@@ -1,0 +1,101 @@
+import { X, Home, Users, Settings, HelpCircle, LogOut, Bell, Palette } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { familyMembers, colorMap } from "@/lib/calendar-data"
+import { cn } from "@/lib/utils"
+
+interface SidebarMenuProps {
+  isOpen: boolean
+  onClose: () => void
+  familyName: string
+}
+
+export function SidebarMenu({ isOpen, onClose, familyName }: SidebarMenuProps) {
+  if (!isOpen) return null
+
+  const menuItems = [
+    { icon: Home, label: "Home", active: true },
+    { icon: Users, label: "Family Members" },
+    { icon: Bell, label: "Notifications" },
+    { icon: Palette, label: "Customize" },
+    { icon: Settings, label: "Settings" },
+    { icon: HelpCircle, label: "Help & Support" },
+  ]
+
+  return (
+    <>
+      {/* Backdrop */}
+      <div className="fixed inset-0 z-40 bg-foreground/20 backdrop-blur-sm" onClick={onClose} />
+
+      {/* Sidebar */}
+      <aside className="fixed left-0 top-0 bottom-0 z-50 w-72 bg-card shadow-2xl flex flex-col">
+        {/* Header */}
+        <div className="flex items-center justify-between p-6 border-b border-border">
+          <div>
+            <h2 className="text-lg font-bold text-foreground">{familyName} Family</h2>
+            <p className="text-sm text-muted-foreground">Calendar Settings</p>
+          </div>
+          <Button variant="ghost" size="icon" onClick={onClose}>
+            <X className="h-5 w-5" />
+          </Button>
+        </div>
+
+        {/* Family Members */}
+        <div className="p-4 border-b border-border">
+          <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Family Members</h3>
+          <div className="space-y-2">
+            {familyMembers.map((member) => {
+              const colors = colorMap[member.color]
+              return (
+                <button
+                  key={member.id}
+                  className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-muted transition-colors"
+                >
+                  <div
+                    className={cn(
+                      "w-8 h-8 rounded-full flex items-center justify-center text-card text-sm font-bold",
+                      colors?.bg,
+                    )}
+                  >
+                    {member.name.charAt(0)}
+                  </div>
+                  <span className="text-sm font-medium text-foreground">{member.name}</span>
+                </button>
+              )
+            })}
+          </div>
+        </div>
+
+        {/* Menu Items */}
+        <nav className="flex-1 p-4">
+          <div className="space-y-1">
+            {menuItems.map((item, index) => {
+              const Icon = item.icon
+              return (
+                <button
+                  key={index}
+                  className={cn(
+                    "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors",
+                    item.active
+                      ? "bg-primary text-primary-foreground"
+                      : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                  )}
+                >
+                  <Icon className="h-5 w-5" />
+                  {item.label}
+                </button>
+              )
+            })}
+          </div>
+        </nav>
+
+        {/* Footer */}
+        <div className="p-4 border-t border-border">
+          <button className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-destructive hover:bg-destructive/10 transition-colors">
+            <LogOut className="h-5 w-5" />
+            Sign Out
+          </button>
+        </div>
+      </aside>
+    </>
+  )
+}
