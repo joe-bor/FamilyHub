@@ -67,25 +67,52 @@ The dev server will start at `http://localhost:5173`
 ```
 family-hub/
 ├── src/
-│   ├── components/        # React components
-│   │   ├── ui/           # shadcn/ui base components
-│   │   ├── *-modal.tsx   # Modal dialogs
-│   │   ├── *-view.tsx    # Main view components
-│   │   └── *.tsx         # Feature components
-│   ├── lib/              # Utilities and data
-│   │   ├── calendar-data.ts  # Data models and mock data
-│   │   └── utils.ts      # Utility functions
-│   ├── App.tsx           # Main application component
-│   ├── main.tsx          # Application entry point
-│   └── index.css         # Global styles and Tailwind imports
-├── docs/                 # Documentation
-│   └── PRD-REVISIONS.md  # PRD alignment document
-├── public/               # Static assets
-├── index.html           # HTML entry point
-├── vite.config.ts       # Vite configuration
-├── tsconfig.app.json    # TypeScript configuration
-├── postcss.config.js    # PostCSS configuration (Tailwind v4)
-└── package.json         # Dependencies
+│   ├── components/
+│   │   ├── ui/                      # shadcn/ui primitives (button, input, label)
+│   │   ├── shared/                  # Cross-module shared components
+│   │   │   ├── calendar-header.tsx
+│   │   │   ├── navigation-tabs.tsx
+│   │   │   ├── sidebar-menu.tsx
+│   │   │   ├── theme-provider.tsx
+│   │   │   └── index.ts             # Barrel exports
+│   │   ├── calendar/                # Calendar module (MVP)
+│   │   │   ├── views/               # Calendar view components
+│   │   │   │   ├── daily-calendar.tsx
+│   │   │   │   ├── weekly-calendar.tsx
+│   │   │   │   ├── monthly-calendar.tsx
+│   │   │   │   ├── schedule-calendar.tsx
+│   │   │   │   └── index.ts
+│   │   │   ├── components/          # Calendar-specific components
+│   │   │   │   ├── calendar-event.tsx
+│   │   │   │   ├── current-time-indicator.tsx
+│   │   │   │   ├── calendar-view-switcher.tsx
+│   │   │   │   ├── add-event-button.tsx
+│   │   │   │   ├── add-event-modal.tsx
+│   │   │   │   ├── today-button.tsx
+│   │   │   │   ├── family-filter-pills.tsx
+│   │   │   │   ├── calendar-filter.tsx
+│   │   │   │   └── index.ts
+│   │   │   └── index.ts             # Main barrel (re-exports all)
+│   │   ├── chores-view.tsx          # Chores module (Phase 3)
+│   │   ├── meals-view.tsx           # Meals module (Phase 3)
+│   │   ├── lists-view.tsx           # Lists module (Phase 3)
+│   │   └── photos-view.tsx          # Photos module (Phase 3)
+│   ├── lib/                         # Utilities and data
+│   │   ├── calendar-data.ts         # Data models and mock data
+│   │   └── utils.ts                 # Utility functions (cn)
+│   ├── App.tsx                      # Main application component
+│   ├── main.tsx                     # Application entry point
+│   └── index.css                    # Global styles and Tailwind imports
+├── docs/                            # Documentation
+│   ├── frontend-spec.md             # Frontend specification (comprehensive)
+│   ├── family-calendar-prd.md       # Product requirements document
+│   └── PRD-REVISIONS.md             # (Archived)
+├── public/                          # Static assets
+├── index.html                       # HTML entry point
+├── vite.config.ts                   # Vite configuration
+├── tsconfig.app.json                # TypeScript configuration
+├── postcss.config.js                # PostCSS configuration (Tailwind v4)
+└── package.json                     # Dependencies
 ```
 
 ## Family Members & Colors
