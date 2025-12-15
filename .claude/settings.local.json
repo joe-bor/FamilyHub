@@ -4,7 +4,16 @@
       "Bash(npm install:*)",
       "Bash(curl:*)",
       "Bash(npx tsc:*)",
-      "Bash(npm run build:*)"
+      "Bash(npm run build:*)",
+      "Bash(tree:*)",
+      "Bash(claude mcp list:*)",
+      "Bash(npx @anthropic-ai/claude-code-mcp-playwright --help)",
+      "mcp__claude-code-docs__search_claude_code_documentation",
+      "Bash(npm search:*)",
+      "WebSearch",
+      "Bash(claude mcp remove:*)",
+      "Bash(claude mcp add playwright --transport stdio -- npx -y @playwright/mcp@latest)",
+      "Bash(cat:*)"
     ]
   }
 }
