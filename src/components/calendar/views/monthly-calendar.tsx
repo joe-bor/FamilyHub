@@ -1,6 +1,6 @@
 import { type CalendarEvent, familyMembers, colorMap } from "@/lib/calendar-data"
 import { cn } from "@/lib/utils"
-import type { FilterState } from "./calendar-filter"
+import type { FilterState } from "../components/calendar-filter"
 import { ChevronLeft, ChevronRight } from "lucide-react"
 
 interface MonthlyCalendarProps {

@@ -1,21 +1,22 @@
 import { useState } from "react"
-import { CalendarHeader } from "@/components/calendar-header"
-import { NavigationTabs, type TabType } from "@/components/navigation-tabs"
-import { WeeklyCalendar } from "@/components/weekly-calendar"
-import { DailyCalendar } from "@/components/daily-calendar"
-import { MonthlyCalendar } from "@/components/monthly-calendar"
-import { ScheduleCalendar } from "@/components/schedule-calendar"
-import { AddEventButton } from "@/components/add-event-button"
-import { AddEventModal } from "@/components/add-event-modal"
-import { SidebarMenu } from "@/components/sidebar-menu"
+import { CalendarHeader, NavigationTabs, SidebarMenu, type TabType } from "@/components/shared"
+import {
+  WeeklyCalendar,
+  DailyCalendar,
+  MonthlyCalendar,
+  ScheduleCalendar,
+  AddEventButton,
+  AddEventModal,
+  CalendarViewSwitcher,
+  FamilyFilterPills,
+  TodayButton,
+  type CalendarViewType,
+  type FilterState
+} from "@/components/calendar"
 import { ChoresView } from "@/components/chores-view"
 import { MealsView } from "@/components/meals-view"
 import { ListsView } from "@/components/lists-view"
 import { PhotosView } from "@/components/photos-view"
-import { CalendarViewSwitcher, type CalendarViewType } from "@/components/calendar-view-switcher"
-import type { FilterState } from "@/components/calendar-filter"
-import { FamilyFilterPills } from "@/components/family-filter-pills"
-import { TodayButton } from "@/components/today-button"
 import { type CalendarEvent, generateSampleEvents, familyMembers } from "@/lib/calendar-data"
 
 export default function FamilyHub() {

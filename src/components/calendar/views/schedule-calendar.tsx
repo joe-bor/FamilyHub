@@ -2,7 +2,7 @@ import type React from "react"
 
 import { type CalendarEvent, familyMembers, colorMap } from "@/lib/calendar-data"
 import { cn } from "@/lib/utils"
-import type { FilterState } from "./calendar-filter"
+import type { FilterState } from "../components/calendar-filter"
 import { Clock, MapPin } from "lucide-react"
 
 interface ScheduleCalendarProps {

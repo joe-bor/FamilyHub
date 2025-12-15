@@ -1,9 +1,9 @@
 import { useRef } from "react"
 import { type CalendarEvent, familyMembers, colorMap } from "@/lib/calendar-data"
-import { CalendarEventCard } from "./calendar-event"
+import { CalendarEventCard } from "../components/calendar-event"
 import { cn } from "@/lib/utils"
-import type { FilterState } from "./calendar-filter"
-import { CurrentTimeIndicator, useAutoScrollToNow } from "./current-time-indicator"
+import type { FilterState } from "../components/calendar-filter"
+import { CurrentTimeIndicator, useAutoScrollToNow } from "../components/current-time-indicator"
 
 interface DailyCalendarProps {
   events: CalendarEvent[]
