@@ -1,7 +1,7 @@
 import { type CalendarEvent, familyMembers, colorMap } from "@/lib/types"
 import { cn } from "@/lib/utils"
 import type { FilterState } from "../components/calendar-filter"
-import { ChevronLeft, ChevronRight } from "lucide-react"
+import { CalendarNavigation } from "../components/calendar-navigation"
 
 interface MonthlyCalendarProps {
   events: CalendarEvent[]
@@ -9,8 +9,10 @@ interface MonthlyCalendarProps {
   onEventClick?: (event: CalendarEvent) => void
   filter: FilterState
   onDateSelect?: (date: Date) => void
-  onPrevMonth?: () => void
-  onNextMonth?: () => void
+  onPrevious: () => void
+  onNext: () => void
+  onToday: () => void
+  isViewingToday: boolean
 }
 
 export function MonthlyCalendar({
@@ -19,8 +21,10 @@ export function MonthlyCalendar({
   onEventClick,
   filter,
   onDateSelect,
-  onPrevMonth,
-  onNextMonth,
+  onPrevious,
+  onNext,
+  onToday,
+  isViewingToday,
 }: MonthlyCalendarProps) {
   const today = new Date()
 
@@ -81,27 +85,19 @@ export function MonthlyCalendar({
     return memberIds.map((id) => familyMembers.find((m) => m.id === id)).filter(Boolean)
   }
 
+  const formatMonthLabel = () => {
+    return currentDate.toLocaleDateString("en-US", { month: "long", year: "numeric" })
+  }
+
   return (
     <div className="flex-1 flex flex-col overflow-hidden bg-background p-4">
-      <div className="flex items-center justify-center gap-4 mb-4">
-        <button
-          onClick={onPrevMonth}
-          className="p-2 rounded-lg hover:bg-muted transition-colors"
-          aria-label="Previous month"
-        >
-          <ChevronLeft className="w-5 h-5 text-muted-foreground" />
-        </button>
-        <h2 className="text-2xl font-bold text-foreground min-w-[200px] text-center">
-          {currentDate.toLocaleDateString("en-US", { month: "long", year: "numeric" })}
-        </h2>
-        <button
-          onClick={onNextMonth}
-          className="p-2 rounded-lg hover:bg-muted transition-colors"
-          aria-label="Next month"
-        >
-          <ChevronRight className="w-5 h-5 text-muted-foreground" />
-        </button>
-      </div>
+      <CalendarNavigation
+        label={formatMonthLabel()}
+        onPrevious={onPrevious}
+        onNext={onNext}
+        onToday={onToday}
+        isViewingToday={isViewingToday}
+      />
 
       {/* Weekday headers */}
       <div className="grid grid-cols-7 gap-1 mb-2">

@@ -1,6 +1,7 @@
 import { useRef } from "react"
 import { type CalendarEvent, familyMembers, colorMap } from "@/lib/types"
 import { CalendarEventCard } from "../components/calendar-event"
+import { CalendarNavigation } from "../components/calendar-navigation"
 import { cn } from "@/lib/utils"
 import type { FilterState } from "../components/calendar-filter"
 import { CurrentTimeIndicator, useAutoScrollToNow } from "../components/current-time-indicator"
@@ -10,6 +11,10 @@ interface DailyCalendarProps {
   currentDate: Date
   onEventClick?: (event: CalendarEvent) => void
   filter: FilterState
+  onPrevious: () => void
+  onNext: () => void
+  onToday: () => void
+  isViewingToday: boolean
 }
 
 function parseTime(timeStr: string): { hours: number; minutes: number } {
@@ -48,7 +53,16 @@ function getEventGridPosition(startTime: string, endTime: string) {
   return { top, height }
 }
 
-export function DailyCalendar({ events, currentDate, onEventClick, filter }: DailyCalendarProps) {
+export function DailyCalendar({
+  events,
+  currentDate,
+  onEventClick,
+  filter,
+  onPrevious,
+  onNext,
+  onToday,
+  isViewingToday,
+}: DailyCalendarProps) {
   const today = new Date()
   const scrollContainerRef = useRef<HTMLDivElement>(null)
 
@@ -59,8 +73,8 @@ export function DailyCalendar({ events, currentDate, onEventClick, filter }: Dai
     return date.toDateString() === today.toDateString()
   }
 
-  const formatDate = (date: Date) => {
-    return date.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })
+  const formatDateLabel = (date: Date) => {
+    return date.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" })
   }
 
   const getEventsForDay = () => {
@@ -104,19 +118,22 @@ export function DailyCalendar({ events, currentDate, onEventClick, filter }: Dai
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden bg-background">
-      {/* Day header */}
+      {/* Navigation header */}
+      <div className="border-b border-border bg-card shrink-0">
+        <CalendarNavigation
+          label={formatDateLabel(currentDate)}
+          onPrevious={onPrevious}
+          onNext={onNext}
+          onToday={onToday}
+          isViewingToday={isViewingToday}
+        />
+      </div>
+
+      {/* Day info header */}
       <div className="flex border-b border-border bg-card shrink-0">
         <div className="w-16 shrink-0" />
-        <div className={cn("flex-1 text-center py-6", isToday(currentDate) && "bg-primary/5")}>
-          <div className={cn("text-lg font-medium", isToday(currentDate) ? "text-primary" : "text-muted-foreground")}>
-            {formatDate(currentDate)}
-          </div>
-          {isToday(currentDate) && (
-            <span className="inline-block mt-2 px-3 py-1 bg-primary text-primary-foreground text-xs font-semibold rounded-full">
-              Today
-            </span>
-          )}
-          <div className="flex justify-center gap-2 mt-3">
+        <div className={cn("flex-1 text-center py-4", isToday(currentDate) && "bg-primary/5")}>
+          <div className="flex justify-center gap-2">
             {familyMembers.map((member) => {
               const hasEvent = dayEvents.some((e) => e.memberId === member.id)
               return hasEvent ? (
