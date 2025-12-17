@@ -1,9 +1,9 @@
 ## FamilyHub
 
-**Document Version:** 1.3
-**Last Updated:** December 14, 2025
+**Document Version:** 1.4
+**Last Updated:** December 16, 2024
 **Project Owner:** Joe
-**Document Status:** Living Document - Phase 1B In Progress
+**Document Status:** Living Document - Phase 1B In Progress (Sprint 4 Complete)
 
 ---
 
@@ -1693,9 +1693,17 @@ _Note: Nunito was chosen for its friendly, rounded aesthetic that appeals to chi
 
 **Focus:** Complete Calendar module frontend, prepare for backend integration
 
-**Sprint 4: State Management & Data Layer (Calendar Only)**
+**Sprint 4: State Management & Data Layer (Calendar Only)** ✅ COMPLETED (December 16, 2024)
 
-- [ ] Implement Zustand or React Context for calendar state
+- [x] Implement Zustand for calendar state (calendar-store.ts)
+- [x] Create domain-specific stores (app, calendar, chores, meals, lists, photos)
+- [x] Extract types to centralized `src/lib/types/` directory
+- [x] Create CalendarModule orchestrator component
+- [x] Simplify App.tsx to layout orchestrator (removed all useState)
+- [x] Add view-aware navigation (goToPrevious, goToNext, goToToday)
+- [x] Add computed selectors (useIsViewingToday)
+- [x] Move calendar navigation into views (CalendarNavigation component)
+- [x] Add persistence for filter preferences (localStorage via Zustand middleware)
 - [ ] Create mock API service layer for events (prepare for backend)
 - [ ] Add loading states for calendar operations
 - [ ] Add error handling for calendar actions
