@@ -1,6 +1,7 @@
 import { useState } from "react"
 import { Check, RotateCcw, Star, Trophy } from "lucide-react"
-import { type ChoreItem, familyMembers, colorMap, generateSampleChores } from "@/lib/calendar-data"
+import { type ChoreItem, familyMembers, colorMap } from "@/lib/types"
+import { generateSampleChores } from "@/lib/calendar-data"
 import { cn } from "@/lib/utils"
 
 export function ChoresView() {

@@ -1,6 +1,7 @@
 import { useState } from "react"
 import { Coffee, Sun, Moon, ChevronLeft, ChevronRight } from "lucide-react"
-import { type MealPlan, generateSampleMeals } from "@/lib/calendar-data"
+import type { MealPlan } from "@/lib/types"
+import { generateSampleMeals } from "@/lib/calendar-data"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 
