@@ -17,32 +17,68 @@ FamilyHub is a family organization app built with React 19, Vite, and Tailwind C
 
 ### Core Structure
 
-- **App.tsx** - Root component managing all app state (current date, active tab, calendar view, events, filters)
-- **src/lib/calendar-data.ts** - Data models and sample data generators for `FamilyMember`, `CalendarEvent`, `ChoreItem`, `MealPlan`
+- **App.tsx** - Layout orchestrator composing AppHeader, NavigationTabs, SidebarMenu, and module views
+- **src/stores/** - Zustand stores for global state management (app, calendar, chores, meals, lists, photos)
+- **src/lib/types/** - Centralized TypeScript types (`calendar.ts`, `family.ts`, `chores.ts`, `meals.ts`)
+- **src/lib/calendar-data.ts** - Sample data generators for events, chores, meals
 - **src/lib/utils.ts** - `cn()` utility for Tailwind class merging
 
 ### Component Organization
 
 ```
-src/components/
-├── ui/           # Base primitives (button, input, label) - shadcn/ui style with CVA
-├── shared/       # App-wide components (NavigationTabs, CalendarHeader, SidebarMenu)
-├── calendar/
-│   ├── views/    # DailyCalendar, WeeklyCalendar, MonthlyCalendar, ScheduleCalendar
-│   └── components/  # AddEventModal, CalendarEvent, FamilyFilterPills, etc.
-└── *-view.tsx    # Tab views (ChoresView, MealsView, ListsView, PhotosView)
+src/
+├── stores/                    # Zustand state management
+│   ├── app-store.ts           # App-wide state (activeTab, sidebar, familyName)
+│   ├── calendar-store.ts      # Calendar state (date, view, events, filters)
+│   └── index.ts               # Barrel exports + selectors (useIsViewingToday)
+│
+├── lib/types/                 # Centralized type definitions
+│   ├── calendar.ts            # CalendarEvent, CalendarViewType, FilterState
+│   ├── family.ts              # FamilyMember, colorMap
+│   ├── chores.ts              # ChoreItem
+│   ├── meals.ts               # MealPlan
+│   └── index.ts               # Barrel exports
+│
+├── components/
+│   ├── ui/                    # Base primitives (button, input, label)
+│   ├── shared/                # App-wide components
+│   │   ├── app-header.tsx     # Top bar (family name, date, weather, settings)
+│   │   ├── navigation-tabs.tsx # Left sidebar module tabs
+│   │   └── sidebar-menu.tsx   # Settings slide-out menu
+│   │
+│   ├── calendar/
+│   │   ├── CalendarModule.tsx # Module orchestrator (wires stores to views)
+│   │   ├── views/             # DailyCalendar, WeeklyCalendar, MonthlyCalendar, ScheduleCalendar
+│   │   └── components/        # CalendarNavigation, CalendarEventCard, FamilyFilterPills, etc.
+│   │
+│   └── *-view.tsx             # Other module views (ChoresView, MealsView, ListsView, PhotosView)
 ```
 
-Barrel exports: Import from `@/components/calendar` or `@/components/shared` rather than individual files.
+Barrel exports: Import from `@/components/calendar`, `@/components/shared`, `@/stores`, or `@/lib/types`.
 
 ### State Management
 
-All state lives in App.tsx using useState hooks:
-- `currentDate` - Selected date for calendar navigation
-- `activeTab` - Current tab (calendar, chores, meals, lists, photos)
-- `calendarView` - View type (daily, weekly, monthly, schedule)
-- `filter` - Family member filtering with `FilterState` type
-- `events` - Array of `CalendarEvent` objects
+Uses **Zustand** for global state with domain-specific stores:
+
+**app-store.ts:**
+- `activeTab` - Current module (calendar, chores, meals, lists, photos)
+- `isSidebarOpen` / `openSidebar` / `closeSidebar` - Sidebar state
+- `familyName` - Display name for family
+
+**calendar-store.ts:**
+- `currentDate`, `calendarView`, `events`, `filter` - Calendar state
+- `goToPrevious`, `goToNext`, `goToToday` - View-aware navigation actions
+- `addEvent`, `updateEvent`, `deleteEvent` - Event CRUD
+- `useIsViewingToday` - Computed selector for "Today" button state
+
+**Usage pattern:**
+```typescript
+import { useCalendarStore, useIsViewingToday } from "@/stores"
+
+const currentDate = useCalendarStore((state) => state.currentDate)
+const goToNext = useCalendarStore((state) => state.goToNext)
+const isViewingToday = useIsViewingToday()
+```
 
 ### Styling
 
@@ -50,7 +86,7 @@ All state lives in App.tsx using useState hooks:
 
 Family member colors: `bg-coral`, `bg-teal`, `bg-green`, `bg-purple`, `bg-yellow`, `bg-pink`, `bg-orange`
 
-The `colorMap` in calendar-data.ts provides bg/text/light variants for each family color.
+The `colorMap` in `src/lib/types/family.ts` provides bg/text/light variants for each family color.
 
 ### Component Patterns
 
