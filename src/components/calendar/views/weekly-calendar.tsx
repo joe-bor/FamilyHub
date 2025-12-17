@@ -1,5 +1,5 @@
 import { useRef } from "react"
-import { type CalendarEvent, familyMembers, colorMap } from "@/lib/calendar-data"
+import { type CalendarEvent, familyMembers, colorMap } from "@/lib/types"
 import { CalendarEventCard } from "../components/calendar-event"
 import { cn } from "@/lib/utils"
 import type { FilterState } from "../components/calendar-filter"

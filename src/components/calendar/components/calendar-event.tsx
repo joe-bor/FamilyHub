@@ -1,4 +1,4 @@
-import { type CalendarEvent, familyMembers, colorMap } from "@/lib/calendar-data"
+import { type CalendarEvent, familyMembers, colorMap } from "@/lib/types"
 import { cn } from "@/lib/utils"
 
 interface CalendarEventCardProps {

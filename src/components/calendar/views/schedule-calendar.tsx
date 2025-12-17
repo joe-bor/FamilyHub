@@ -1,6 +1,6 @@
 import type React from "react"
 
-import { type CalendarEvent, familyMembers, colorMap } from "@/lib/calendar-data"
+import { type CalendarEvent, familyMembers, colorMap } from "@/lib/types"
 import { cn } from "@/lib/utils"
 import type { FilterState } from "../components/calendar-filter"
 import { Clock, MapPin } from "lucide-react"

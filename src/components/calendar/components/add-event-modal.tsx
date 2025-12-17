@@ -5,7 +5,7 @@ import { X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { familyMembers, colorMap, type CalendarEvent } from "@/lib/calendar-data"
+import { familyMembers, colorMap, type CalendarEvent } from "@/lib/types"
 import { cn } from "@/lib/utils"
 
 interface AddEventModalProps {

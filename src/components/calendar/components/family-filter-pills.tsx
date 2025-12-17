@@ -1,42 +1,21 @@
-import { familyMembers, colorMap } from "@/lib/calendar-data"
+import { familyMembers, colorMap } from "@/lib/types"
 import { cn } from "@/lib/utils"
 import { Check } from "lucide-react"
-import type { FilterState } from "./calendar-filter"
+import { useCalendarStore } from "@/stores"
 
-interface FamilyFilterPillsProps {
-  filter: FilterState
-  onFilterChange: (filter: FilterState) => void
-}
-
-export function FamilyFilterPills({ filter, onFilterChange }: FamilyFilterPillsProps) {
-  const toggleMember = (memberId: string) => {
-    const isSelected = filter.selectedMembers.includes(memberId)
-    const newSelectedMembers = isSelected
-      ? filter.selectedMembers.filter((id) => id !== memberId)
-      : [...filter.selectedMembers, memberId]
-
-    onFilterChange({ ...filter, selectedMembers: newSelectedMembers })
-  }
+export function FamilyFilterPills() {
+  const filter = useCalendarStore((state) => state.filter)
+  const toggleMember = useCalendarStore((state) => state.toggleMember)
+  const toggleAllMembers = useCalendarStore((state) => state.toggleAllMembers)
+  const toggleAllDayEvents = useCalendarStore((state) => state.toggleAllDayEvents)
 
   const allSelected = filter.selectedMembers.length === familyMembers.length
   const noneSelected = filter.selectedMembers.length === 0
 
-  const toggleAll = () => {
-    if (allSelected) {
-      onFilterChange({ ...filter, selectedMembers: [] })
-    } else {
-      onFilterChange({ ...filter, selectedMembers: familyMembers.map((m) => m.id) })
-    }
-  }
-
-  const toggleAllDayEvents = () => {
-    onFilterChange({ ...filter, showAllDayEvents: !filter.showAllDayEvents })
-  }
-
   return (
     <div className="flex items-center gap-1.5">
       <button
-        onClick={toggleAll}
+        onClick={toggleAllMembers}
         className={cn(
           "px-2.5 py-1 rounded-full text-xs font-medium transition-all border",
           allSelected
