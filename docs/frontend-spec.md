@@ -1,7 +1,7 @@
 # FamilyHub Frontend Specification
 
-**Version:** 1.0
-**Last Updated:** December 14, 2025
+**Version:** 1.1
+**Last Updated:** December 16, 2024
 **Status:** Living Document - Phase 1B In Progress
 
 ---
@@ -68,8 +68,9 @@ FamilyHub is a **modular family dashboard** Progressive Web Application (PWA) de
 - **date-fns** for date manipulation and formatting
 
 **State Management:**
-- **Phase 1A (Current):** React `useState` + `useReducer` (local state)
-- **Phase 1B (Next):** Zustand or React Context for global state
+- **Zustand** for global state (domain-specific stores)
+- Stores: `app-store.ts`, `calendar-store.ts`, `chores-store.ts`, `meals-store.ts`, `lists-store.ts`, `photos-store.ts`
+- Filter preferences persisted to localStorage via Zustand middleware
 
 **Utilities:**
 - **clsx** + **tailwind-merge** for className composition (`cn()` utility)
@@ -79,6 +80,26 @@ FamilyHub is a **modular family dashboard** Progressive Web Application (PWA) de
 ```
 /Users/joe.bor/code/family-hub/
 ├── src/
+│   ├── stores/                          # Zustand state management
+│   │   ├── app-store.ts                 # App-wide state (activeTab, sidebar)
+│   │   ├── calendar-store.ts            # Calendar state (date, view, events, filter)
+│   │   ├── chores-store.ts              # Chores module state
+│   │   ├── meals-store.ts               # Meals module state
+│   │   ├── lists-store.ts               # Lists module state
+│   │   ├── photos-store.ts              # Photos module state
+│   │   └── index.ts                     # Barrel exports + selectors
+│   │
+│   ├── lib/
+│   │   ├── types/                       # Centralized type definitions
+│   │   │   ├── calendar.ts              # CalendarEvent, CalendarViewType, FilterState
+│   │   │   ├── family.ts                # FamilyMember, colorMap, familyMembers
+│   │   │   ├── chores.ts                # ChoreItem
+│   │   │   ├── meals.ts                 # MealPlan
+│   │   │   └── index.ts                 # Barrel exports
+│   │   │
+│   │   ├── calendar-data.ts             # Sample data generators
+│   │   └── utils.ts                     # Utility functions (cn)
+│   │
 │   ├── components/
 │   │   ├── ui/                          # Primitive components (shadcn/ui)
 │   │   │   ├── button.tsx
@@ -86,50 +107,41 @@ FamilyHub is a **modular family dashboard** Progressive Web Application (PWA) de
 │   │   │   └── label.tsx
 │   │   │
 │   │   ├── shared/                      # Cross-module shared components
-│   │   │   ├── calendar-header.tsx      # Top navigation bar
+│   │   │   ├── app-header.tsx           # Top bar (family name, date, weather)
 │   │   │   ├── navigation-tabs.tsx      # Left sidebar (5 modules)
-│   │   │   ├── sidebar-menu.tsx         # Settings/profile menu
+│   │   │   ├── sidebar-menu.tsx         # Settings/profile slide-out
 │   │   │   ├── theme-provider.tsx       # Dark mode context
 │   │   │   └── index.ts                 # Barrel exports
 │   │   │
 │   │   ├── calendar/                    # Calendar module (MVP)
+│   │   │   ├── CalendarModule.tsx       # Module orchestrator (wires stores to views)
+│   │   │   │
 │   │   │   ├── views/                   # Calendar view components
-│   │   │   │   ├── daily-calendar.tsx
-│   │   │   │   ├── weekly-calendar.tsx
-│   │   │   │   ├── monthly-calendar.tsx
-│   │   │   │   ├── schedule-calendar.tsx
+│   │   │   │   ├── daily-calendar.tsx   # Day view with navigation
+│   │   │   │   ├── weekly-calendar.tsx  # Week view with navigation
+│   │   │   │   ├── monthly-calendar.tsx # Month view with navigation
+│   │   │   │   ├── schedule-calendar.tsx # Rolling 14-day agenda
 │   │   │   │   └── index.ts
 │   │   │   │
 │   │   │   ├── components/              # Calendar-specific components
+│   │   │   │   ├── calendar-navigation.tsx  # Unified nav (prev/today/next)
 │   │   │   │   ├── calendar-event.tsx
 │   │   │   │   ├── current-time-indicator.tsx
 │   │   │   │   ├── calendar-view-switcher.tsx
 │   │   │   │   ├── add-event-button.tsx
 │   │   │   │   ├── add-event-modal.tsx
-│   │   │   │   ├── today-button.tsx
 │   │   │   │   ├── family-filter-pills.tsx
 │   │   │   │   ├── calendar-filter.tsx
 │   │   │   │   └── index.ts
 │   │   │   │
 │   │   │   └── index.ts                 # Main barrel (re-exports all)
 │   │   │
-│   │   ├── chores/                      # Chores module (Phase 3)
-│   │   │   └── chores-view.tsx
-│   │   │
-│   │   ├── meals/                       # Meals module (Phase 3)
-│   │   │   └── meals-view.tsx
-│   │   │
-│   │   ├── lists/                       # Lists module (Phase 3)
-│   │   │   └── lists-view.tsx
-│   │   │
-│   │   └── photos/                      # Photos module (Phase 3)
-│   │       └── photos-view.tsx
+│   │   ├── chores-view.tsx              # Chores module view (Phase 3)
+│   │   ├── meals-view.tsx               # Meals module view (Phase 3)
+│   │   ├── lists-view.tsx               # Lists module view (Phase 3)
+│   │   └── photos-view.tsx              # Photos module view (Phase 3)
 │   │
-│   ├── lib/
-│   │   ├── calendar-data.ts             # Data models, mock data, types
-│   │   └── utils.ts                     # Utility functions (cn)
-│   │
-│   ├── App.tsx                          # Main application component
+│   ├── App.tsx                          # Layout orchestrator (composes modules)
 │   ├── main.tsx                         # Application entry point
 │   └── index.css                        # Global styles (Tailwind imports)
 │
@@ -151,11 +163,11 @@ FamilyHub is a **modular family dashboard** Progressive Web Application (PWA) de
 ```
 
 **Key Directories:**
+- **`/stores/`**: Zustand stores for global state management
+- **`/lib/types/`**: Centralized TypeScript type definitions
 - **`/components/ui/`**: Reusable UI primitives (button, input, label from shadcn/ui)
 - **`/components/shared/`**: Components used across multiple modules
-- **`/components/calendar/`**: Calendar module (MVP) - fully organized
-- **`/components/[module]/`**: Future modules (Chores, Meals, Lists, Photos)
-- **`/lib/`**: Utilities, types, data models
+- **`/components/calendar/`**: Calendar module (MVP) - fully organized with CalendarModule orchestrator
 
 ---
 
@@ -601,44 +613,61 @@ export function WeeklyCalendar({
 
 ## 4. State Management
 
-### 4.1 Current Approach (Phase 1A)
+### 4.1 Current Approach (Zustand - Implemented)
 
-**Local Component State:**
+**Global State with Domain-Specific Stores:**
 
-Uses React's built-in `useState` and `useReducer` hooks for component-level state.
+Uses Zustand for lightweight, TypeScript-first global state management. State is organized into domain-specific stores.
 
-**Example from App.tsx:**
+**Store Architecture:**
+```
+src/stores/
+├── app-store.ts        # App-wide state (activeTab, sidebar, familyName)
+├── calendar-store.ts   # Calendar state (date, view, events, filter, navigation)
+├── chores-store.ts     # Chores module state
+├── meals-store.ts      # Meals module state
+├── lists-store.ts      # Lists module state
+├── photos-store.ts     # Photos module state
+└── index.ts            # Barrel exports + computed selectors
+```
+
+**App.tsx is now a Layout Orchestrator:**
 ```typescript
-export default function FamilyHub() {
-  // Calendar state
-  const [currentDate, setCurrentDate] = useState(new Date())
-  const [activeTab, setActiveTab] = useState<TabType>("calendar")
-  const [calendarView, setCalendarView] = useState<CalendarViewType>("weekly")
+export default function App() {
+  const activeTab = useAppStore((state) => state.activeTab)
+  const isSidebarOpen = useAppStore((state) => state.isSidebarOpen)
+  const closeSidebar = useAppStore((state) => state.closeSidebar)
 
-  // Events state (mock data for Phase 1A)
-  const [events, setEvents] = useState<CalendarEvent[]>(() => generateSampleEvents())
+  const renderModule = () => {
+    switch (activeTab) {
+      case "calendar":
+        return <CalendarModule />  // CalendarModule uses calendar-store internally
+      case "chores":
+        return <ChoresView />
+      // ... other modules
+    }
+  }
 
-  // Filter state
-  const [filter, setFilter] = useState<FilterState>({
-    selectedMembers: familyMembers.map(m => m.id),
-    showAllDayEvents: true,
-  })
-
-  // Modal state
-  const [isEventModalOpen, setIsEventModalOpen] = useState(false)
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false)
-
-  // ... event handlers
+  return (
+    <div className="flex h-screen">
+      <NavigationTabs />
+      <main className="flex-1 flex flex-col">
+        <AppHeader />
+        {renderModule()}
+      </main>
+      <SidebarMenu isOpen={isSidebarOpen} onClose={closeSidebar} />
+    </div>
+  )
 }
 ```
 
 **Characteristics:**
-- **Simple:** No external state management library
-- **Local:** State lives in parent component (`App.tsx`)
-- **Props drilling:** State passed down to children via props
-- **Sufficient for MVP:** Works well for single-page calendar app
+- **Domain-specific stores:** Each module has its own store
+- **No props drilling:** Components subscribe directly to stores
+- **Computed selectors:** `useIsViewingToday()` for derived state
+- **Persistence:** Filter preferences saved to localStorage via middleware
 
-### 4.2 Phase 1B Migration (Zustand)
+### 4.2 Store Implementation Details
 
 **Why Zustand?**
 - Lightweight (1-2KB gzipped)
@@ -3153,10 +3182,16 @@ async function handleCreateEvent(event: CalendarEvent) {
 
 ### Phase 1B: Frontend Polish (Current Sprint)
 
-**State Management:**
-- [ ] Implement Zustand store for calendar state
-- [ ] Migrate from local `useState` to Zustand
-- [ ] Add persistence for filter state (localStorage)
+**State Management:** ✅ COMPLETED (December 16, 2024)
+- [x] Implement Zustand stores for all modules (app, calendar, chores, meals, lists, photos)
+- [x] Migrate from local `useState` to Zustand
+- [x] Add persistence for filter state (localStorage via Zustand middleware)
+- [x] Extract types to centralized `src/lib/types/` directory
+- [x] Create CalendarModule orchestrator component
+- [x] Simplify App.tsx to layout orchestrator
+- [x] Add view-aware navigation actions (goToPrevious, goToNext, goToToday)
+- [x] Add computed selector (useIsViewingToday)
+- [x] Move calendar navigation into views (CalendarNavigation component)
 - [ ] Create loading states for all async operations
 - [ ] Add error states with user-friendly messages
 
