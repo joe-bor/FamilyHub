@@ -7,7 +7,6 @@ import {
   AddEventModal,
   CalendarViewSwitcher,
   FamilyFilterPills,
-  TodayButton,
 } from "@/components/calendar"
 import { useCalendarStore, useIsViewingToday } from "@/stores"
 import type { CalendarEvent } from "@/lib/types"
@@ -42,43 +41,40 @@ export function CalendarModule() {
     filter,
   }
 
+  const navigationProps = {
+    onPrevious: goToPrevious,
+    onNext: goToNext,
+    onToday: goToToday,
+    isViewingToday,
+  }
+
   const renderCalendarView = () => {
     switch (calendarView) {
       case "daily":
-        return <DailyCalendar {...commonProps} />
+        return <DailyCalendar {...commonProps} {...navigationProps} />
       case "weekly":
-        return <WeeklyCalendar {...commonProps} />
+        return <WeeklyCalendar {...commonProps} {...navigationProps} />
       case "monthly":
         return (
           <MonthlyCalendar
             {...commonProps}
+            {...navigationProps}
             onDateSelect={selectDateAndSwitchToDaily}
-            onPrevMonth={goToPrevious}
-            onNextMonth={goToNext}
           />
         )
       case "schedule":
         return <ScheduleCalendar {...commonProps} />
       default:
-        return <WeeklyCalendar {...commonProps} />
+        return <WeeklyCalendar {...commonProps} {...navigationProps} />
     }
   }
-
-  const showTodayButton = calendarView === "monthly"
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
       {/* Toolbar */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 px-4 py-3 bg-card border-b border-border">
-        <div className="flex items-center gap-3">
-          <CalendarViewSwitcher />
-          {showTodayButton && (
-            <TodayButton onClick={goToToday} isToday={isViewingToday} />
-          )}
-        </div>
-        <div className="flex items-center gap-3">
-          <FamilyFilterPills />
-        </div>
+        <CalendarViewSwitcher />
+        <FamilyFilterPills />
       </div>
 
       {/* Calendar View */}
