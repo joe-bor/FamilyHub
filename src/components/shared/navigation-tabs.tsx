@@ -1,32 +1,32 @@
 import { Calendar, ListTodo, CheckSquare, UtensilsCrossed, ImageIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { useAppStore, type ModuleType } from "@/stores"
 
-export type TabType = "calendar" | "lists" | "chores" | "meals" | "photos"
-
-interface NavigationTabsProps {
-  activeTab: TabType
-  onTabChange: (tab: TabType) => void
-}
+// Keep TabType export for backward compatibility
+export type TabType = ModuleType
 
 const tabs = [
-  { id: "calendar" as TabType, label: "Calendar", icon: Calendar },
-  { id: "lists" as TabType, label: "Lists", icon: ListTodo },
-  { id: "chores" as TabType, label: "Chores", icon: CheckSquare },
-  { id: "meals" as TabType, label: "Meals", icon: UtensilsCrossed },
-  { id: "photos" as TabType, label: "Photos", icon: ImageIcon },
+  { id: "calendar" as ModuleType, label: "Calendar", icon: Calendar },
+  { id: "lists" as ModuleType, label: "Lists", icon: ListTodo },
+  { id: "chores" as ModuleType, label: "Chores", icon: CheckSquare },
+  { id: "meals" as ModuleType, label: "Meals", icon: UtensilsCrossed },
+  { id: "photos" as ModuleType, label: "Photos", icon: ImageIcon },
 ]
 
-export function NavigationTabs({ activeTab, onTabChange }: NavigationTabsProps) {
+export function NavigationTabs() {
+  const activeModule = useAppStore((state) => state.activeModule)
+  const setActiveModule = useAppStore((state) => state.setActiveModule)
+
   return (
     <nav className="w-20 flex flex-col items-center gap-2 py-6 bg-card border-r border-border shrink-0">
       {tabs.map((tab) => {
         const Icon = tab.icon
-        const isActive = activeTab === tab.id
+        const isActive = activeModule === tab.id
 
         return (
           <button
             key={tab.id}
-            onClick={() => onTabChange(tab.id)}
+            onClick={() => setActiveModule(tab.id)}
             className={cn(
               "flex flex-col items-center gap-1 px-2 py-3 rounded-xl w-16 transition-colors",
               isActive

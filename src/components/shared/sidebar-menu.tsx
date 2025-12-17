@@ -1,15 +1,14 @@
 import { X, Home, Users, Settings, HelpCircle, LogOut, Bell, Palette } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { familyMembers, colorMap } from "@/lib/calendar-data"
+import { familyMembers, colorMap } from "@/lib/types"
 import { cn } from "@/lib/utils"
+import { useAppStore } from "@/stores"
 
-interface SidebarMenuProps {
-  isOpen: boolean
-  onClose: () => void
-  familyName: string
-}
+export function SidebarMenu() {
+  const isOpen = useAppStore((state) => state.isSidebarOpen)
+  const closeSidebar = useAppStore((state) => state.closeSidebar)
+  const familyName = useAppStore((state) => state.familyName)
 
-export function SidebarMenu({ isOpen, onClose, familyName }: SidebarMenuProps) {
   if (!isOpen) return null
 
   const menuItems = [
@@ -24,7 +23,7 @@ export function SidebarMenu({ isOpen, onClose, familyName }: SidebarMenuProps) {
   return (
     <>
       {/* Backdrop */}
-      <div className="fixed inset-0 z-40 bg-foreground/20 backdrop-blur-sm" onClick={onClose} />
+      <div className="fixed inset-0 z-40 bg-foreground/20 backdrop-blur-sm" onClick={closeSidebar} />
 
       {/* Sidebar */}
       <aside className="fixed left-0 top-0 bottom-0 z-50 w-72 bg-card shadow-2xl flex flex-col">
@@ -34,7 +33,7 @@ export function SidebarMenu({ isOpen, onClose, familyName }: SidebarMenuProps) {
             <h2 className="text-lg font-bold text-foreground">{familyName} Family</h2>
             <p className="text-sm text-muted-foreground">Calendar Settings</p>
           </div>
-          <Button variant="ghost" size="icon" onClick={onClose}>
+          <Button variant="ghost" size="icon" onClick={closeSidebar}>
             <X className="h-5 w-5" />
           </Button>
         </div>

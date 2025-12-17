@@ -1,16 +1,18 @@
 import { Cloud, Sun, Menu, Settings, ChevronLeft, ChevronRight } from "lucide-react"
-import { familyMembers, colorMap } from "@/lib/calendar-data"
+import { familyMembers, colorMap } from "@/lib/types"
 import { Button } from "@/components/ui/button"
+import { useAppStore, useCalendarStore } from "@/stores"
 
-interface CalendarHeaderProps {
-  currentDate: Date
-  familyName: string
-  onPrevWeek: () => void
-  onNextWeek: () => void
-  onMenuClick: () => void
-}
+export function AppHeader() {
+  // From calendar-store
+  const currentDate = useCalendarStore((state) => state.currentDate)
+  const goToPrevious = useCalendarStore((state) => state.goToPrevious)
+  const goToNext = useCalendarStore((state) => state.goToNext)
 
-export function CalendarHeader({ currentDate, familyName, onPrevWeek, onNextWeek, onMenuClick }: CalendarHeaderProps) {
+  // From app-store
+  const familyName = useAppStore((state) => state.familyName)
+  const openSidebar = useAppStore((state) => state.openSidebar)
+
   const formatDate = (date: Date) => {
     return date.toLocaleDateString("en-US", {
       month: "long",
@@ -34,7 +36,7 @@ export function CalendarHeader({ currentDate, familyName, onPrevWeek, onNextWeek
           variant="ghost"
           size="icon"
           className="text-muted-foreground hover:text-foreground"
-          onClick={onMenuClick}
+          onClick={openSidebar}
         >
           <Menu className="h-6 w-6" />
         </Button>
@@ -54,7 +56,7 @@ export function CalendarHeader({ currentDate, familyName, onPrevWeek, onNextWeek
           <Button
             variant="ghost"
             size="icon"
-            onClick={onPrevWeek}
+            onClick={goToPrevious}
             className="h-8 w-8 text-muted-foreground hover:text-foreground"
           >
             <ChevronLeft className="h-5 w-5" />
@@ -62,7 +64,7 @@ export function CalendarHeader({ currentDate, familyName, onPrevWeek, onNextWeek
           <Button
             variant="ghost"
             size="icon"
-            onClick={onNextWeek}
+            onClick={goToNext}
             className="h-8 w-8 text-muted-foreground hover:text-foreground"
           >
             <ChevronRight className="h-5 w-5" />
