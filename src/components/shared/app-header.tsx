@@ -1,4 +1,4 @@
-import { Cloud, Sun, Menu, Settings, ChevronLeft, ChevronRight } from "lucide-react"
+import { Cloud, Sun, Menu, Settings } from "lucide-react"
 import { familyMembers, colorMap } from "@/lib/types"
 import { Button } from "@/components/ui/button"
 import { useAppStore, useCalendarStore } from "@/stores"
@@ -6,8 +6,6 @@ import { useAppStore, useCalendarStore } from "@/stores"
 export function AppHeader() {
   // From calendar-store
   const currentDate = useCalendarStore((state) => state.currentDate)
-  const goToPrevious = useCalendarStore((state) => state.goToPrevious)
-  const goToNext = useCalendarStore((state) => state.goToNext)
 
   // From app-store
   const familyName = useAppStore((state) => state.familyName)
@@ -51,26 +49,6 @@ export function AppHeader() {
       </div>
 
       <div className="flex items-center gap-6">
-        {/* Navigation arrows */}
-        <div className="flex items-center gap-1">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={goToPrevious}
-            className="h-8 w-8 text-muted-foreground hover:text-foreground"
-          >
-            <ChevronLeft className="h-5 w-5" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={goToNext}
-            className="h-8 w-8 text-muted-foreground hover:text-foreground"
-          >
-            <ChevronRight className="h-5 w-5" />
-          </Button>
-        </div>
-
         {/* Weather */}
         <div className="flex items-center gap-2 text-muted-foreground">
           <div className="relative">
