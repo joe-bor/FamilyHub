@@ -31,10 +31,20 @@ function parseTime(timeStr: string): { hours: number; minutes: number } {
   return { hours, minutes }
 }
 
-function getEventTop(startTime: string, startHour = 6) {
+const ROW_HEIGHT = 80 // px per hour
+const START_HOUR = 6
+
+function getEventPosition(startTime: string, endTime: string) {
   const start = parseTime(startTime)
-  const startOffset = start.hours - startHour + start.minutes / 60
-  return `${startOffset * 80}px`
+  const end = parseTime(endTime)
+
+  const startOffset = start.hours - START_HOUR + start.minutes / 60
+  const endOffset = end.hours - START_HOUR + end.minutes / 60
+
+  const top = startOffset * ROW_HEIGHT
+  const height = Math.max((endOffset - startOffset) * ROW_HEIGHT, 30) // Minimum 30px
+
+  return { top, height }
 }
 
 export function WeeklyCalendar({
@@ -212,15 +222,18 @@ export function WeeklyCalendar({
                 {isTodayColumn && <CurrentTimeIndicator />}
 
                 <div className="absolute inset-0 px-0.5">
-                  {dayEvents.map((event) => (
-                    <div
-                      key={event.id}
-                      className="absolute left-0.5 right-0.5"
-                      style={{ top: getEventTop(event.startTime) }}
-                    >
-                      <CalendarEventCard event={event} onClick={() => onEventClick?.(event)} />
-                    </div>
-                  ))}
+                  {dayEvents.map((event) => {
+                    const { top, height } = getEventPosition(event.startTime, event.endTime)
+                    return (
+                      <div
+                        key={event.id}
+                        className="absolute left-0.5 right-0.5 overflow-hidden rounded-xl"
+                        style={{ top: `${top}px`, height: `${height}px` }}
+                      >
+                        <CalendarEventCard event={event} onClick={() => onEventClick?.(event)} />
+                      </div>
+                    )
+                  })}
                 </div>
               </div>
             )

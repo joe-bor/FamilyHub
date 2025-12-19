@@ -53,6 +53,74 @@ function getEventGridPosition(startTime: string, endTime: string) {
   return { top, height }
 }
 
+function getTimeInMinutes(timeStr: string): number {
+  const { hours, minutes } = parseTime(timeStr)
+  return hours * 60 + minutes
+}
+
+function eventsOverlap(a: CalendarEvent, b: CalendarEvent): boolean {
+  const aStart = getTimeInMinutes(a.startTime)
+  const aEnd = getTimeInMinutes(a.endTime)
+  const bStart = getTimeInMinutes(b.startTime)
+  const bEnd = getTimeInMinutes(b.endTime)
+  return aStart < bEnd && bStart < aEnd
+}
+
+interface EventWithLayout extends CalendarEvent {
+  column: number
+  totalColumns: number
+}
+
+function calculateEventColumns(events: CalendarEvent[]): EventWithLayout[] {
+  if (events.length === 0) return []
+
+  // Sort by start time, then by duration (longer events first)
+  const sorted = [...events].sort((a, b) => {
+    const aStart = getTimeInMinutes(a.startTime)
+    const bStart = getTimeInMinutes(b.startTime)
+    if (aStart !== bStart) return aStart - bStart
+
+    const aDuration = getTimeInMinutes(a.endTime) - aStart
+    const bDuration = getTimeInMinutes(b.endTime) - bStart
+    return bDuration - aDuration // Longer events first
+  })
+
+  const result: EventWithLayout[] = []
+  const columns: CalendarEvent[][] = [] // Each column tracks events in that column
+
+  for (const event of sorted) {
+    // Find the first column where this event doesn't overlap with existing events
+    let assignedColumn = -1
+    for (let col = 0; col < columns.length; col++) {
+      const hasOverlap = columns[col].some((e) => eventsOverlap(e, event))
+      if (!hasOverlap) {
+        assignedColumn = col
+        break
+      }
+    }
+
+    // If no suitable column found, create a new one
+    if (assignedColumn === -1) {
+      assignedColumn = columns.length
+      columns.push([])
+    }
+
+    columns[assignedColumn].push(event)
+    result.push({ ...event, column: assignedColumn, totalColumns: 0 }) // totalColumns set later
+  }
+
+  // Now calculate totalColumns for each event based on overlapping events
+  for (const eventWithLayout of result) {
+    // Find all events that overlap with this one
+    const overlapping = result.filter((e) => eventsOverlap(e, eventWithLayout))
+    // Find the max column among overlapping events + 1
+    const maxColumn = Math.max(...overlapping.map((e) => e.column))
+    eventWithLayout.totalColumns = maxColumn + 1
+  }
+
+  return result
+}
+
 export function DailyCalendar({
   events,
   currentDate,
@@ -115,6 +183,7 @@ export function DailyCalendar({
   ]
 
   const dayEvents = getEventsForDay()
+  const eventsWithLayout = calculateEventColumns(dayEvents)
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden bg-background">
@@ -171,15 +240,30 @@ export function DailyCalendar({
             </div>
           )}
 
-          {dayEvents.map((event) => {
+          {eventsWithLayout.map((event) => {
             const { top, height } = getEventGridPosition(event.startTime, event.endTime)
+            const { column, totalColumns } = event
+
+            // Calculate horizontal position (max 3 columns)
+            const effectiveColumns = Math.min(totalColumns, 3)
+            const columnWidth = 100 / effectiveColumns
+            const left = Math.min(column, 2) * columnWidth
+
+            // Use compact variant for 3+ columns
+            const variant = totalColumns >= 3 ? "compact" : "large"
+
             return (
               <div
                 key={event.id}
-                className="absolute left-2 right-2"
-                style={{ top: `${top}px`, height: `${height}px` }}
+                className="absolute overflow-hidden rounded-xl"
+                style={{
+                  top: `${top}px`,
+                  height: `${height}px`,
+                  left: `calc(${left}% + 8px)`,
+                  width: `calc(${columnWidth}% - 12px)`,
+                }}
               >
-                <CalendarEventCard event={event} onClick={() => onEventClick?.(event)} variant="large" />
+                <CalendarEventCard event={event} onClick={() => onEventClick?.(event)} variant={variant} />
               </div>
             )
           })}
