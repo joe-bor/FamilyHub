@@ -35,16 +35,24 @@ export function MonthlyCalendar({
     const firstDay = new Date(year, month, 1)
     const lastDay = new Date(year, month + 1, 0)
 
-    const days: (Date | null)[] = []
+    const days: Date[] = []
 
-    // Add empty slots for days before the first day of the month
-    for (let i = 0; i < firstDay.getDay(); i++) {
-      days.push(null)
+    // Add previous month's trailing days
+    const daysFromPrevMonth = firstDay.getDay() // 0 = Sunday, 1 = Monday, etc.
+    const prevMonthLastDay = new Date(year, month, 0).getDate() // Last day of previous month
+    for (let i = daysFromPrevMonth - 1; i >= 0; i--) {
+      days.push(new Date(year, month - 1, prevMonthLastDay - i))
     }
 
-    // Add all days of the month
+    // Add all days of the current month
     for (let i = 1; i <= lastDay.getDate(); i++) {
       days.push(new Date(year, month, i))
+    }
+
+    // Add next month's leading days to complete the final week
+    let nextMonthDay = 1
+    while (days.length % 7 !== 0) {
+      days.push(new Date(year, month + 1, nextMonthDay++))
     }
 
     return days
@@ -53,18 +61,15 @@ export function MonthlyCalendar({
   const days = getDaysInMonth()
   const weekDays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
 
-  const isToday = (date: Date | null) => {
-    if (!date) return false
+  const isToday = (date: Date) => {
     return date.toDateString() === today.toDateString()
   }
 
-  const isCurrentMonth = (date: Date | null) => {
-    if (!date) return false
+  const isCurrentMonth = (date: Date) => {
     return date.getMonth() === currentDate.getMonth()
   }
 
-  const getEventsForDay = (date: Date | null) => {
-    if (!date) return []
+  const getEventsForDay = (date: Date) => {
     return events.filter((event) => {
       const eventDate = new Date(event.date)
       const dateMatches = eventDate.toDateString() === date.toDateString()
@@ -78,8 +83,7 @@ export function MonthlyCalendar({
     return familyMembers.find((m) => m.id === memberId)
   }
 
-  const getMembersWithEvents = (date: Date | null) => {
-    if (!date) return []
+  const getMembersWithEvents = (date: Date) => {
     const dayEvents = getEventsForDay(date)
     const memberIds = [...new Set(dayEvents.map((e) => e.memberId))]
     return memberIds.map((id) => familyMembers.find((m) => m.id === id)).filter(Boolean)
@@ -90,7 +94,7 @@ export function MonthlyCalendar({
   }
 
   return (
-    <div className="flex-1 flex flex-col overflow-hidden bg-background p-4">
+    <div className="flex-1 flex flex-col min-h-0 bg-background p-4 overflow-auto">
       <CalendarNavigation
         label={formatMonthLabel()}
         onPrevious={onPrevious}
@@ -100,7 +104,7 @@ export function MonthlyCalendar({
       />
 
       {/* Weekday headers */}
-      <div className="grid grid-cols-7 gap-1 mb-2">
+      <div className="grid grid-cols-7 gap-1 mb-2 shrink-0">
         {weekDays.map((day) => (
           <div key={day} className="text-center py-2 text-sm font-medium text-muted-foreground">
             {day}
@@ -109,7 +113,7 @@ export function MonthlyCalendar({
       </div>
 
       {/* Calendar grid */}
-      <div className="flex-1 grid grid-cols-7 gap-1 auto-rows-fr">
+      <div className="grid grid-cols-7 gap-1 shrink-0">
         {days.map((date, index) => {
           const dayEvents = getEventsForDay(date)
           const busyMembers = getMembersWithEvents(date)
@@ -117,75 +121,71 @@ export function MonthlyCalendar({
           return (
             <div
               key={index}
-              onClick={() => date && onDateSelect?.(date)}
+              onClick={() => onDateSelect?.(date)}
               className={cn(
-                "min-h-24 p-2 rounded-lg border cursor-pointer transition-colors",
-                date ? "bg-card hover:bg-accent/50" : "bg-transparent border-transparent",
+                "min-h-[100px] p-2 rounded-lg border cursor-pointer transition-colors overflow-hidden",
+                "bg-card hover:bg-accent/50",
                 isToday(date) &&
                   "ring-2 ring-primary ring-offset-2 ring-offset-background bg-primary/10 border-primary",
-                !isToday(date) && date && "border-border/50",
-                !isCurrentMonth(date) && date && "opacity-50",
+                !isToday(date) && "border-border/50",
+                !isCurrentMonth(date) && "opacity-50",
               )}
             >
-              {date && (
-                <>
-                  <div className="flex items-center justify-between mb-1">
-                    <div
-                      className={cn(
-                        "text-sm font-medium",
-                        isToday(date)
-                          ? "bg-primary text-primary-foreground w-7 h-7 rounded-full flex items-center justify-center font-bold"
-                          : "text-foreground",
-                      )}
-                    >
-                      {date.getDate()}
-                    </div>
-                    {busyMembers.length > 0 && (
-                      <div className="flex -space-x-1">
-                        {busyMembers.slice(0, 3).map((member) => (
-                          <div
-                            key={member?.id}
-                            className={cn(
-                              "w-3 h-3 rounded-full border border-card",
-                              member ? colorMap[member.color]?.bg : "bg-muted",
-                            )}
-                            title={member?.name}
-                          />
-                        ))}
-                        {busyMembers.length > 3 && (
-                          <div className="w-3 h-3 rounded-full bg-muted border border-card flex items-center justify-center">
-                            <span className="text-[8px] text-muted-foreground">+</span>
-                          </div>
+              <div className="flex items-center justify-between mb-1">
+                <div
+                  className={cn(
+                    "text-sm font-medium",
+                    isToday(date)
+                      ? "bg-primary text-primary-foreground w-7 h-7 rounded-full flex items-center justify-center font-bold"
+                      : "text-foreground",
+                  )}
+                >
+                  {date.getDate()}
+                </div>
+                {busyMembers.length > 0 && (
+                  <div className="flex -space-x-1">
+                    {busyMembers.slice(0, 3).map((member) => (
+                      <div
+                        key={member?.id}
+                        className={cn(
+                          "w-3 h-3 rounded-full border border-card",
+                          member ? colorMap[member.color]?.bg : "bg-muted",
                         )}
+                        title={member?.name}
+                      />
+                    ))}
+                    {busyMembers.length > 3 && (
+                      <div className="w-3 h-3 rounded-full bg-muted border border-card flex items-center justify-center">
+                        <span className="text-[8px] text-muted-foreground">+</span>
                       </div>
                     )}
                   </div>
-                  <div className="space-y-1">
-                    {dayEvents.slice(0, 3).map((event) => {
-                      const member = getMemberForEvent(event.memberId)
-                      return (
-                        <div
-                          key={event.id}
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            onEventClick?.(event)
-                          }}
-                          className={cn(
-                            "text-xs px-1.5 py-0.5 rounded truncate",
-                            member ? colorMap[member.color]?.bg : "bg-muted",
-                            "text-white font-medium",
-                          )}
-                        >
-                          {event.title}
-                        </div>
-                      )
-                    })}
-                    {dayEvents.length > 3 && (
-                      <div className="text-xs text-muted-foreground font-medium">+{dayEvents.length - 3} more</div>
-                    )}
-                  </div>
-                </>
-              )}
+                )}
+              </div>
+              <div className="space-y-1">
+                {dayEvents.slice(0, 3).map((event) => {
+                  const member = getMemberForEvent(event.memberId)
+                  return (
+                    <div
+                      key={event.id}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        onEventClick?.(event)
+                      }}
+                      className={cn(
+                        "text-xs px-1.5 py-0.5 rounded truncate",
+                        member ? colorMap[member.color]?.bg : "bg-muted",
+                        "text-white font-medium",
+                      )}
+                    >
+                      {event.title}
+                    </div>
+                  )
+                })}
+                {dayEvents.length > 3 && (
+                  <div className="text-xs text-muted-foreground font-medium">+{dayEvents.length - 3} more</div>
+                )}
+              </div>
             </div>
           )
         })}
