@@ -12,9 +12,10 @@ interface AddEventModalProps {
   isOpen: boolean
   onClose: () => void
   onAdd: (event: Omit<CalendarEvent, "id">) => void
+  isPending?: boolean
 }
 
-export function AddEventModal({ isOpen, onClose, onAdd }: AddEventModalProps) {
+export function AddEventModal({ isOpen, onClose, onAdd, isPending = false }: AddEventModalProps) {
   const [title, setTitle] = useState("")
   const [date, setDate] = useState("")
   const [startTime, setStartTime] = useState("")
@@ -25,7 +26,7 @@ export function AddEventModal({ isOpen, onClose, onAdd }: AddEventModalProps) {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    if (!title || !date || !startTime || !endTime) return
+    if (!title || !date || !startTime || !endTime || isPending) return
 
     onAdd({
       title,
@@ -35,13 +36,12 @@ export function AddEventModal({ isOpen, onClose, onAdd }: AddEventModalProps) {
       memberId: selectedMember,
     })
 
-    // Reset form
+    // Reset form (modal close is handled by parent on success)
     setTitle("")
     setDate("")
     setStartTime("")
     setEndTime("")
     setSelectedMember(familyMembers[0].id)
-    onClose()
   }
 
   return (
@@ -124,11 +124,11 @@ export function AddEventModal({ isOpen, onClose, onAdd }: AddEventModalProps) {
           </div>
 
           <div className="flex gap-3 pt-4">
-            <Button type="button" variant="outline" onClick={onClose} className="flex-1 bg-transparent">
+            <Button type="button" variant="outline" onClick={onClose} className="flex-1 bg-transparent" disabled={isPending}>
               Cancel
             </Button>
-            <Button type="submit" className="flex-1 bg-primary hover:bg-primary/90">
-              Add Event
+            <Button type="submit" className="flex-1 bg-primary hover:bg-primary/90" disabled={isPending}>
+              {isPending ? "Adding..." : "Add Event"}
             </Button>
           </div>
         </form>

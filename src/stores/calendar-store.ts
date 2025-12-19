@@ -1,14 +1,12 @@
 import { create } from "zustand"
 import { persist } from "zustand/middleware"
-import type { CalendarEvent, CalendarViewType, FilterState } from "@/lib/types"
-import { generateSampleEvents } from "@/lib/calendar-data"
+import type { CalendarViewType, FilterState } from "@/lib/types"
 import { familyMembers } from "@/lib/types"
 
 interface CalendarState {
-  // State
+  // Client-only state (server state is now in TanStack Query)
   currentDate: Date
   calendarView: CalendarViewType
-  events: CalendarEvent[]
   filter: FilterState
   isAddEventModalOpen: boolean
 
@@ -22,11 +20,6 @@ interface CalendarState {
   // View actions
   setCalendarView: (view: CalendarViewType) => void
 
-  // Event CRUD
-  addEvent: (event: Omit<CalendarEvent, "id">) => void
-  updateEvent: (id: string, updates: Partial<CalendarEvent>) => void
-  deleteEvent: (id: string) => void
-
   // Filter actions
   setFilter: (filter: FilterState) => void
   toggleMember: (memberId: string) => void
@@ -38,22 +31,12 @@ interface CalendarState {
   closeAddEventModal: () => void
 }
 
-// Helper to format time consistently
-const formatTime = (time: string): string => {
-  const [hours, minutes] = time.split(":")
-  const hour = Number.parseInt(hours)
-  const ampm = hour >= 12 ? "PM" : "AM"
-  const hour12 = hour % 12 || 12
-  return `${hour12}:${minutes} ${ampm}`
-}
-
 export const useCalendarStore = create<CalendarState>()(
   persist(
     (set, get) => ({
       // Initial state
       currentDate: new Date(),
       calendarView: "weekly",
-      events: generateSampleEvents(),
       filter: {
         selectedMembers: familyMembers.map((m) => m.id),
         showAllDayEvents: true,
@@ -114,31 +97,6 @@ export const useCalendarStore = create<CalendarState>()(
       // View actions
       setCalendarView: (view) => set({ calendarView: view }),
 
-      // Event CRUD
-      addEvent: (eventData) => {
-        const event: CalendarEvent = {
-          ...eventData,
-          id: `event-${Date.now()}`,
-          startTime: formatTime(eventData.startTime),
-          endTime: formatTime(eventData.endTime),
-        }
-        set((state) => ({ events: [...state.events, event] }))
-      },
-
-      updateEvent: (id, updates) => {
-        set((state) => ({
-          events: state.events.map((event) =>
-            event.id === id ? { ...event, ...updates } : event
-          ),
-        }))
-      },
-
-      deleteEvent: (id) => {
-        set((state) => ({
-          events: state.events.filter((event) => event.id !== id),
-        }))
-      },
-
       // Filter actions
       setFilter: (filter) => set({ filter }),
 
@@ -175,8 +133,8 @@ export const useCalendarStore = create<CalendarState>()(
     }),
     {
       name: "family-hub-calendar",
-      // Only persist filter preferences (avoid Date serialization issues)
-      partialize: (state) => ({ filter: state.filter }),
+      // Persist filter and view preferences
+      partialize: (state) => ({ filter: state.filter, calendarView: state.calendarView }),
     }
   )
 )
