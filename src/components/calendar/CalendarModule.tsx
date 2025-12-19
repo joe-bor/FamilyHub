@@ -1,3 +1,4 @@
+import { useMemo } from "react"
 import {
   WeeklyCalendar,
   DailyCalendar,
@@ -9,29 +10,104 @@ import {
   FamilyFilterPills,
 } from "@/components/calendar"
 import { useCalendarStore, useIsViewingToday } from "@/stores"
-import type { CalendarEvent } from "@/lib/types"
+import { useCalendarEvents, useCreateEvent } from "@/api"
+import type { CalendarEvent, CreateEventRequest } from "@/lib/types"
+import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, addDays } from "date-fns"
+
+// Helper to format time consistently (24h -> 12h AM/PM)
+function formatTime(time: string): string {
+  const [hours, minutes] = time.split(":")
+  const hour = Number.parseInt(hours)
+  const ampm = hour >= 12 ? "PM" : "AM"
+  const hour12 = hour % 12 || 12
+  return `${hour12}:${minutes} ${ampm}`
+}
 
 export function CalendarModule() {
-  // Get state from store
+  // Client state from Zustand
   const currentDate = useCalendarStore((state) => state.currentDate)
   const calendarView = useCalendarStore((state) => state.calendarView)
-  const events = useCalendarStore((state) => state.events)
   const filter = useCalendarStore((state) => state.filter)
   const isAddEventModalOpen = useCalendarStore((state) => state.isAddEventModalOpen)
   const isViewingToday = useIsViewingToday()
 
-  // Get actions from store
+  // Client actions from Zustand
   const goToToday = useCalendarStore((state) => state.goToToday)
   const goToPrevious = useCalendarStore((state) => state.goToPrevious)
   const goToNext = useCalendarStore((state) => state.goToNext)
   const selectDateAndSwitchToDaily = useCalendarStore((state) => state.selectDateAndSwitchToDaily)
-  const addEvent = useCalendarStore((state) => state.addEvent)
   const openAddEventModal = useCalendarStore((state) => state.openAddEventModal)
   const closeAddEventModal = useCalendarStore((state) => state.closeAddEventModal)
+
+  // Compute date range based on current view for API query
+  const dateRange = useMemo(() => {
+    let start: Date
+    let end: Date
+
+    switch (calendarView) {
+      case "daily":
+        start = currentDate
+        end = currentDate
+        break
+      case "weekly":
+        start = startOfWeek(currentDate, { weekStartsOn: 0 })
+        end = endOfWeek(currentDate, { weekStartsOn: 0 })
+        break
+      case "monthly":
+        start = startOfMonth(currentDate)
+        end = endOfMonth(currentDate)
+        break
+      case "schedule":
+        start = currentDate
+        end = addDays(currentDate, 14)
+        break
+      default:
+        start = startOfWeek(currentDate, { weekStartsOn: 0 })
+        end = endOfWeek(currentDate, { weekStartsOn: 0 })
+    }
+
+    return {
+      startDate: format(start, "yyyy-MM-dd"),
+      endDate: format(end, "yyyy-MM-dd"),
+    }
+  }, [currentDate, calendarView])
+
+  // Server state from TanStack Query
+  const { data: eventsResponse, isLoading, isError, error } = useCalendarEvents(dateRange)
+
+  // Mutations
+  const createEvent = useCreateEvent({
+    onSuccess: () => {
+      closeAddEventModal()
+    },
+  })
+
+  // Client-side filtering based on filter state
+  const events = useMemo(() => {
+    const rawEvents = eventsResponse?.data ?? []
+    return rawEvents.filter((event) => {
+      const memberMatches = filter.selectedMembers.includes(event.memberId)
+      const allDayMatches = filter.showAllDayEvents || !event.isAllDay
+      return memberMatches && allDayMatches
+    })
+  }, [eventsResponse, filter])
 
   const handleEventClick = (event: CalendarEvent) => {
     console.log("Event clicked:", event)
     // Future: Open event detail modal
+  }
+
+  const handleAddEvent = (eventData: Omit<CalendarEvent, "id">) => {
+    const request: CreateEventRequest = {
+      title: eventData.title,
+      startTime: formatTime(eventData.startTime),
+      endTime: formatTime(eventData.endTime),
+      date: eventData.date.toISOString(),
+      memberId: eventData.memberId,
+      isAllDay: eventData.isAllDay,
+      location: eventData.location,
+    }
+    createEvent.mutate(request)
   }
 
   const commonProps = {
@@ -49,6 +125,26 @@ export function CalendarModule() {
   }
 
   const renderCalendarView = () => {
+    // Show loading state
+    if (isLoading) {
+      return (
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-muted-foreground">Loading events...</div>
+        </div>
+      )
+    }
+
+    // Show error state
+    if (isError) {
+      return (
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-destructive">
+            Error loading events: {error?.message ?? "Unknown error"}
+          </div>
+        </div>
+      )
+    }
+
     switch (calendarView) {
       case "daily":
         return <DailyCalendar {...commonProps} {...navigationProps} />
@@ -87,7 +183,8 @@ export function CalendarModule() {
       <AddEventModal
         isOpen={isAddEventModalOpen}
         onClose={closeAddEventModal}
-        onAdd={addEvent}
+        onAdd={handleAddEvent}
+        isPending={createEvent.isPending}
       />
     </div>
   )
