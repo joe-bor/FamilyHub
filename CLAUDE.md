@@ -18,22 +18,39 @@ FamilyHub is a family organization app built with React 19, Vite, and Tailwind C
 ### Core Structure
 
 - **App.tsx** - Layout orchestrator composing AppHeader, NavigationTabs, SidebarMenu, and module views
-- **src/stores/** - Zustand stores for global state management (app, calendar, chores, meals, lists, photos)
+- **src/api/** - API layer with TanStack Query hooks, services, and mock handlers
+- **src/stores/** - Zustand stores for UI state management (app, calendar view preferences)
+- **src/providers/** - React context providers (QueryProvider for TanStack Query)
 - **src/lib/types/** - Centralized TypeScript types (`calendar.ts`, `family.ts`, `chores.ts`, `meals.ts`)
-- **src/lib/calendar-data.ts** - Sample data generators for events, chores, meals
 - **src/lib/utils.ts** - `cn()` utility for Tailwind class merging
 
 ### Component Organization
 
 ```
 src/
-├── stores/                    # Zustand state management
+├── api/                       # API layer (TanStack Query + services)
+│   ├── client/                # HTTP client and error handling
+│   │   ├── http-client.ts     # Fetch wrapper with interceptors
+│   │   └── api-error.ts       # ApiException, ApiErrorCode
+│   ├── hooks/                 # TanStack Query hooks
+│   │   └── use-calendar.ts    # useCalendarEvents, useCreateEvent, etc.
+│   ├── services/              # API service functions
+│   │   └── calendar.service.ts # CRUD operations for calendar
+│   ├── mocks/                 # Mock API handlers (dev mode)
+│   │   ├── calendar.mock.ts   # Mock event data and handlers
+│   │   └── delay.ts           # Simulated network delay
+│   └── index.ts               # Barrel exports
+│
+├── providers/                 # React context providers
+│   └── query-provider.tsx     # TanStack Query setup with DevTools
+│
+├── stores/                    # Zustand UI state management
 │   ├── app-store.ts           # App-wide state (activeTab, sidebar, familyName)
-│   ├── calendar-store.ts      # Calendar state (date, view, events, filters)
+│   ├── calendar-store.ts      # Calendar UI state (date, view, filters)
 │   └── index.ts               # Barrel exports + selectors (useIsViewingToday)
 │
 ├── lib/types/                 # Centralized type definitions
-│   ├── calendar.ts            # CalendarEvent, CalendarViewType, FilterState
+│   ├── calendar.ts            # CalendarEvent, API types, CalendarViewType, FilterState
 │   ├── family.ts              # FamilyMember, colorMap
 │   ├── chores.ts              # ChoreItem
 │   ├── meals.ts               # MealPlan
@@ -47,18 +64,25 @@ src/
 │   │   └── sidebar-menu.tsx   # Settings slide-out menu
 │   │
 │   ├── calendar/
-│   │   ├── CalendarModule.tsx # Module orchestrator (wires stores to views)
+│   │   ├── CalendarModule.tsx # Module orchestrator (wires API hooks to views)
 │   │   ├── views/             # DailyCalendar, WeeklyCalendar, MonthlyCalendar, ScheduleCalendar
 │   │   └── components/        # CalendarNavigation, CalendarEventCard, FamilyFilterPills, etc.
 │   │
 │   └── *-view.tsx             # Other module views (ChoresView, MealsView, ListsView, PhotosView)
 ```
 
-Barrel exports: Import from `@/components/calendar`, `@/components/shared`, `@/stores`, or `@/lib/types`.
+Barrel exports: Import from `@/api`, `@/components/calendar`, `@/components/shared`, `@/stores`, or `@/lib/types`.
 
 ### State Management
 
-Uses **Zustand** for global state with domain-specific stores:
+Uses a hybrid approach: **TanStack Query** for server state (API data) and **Zustand** for UI state.
+
+**TanStack Query (Server State):**
+- Calendar events fetched via `useCalendarEvents` hook
+- Automatic caching, background refetching, and stale-while-revalidate
+- Optimistic updates for mutations (`useCreateEvent`, `useUpdateEvent`, `useDeleteEvent`)
+
+**Zustand (UI State):**
 
 **app-store.ts:**
 - `activeTab` - Current module (calendar, chores, meals, lists, photos)
@@ -66,19 +90,46 @@ Uses **Zustand** for global state with domain-specific stores:
 - `familyName` - Display name for family
 
 **calendar-store.ts:**
-- `currentDate`, `calendarView`, `events`, `filter` - Calendar state
+- `currentDate`, `calendarView`, `filter` - Calendar UI preferences
 - `goToPrevious`, `goToNext`, `goToToday` - View-aware navigation actions
-- `addEvent`, `updateEvent`, `deleteEvent` - Event CRUD
 - `useIsViewingToday` - Computed selector for "Today" button state
 
 **Usage pattern:**
 ```typescript
 import { useCalendarStore, useIsViewingToday } from "@/stores"
+import { useCalendarEvents, useCreateEvent } from "@/api"
 
+// UI state from Zustand
 const currentDate = useCalendarStore((state) => state.currentDate)
 const goToNext = useCalendarStore((state) => state.goToNext)
 const isViewingToday = useIsViewingToday()
+
+// Server state from TanStack Query
+const { data, isLoading } = useCalendarEvents({ startDate, endDate })
+const createEvent = useCreateEvent({ onSuccess: () => console.log("Created!") })
 ```
+
+### API Layer
+
+The API layer follows a service-based architecture with TanStack Query for data fetching.
+
+**Query Keys Factory** (`calendarKeys`):
+```typescript
+calendarKeys.all          // ["calendar"]
+calendarKeys.events()     // ["calendar", "events"]
+calendarKeys.eventList(params) // ["calendar", "events", { startDate, endDate }]
+calendarKeys.event(id)    // ["calendar", "events", "event-123"]
+```
+
+**Available Hooks:**
+- `useCalendarEvents(params?)` - Fetch events with optional date range/member filters
+- `useCalendarEvent(id)` - Fetch single event by ID
+- `useCreateEvent(callbacks?)` - Create event mutation with cache invalidation
+- `useUpdateEvent(callbacks?)` - Update event with optimistic updates
+- `useDeleteEvent(callbacks?)` - Delete event with optimistic removal
+
+**Mock API:**
+In development, the API uses mock handlers (`src/api/mocks/`) with simulated network delays. Toggle via `USE_MOCK_API` constant.
 
 ### Styling
 
