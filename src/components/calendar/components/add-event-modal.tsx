@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { familyMembers, colorMap, type CalendarEvent } from "@/lib/types"
 import { cn } from "@/lib/utils"
+import { parseISO } from "date-fns"
 
 interface AddEventModalProps {
   isOpen: boolean
@@ -30,7 +31,8 @@ export function AddEventModal({ isOpen, onClose, onAdd, isPending = false }: Add
 
     onAdd({
       title,
-      date: new Date(date),
+      // Use parseISO to correctly parse date string as local time, not UTC
+      date: parseISO(date),
       startTime,
       endTime,
       memberId: selectedMember,
