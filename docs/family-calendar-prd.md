@@ -1693,7 +1693,7 @@ _Note: Nunito was chosen for its friendly, rounded aesthetic that appeals to chi
 
 **Focus:** Complete Calendar module frontend, prepare for backend integration
 
-**Sprint 4: State Management & Data Layer (Calendar Only)** ✅ COMPLETED (December 16, 2024)
+**Sprint 4: State Management & Data Layer (Calendar Only)** ✅ COMPLETED (December 20, 2024)
 
 - [x] Implement Zustand for calendar state (calendar-store.ts)
 - [x] Create domain-specific stores (app, calendar, chores, meals, lists, photos)
@@ -1704,9 +1704,9 @@ _Note: Nunito was chosen for its friendly, rounded aesthetic that appeals to chi
 - [x] Add computed selectors (useIsViewingToday)
 - [x] Move calendar navigation into views (CalendarNavigation component)
 - [x] Add persistence for filter preferences (localStorage via Zustand middleware)
-- [ ] Create mock API service layer for events (prepare for backend)
-- [ ] Add loading states for calendar operations
-- [ ] Add error handling for calendar actions
+- [x] Create mock API service layer with TanStack Query (src/api/)
+- [x] Add loading states for calendar operations
+- [x] Add error handling for calendar actions
 - [ ] Implement form validation with Zod (event forms)
 - [ ] Optimize event rendering performance
 
