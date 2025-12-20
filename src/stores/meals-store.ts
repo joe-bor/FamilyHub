@@ -1,12 +1,12 @@
-import { create } from "zustand"
-import type { MealPlan } from "@/lib/types"
-import { generateSampleMeals } from "@/lib/calendar-data"
+import { create } from "zustand";
+import { generateSampleMeals } from "@/lib/calendar-data";
+import type { MealPlan } from "@/lib/types";
 
 interface MealsState {
-  meals: MealPlan[]
-  updateMeal: (id: string, updates: Partial<MealPlan>) => void
-  addMeal: (meal: Omit<MealPlan, "id">) => void
-  deleteMeal: (id: string) => void
+  meals: MealPlan[];
+  updateMeal: (id: string, updates: Partial<MealPlan>) => void;
+  addMeal: (meal: Omit<MealPlan, "id">) => void;
+  deleteMeal: (id: string) => void;
 }
 
 export const useMealsStore = create<MealsState>((set) => ({
@@ -15,7 +15,7 @@ export const useMealsStore = create<MealsState>((set) => ({
   updateMeal: (id, updates) =>
     set((state) => ({
       meals: state.meals.map((meal) =>
-        meal.id === id ? { ...meal, ...updates } : meal
+        meal.id === id ? { ...meal, ...updates } : meal,
       ),
     })),
 
@@ -28,4 +28,4 @@ export const useMealsStore = create<MealsState>((set) => ({
     set((state) => ({
       meals: state.meals.filter((meal) => meal.id !== id),
     })),
-}))
+}));

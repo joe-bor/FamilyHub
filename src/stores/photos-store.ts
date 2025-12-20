@@ -1,18 +1,18 @@
-import { create } from "zustand"
+import { create } from "zustand";
 
 export interface Photo {
-  id: string
-  url: string
-  caption?: string
-  date: Date
-  memberId?: string
+  id: string;
+  url: string;
+  caption?: string;
+  date: Date;
+  memberId?: string;
 }
 
 interface PhotosState {
-  photos: Photo[]
-  addPhoto: (photo: Omit<Photo, "id">) => void
-  updatePhoto: (id: string, updates: Partial<Photo>) => void
-  deletePhoto: (id: string) => void
+  photos: Photo[];
+  addPhoto: (photo: Omit<Photo, "id">) => void;
+  updatePhoto: (id: string, updates: Partial<Photo>) => void;
+  deletePhoto: (id: string) => void;
 }
 
 export const usePhotosStore = create<PhotosState>((set) => ({
@@ -26,7 +26,7 @@ export const usePhotosStore = create<PhotosState>((set) => ({
   updatePhoto: (id, updates) =>
     set((state) => ({
       photos: state.photos.map((photo) =>
-        photo.id === id ? { ...photo, ...updates } : photo
+        photo.id === id ? { ...photo, ...updates } : photo,
       ),
     })),
 
@@ -34,4 +34,4 @@ export const usePhotosStore = create<PhotosState>((set) => ({
     set((state) => ({
       photos: state.photos.filter((photo) => photo.id !== id),
     })),
-}))
+}));

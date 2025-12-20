@@ -1,16 +1,18 @@
-import { familyMembers, colorMap } from "@/lib/types"
-import { cn } from "@/lib/utils"
-import { Check } from "lucide-react"
-import { useCalendarStore } from "@/stores"
+import { Check } from "lucide-react";
+import { colorMap, familyMembers } from "@/lib/types";
+import { cn } from "@/lib/utils";
+import { useCalendarStore } from "@/stores";
 
 export function FamilyFilterPills() {
-  const filter = useCalendarStore((state) => state.filter)
-  const toggleMember = useCalendarStore((state) => state.toggleMember)
-  const toggleAllMembers = useCalendarStore((state) => state.toggleAllMembers)
-  const toggleAllDayEvents = useCalendarStore((state) => state.toggleAllDayEvents)
+  const filter = useCalendarStore((state) => state.filter);
+  const toggleMember = useCalendarStore((state) => state.toggleMember);
+  const toggleAllMembers = useCalendarStore((state) => state.toggleAllMembers);
+  const toggleAllDayEvents = useCalendarStore(
+    (state) => state.toggleAllDayEvents,
+  );
 
-  const allSelected = filter.selectedMembers.length === familyMembers.length
-  const noneSelected = filter.selectedMembers.length === 0
+  const allSelected = filter.selectedMembers.length === familyMembers.length;
+  const noneSelected = filter.selectedMembers.length === 0;
 
   return (
     <div className="flex items-center gap-1.5">
@@ -45,8 +47,8 @@ export function FamilyFilterPills() {
       <div className="w-px h-5 bg-border mx-1" />
 
       {familyMembers.map((member) => {
-        const colors = colorMap[member.color]
-        const isSelected = filter.selectedMembers.includes(member.id)
+        const colors = colorMap[member.color];
+        const isSelected = filter.selectedMembers.includes(member.id);
 
         return (
           <button
@@ -71,8 +73,8 @@ export function FamilyFilterPills() {
             </span>
             <span className="hidden sm:inline">{member.name}</span>
           </button>
-        )
+        );
       })}
     </div>
-  )
+  );
 }

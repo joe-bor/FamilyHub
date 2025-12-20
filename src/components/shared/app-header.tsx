@@ -1,31 +1,31 @@
-import { Cloud, Sun, Menu, Settings } from "lucide-react"
-import { familyMembers, colorMap } from "@/lib/types"
-import { Button } from "@/components/ui/button"
-import { useAppStore, useCalendarStore } from "@/stores"
+import { Cloud, Menu, Settings, Sun } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { colorMap, familyMembers } from "@/lib/types";
+import { useAppStore, useCalendarStore } from "@/stores";
 
 export function AppHeader() {
   // From calendar-store
-  const currentDate = useCalendarStore((state) => state.currentDate)
+  const currentDate = useCalendarStore((state) => state.currentDate);
 
   // From app-store
-  const familyName = useAppStore((state) => state.familyName)
-  const openSidebar = useAppStore((state) => state.openSidebar)
+  const familyName = useAppStore((state) => state.familyName);
+  const openSidebar = useAppStore((state) => state.openSidebar);
 
   const formatDate = (date: Date) => {
     return date.toLocaleDateString("en-US", {
       month: "long",
       day: "numeric",
       year: "numeric",
-    })
-  }
+    });
+  };
 
   const formatTime = (date: Date) => {
     return date.toLocaleTimeString("en-US", {
       hour: "numeric",
       minute: "2-digit",
       hour12: true,
-    })
-  }
+    });
+  };
 
   return (
     <header className="flex items-center justify-between px-6 py-4 bg-card border-b border-border">
@@ -39,7 +39,9 @@ export function AppHeader() {
           <Menu className="h-6 w-6" />
         </Button>
         <div>
-          <h1 className="text-xl font-bold text-foreground">{familyName} Family</h1>
+          <h1 className="text-xl font-bold text-foreground">
+            {familyName} Family
+          </h1>
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <span>{formatDate(currentDate)}</span>
             <span>•</span>
@@ -70,10 +72,14 @@ export function AppHeader() {
         </div>
 
         {/* Settings */}
-        <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="text-muted-foreground hover:text-foreground"
+        >
           <Settings className="h-5 w-5" />
         </Button>
       </div>
     </header>
-  )
+  );
 }

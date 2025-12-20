@@ -1,27 +1,27 @@
-import { useState } from "react"
-import { Coffee, Sun, Moon, ChevronLeft, ChevronRight } from "lucide-react"
-import type { MealPlan } from "@/lib/types"
-import { generateSampleMeals } from "@/lib/calendar-data"
-import { Button } from "@/components/ui/button"
-import { cn } from "@/lib/utils"
+import { ChevronLeft, ChevronRight, Coffee, Moon, Sun } from "lucide-react";
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { generateSampleMeals } from "@/lib/calendar-data";
+import type { MealPlan } from "@/lib/types";
+import { cn } from "@/lib/utils";
 
 export function MealsView() {
-  const [meals] = useState<MealPlan[]>(generateSampleMeals())
-  const [selectedDay, setSelectedDay] = useState(0)
+  const [meals] = useState<MealPlan[]>(generateSampleMeals());
+  const [selectedDay, setSelectedDay] = useState(0);
 
   const formatDayName = (date: Date) => {
-    return date.toLocaleDateString("en-US", { weekday: "short" })
-  }
+    return date.toLocaleDateString("en-US", { weekday: "short" });
+  };
 
   const formatDayNumber = (date: Date) => {
-    return date.getDate()
-  }
+    return date.getDate();
+  };
 
-  const today = new Date()
+  const today = new Date();
 
   const isToday = (date: Date) => {
-    return date.toDateString() === today.toDateString()
-  }
+    return date.toDateString() === today.toDateString();
+  };
 
   return (
     <div className="flex-1 p-6 overflow-y-auto">
@@ -33,7 +33,9 @@ export function MealsView() {
             <Button variant="ghost" size="icon" className="h-8 w-8">
               <ChevronLeft className="h-4 w-4" />
             </Button>
-            <span className="text-sm font-medium text-muted-foreground">This Week</span>
+            <span className="text-sm font-medium text-muted-foreground">
+              This Week
+            </span>
             <Button variant="ghost" size="icon" className="h-8 w-8">
               <ChevronRight className="h-4 w-4" />
             </Button>
@@ -55,8 +57,12 @@ export function MealsView() {
                     : "bg-card text-muted-foreground hover:bg-muted",
               )}
             >
-              <span className="text-xs font-medium">{formatDayName(meal.date)}</span>
-              <span className="text-lg font-bold mt-1">{formatDayNumber(meal.date)}</span>
+              <span className="text-xs font-medium">
+                {formatDayName(meal.date)}
+              </span>
+              <span className="text-lg font-bold mt-1">
+                {formatDayNumber(meal.date)}
+              </span>
             </button>
           ))}
         </div>
@@ -75,7 +81,9 @@ export function MealsView() {
               </div>
             </div>
             <div className="bg-yellow-50 rounded-xl p-4">
-              <p className="font-medium text-foreground">{meals[selectedDay]?.breakfast || "No meal planned"}</p>
+              <p className="font-medium text-foreground">
+                {meals[selectedDay]?.breakfast || "No meal planned"}
+              </p>
             </div>
           </div>
 
@@ -91,7 +99,9 @@ export function MealsView() {
               </div>
             </div>
             <div className="bg-orange-50 rounded-xl p-4">
-              <p className="font-medium text-foreground">{meals[selectedDay]?.lunch || "No meal planned"}</p>
+              <p className="font-medium text-foreground">
+                {meals[selectedDay]?.lunch || "No meal planned"}
+              </p>
             </div>
           </div>
 
@@ -107,11 +117,13 @@ export function MealsView() {
               </div>
             </div>
             <div className="bg-indigo-50 rounded-xl p-4">
-              <p className="font-medium text-foreground">{meals[selectedDay]?.dinner || "No meal planned"}</p>
+              <p className="font-medium text-foreground">
+                {meals[selectedDay]?.dinner || "No meal planned"}
+              </p>
             </div>
           </div>
         </div>
       </div>
     </div>
-  )
+  );
 }

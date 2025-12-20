@@ -1,18 +1,18 @@
-import { type CalendarEvent, familyMembers, colorMap } from "@/lib/types"
-import { cn } from "@/lib/utils"
-import type { FilterState } from "../components/calendar-filter"
-import { CalendarNavigation } from "../components/calendar-navigation"
+import { type CalendarEvent, colorMap, familyMembers } from "@/lib/types";
+import { cn } from "@/lib/utils";
+import type { FilterState } from "../components/calendar-filter";
+import { CalendarNavigation } from "../components/calendar-navigation";
 
 interface MonthlyCalendarProps {
-  events: CalendarEvent[]
-  currentDate: Date
-  onEventClick?: (event: CalendarEvent) => void
-  filter: FilterState
-  onDateSelect?: (date: Date) => void
-  onPrevious: () => void
-  onNext: () => void
-  onToday: () => void
-  isViewingToday: boolean
+  events: CalendarEvent[];
+  currentDate: Date;
+  onEventClick?: (event: CalendarEvent) => void;
+  filter: FilterState;
+  onDateSelect?: (date: Date) => void;
+  onPrevious: () => void;
+  onNext: () => void;
+  onToday: () => void;
+  isViewingToday: boolean;
 }
 
 export function MonthlyCalendar({
@@ -26,72 +26,77 @@ export function MonthlyCalendar({
   onToday,
   isViewingToday,
 }: MonthlyCalendarProps) {
-  const today = new Date()
+  const today = new Date();
 
   const getDaysInMonth = () => {
-    const year = currentDate.getFullYear()
-    const month = currentDate.getMonth()
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth();
 
-    const firstDay = new Date(year, month, 1)
-    const lastDay = new Date(year, month + 1, 0)
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
 
-    const days: Date[] = []
+    const days: Date[] = [];
 
     // Add previous month's trailing days
-    const daysFromPrevMonth = firstDay.getDay() // 0 = Sunday, 1 = Monday, etc.
-    const prevMonthLastDay = new Date(year, month, 0).getDate() // Last day of previous month
+    const daysFromPrevMonth = firstDay.getDay(); // 0 = Sunday, 1 = Monday, etc.
+    const prevMonthLastDay = new Date(year, month, 0).getDate(); // Last day of previous month
     for (let i = daysFromPrevMonth - 1; i >= 0; i--) {
-      days.push(new Date(year, month - 1, prevMonthLastDay - i))
+      days.push(new Date(year, month - 1, prevMonthLastDay - i));
     }
 
     // Add all days of the current month
     for (let i = 1; i <= lastDay.getDate(); i++) {
-      days.push(new Date(year, month, i))
+      days.push(new Date(year, month, i));
     }
 
     // Add next month's leading days to complete the final week
-    let nextMonthDay = 1
+    let nextMonthDay = 1;
     while (days.length % 7 !== 0) {
-      days.push(new Date(year, month + 1, nextMonthDay++))
+      days.push(new Date(year, month + 1, nextMonthDay++));
     }
 
-    return days
-  }
+    return days;
+  };
 
-  const days = getDaysInMonth()
-  const weekDays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
+  const days = getDaysInMonth();
+  const weekDays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
   const isToday = (date: Date) => {
-    return date.toDateString() === today.toDateString()
-  }
+    return date.toDateString() === today.toDateString();
+  };
 
   const isCurrentMonth = (date: Date) => {
-    return date.getMonth() === currentDate.getMonth()
-  }
+    return date.getMonth() === currentDate.getMonth();
+  };
 
   const getEventsForDay = (date: Date) => {
     return events.filter((event) => {
-      const eventDate = new Date(event.date)
-      const dateMatches = eventDate.toDateString() === date.toDateString()
-      const memberMatches = filter.selectedMembers.includes(event.memberId)
-      const allDayMatches = filter.showAllDayEvents || !event.isAllDay
-      return dateMatches && memberMatches && allDayMatches
-    })
-  }
+      const eventDate = new Date(event.date);
+      const dateMatches = eventDate.toDateString() === date.toDateString();
+      const memberMatches = filter.selectedMembers.includes(event.memberId);
+      const allDayMatches = filter.showAllDayEvents || !event.isAllDay;
+      return dateMatches && memberMatches && allDayMatches;
+    });
+  };
 
   const getMemberForEvent = (memberId: string) => {
-    return familyMembers.find((m) => m.id === memberId)
-  }
+    return familyMembers.find((m) => m.id === memberId);
+  };
 
   const getMembersWithEvents = (date: Date) => {
-    const dayEvents = getEventsForDay(date)
-    const memberIds = [...new Set(dayEvents.map((e) => e.memberId))]
-    return memberIds.map((id) => familyMembers.find((m) => m.id === id)).filter(Boolean)
-  }
+    const dayEvents = getEventsForDay(date);
+    const memberIds = [...new Set(dayEvents.map((e) => e.memberId))];
+    return memberIds
+      .map((id) => familyMembers.find((m) => m.id === id))
+      .filter(Boolean);
+  };
 
   const formatMonthLabel = () => {
-    return currentDate.toLocaleDateString("en-US", { month: "long", year: "numeric" })
-  }
+    return currentDate.toLocaleDateString("en-US", {
+      month: "long",
+      year: "numeric",
+    });
+  };
 
   return (
     <div className="flex-1 flex flex-col min-h-0 bg-background p-4 overflow-auto">
@@ -106,7 +111,10 @@ export function MonthlyCalendar({
       {/* Weekday headers */}
       <div className="grid grid-cols-7 gap-1 mb-2 shrink-0">
         {weekDays.map((day) => (
-          <div key={day} className="text-center py-2 text-sm font-medium text-muted-foreground">
+          <div
+            key={day}
+            className="text-center py-2 text-sm font-medium text-muted-foreground"
+          >
             {day}
           </div>
         ))}
@@ -115,8 +123,8 @@ export function MonthlyCalendar({
       {/* Calendar grid */}
       <div className="grid grid-cols-7 gap-1 shrink-0">
         {days.map((date, index) => {
-          const dayEvents = getEventsForDay(date)
-          const busyMembers = getMembersWithEvents(date)
+          const dayEvents = getEventsForDay(date);
+          const busyMembers = getMembersWithEvents(date);
 
           return (
             <div
@@ -156,7 +164,9 @@ export function MonthlyCalendar({
                     ))}
                     {busyMembers.length > 3 && (
                       <div className="w-3 h-3 rounded-full bg-muted border border-card flex items-center justify-center">
-                        <span className="text-[8px] text-muted-foreground">+</span>
+                        <span className="text-[8px] text-muted-foreground">
+                          +
+                        </span>
                       </div>
                     )}
                   </div>
@@ -164,13 +174,13 @@ export function MonthlyCalendar({
               </div>
               <div className="space-y-1">
                 {dayEvents.slice(0, 3).map((event) => {
-                  const member = getMemberForEvent(event.memberId)
+                  const member = getMemberForEvent(event.memberId);
                   return (
                     <div
                       key={event.id}
                       onClick={(e) => {
-                        e.stopPropagation()
-                        onEventClick?.(event)
+                        e.stopPropagation();
+                        onEventClick?.(event);
                       }}
                       className={cn(
                         "text-xs px-1.5 py-0.5 rounded truncate",
@@ -180,16 +190,18 @@ export function MonthlyCalendar({
                     >
                       {event.title}
                     </div>
-                  )
+                  );
                 })}
                 {dayEvents.length > 3 && (
-                  <div className="text-xs text-muted-foreground font-medium">+{dayEvents.length - 3} more</div>
+                  <div className="text-xs text-muted-foreground font-medium">
+                    +{dayEvents.length - 3} more
+                  </div>
                 )}
               </div>
             </div>
-          )
+          );
         })}
       </div>
     </div>
-  )
+  );
 }

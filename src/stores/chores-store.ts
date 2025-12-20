@@ -1,13 +1,13 @@
-import { create } from "zustand"
-import type { ChoreItem } from "@/lib/types"
-import { generateSampleChores } from "@/lib/calendar-data"
+import { create } from "zustand";
+import { generateSampleChores } from "@/lib/calendar-data";
+import type { ChoreItem } from "@/lib/types";
 
 interface ChoresState {
-  chores: ChoreItem[]
-  toggleChore: (id: string) => void
-  addChore: (chore: Omit<ChoreItem, "id">) => void
-  updateChore: (id: string, updates: Partial<ChoreItem>) => void
-  deleteChore: (id: string) => void
+  chores: ChoreItem[];
+  toggleChore: (id: string) => void;
+  addChore: (chore: Omit<ChoreItem, "id">) => void;
+  updateChore: (id: string, updates: Partial<ChoreItem>) => void;
+  deleteChore: (id: string) => void;
 }
 
 export const useChoresStore = create<ChoresState>((set) => ({
@@ -16,7 +16,7 @@ export const useChoresStore = create<ChoresState>((set) => ({
   toggleChore: (id) =>
     set((state) => ({
       chores: state.chores.map((chore) =>
-        chore.id === id ? { ...chore, completed: !chore.completed } : chore
+        chore.id === id ? { ...chore, completed: !chore.completed } : chore,
       ),
     })),
 
@@ -28,7 +28,7 @@ export const useChoresStore = create<ChoresState>((set) => ({
   updateChore: (id, updates) =>
     set((state) => ({
       chores: state.chores.map((chore) =>
-        chore.id === id ? { ...chore, ...updates } : chore
+        chore.id === id ? { ...chore, ...updates } : chore,
       ),
     })),
 
@@ -36,4 +36,4 @@ export const useChoresStore = create<ChoresState>((set) => ({
     set((state) => ({
       chores: state.chores.filter((chore) => chore.id !== id),
     })),
-}))
+}));

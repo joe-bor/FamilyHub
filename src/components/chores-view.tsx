@@ -1,29 +1,35 @@
-import { useState } from "react"
-import { Check, RotateCcw, Star, Trophy } from "lucide-react"
-import { type ChoreItem, familyMembers, colorMap } from "@/lib/types"
-import { generateSampleChores } from "@/lib/calendar-data"
-import { cn } from "@/lib/utils"
+import { Check, RotateCcw, Star, Trophy } from "lucide-react";
+import { useState } from "react";
+import { generateSampleChores } from "@/lib/calendar-data";
+import { type ChoreItem, colorMap, familyMembers } from "@/lib/types";
+import { cn } from "@/lib/utils";
 
 export function ChoresView() {
-  const [chores, setChores] = useState<ChoreItem[]>(generateSampleChores())
+  const [chores, setChores] = useState<ChoreItem[]>(generateSampleChores());
 
   const toggleChore = (id: string) => {
-    setChores((prev) => prev.map((chore) => (chore.id === id ? { ...chore, completed: !chore.completed } : chore)))
-  }
+    setChores((prev) =>
+      prev.map((chore) =>
+        chore.id === id ? { ...chore, completed: !chore.completed } : chore,
+      ),
+    );
+  };
 
   // Group chores by family member
   const choresByMember = familyMembers.reduce(
     (acc, member) => {
-      const memberChores = chores.filter((chore) => chore.assignedTo === member.id)
+      const memberChores = chores.filter(
+        (chore) => chore.assignedTo === member.id,
+      );
       if (memberChores.length > 0) {
-        acc[member.id] = memberChores
+        acc[member.id] = memberChores;
       }
-      return acc
+      return acc;
     },
     {} as Record<string, ChoreItem[]>,
-  )
+  );
 
-  const getMember = (id: string) => familyMembers.find((m) => m.id === id)
+  const getMember = (id: string) => familyMembers.find((m) => m.id === id);
 
   return (
     <div className="flex-1 p-6 overflow-y-auto">
@@ -34,7 +40,8 @@ export function ChoresView() {
           <div className="flex items-center gap-2 text-muted-foreground">
             <Trophy className="h-5 w-5 text-yellow-500" />
             <span className="text-sm font-medium">
-              {chores.filter((c) => c.completed).length} of {chores.length} total completed
+              {chores.filter((c) => c.completed).length} of {chores.length}{" "}
+              total completed
             </span>
           </div>
         </div>
@@ -42,24 +49,34 @@ export function ChoresView() {
         {/* Family member containers grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {Object.entries(choresByMember).map(([memberId, memberChores]) => {
-            const member = getMember(memberId)
-            if (!member) return null
+            const member = getMember(memberId);
+            if (!member) return null;
 
-            const colors = colorMap[member.color]
-            const completedCount = memberChores.filter((c) => c.completed).length
-            const totalCount = memberChores.length
-            const progressPercent = totalCount > 0 ? (completedCount / totalCount) * 100 : 0
+            const colors = colorMap[member.color];
+            const completedCount = memberChores.filter(
+              (c) => c.completed,
+            ).length;
+            const totalCount = memberChores.length;
+            const progressPercent =
+              totalCount > 0 ? (completedCount / totalCount) * 100 : 0;
 
             return (
-              <div key={memberId} className="bg-card rounded-2xl shadow-sm border border-border overflow-hidden">
+              <div
+                key={memberId}
+                className="bg-card rounded-2xl shadow-sm border border-border overflow-hidden"
+              >
                 {/* Member header with colored bar */}
                 <div className={cn("px-5 py-4", colors?.bg)}>
                   <div className="flex items-center gap-3">
                     <div className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center">
-                      <span className="text-white text-xl font-bold">{member.name.charAt(0)}</span>
+                      <span className="text-white text-xl font-bold">
+                        {member.name.charAt(0)}
+                      </span>
                     </div>
                     <div className="flex-1">
-                      <h3 className="font-bold text-white text-lg">{member.name}</h3>
+                      <h3 className="font-bold text-white text-lg">
+                        {member.name}
+                      </h3>
                       <div className="flex items-center gap-1 mt-0.5">
                         <Star className="h-3.5 w-3.5 text-white/80 fill-white/80" />
                         <span className="text-white/90 text-sm">
@@ -100,10 +117,14 @@ export function ChoresView() {
                       <div
                         className={cn(
                           "w-6 h-6 rounded-full flex items-center justify-center shrink-0 transition-colors",
-                          chore.completed ? "bg-green-500" : "border-2 border-border bg-white",
+                          chore.completed
+                            ? "bg-green-500"
+                            : "border-2 border-border bg-white",
                         )}
                       >
-                        {chore.completed && <Check className="h-4 w-4 text-white" />}
+                        {chore.completed && (
+                          <Check className="h-4 w-4 text-white" />
+                        )}
                       </div>
 
                       {/* Chore info */}
@@ -111,7 +132,9 @@ export function ChoresView() {
                         <h4
                           className={cn(
                             "font-medium text-sm truncate",
-                            chore.completed ? "text-muted-foreground line-through" : "text-foreground",
+                            chore.completed
+                              ? "text-muted-foreground line-through"
+                              : "text-foreground",
                           )}
                         >
                           {chore.title}
@@ -119,7 +142,9 @@ export function ChoresView() {
                         {chore.recurring && (
                           <div className="flex items-center gap-1 mt-0.5">
                             <RotateCcw className="h-3 w-3 text-muted-foreground" />
-                            <span className="text-xs text-muted-foreground capitalize">{chore.recurring}</span>
+                            <span className="text-xs text-muted-foreground capitalize">
+                              {chore.recurring}
+                            </span>
                           </div>
                         )}
                       </div>
@@ -127,11 +152,13 @@ export function ChoresView() {
                   ))}
 
                   {memberChores.length === 0 && (
-                    <div className="text-center py-6 text-muted-foreground text-sm">No chores assigned</div>
+                    <div className="text-center py-6 text-muted-foreground text-sm">
+                      No chores assigned
+                    </div>
                   )}
                 </div>
               </div>
-            )
+            );
           })}
         </div>
 
@@ -141,11 +168,13 @@ export function ChoresView() {
             <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
               <Trophy className="h-8 w-8 text-muted-foreground" />
             </div>
-            <h3 className="text-lg font-semibold text-foreground mb-2">No chores today!</h3>
+            <h3 className="text-lg font-semibold text-foreground mb-2">
+              No chores today!
+            </h3>
             <p className="text-muted-foreground">Enjoy your free time.</p>
           </div>
         )}
       </div>
     </div>
-  )
+  );
 }

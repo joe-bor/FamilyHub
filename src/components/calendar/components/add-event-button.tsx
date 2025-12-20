@@ -1,8 +1,8 @@
-import { Plus } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import { Plus } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface AddEventButtonProps {
-  onClick: () => void
+  onClick: () => void;
 }
 
 export function AddEventButton({ onClick }: AddEventButtonProps) {
@@ -14,5 +14,5 @@ export function AddEventButton({ onClick }: AddEventButtonProps) {
     >
       <Plus className="h-7 w-7 text-primary-foreground" />
     </Button>
-  )
+  );
 }

@@ -1,124 +1,127 @@
-import { useRef } from "react"
-import { type CalendarEvent, familyMembers, colorMap } from "@/lib/types"
-import { CalendarEventCard } from "../components/calendar-event"
-import { CalendarNavigation } from "../components/calendar-navigation"
-import { cn } from "@/lib/utils"
-import type { FilterState } from "../components/calendar-filter"
-import { CurrentTimeIndicator, useAutoScrollToNow } from "../components/current-time-indicator"
+import { useRef } from "react";
+import { type CalendarEvent, colorMap, familyMembers } from "@/lib/types";
+import { cn } from "@/lib/utils";
+import { CalendarEventCard } from "../components/calendar-event";
+import type { FilterState } from "../components/calendar-filter";
+import { CalendarNavigation } from "../components/calendar-navigation";
+import {
+  CurrentTimeIndicator,
+  useAutoScrollToNow,
+} from "../components/current-time-indicator";
 
 interface DailyCalendarProps {
-  events: CalendarEvent[]
-  currentDate: Date
-  onEventClick?: (event: CalendarEvent) => void
-  filter: FilterState
-  onPrevious: () => void
-  onNext: () => void
-  onToday: () => void
-  isViewingToday: boolean
+  events: CalendarEvent[];
+  currentDate: Date;
+  onEventClick?: (event: CalendarEvent) => void;
+  filter: FilterState;
+  onPrevious: () => void;
+  onNext: () => void;
+  onToday: () => void;
+  isViewingToday: boolean;
 }
 
 function parseTime(timeStr: string): { hours: number; minutes: number } {
-  const match = timeStr.match(/(\d+):(\d+)\s*(AM|PM)/i)
-  if (!match) return { hours: 0, minutes: 0 }
+  const match = timeStr.match(/(\d+):(\d+)\s*(AM|PM)/i);
+  if (!match) return { hours: 0, minutes: 0 };
 
-  let hours = Number.parseInt(match[1])
-  const minutes = Number.parseInt(match[2])
-  const period = match[3].toUpperCase()
+  let hours = Number.parseInt(match[1], 10);
+  const minutes = Number.parseInt(match[2], 10);
+  const period = match[3].toUpperCase();
 
-  if (period === "PM" && hours !== 12) hours += 12
-  if (period === "AM" && hours === 12) hours = 0
+  if (period === "PM" && hours !== 12) hours += 12;
+  if (period === "AM" && hours === 12) hours = 0;
 
-  return { hours, minutes }
+  return { hours, minutes };
 }
 
-const START_HOUR = 6
-const ROW_HEIGHT = 80 // px per hour
+const START_HOUR = 6;
+const ROW_HEIGHT = 80; // px per hour
 
 function getEventGridPosition(startTime: string, endTime: string) {
-  const start = parseTime(startTime)
-  const end = parseTime(endTime)
+  const start = parseTime(startTime);
+  const end = parseTime(endTime);
 
   // Calculate row index from start hour (6 AM = row 0)
-  const startRow = start.hours - START_HOUR
-  const startMinuteOffset = start.minutes / 60
+  const startRow = start.hours - START_HOUR;
+  const startMinuteOffset = start.minutes / 60;
 
-  const endRow = end.hours - START_HOUR
-  const endMinuteOffset = end.minutes / 60
+  const endRow = end.hours - START_HOUR;
+  const endMinuteOffset = end.minutes / 60;
 
   // Calculate top position: row * height + minute offset
-  const top = (startRow + startMinuteOffset) * ROW_HEIGHT
-  const bottom = (endRow + endMinuteOffset) * ROW_HEIGHT
-  const height = Math.max(bottom - top, 30) // Minimum 30px height
+  const top = (startRow + startMinuteOffset) * ROW_HEIGHT;
+  const bottom = (endRow + endMinuteOffset) * ROW_HEIGHT;
+  const height = Math.max(bottom - top, 30); // Minimum 30px height
 
-  return { top, height }
+  return { top, height };
 }
 
 function getTimeInMinutes(timeStr: string): number {
-  const { hours, minutes } = parseTime(timeStr)
-  return hours * 60 + minutes
+  const { hours, minutes } = parseTime(timeStr);
+  return hours * 60 + minutes;
 }
 
 function eventsOverlap(a: CalendarEvent, b: CalendarEvent): boolean {
-  const aStart = getTimeInMinutes(a.startTime)
-  const aEnd = getTimeInMinutes(a.endTime)
-  const bStart = getTimeInMinutes(b.startTime)
-  const bEnd = getTimeInMinutes(b.endTime)
-  return aStart < bEnd && bStart < aEnd
+  const aStart = getTimeInMinutes(a.startTime);
+  const aEnd = getTimeInMinutes(a.endTime);
+  const bStart = getTimeInMinutes(b.startTime);
+  const bEnd = getTimeInMinutes(b.endTime);
+  return aStart < bEnd && bStart < aEnd;
 }
 
 interface EventWithLayout extends CalendarEvent {
-  column: number
-  totalColumns: number
+  column: number;
+  totalColumns: number;
 }
 
 function calculateEventColumns(events: CalendarEvent[]): EventWithLayout[] {
-  if (events.length === 0) return []
+  if (events.length === 0) return [];
 
   // Sort by start time, then by duration (longer events first)
   const sorted = [...events].sort((a, b) => {
-    const aStart = getTimeInMinutes(a.startTime)
-    const bStart = getTimeInMinutes(b.startTime)
-    if (aStart !== bStart) return aStart - bStart
+    const aStart = getTimeInMinutes(a.startTime);
+    const bStart = getTimeInMinutes(b.startTime);
+    if (aStart !== bStart) return aStart - bStart;
 
-    const aDuration = getTimeInMinutes(a.endTime) - aStart
-    const bDuration = getTimeInMinutes(b.endTime) - bStart
-    return bDuration - aDuration // Longer events first
-  })
+    const aDuration = getTimeInMinutes(a.endTime) - aStart;
+    const bDuration = getTimeInMinutes(b.endTime) - bStart;
+    return bDuration - aDuration; // Longer events first
+  });
 
-  const result: EventWithLayout[] = []
-  const columns: CalendarEvent[][] = [] // Each column tracks events in that column
+  const result: EventWithLayout[] = [];
+  const columns: CalendarEvent[][] = []; // Each column tracks events in that column
 
   for (const event of sorted) {
     // Find the first column where this event doesn't overlap with existing events
-    let assignedColumn = -1
+    let assignedColumn = -1;
     for (let col = 0; col < columns.length; col++) {
-      const hasOverlap = columns[col].some((e) => eventsOverlap(e, event))
+      const hasOverlap = columns[col].some((e) => eventsOverlap(e, event));
       if (!hasOverlap) {
-        assignedColumn = col
-        break
+        assignedColumn = col;
+        break;
       }
     }
 
     // If no suitable column found, create a new one
     if (assignedColumn === -1) {
-      assignedColumn = columns.length
-      columns.push([])
+      assignedColumn = columns.length;
+      columns.push([]);
     }
 
-    columns[assignedColumn].push(event)
-    result.push({ ...event, column: assignedColumn, totalColumns: 0 }) // totalColumns set later
+    columns[assignedColumn].push(event);
+    result.push({ ...event, column: assignedColumn, totalColumns: 0 }); // totalColumns set later
   }
 
   // Now calculate totalColumns for each event based on overlapping events
   for (const eventWithLayout of result) {
     // Find all events that overlap with this one
-    const overlapping = result.filter((e) => eventsOverlap(e, eventWithLayout))
+    const overlapping = result.filter((e) => eventsOverlap(e, eventWithLayout));
     // Find the max column among overlapping events + 1
-    const maxColumn = Math.max(...overlapping.map((e) => e.column))
-    eventWithLayout.totalColumns = maxColumn + 1
+    const maxColumn = Math.max(...overlapping.map((e) => e.column));
+    eventWithLayout.totalColumns = maxColumn + 1;
   }
 
-  return result
+  return result;
 }
 
 export function DailyCalendar({
@@ -131,35 +134,43 @@ export function DailyCalendar({
   onToday,
   isViewingToday,
 }: DailyCalendarProps) {
-  const today = new Date()
-  const scrollContainerRef = useRef<HTMLDivElement>(null)
+  const today = new Date();
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
-  const isCurrentDay = currentDate.toDateString() === today.toDateString()
-  useAutoScrollToNow(isCurrentDay ? scrollContainerRef : { current: null })
+  const isCurrentDay = currentDate.toDateString() === today.toDateString();
+  useAutoScrollToNow(isCurrentDay ? scrollContainerRef : { current: null });
 
   const isToday = (date: Date) => {
-    return date.toDateString() === today.toDateString()
-  }
+    return date.toDateString() === today.toDateString();
+  };
 
   const formatDateLabel = (date: Date) => {
-    return date.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" })
-  }
+    return date.toLocaleDateString("en-US", {
+      weekday: "long",
+      month: "long",
+      day: "numeric",
+      year: "numeric",
+    });
+  };
 
   const getEventsForDay = () => {
     return events
       .filter((event) => {
-        const eventDate = new Date(event.date)
-        const dateMatches = eventDate.toDateString() === currentDate.toDateString()
-        const memberMatches = filter.selectedMembers.includes(event.memberId)
-        const allDayMatches = filter.showAllDayEvents || !event.isAllDay
-        return dateMatches && memberMatches && allDayMatches
+        const eventDate = new Date(event.date);
+        const dateMatches =
+          eventDate.toDateString() === currentDate.toDateString();
+        const memberMatches = filter.selectedMembers.includes(event.memberId);
+        const allDayMatches = filter.showAllDayEvents || !event.isAllDay;
+        return dateMatches && memberMatches && allDayMatches;
       })
       .sort((a, b) => {
-        const timeA = parseTime(a.startTime)
-        const timeB = parseTime(b.startTime)
-        return timeA.hours * 60 + timeA.minutes - (timeB.hours * 60 + timeB.minutes)
-      })
-  }
+        const timeA = parseTime(a.startTime);
+        const timeB = parseTime(b.startTime);
+        return (
+          timeA.hours * 60 + timeA.minutes - (timeB.hours * 60 + timeB.minutes)
+        );
+      });
+  };
 
   const timeSlots = [
     "6 AM",
@@ -180,10 +191,10 @@ export function DailyCalendar({
     "9 PM",
     "10 PM",
     "11 PM",
-  ]
+  ];
 
-  const dayEvents = getEventsForDay()
-  const eventsWithLayout = calculateEventColumns(dayEvents)
+  const dayEvents = getEventsForDay();
+  const eventsWithLayout = calculateEventColumns(dayEvents);
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden bg-background">
@@ -201,16 +212,28 @@ export function DailyCalendar({
       {/* Day info header */}
       <div className="flex border-b border-border bg-card shrink-0">
         <div className="w-16 shrink-0" />
-        <div className={cn("flex-1 text-center py-4", isToday(currentDate) && "bg-primary/5")}>
+        <div
+          className={cn(
+            "flex-1 text-center py-4",
+            isToday(currentDate) && "bg-primary/5",
+          )}
+        >
           <div className="flex justify-center gap-2">
             {familyMembers.map((member) => {
-              const hasEvent = dayEvents.some((e) => e.memberId === member.id)
+              const hasEvent = dayEvents.some((e) => e.memberId === member.id);
               return hasEvent ? (
                 <div key={member.id} className="flex items-center gap-1">
-                  <div className={cn("w-3 h-3 rounded-full", colorMap[member.color]?.bg)} />
-                  <span className="text-xs text-muted-foreground">{member.name}</span>
+                  <div
+                    className={cn(
+                      "w-3 h-3 rounded-full",
+                      colorMap[member.color]?.bg,
+                    )}
+                  />
+                  <span className="text-xs text-muted-foreground">
+                    {member.name}
+                  </span>
                 </div>
-              ) : null
+              ) : null;
             })}
           </div>
         </div>
@@ -221,17 +244,33 @@ export function DailyCalendar({
         {/* Time column */}
         <div className="w-16 shrink-0 bg-card border-r border-border">
           {timeSlots.map((time, index) => (
-            <div key={index} className="h-20 flex items-start justify-end pr-2 pt-1 border-b border-border/50">
-              <span className="text-xs text-foreground/70 font-semibold">{time}</span>
+            <div
+              key={index}
+              className="h-20 flex items-start justify-end pr-2 pt-1 border-b border-border/50"
+            >
+              <span className="text-xs text-foreground/70 font-semibold">
+                {time}
+              </span>
             </div>
           ))}
         </div>
 
         {/* Day column - relative container for absolute positioned events */}
-        <div className={cn("flex-1 relative", isToday(currentDate) && "bg-primary/5")}>
+        <div
+          className={cn(
+            "flex-1 relative",
+            isToday(currentDate) && "bg-primary/5",
+          )}
+        >
           {/* Grid rows */}
           {timeSlots.map((_, index) => (
-            <div key={index} className={cn("h-20 border-b border-border/50", index % 2 === 0 && "bg-muted/30")} />
+            <div
+              key={index}
+              className={cn(
+                "h-20 border-b border-border/50",
+                index % 2 === 0 && "bg-muted/30",
+              )}
+            />
           ))}
 
           {isCurrentDay && (
@@ -241,16 +280,19 @@ export function DailyCalendar({
           )}
 
           {eventsWithLayout.map((event) => {
-            const { top, height } = getEventGridPosition(event.startTime, event.endTime)
-            const { column, totalColumns } = event
+            const { top, height } = getEventGridPosition(
+              event.startTime,
+              event.endTime,
+            );
+            const { column, totalColumns } = event;
 
             // Calculate horizontal position (max 3 columns)
-            const effectiveColumns = Math.min(totalColumns, 3)
-            const columnWidth = 100 / effectiveColumns
-            const left = Math.min(column, 2) * columnWidth
+            const effectiveColumns = Math.min(totalColumns, 3);
+            const columnWidth = 100 / effectiveColumns;
+            const left = Math.min(column, 2) * columnWidth;
 
             // Use compact variant for 3+ columns
-            const variant = totalColumns >= 3 ? "compact" : "large"
+            const variant = totalColumns >= 3 ? "compact" : "large";
 
             return (
               <div
@@ -263,12 +305,16 @@ export function DailyCalendar({
                   width: `calc(${columnWidth}% - 12px)`,
                 }}
               >
-                <CalendarEventCard event={event} onClick={() => onEventClick?.(event)} variant={variant} />
+                <CalendarEventCard
+                  event={event}
+                  onClick={() => onEventClick?.(event)}
+                  variant={variant}
+                />
               </div>
-            )
+            );
           })}
         </div>
       </div>
     </div>
-  )
+  );
 }

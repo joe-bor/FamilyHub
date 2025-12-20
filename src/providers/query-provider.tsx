@@ -1,7 +1,7 @@
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
-import { ReactQueryDevtools } from "@tanstack/react-query-devtools"
-import type { ReactNode } from "react"
-import { ApiException } from "@/api/client"
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
+import type { ReactNode } from "react";
+import { ApiException } from "@/api/client";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -12,10 +12,10 @@ const queryClient = new QueryClient({
         // Don't retry on 4xx errors
         if (ApiException.isApiException(error)) {
           if (error.status >= 400 && error.status < 500) {
-            return false
+            return false;
           }
         }
-        return failureCount < 3
+        return failureCount < 3;
       },
       refetchOnWindowFocus: false,
     },
@@ -23,10 +23,10 @@ const queryClient = new QueryClient({
       retry: false,
     },
   },
-})
+});
 
 interface QueryProviderProps {
-  children: ReactNode
+  children: ReactNode;
 }
 
 export function QueryProvider({ children }: QueryProviderProps) {
@@ -35,5 +35,5 @@ export function QueryProvider({ children }: QueryProviderProps) {
       {children}
       {import.meta.env.DEV && <ReactQueryDevtools initialIsOpen={false} />}
     </QueryClientProvider>
-  )
+  );
 }

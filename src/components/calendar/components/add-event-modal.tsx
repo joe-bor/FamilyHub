@@ -1,33 +1,37 @@
-import type React from "react"
-
-import { useState } from "react"
-import { X } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { familyMembers, colorMap, type CalendarEvent } from "@/lib/types"
-import { cn } from "@/lib/utils"
-import { parseISO } from "date-fns"
+import { parseISO } from "date-fns";
+import { X } from "lucide-react";
+import type React from "react";
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { type CalendarEvent, colorMap, familyMembers } from "@/lib/types";
+import { cn } from "@/lib/utils";
 
 interface AddEventModalProps {
-  isOpen: boolean
-  onClose: () => void
-  onAdd: (event: Omit<CalendarEvent, "id">) => void
-  isPending?: boolean
+  isOpen: boolean;
+  onClose: () => void;
+  onAdd: (event: Omit<CalendarEvent, "id">) => void;
+  isPending?: boolean;
 }
 
-export function AddEventModal({ isOpen, onClose, onAdd, isPending = false }: AddEventModalProps) {
-  const [title, setTitle] = useState("")
-  const [date, setDate] = useState("")
-  const [startTime, setStartTime] = useState("")
-  const [endTime, setEndTime] = useState("")
-  const [selectedMember, setSelectedMember] = useState(familyMembers[0].id)
+export function AddEventModal({
+  isOpen,
+  onClose,
+  onAdd,
+  isPending = false,
+}: AddEventModalProps) {
+  const [title, setTitle] = useState("");
+  const [date, setDate] = useState("");
+  const [startTime, setStartTime] = useState("");
+  const [endTime, setEndTime] = useState("");
+  const [selectedMember, setSelectedMember] = useState(familyMembers[0].id);
 
-  if (!isOpen) return null
+  if (!isOpen) return null;
 
   const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!title || !date || !startTime || !endTime || isPending) return
+    e.preventDefault();
+    if (!title || !date || !startTime || !endTime || isPending) return;
 
     onAdd({
       title,
@@ -36,20 +40,23 @@ export function AddEventModal({ isOpen, onClose, onAdd, isPending = false }: Add
       startTime,
       endTime,
       memberId: selectedMember,
-    })
+    });
 
     // Reset form (modal close is handled by parent on success)
-    setTitle("")
-    setDate("")
-    setStartTime("")
-    setEndTime("")
-    setSelectedMember(familyMembers[0].id)
-  }
+    setTitle("");
+    setDate("");
+    setStartTime("");
+    setEndTime("");
+    setSelectedMember(familyMembers[0].id);
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       {/* Backdrop */}
-      <div className="absolute inset-0 bg-foreground/20 backdrop-blur-sm" onClick={onClose} />
+      <div
+        className="absolute inset-0 bg-foreground/20 backdrop-blur-sm"
+        onClick={onClose}
+      />
 
       {/* Modal */}
       <div className="relative bg-card rounded-2xl shadow-2xl w-full max-w-md mx-4 p-6">
@@ -74,7 +81,13 @@ export function AddEventModal({ isOpen, onClose, onAdd, isPending = false }: Add
 
           <div className="space-y-2">
             <Label htmlFor="date">Date</Label>
-            <Input id="date" type="date" value={date} onChange={(e) => setDate(e.target.value)} className="bg-input" />
+            <Input
+              id="date"
+              type="date"
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+              className="bg-input"
+            />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
@@ -104,8 +117,8 @@ export function AddEventModal({ isOpen, onClose, onAdd, isPending = false }: Add
             <Label>Assign To</Label>
             <div className="flex flex-wrap gap-2">
               {familyMembers.map((member) => {
-                const colors = colorMap[member.color]
-                const isSelected = selectedMember === member.id
+                const colors = colorMap[member.color];
+                const isSelected = selectedMember === member.id;
 
                 return (
                   <button
@@ -114,27 +127,39 @@ export function AddEventModal({ isOpen, onClose, onAdd, isPending = false }: Add
                     onClick={() => setSelectedMember(member.id)}
                     className={cn(
                       "flex items-center gap-2 px-3 py-2 rounded-full text-sm font-medium transition-all",
-                      isSelected ? `${colors?.bg} text-card` : `${colors?.light} ${colors?.text} hover:opacity-80`,
+                      isSelected
+                        ? `${colors?.bg} text-card`
+                        : `${colors?.light} ${colors?.text} hover:opacity-80`,
                     )}
                   >
                     <div className={cn("w-3 h-3 rounded-full", colors?.bg)} />
                     {member.name}
                   </button>
-                )
+                );
               })}
             </div>
           </div>
 
           <div className="flex gap-3 pt-4">
-            <Button type="button" variant="outline" onClick={onClose} className="flex-1 bg-transparent" disabled={isPending}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onClose}
+              className="flex-1 bg-transparent"
+              disabled={isPending}
+            >
               Cancel
             </Button>
-            <Button type="submit" className="flex-1 bg-primary hover:bg-primary/90" disabled={isPending}>
+            <Button
+              type="submit"
+              className="flex-1 bg-primary hover:bg-primary/90"
+              disabled={isPending}
+            >
               {isPending ? "Adding..." : "Add Event"}
             </Button>
           </div>
         </form>
       </div>
     </div>
-  )
+  );
 }

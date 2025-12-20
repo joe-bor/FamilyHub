@@ -2,10 +2,10 @@
 // Types and data are in @/lib/types
 // Note: Calendar events now use mock API handlers in @/api/mocks/calendar.mock.ts
 
-import type { ChoreItem, MealPlan } from "./types"
+import type { ChoreItem, MealPlan } from "./types";
 
 export function generateSampleChores(): ChoreItem[] {
-  const today = new Date()
+  const today = new Date();
   return [
     {
       id: "1",
@@ -71,12 +71,12 @@ export function generateSampleChores(): ChoreItem[] {
       dueDate: today,
       recurring: "daily",
     },
-  ]
+  ];
 }
 
 export function generateSampleMeals(): MealPlan[] {
-  const today = new Date()
-  const meals: MealPlan[] = []
+  const today = new Date();
+  const meals: MealPlan[] = [];
 
   const mealOptions = {
     breakfast: [
@@ -106,11 +106,11 @@ export function generateSampleMeals(): MealPlan[] {
       "BBQ Ribs",
       "Homemade Pizza",
     ],
-  }
+  };
 
   for (let i = 0; i < 7; i++) {
-    const date = new Date(today)
-    date.setDate(today.getDate() - today.getDay() + i + 3)
+    const date = new Date(today);
+    date.setDate(today.getDate() - today.getDay() + i + 3);
 
     meals.push({
       id: `meal-${i}`,
@@ -125,8 +125,8 @@ export function generateSampleMeals(): MealPlan[] {
         mealOptions.dinner[
           Math.floor(Math.random() * mealOptions.dinner.length)
         ],
-    })
+    });
   }
 
-  return meals
+  return meals;
 }

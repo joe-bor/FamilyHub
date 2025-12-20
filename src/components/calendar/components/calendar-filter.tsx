@@ -1,34 +1,40 @@
-import { useState, useRef, useEffect } from "react"
-import { Settings2, Check } from "lucide-react"
-import { cn } from "@/lib/utils"
+import { Check, Settings2 } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { cn } from "@/lib/utils";
 
 export interface FilterState {
-  selectedMembers: string[]
-  showAllDayEvents: boolean
+  selectedMembers: string[];
+  showAllDayEvents: boolean;
 }
 
 interface CalendarFilterProps {
-  filter: FilterState
-  onFilterChange: (filter: FilterState) => void
+  filter: FilterState;
+  onFilterChange: (filter: FilterState) => void;
 }
 
-export function CalendarFilter({ filter, onFilterChange }: CalendarFilterProps) {
-  const [isOpen, setIsOpen] = useState(false)
-  const dropdownRef = useRef<HTMLDivElement>(null)
+export function CalendarFilter({
+  filter,
+  onFilterChange,
+}: CalendarFilterProps) {
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setIsOpen(false)
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
+        setIsOpen(false);
       }
     }
-    document.addEventListener("mousedown", handleClickOutside)
-    return () => document.removeEventListener("mousedown", handleClickOutside)
-  }, [])
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   const toggleAllDayEvents = () => {
-    onFilterChange({ ...filter, showAllDayEvents: !filter.showAllDayEvents })
-  }
+    onFilterChange({ ...filter, showAllDayEvents: !filter.showAllDayEvents });
+  };
 
   return (
     <div className="relative" ref={dropdownRef}>
@@ -58,19 +64,25 @@ export function CalendarFilter({ filter, onFilterChange }: CalendarFilterProps) 
               <div className="w-5 h-5 rounded-full bg-muted flex items-center justify-center">
                 <span className="text-[10px] font-medium">24</span>
               </div>
-              <span className="flex-1 text-left text-sm text-foreground">All Day Events</span>
+              <span className="flex-1 text-left text-sm text-foreground">
+                All Day Events
+              </span>
               <div
                 className={cn(
                   "w-4 h-4 rounded border-2 flex items-center justify-center transition-colors",
-                  filter.showAllDayEvents ? "bg-primary border-primary" : "border-border",
+                  filter.showAllDayEvents
+                    ? "bg-primary border-primary"
+                    : "border-border",
                 )}
               >
-                {filter.showAllDayEvents && <Check className="h-2.5 w-2.5 text-primary-foreground" />}
+                {filter.showAllDayEvents && (
+                  <Check className="h-2.5 w-2.5 text-primary-foreground" />
+                )}
               </div>
             </button>
           </div>
         </div>
       )}
     </div>
-  )
+  );
 }

@@ -1,58 +1,65 @@
-import { ApiException, ApiErrorCode, mapStatusToErrorCode } from "./api-error"
+import { ApiErrorCode, ApiException, mapStatusToErrorCode } from "./api-error";
 
-type QueryParams = Record<string, string | number | boolean | undefined>
+type QueryParams = Record<string, string | number | boolean | undefined>;
 
 interface RequestConfig extends Omit<RequestInit, "body"> {
-  params?: QueryParams
-  timeout?: number
+  params?: QueryParams;
+  timeout?: number;
 }
 
 interface HttpClientConfig {
-  baseUrl: string
-  defaultHeaders?: Record<string, string>
-  onUnauthorized?: () => void
+  baseUrl: string;
+  defaultHeaders?: Record<string, string>;
+  onUnauthorized?: () => void;
 }
 
-async function parseErrorResponse(
-  response: Response
-): Promise<{ code: ApiErrorCode; message: string; status: number; details?: Record<string, unknown>; field?: string }> {
+async function parseErrorResponse(response: Response): Promise<{
+  code: ApiErrorCode;
+  message: string;
+  status: number;
+  details?: Record<string, unknown>;
+  field?: string;
+}> {
   try {
-    const body = await response.json()
+    const body = await response.json();
     return {
       code: mapStatusToErrorCode(response.status),
       message: body.message || response.statusText,
       status: response.status,
       details: body.details,
       field: body.field,
-    }
+    };
   } catch {
     return {
       code: mapStatusToErrorCode(response.status),
       message: response.statusText,
       status: response.status,
-    }
+    };
   }
 }
 
 export function createHttpClient(config: HttpClientConfig) {
-  const { baseUrl, defaultHeaders = {}, onUnauthorized } = config
+  const { baseUrl, defaultHeaders = {}, onUnauthorized } = config;
 
-  async function request<T>(endpoint: string, options: RequestConfig & { body?: unknown } = {}): Promise<T> {
-    const { params, timeout = 30000, body, ...fetchOptions } = options
+  async function request<T>(
+    endpoint: string,
+    options: RequestConfig & { body?: unknown } = {},
+  ): Promise<T> {
+    const { params, timeout = 30000, body, ...fetchOptions } = options;
 
     // Build URL with query params
-    const url = new URL(endpoint, baseUrl)
+    const url = new URL(endpoint, baseUrl);
     if (params) {
       Object.entries(params).forEach(([key, value]) => {
         if (value !== undefined) {
-          url.searchParams.append(key, String(value))
+          url.searchParams.append(key, String(value));
         }
-      })
+      });
     }
 
     // Setup abort controller for timeout
-    const controller = new AbortController()
-    const timeoutId = setTimeout(() => controller.abort(), timeout)
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeout);
 
     try {
       const response = await fetch(url.toString(), {
@@ -64,31 +71,31 @@ export function createHttpClient(config: HttpClientConfig) {
           ...fetchOptions.headers,
         },
         body: body ? JSON.stringify(body) : undefined,
-      })
+      });
 
-      clearTimeout(timeoutId)
+      clearTimeout(timeoutId);
 
       if (!response.ok) {
-        const error = await parseErrorResponse(response)
+        const error = await parseErrorResponse(response);
 
         if (response.status === 401 && onUnauthorized) {
-          onUnauthorized()
+          onUnauthorized();
         }
 
-        throw new ApiException(error)
+        throw new ApiException(error);
       }
 
       // Handle empty responses (204 No Content)
       if (response.status === 204) {
-        return undefined as T
+        return undefined as T;
       }
 
-      return response.json()
+      return response.json();
     } catch (error) {
-      clearTimeout(timeoutId)
+      clearTimeout(timeoutId);
 
       if (ApiException.isApiException(error)) {
-        throw error
+        throw error;
       }
 
       if (error instanceof DOMException && error.name === "AbortError") {
@@ -96,7 +103,7 @@ export function createHttpClient(config: HttpClientConfig) {
           code: ApiErrorCode.TIMEOUT,
           message: "Request timed out",
           status: 408,
-        })
+        });
       }
 
       throw new ApiException(
@@ -105,13 +112,14 @@ export function createHttpClient(config: HttpClientConfig) {
           message: "Network error occurred",
           status: 0,
         },
-        error
-      )
+        error,
+      );
     }
   }
 
   return {
-    get: <T>(endpoint: string, config?: RequestConfig) => request<T>(endpoint, { ...config, method: "GET" }),
+    get: <T>(endpoint: string, config?: RequestConfig) =>
+      request<T>(endpoint, { ...config, method: "GET" }),
 
     post: <T>(endpoint: string, data?: unknown, config?: RequestConfig) =>
       request<T>(endpoint, {
@@ -134,11 +142,12 @@ export function createHttpClient(config: HttpClientConfig) {
         body: data,
       }),
 
-    delete: <T>(endpoint: string, config?: RequestConfig) => request<T>(endpoint, { ...config, method: "DELETE" }),
-  }
+    delete: <T>(endpoint: string, config?: RequestConfig) =>
+      request<T>(endpoint, { ...config, method: "DELETE" }),
+  };
 }
 
 // Singleton instance for the app
 export const httpClient = createHttpClient({
   baseUrl: import.meta.env.VITE_API_BASE_URL || "/api",
-})
+});

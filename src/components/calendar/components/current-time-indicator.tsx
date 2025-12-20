@@ -1,35 +1,40 @@
-import type React from "react"
+import type React from "react";
 
-import { useState, useEffect } from "react"
+import { useEffect, useState } from "react";
 
 interface CurrentTimeIndicatorProps {
-  startHour?: number
+  startHour?: number;
 }
 
-export function CurrentTimeIndicator({ startHour = 6 }: CurrentTimeIndicatorProps) {
-  const [currentTime, setCurrentTime] = useState(new Date())
+export function CurrentTimeIndicator({
+  startHour = 6,
+}: CurrentTimeIndicatorProps) {
+  const [currentTime, setCurrentTime] = useState(new Date());
 
   useEffect(() => {
     const interval = setInterval(() => {
-      setCurrentTime(new Date())
-    }, 60000)
+      setCurrentTime(new Date());
+    }, 60000);
 
-    return () => clearInterval(interval)
-  }, [])
+    return () => clearInterval(interval);
+  }, []);
 
-  const hours = currentTime.getHours()
-  const minutes = currentTime.getMinutes()
+  const hours = currentTime.getHours();
+  const minutes = currentTime.getMinutes();
 
-  const hourOffset = hours - startHour
-  const minuteOffset = minutes / 60
-  const topPosition = (hourOffset + minuteOffset) * 80
+  const hourOffset = hours - startHour;
+  const minuteOffset = minutes / 60;
+  const topPosition = (hourOffset + minuteOffset) * 80;
 
   if (hours < startHour || hours >= 23) {
-    return null
+    return null;
   }
 
   return (
-    <div className="absolute left-0 right-0 z-20 pointer-events-none" style={{ top: `${topPosition}px` }}>
+    <div
+      className="absolute left-0 right-0 z-20 pointer-events-none"
+      style={{ top: `${topPosition}px` }}
+    >
       {/* Line */}
       <div
         className="absolute left-3 right-0 h-[2px] bg-primary shadow-[0_0_6px_2px_rgba(139,92,246,0.4)]"
@@ -41,24 +46,27 @@ export function CurrentTimeIndicator({ startHour = 6 }: CurrentTimeIndicatorProp
         style={{ top: "-6px" }}
       />
     </div>
-  )
+  );
 }
 
-export function useAutoScrollToNow(containerRef: React.RefObject<HTMLElement | null>, startHour = 6) {
+export function useAutoScrollToNow(
+  containerRef: React.RefObject<HTMLElement | null>,
+  startHour = 6,
+) {
   useEffect(() => {
-    if (!containerRef.current) return
+    if (!containerRef.current) return;
 
-    const now = new Date()
-    const hours = now.getHours()
-    const minutes = now.getMinutes()
+    const now = new Date();
+    const hours = now.getHours();
+    const minutes = now.getMinutes();
 
-    const hourOffset = hours - startHour
-    const minuteOffset = minutes / 60
-    const scrollPosition = (hourOffset + minuteOffset) * 80 - 200
+    const hourOffset = hours - startHour;
+    const minuteOffset = minutes / 60;
+    const scrollPosition = (hourOffset + minuteOffset) * 80 - 200;
 
     containerRef.current.scrollTo({
       top: Math.max(0, scrollPosition),
       behavior: "smooth",
-    })
-  }, [containerRef, startHour])
+    });
+  }, [containerRef, startHour]);
 }
