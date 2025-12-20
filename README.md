@@ -19,6 +19,8 @@ FamilyHub is designed as a **modular dashboard** with distinct sections/modules:
 ### Frontend (Current Repository)
 - **React 18** with TypeScript
 - **Vite 7.x** - Build tool and dev server
+- **TanStack Query** - Server state management with caching
+- **Zustand** - Client UI state management
 - **Tailwind CSS v4** - Utility-first CSS with PostCSS
 - **shadcn/ui** - Component library built on Radix UI primitives
 - **date-fns** - Date manipulation library
@@ -67,38 +69,35 @@ The dev server will start at `http://localhost:5173`
 ```
 family-hub/
 ├── src/
+│   ├── api/                         # API layer (TanStack Query + services)
+│   │   ├── client/                  # HTTP client and error handling
+│   │   ├── hooks/                   # TanStack Query hooks (useCalendarEvents, etc.)
+│   │   ├── services/                # API service functions
+│   │   ├── mocks/                   # Mock API handlers (dev mode)
+│   │   └── index.ts                 # Barrel exports
+│   ├── providers/                   # React context providers
+│   │   └── query-provider.tsx       # TanStack Query setup with DevTools
+│   ├── stores/                      # Zustand UI state management
+│   │   ├── app-store.ts             # App-wide state (activeTab, sidebar)
+│   │   ├── calendar-store.ts        # Calendar UI state (date, view, filters)
+│   │   └── index.ts                 # Barrel exports + selectors
 │   ├── components/
 │   │   ├── ui/                      # shadcn/ui primitives (button, input, label)
 │   │   ├── shared/                  # Cross-module shared components
-│   │   │   ├── calendar-header.tsx
+│   │   │   ├── app-header.tsx
 │   │   │   ├── navigation-tabs.tsx
 │   │   │   ├── sidebar-menu.tsx
-│   │   │   ├── theme-provider.tsx
 │   │   │   └── index.ts             # Barrel exports
 │   │   ├── calendar/                # Calendar module (MVP)
+│   │   │   ├── CalendarModule.tsx   # Module orchestrator (wires API to views)
 │   │   │   ├── views/               # Calendar view components
-│   │   │   │   ├── daily-calendar.tsx
-│   │   │   │   ├── weekly-calendar.tsx
-│   │   │   │   ├── monthly-calendar.tsx
-│   │   │   │   ├── schedule-calendar.tsx
-│   │   │   │   └── index.ts
-│   │   │   ├── components/          # Calendar-specific components
-│   │   │   │   ├── calendar-event.tsx
-│   │   │   │   ├── current-time-indicator.tsx
-│   │   │   │   ├── calendar-view-switcher.tsx
-│   │   │   │   ├── add-event-button.tsx
-│   │   │   │   ├── add-event-modal.tsx
-│   │   │   │   ├── today-button.tsx
-│   │   │   │   ├── family-filter-pills.tsx
-│   │   │   │   ├── calendar-filter.tsx
-│   │   │   │   └── index.ts
-│   │   │   └── index.ts             # Main barrel (re-exports all)
+│   │   │   └── components/          # Calendar-specific components
 │   │   ├── chores-view.tsx          # Chores module (Phase 3)
 │   │   ├── meals-view.tsx           # Meals module (Phase 3)
 │   │   ├── lists-view.tsx           # Lists module (Phase 3)
 │   │   └── photos-view.tsx          # Photos module (Phase 3)
-│   ├── lib/                         # Utilities and data
-│   │   ├── calendar-data.ts         # Data models and mock data
+│   ├── lib/                         # Utilities and types
+│   │   ├── types/                   # Centralized TypeScript types
 │   │   └── utils.ts                 # Utility functions (cn)
 │   ├── App.tsx                      # Main application component
 │   ├── main.tsx                     # Application entry point
@@ -163,9 +162,9 @@ The application supports 6 family member profiles:
 - shadcn/ui component library
 
 ### 🚧 Phase 1B: Calendar Frontend Polish (Current)
-- [ ] Implement state management (Zustand or React Context)
-- [ ] Create mock API service layer
-- [ ] Add loading states and error handling
+- [x] Implement state management (Zustand for UI, TanStack Query for server state)
+- [x] Create mock API service layer with TanStack Query hooks
+- [x] Add loading states and error handling
 - [ ] Implement form validation with Zod
 - [ ] Optimize event rendering performance
 - [ ] PWA configuration (manifest, service worker)
@@ -209,22 +208,25 @@ The application supports 6 family member profiles:
 
 ## Key Files
 
+### API Layer
+- `src/api/hooks/use-calendar.ts` - TanStack Query hooks for calendar operations
+- `src/api/services/calendar.service.ts` - Calendar API service functions
+- `src/api/mocks/calendar.mock.ts` - Mock handlers with simulated delays
+- `src/providers/query-provider.tsx` - TanStack Query configuration
+
 ### Data Models
-See `src/lib/calendar-data.ts` for:
-- `FamilyMember` - Family member profile type
-- `CalendarEvent` - Calendar event type
-- `ChoreItem` - Chore task type
-- `MealPlan` - Meal planning type
-- Mock data generators
+See `src/lib/types/` for centralized TypeScript types:
+- `calendar.ts` - CalendarEvent, API request/response types
+- `family.ts` - FamilyMember, colorMap
+- `chores.ts` - ChoreItem
+- `meals.ts` - MealPlan
 
 ### Main Components
 - `src/App.tsx` - Main dashboard component
-- `src/components/calendar-header.tsx` - Top navigation bar
-- `src/components/navigation-tabs.tsx` - Left sidebar module switcher
-- `src/components/daily-calendar.tsx` - Day view implementation
-- `src/components/weekly-calendar.tsx` - Week view implementation
-- `src/components/monthly-calendar.tsx` - Month view implementation
-- `src/components/schedule-calendar.tsx` - Schedule/agenda view
+- `src/components/calendar/CalendarModule.tsx` - Calendar module orchestrator
+- `src/components/shared/app-header.tsx` - Top navigation bar
+- `src/components/shared/navigation-tabs.tsx` - Left sidebar module switcher
+- `src/components/calendar/views/` - Day, Week, Month, Schedule views
 
 ## Documentation
 

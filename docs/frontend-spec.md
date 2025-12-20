@@ -68,8 +68,9 @@ FamilyHub is a **modular family dashboard** Progressive Web Application (PWA) de
 - **date-fns** for date manipulation and formatting
 
 **State Management:**
-- **Zustand** for global state (domain-specific stores)
-- Stores: `app-store.ts`, `calendar-store.ts`, `chores-store.ts`, `meals-store.ts`, `lists-store.ts`, `photos-store.ts`
+- **TanStack Query** for server state (API data with caching, background refetching)
+- **Zustand** for UI state (domain-specific stores)
+- Stores: `app-store.ts`, `calendar-store.ts` (UI preferences only)
 - Filter preferences persisted to localStorage via Zustand middleware
 
 **Utilities:**
@@ -80,24 +81,35 @@ FamilyHub is a **modular family dashboard** Progressive Web Application (PWA) de
 ```
 /Users/joe.bor/code/family-hub/
 ├── src/
-│   ├── stores/                          # Zustand state management
+│   ├── api/                             # API layer (TanStack Query + services)
+│   │   ├── client/                      # HTTP client and error handling
+│   │   │   ├── http-client.ts           # Fetch wrapper with interceptors
+│   │   │   └── api-error.ts             # ApiException, ApiErrorCode
+│   │   ├── hooks/                       # TanStack Query hooks
+│   │   │   └── use-calendar.ts          # useCalendarEvents, useCreateEvent, etc.
+│   │   ├── services/                    # API service functions
+│   │   │   └── calendar.service.ts      # CRUD operations for calendar
+│   │   ├── mocks/                       # Mock API handlers (dev mode)
+│   │   │   ├── calendar.mock.ts         # Mock event data and handlers
+│   │   │   └── delay.ts                 # Simulated network delay
+│   │   └── index.ts                     # Barrel exports
+│   │
+│   ├── providers/                       # React context providers
+│   │   └── query-provider.tsx           # TanStack Query setup with DevTools
+│   │
+│   ├── stores/                          # Zustand UI state management
 │   │   ├── app-store.ts                 # App-wide state (activeTab, sidebar)
-│   │   ├── calendar-store.ts            # Calendar state (date, view, events, filter)
-│   │   ├── chores-store.ts              # Chores module state
-│   │   ├── meals-store.ts               # Meals module state
-│   │   ├── lists-store.ts               # Lists module state
-│   │   ├── photos-store.ts              # Photos module state
+│   │   ├── calendar-store.ts            # Calendar UI state (date, view, filters)
 │   │   └── index.ts                     # Barrel exports + selectors
 │   │
 │   ├── lib/
 │   │   ├── types/                       # Centralized type definitions
-│   │   │   ├── calendar.ts              # CalendarEvent, CalendarViewType, FilterState
+│   │   │   ├── calendar.ts              # CalendarEvent, API types, CalendarViewType
 │   │   │   ├── family.ts                # FamilyMember, colorMap, familyMembers
 │   │   │   ├── chores.ts                # ChoreItem
 │   │   │   ├── meals.ts                 # MealPlan
 │   │   │   └── index.ts                 # Barrel exports
 │   │   │
-│   │   ├── calendar-data.ts             # Sample data generators
 │   │   └── utils.ts                     # Utility functions (cn)
 │   │
 │   ├── components/
@@ -613,21 +625,23 @@ export function WeeklyCalendar({
 
 ## 4. State Management
 
-### 4.1 Current Approach (Zustand - Implemented)
+### 4.1 Current Approach (Hybrid: TanStack Query + Zustand)
 
-**Global State with Domain-Specific Stores:**
+Uses a hybrid approach: **TanStack Query** for server state (API data) and **Zustand** for UI state.
 
-Uses Zustand for lightweight, TypeScript-first global state management. State is organized into domain-specific stores.
+**TanStack Query (Server State):**
+- Calendar events fetched via `useCalendarEvents` hook
+- Automatic caching, background refetching, and stale-while-revalidate
+- Optimistic updates for mutations (`useCreateEvent`, `useUpdateEvent`, `useDeleteEvent`)
+- Query keys factory for type-safe cache management
+
+**Zustand (UI State):**
 
 **Store Architecture:**
 ```
 src/stores/
 ├── app-store.ts        # App-wide state (activeTab, sidebar, familyName)
-├── calendar-store.ts   # Calendar state (date, view, events, filter, navigation)
-├── chores-store.ts     # Chores module state
-├── meals-store.ts      # Meals module state
-├── lists-store.ts      # Lists module state
-├── photos-store.ts     # Photos module state
+├── calendar-store.ts   # Calendar UI state (date, view, filter preferences)
 └── index.ts            # Barrel exports + computed selectors
 ```
 
@@ -996,91 +1010,75 @@ export const colorMap: Record<ColorKey, ColorVariant> = {
 
 ## 6. API Integration Layer
 
-### 6.1 API Client Setup (Phase 2)
+### 6.1 Current Implementation (TanStack Query + Mock API)
 
-**Location:** `src/lib/api/client.ts`
+The API layer uses TanStack Query for data fetching with a service-based architecture. Currently uses mock handlers in development, ready for backend integration in Phase 2.
 
+**Architecture:**
+```
+src/api/
+├── client/                    # HTTP client and error handling
+│   ├── http-client.ts         # Fetch wrapper with interceptors
+│   └── api-error.ts           # ApiException, ApiErrorCode
+├── hooks/                     # TanStack Query hooks
+│   └── use-calendar.ts        # Calendar data hooks
+├── services/                  # API service functions
+│   └── calendar.service.ts    # CRUD operations
+├── mocks/                     # Mock handlers (dev mode)
+│   ├── calendar.mock.ts       # Mock event data
+│   └── delay.ts               # Simulated network delay
+└── index.ts                   # Barrel exports
+```
+
+**Query Keys Factory:**
 ```typescript
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080/api"
-
-class ApiClient {
-  private baseURL: string
-
-  constructor(baseURL: string) {
-    this.baseURL = baseURL
-  }
-
-  async get<T>(path: string): Promise<T> {
-    const response = await fetch(`${this.baseURL}${path}`, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-      },
-    })
-
-    if (!response.ok) {
-      throw new ApiError(`HTTP ${response.status}: ${response.statusText}`)
-    }
-
-    return response.json()
-  }
-
-  async post<T>(path: string, data: unknown): Promise<T> {
-    const response = await fetch(`${this.baseURL}${path}`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(data),
-    })
-
-    if (!response.ok) {
-      throw new ApiError(`HTTP ${response.status}: ${response.statusText}`)
-    }
-
-    return response.json()
-  }
-
-  async put<T>(path: string, data: unknown): Promise<T> {
-    const response = await fetch(`${this.baseURL}${path}`, {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(data),
-    })
-
-    if (!response.ok) {
-      throw new ApiError(`HTTP ${response.status}: ${response.statusText}`)
-    }
-
-    return response.json()
-  }
-
-  async delete<T>(path: string): Promise<T> {
-    const response = await fetch(`${this.baseURL}${path}`, {
-      method: "DELETE",
-      headers: {
-        "Content-Type": "application/json",
-      },
-    })
-
-    if (!response.ok) {
-      throw new ApiError(`HTTP ${response.status}: ${response.statusText}`)
-    }
-
-    return response.json()
-  }
+// Type-safe query keys for cache management
+export const calendarKeys = {
+  all: ["calendar"] as const,
+  events: () => [...calendarKeys.all, "events"] as const,
+  eventList: (params?: GetEventsParams) => [...calendarKeys.events(), params] as const,
+  event: (id: string) => [...calendarKeys.events(), id] as const,
 }
+```
 
-export const apiClient = new ApiClient(API_BASE_URL)
+**Available Hooks:**
+```typescript
+// Queries
+useCalendarEvents(params?)     // Fetch events with date range/member filters
+useCalendarEvent(id)           // Fetch single event by ID
 
-class ApiError extends Error {
-  constructor(message: string) {
-    super(message)
-    this.name = "ApiError"
-  }
+// Mutations (with optimistic updates)
+useCreateEvent(callbacks?)     // Create event, invalidates cache
+useUpdateEvent(callbacks?)     // Update event with optimistic UI
+useDeleteEvent(callbacks?)     // Delete event with optimistic removal
+```
+
+**Usage in Components:**
+```typescript
+import { useCalendarEvents, useCreateEvent } from "@/api"
+
+function CalendarModule() {
+  const { data, isLoading, error } = useCalendarEvents({
+    startDate: "2025-01-01",
+    endDate: "2025-01-31",
+  })
+
+  const createEvent = useCreateEvent({
+    onSuccess: () => console.log("Event created!"),
+    onError: (err) => console.error(err.message),
+  })
+
+  if (isLoading) return <Loading />
+  if (error) return <Error message={error.message} />
+
+  return <EventList events={data?.data ?? []} />
 }
+```
+
+**Mock API Toggle:**
+```typescript
+// src/api/mocks/index.ts
+export const USE_MOCK_API = true  // Toggle for development
 ```
 
 ### 6.2 API Contract
