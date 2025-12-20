@@ -1,4 +1,5 @@
 {
+  "includeCoAuthoredBy": false,
   "permissions": {
     "allow": [
       "Bash(npm install:*)",
@@ -13,7 +14,37 @@
       "WebSearch",
       "Bash(claude mcp remove:*)",
       "Bash(claude mcp add playwright --transport stdio -- npx -y @playwright/mcp@latest)",
-      "Bash(cat:*)"
+      "Bash(cat:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git checkout:*)",
+      "Bash(git push:*)",
+      "Bash(gh pr create:*)",
+      "Bash(mkdir:*)",
+      "Bash(git restore:*)",
+      "Bash(ls:*)"
+    ]
+  },
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "afplay /System/Library/Sounds/Funk.aiff"
+          }
+        ]
+      }
+    ],
+    "Notification": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "afplay /System/Library/Sounds/Purr.aiff"
+          }
+        ]
+      }
     ]
   }
 }
