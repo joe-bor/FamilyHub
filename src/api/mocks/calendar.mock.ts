@@ -8,6 +8,7 @@ import type {
 } from "@/lib/types"
 import { ApiException, ApiErrorCode } from "@/api/client"
 import { simulateApiCall } from "./delay"
+import { parseISO, startOfDay, isWithinInterval } from "date-fns"
 
 // Event templates for generating sample data
 const eventTemplates = [
@@ -84,15 +85,26 @@ export const calendarMockHandlers = {
 
     let events = [...mockEvents]
 
-    // Apply filters
-    if (params?.startDate) {
-      const start = new Date(params.startDate)
-      events = events.filter((e) => new Date(e.date) >= start)
+    // Apply date range filter
+    // Use date-fns to normalize dates and avoid timezone issues
+    if (params?.startDate && params?.endDate) {
+      // Parse ISO date strings and normalize to start of day in local timezone
+      const start = startOfDay(parseISO(params.startDate))
+      const end = startOfDay(parseISO(params.endDate))
+
+      events = events.filter((e) => {
+        const eventDate = startOfDay(new Date(e.date))
+        return isWithinInterval(eventDate, { start, end })
+      })
+    } else if (params?.startDate) {
+      const start = startOfDay(parseISO(params.startDate))
+      events = events.filter((e) => startOfDay(new Date(e.date)) >= start)
+    } else if (params?.endDate) {
+      const end = startOfDay(parseISO(params.endDate))
+      events = events.filter((e) => startOfDay(new Date(e.date)) <= end)
     }
-    if (params?.endDate) {
-      const end = new Date(params.endDate)
-      events = events.filter((e) => new Date(e.date) <= end)
-    }
+
+    // Apply member filter
     if (params?.memberId) {
       events = events.filter((e) => e.memberId === params.memberId)
     }
