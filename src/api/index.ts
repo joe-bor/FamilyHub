@@ -1,18 +1,20 @@
 // Client
-export { ApiErrorCode, ApiException, httpClient, type ApiErrorDetails } from "./client"
-
-// Services
-export { calendarService } from "./services"
-
+export {
+  ApiErrorCode,
+  type ApiErrorDetails,
+  ApiException,
+  httpClient,
+} from "./client";
 // Hooks
 export {
   calendarKeys,
-  useCalendarEvents,
   useCalendarEvent,
+  useCalendarEvents,
   useCreateEvent,
-  useUpdateEvent,
   useDeleteEvent,
-} from "./hooks"
-
+  useUpdateEvent,
+} from "./hooks";
 // Mocks
-export { USE_MOCK_API } from "./mocks"
+export { USE_MOCK_API } from "./mocks";
+// Services
+export { calendarService } from "./services";

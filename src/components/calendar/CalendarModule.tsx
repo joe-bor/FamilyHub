@@ -1,101 +1,121 @@
-import { useMemo } from "react"
 import {
-  WeeklyCalendar,
-  DailyCalendar,
-  MonthlyCalendar,
-  ScheduleCalendar,
+  addDays,
+  endOfMonth,
+  endOfWeek,
+  format,
+  startOfMonth,
+  startOfWeek,
+} from "date-fns";
+import { useMemo } from "react";
+import { useCalendarEvents, useCreateEvent } from "@/api";
+import {
   AddEventButton,
   AddEventModal,
   CalendarViewSwitcher,
+  DailyCalendar,
   FamilyFilterPills,
-} from "@/components/calendar"
-import { useCalendarStore, useIsViewingToday } from "@/stores"
-import { useCalendarEvents, useCreateEvent } from "@/api"
-import type { CalendarEvent, CreateEventRequest } from "@/lib/types"
-import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, addDays } from "date-fns"
+  MonthlyCalendar,
+  ScheduleCalendar,
+  WeeklyCalendar,
+} from "@/components/calendar";
+import type { CalendarEvent, CreateEventRequest } from "@/lib/types";
+import { useCalendarStore, useIsViewingToday } from "@/stores";
 
 // Helper to format time consistently (24h -> 12h AM/PM)
 function formatTime(time: string): string {
-  const [hours, minutes] = time.split(":")
-  const hour = Number.parseInt(hours)
-  const ampm = hour >= 12 ? "PM" : "AM"
-  const hour12 = hour % 12 || 12
-  return `${hour12}:${minutes} ${ampm}`
+  const [hours, minutes] = time.split(":");
+  const hour = Number.parseInt(hours, 10);
+  const ampm = hour >= 12 ? "PM" : "AM";
+  const hour12 = hour % 12 || 12;
+  return `${hour12}:${minutes} ${ampm}`;
 }
 
 export function CalendarModule() {
   // Client state from Zustand
-  const currentDate = useCalendarStore((state) => state.currentDate)
-  const calendarView = useCalendarStore((state) => state.calendarView)
-  const filter = useCalendarStore((state) => state.filter)
-  const isAddEventModalOpen = useCalendarStore((state) => state.isAddEventModalOpen)
-  const isViewingToday = useIsViewingToday()
+  const currentDate = useCalendarStore((state) => state.currentDate);
+  const calendarView = useCalendarStore((state) => state.calendarView);
+  const filter = useCalendarStore((state) => state.filter);
+  const isAddEventModalOpen = useCalendarStore(
+    (state) => state.isAddEventModalOpen,
+  );
+  const isViewingToday = useIsViewingToday();
 
   // Client actions from Zustand
-  const goToToday = useCalendarStore((state) => state.goToToday)
-  const goToPrevious = useCalendarStore((state) => state.goToPrevious)
-  const goToNext = useCalendarStore((state) => state.goToNext)
-  const selectDateAndSwitchToDaily = useCalendarStore((state) => state.selectDateAndSwitchToDaily)
-  const openAddEventModal = useCalendarStore((state) => state.openAddEventModal)
-  const closeAddEventModal = useCalendarStore((state) => state.closeAddEventModal)
+  const goToToday = useCalendarStore((state) => state.goToToday);
+  const goToPrevious = useCalendarStore((state) => state.goToPrevious);
+  const goToNext = useCalendarStore((state) => state.goToNext);
+  const selectDateAndSwitchToDaily = useCalendarStore(
+    (state) => state.selectDateAndSwitchToDaily,
+  );
+  const openAddEventModal = useCalendarStore(
+    (state) => state.openAddEventModal,
+  );
+  const closeAddEventModal = useCalendarStore(
+    (state) => state.closeAddEventModal,
+  );
 
   // Compute date range based on current view for API query
   const dateRange = useMemo(() => {
-    let start: Date
-    let end: Date
+    let start: Date;
+    let end: Date;
 
     switch (calendarView) {
       case "daily":
-        start = currentDate
-        end = currentDate
-        break
+        start = currentDate;
+        end = currentDate;
+        break;
       case "weekly":
-        start = startOfWeek(currentDate, { weekStartsOn: 0 })
-        end = endOfWeek(currentDate, { weekStartsOn: 0 })
-        break
+        start = startOfWeek(currentDate, { weekStartsOn: 0 });
+        end = endOfWeek(currentDate, { weekStartsOn: 0 });
+        break;
       case "monthly":
-        start = startOfMonth(currentDate)
-        end = endOfMonth(currentDate)
-        break
+        start = startOfMonth(currentDate);
+        end = endOfMonth(currentDate);
+        break;
       case "schedule":
-        start = currentDate
-        end = addDays(currentDate, 14)
-        break
+        start = currentDate;
+        end = addDays(currentDate, 14);
+        break;
       default:
-        start = startOfWeek(currentDate, { weekStartsOn: 0 })
-        end = endOfWeek(currentDate, { weekStartsOn: 0 })
+        start = startOfWeek(currentDate, { weekStartsOn: 0 });
+        end = endOfWeek(currentDate, { weekStartsOn: 0 });
     }
 
     return {
       startDate: format(start, "yyyy-MM-dd"),
       endDate: format(end, "yyyy-MM-dd"),
-    }
-  }, [currentDate, calendarView])
+    };
+  }, [currentDate, calendarView]);
 
   // Server state from TanStack Query
-  const { data: eventsResponse, isLoading, isError, error } = useCalendarEvents(dateRange)
+  const {
+    data: eventsResponse,
+    isLoading,
+    isError,
+    error,
+  } = useCalendarEvents(dateRange);
 
   // Mutations
   const createEvent = useCreateEvent({
     onSuccess: () => {
-      closeAddEventModal()
+      closeAddEventModal();
     },
-  })
+  });
 
   // Client-side filtering based on filter state
   const events = useMemo(() => {
-    const rawEvents = eventsResponse?.data ?? []
+    const rawEvents = eventsResponse?.data ?? [];
     return rawEvents.filter((event) => {
-      const memberMatches = filter.selectedMembers.includes(event.memberId)
-      const allDayMatches = filter.showAllDayEvents || !event.isAllDay
-      return memberMatches && allDayMatches
-    })
-  }, [eventsResponse, filter])
+      const memberMatches = filter.selectedMembers.includes(event.memberId);
+      const allDayMatches = filter.showAllDayEvents || !event.isAllDay;
+      return memberMatches && allDayMatches;
+    });
+  }, [eventsResponse, filter]);
 
   const handleEventClick = (event: CalendarEvent) => {
-    console.log("Event clicked:", event)
+    console.log("Event clicked:", event);
     // Future: Open event detail modal
-  }
+  };
 
   const handleAddEvent = (eventData: Omit<CalendarEvent, "id">) => {
     const request: CreateEventRequest = {
@@ -106,23 +126,23 @@ export function CalendarModule() {
       memberId: eventData.memberId,
       isAllDay: eventData.isAllDay,
       location: eventData.location,
-    }
-    createEvent.mutate(request)
-  }
+    };
+    createEvent.mutate(request);
+  };
 
   const commonProps = {
     events,
     currentDate,
     onEventClick: handleEventClick,
     filter,
-  }
+  };
 
   const navigationProps = {
     onPrevious: goToPrevious,
     onNext: goToNext,
     onToday: goToToday,
     isViewingToday,
-  }
+  };
 
   const renderCalendarView = () => {
     // Show loading state
@@ -131,7 +151,7 @@ export function CalendarModule() {
         <div className="flex-1 flex items-center justify-center">
           <div className="text-muted-foreground">Loading events...</div>
         </div>
-      )
+      );
     }
 
     // Show error state
@@ -142,14 +162,14 @@ export function CalendarModule() {
             Error loading events: {error?.message ?? "Unknown error"}
           </div>
         </div>
-      )
+      );
     }
 
     switch (calendarView) {
       case "daily":
-        return <DailyCalendar {...commonProps} {...navigationProps} />
+        return <DailyCalendar {...commonProps} {...navigationProps} />;
       case "weekly":
-        return <WeeklyCalendar {...commonProps} {...navigationProps} />
+        return <WeeklyCalendar {...commonProps} {...navigationProps} />;
       case "monthly":
         return (
           <MonthlyCalendar
@@ -157,13 +177,13 @@ export function CalendarModule() {
             {...navigationProps}
             onDateSelect={selectDateAndSwitchToDaily}
           />
-        )
+        );
       case "schedule":
-        return <ScheduleCalendar {...commonProps} />
+        return <ScheduleCalendar {...commonProps} />;
       default:
-        return <WeeklyCalendar {...commonProps} {...navigationProps} />
+        return <WeeklyCalendar {...commonProps} {...navigationProps} />;
     }
-  }
+  };
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
@@ -187,5 +207,5 @@ export function CalendarModule() {
         isPending={createEvent.isPending}
       />
     </div>
-  )
+  );
 }

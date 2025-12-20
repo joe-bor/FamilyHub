@@ -1,15 +1,24 @@
-import { X, Home, Users, Settings, HelpCircle, LogOut, Bell, Palette } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { familyMembers, colorMap } from "@/lib/types"
-import { cn } from "@/lib/utils"
-import { useAppStore } from "@/stores"
+import {
+  Bell,
+  HelpCircle,
+  Home,
+  LogOut,
+  Palette,
+  Settings,
+  Users,
+  X,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { colorMap, familyMembers } from "@/lib/types";
+import { cn } from "@/lib/utils";
+import { useAppStore } from "@/stores";
 
 export function SidebarMenu() {
-  const isOpen = useAppStore((state) => state.isSidebarOpen)
-  const closeSidebar = useAppStore((state) => state.closeSidebar)
-  const familyName = useAppStore((state) => state.familyName)
+  const isOpen = useAppStore((state) => state.isSidebarOpen);
+  const closeSidebar = useAppStore((state) => state.closeSidebar);
+  const familyName = useAppStore((state) => state.familyName);
 
-  if (!isOpen) return null
+  if (!isOpen) return null;
 
   const menuItems = [
     { icon: Home, label: "Home", active: true },
@@ -18,19 +27,24 @@ export function SidebarMenu() {
     { icon: Palette, label: "Customize" },
     { icon: Settings, label: "Settings" },
     { icon: HelpCircle, label: "Help & Support" },
-  ]
+  ];
 
   return (
     <>
       {/* Backdrop */}
-      <div className="fixed inset-0 z-40 bg-foreground/20 backdrop-blur-sm" onClick={closeSidebar} />
+      <div
+        className="fixed inset-0 z-40 bg-foreground/20 backdrop-blur-sm"
+        onClick={closeSidebar}
+      />
 
       {/* Sidebar */}
       <aside className="fixed left-0 top-0 bottom-0 z-50 w-72 bg-card shadow-2xl flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-border">
           <div>
-            <h2 className="text-lg font-bold text-foreground">{familyName} Family</h2>
+            <h2 className="text-lg font-bold text-foreground">
+              {familyName} Family
+            </h2>
             <p className="text-sm text-muted-foreground">Calendar Settings</p>
           </div>
           <Button variant="ghost" size="icon" onClick={closeSidebar}>
@@ -40,10 +54,12 @@ export function SidebarMenu() {
 
         {/* Family Members */}
         <div className="p-4 border-b border-border">
-          <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Family Members</h3>
+          <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+            Family Members
+          </h3>
           <div className="space-y-2">
             {familyMembers.map((member) => {
-              const colors = colorMap[member.color]
+              const colors = colorMap[member.color];
               return (
                 <button
                   key={member.id}
@@ -57,9 +73,11 @@ export function SidebarMenu() {
                   >
                     {member.name.charAt(0)}
                   </div>
-                  <span className="text-sm font-medium text-foreground">{member.name}</span>
+                  <span className="text-sm font-medium text-foreground">
+                    {member.name}
+                  </span>
                 </button>
-              )
+              );
             })}
           </div>
         </div>
@@ -68,7 +86,7 @@ export function SidebarMenu() {
         <nav className="flex-1 p-4">
           <div className="space-y-1">
             {menuItems.map((item, index) => {
-              const Icon = item.icon
+              const Icon = item.icon;
               return (
                 <button
                   key={index}
@@ -82,7 +100,7 @@ export function SidebarMenu() {
                   <Icon className="h-5 w-5" />
                   {item.label}
                 </button>
-              )
+              );
             })}
           </div>
         </nav>
@@ -96,5 +114,5 @@ export function SidebarMenu() {
         </div>
       </aside>
     </>
-  )
+  );
 }

@@ -1,24 +1,24 @@
-import { create } from "zustand"
+import { create } from "zustand";
 
 export interface ListItem {
-  id: string
-  text: string
-  completed: boolean
+  id: string;
+  text: string;
+  completed: boolean;
 }
 
 export interface List {
-  id: string
-  name: string
-  items: ListItem[]
+  id: string;
+  name: string;
+  items: ListItem[];
 }
 
 interface ListsState {
-  lists: List[]
-  addList: (name: string) => void
-  deleteList: (id: string) => void
-  addItem: (listId: string, text: string) => void
-  toggleItem: (listId: string, itemId: string) => void
-  deleteItem: (listId: string, itemId: string) => void
+  lists: List[];
+  addList: (name: string) => void;
+  deleteList: (id: string) => void;
+  addItem: (listId: string, text: string) => void;
+  toggleItem: (listId: string, itemId: string) => void;
+  deleteItem: (listId: string, itemId: string) => void;
 }
 
 export const useListsStore = create<ListsState>((set) => ({
@@ -26,10 +26,7 @@ export const useListsStore = create<ListsState>((set) => ({
 
   addList: (name) =>
     set((state) => ({
-      lists: [
-        ...state.lists,
-        { id: `list-${Date.now()}`, name, items: [] },
-      ],
+      lists: [...state.lists, { id: `list-${Date.now()}`, name, items: [] }],
     })),
 
   deleteList: (id) =>
@@ -48,7 +45,7 @@ export const useListsStore = create<ListsState>((set) => ({
                 { id: `item-${Date.now()}`, text, completed: false },
               ],
             }
-          : list
+          : list,
       ),
     })),
 
@@ -61,10 +58,10 @@ export const useListsStore = create<ListsState>((set) => ({
               items: list.items.map((item) =>
                 item.id === itemId
                   ? { ...item, completed: !item.completed }
-                  : item
+                  : item,
               ),
             }
-          : list
+          : list,
       ),
     })),
 
@@ -76,7 +73,7 @@ export const useListsStore = create<ListsState>((set) => ({
               ...list,
               items: list.items.filter((item) => item.id !== itemId),
             }
-          : list
+          : list,
       ),
     })),
-}))
+}));

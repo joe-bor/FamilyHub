@@ -1,19 +1,24 @@
-import type React from "react"
-import { Calendar, CalendarDays, CalendarRange, List } from "lucide-react"
-import { cn } from "@/lib/utils"
-import { useCalendarStore } from "@/stores"
-import type { CalendarViewType } from "@/lib/types"
+import { Calendar, CalendarDays, CalendarRange, List } from "lucide-react";
+import type React from "react";
+import type { CalendarViewType } from "@/lib/types";
+import { cn } from "@/lib/utils";
+import { useCalendarStore } from "@/stores";
 
-const views: { id: CalendarViewType; label: string; icon: React.ReactNode }[] = [
-  { id: "daily", label: "Day", icon: <Calendar className="w-4 h-4" /> },
-  { id: "weekly", label: "Week", icon: <CalendarDays className="w-4 h-4" /> },
-  { id: "monthly", label: "Month", icon: <CalendarRange className="w-4 h-4" /> },
-  { id: "schedule", label: "Schedule", icon: <List className="w-4 h-4" /> },
-]
+const views: { id: CalendarViewType; label: string; icon: React.ReactNode }[] =
+  [
+    { id: "daily", label: "Day", icon: <Calendar className="w-4 h-4" /> },
+    { id: "weekly", label: "Week", icon: <CalendarDays className="w-4 h-4" /> },
+    {
+      id: "monthly",
+      label: "Month",
+      icon: <CalendarRange className="w-4 h-4" />,
+    },
+    { id: "schedule", label: "Schedule", icon: <List className="w-4 h-4" /> },
+  ];
 
 export function CalendarViewSwitcher() {
-  const calendarView = useCalendarStore((state) => state.calendarView)
-  const setCalendarView = useCalendarStore((state) => state.setCalendarView)
+  const calendarView = useCalendarStore((state) => state.calendarView);
+  const setCalendarView = useCalendarStore((state) => state.setCalendarView);
 
   return (
     <div className="flex items-center gap-1 bg-muted rounded-lg p-1">
@@ -33,5 +38,5 @@ export function CalendarViewSwitcher() {
         </button>
       ))}
     </div>
-  )
+  );
 }

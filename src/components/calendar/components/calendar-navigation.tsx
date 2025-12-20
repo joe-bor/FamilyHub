@@ -1,13 +1,13 @@
-import { ChevronLeft, ChevronRight, CalendarCheck } from "lucide-react"
-import { cn } from "@/lib/utils"
-import { Button } from "@/components/ui/button"
+import { CalendarCheck, ChevronLeft, ChevronRight } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 interface CalendarNavigationProps {
-  label: string
-  onPrevious: () => void
-  onNext: () => void
-  onToday: () => void
-  isViewingToday: boolean
+  label: string;
+  onPrevious: () => void;
+  onNext: () => void;
+  onToday: () => void;
+  isViewingToday: boolean;
 }
 
 export function CalendarNavigation({
@@ -57,5 +57,5 @@ export function CalendarNavigation({
         <ChevronRight className="h-5 w-5" />
       </Button>
     </div>
-  )
+  );
 }

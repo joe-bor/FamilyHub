@@ -1,30 +1,30 @@
-import { AppHeader, NavigationTabs, SidebarMenu } from "@/components/shared"
-import { CalendarModule } from "@/components/calendar"
-import { ChoresView } from "@/components/chores-view"
-import { MealsView } from "@/components/meals-view"
-import { ListsView } from "@/components/lists-view"
-import { PhotosView } from "@/components/photos-view"
-import { useAppStore, type ModuleType } from "@/stores"
+import { CalendarModule } from "@/components/calendar";
+import { ChoresView } from "@/components/chores-view";
+import { ListsView } from "@/components/lists-view";
+import { MealsView } from "@/components/meals-view";
+import { PhotosView } from "@/components/photos-view";
+import { AppHeader, NavigationTabs, SidebarMenu } from "@/components/shared";
+import { type ModuleType, useAppStore } from "@/stores";
 
 function renderModule(activeModule: ModuleType) {
   switch (activeModule) {
     case "calendar":
-      return <CalendarModule />
+      return <CalendarModule />;
     case "chores":
-      return <ChoresView />
+      return <ChoresView />;
     case "meals":
-      return <MealsView />
+      return <MealsView />;
     case "lists":
-      return <ListsView />
+      return <ListsView />;
     case "photos":
-      return <PhotosView />
+      return <PhotosView />;
     default:
-      return null
+      return null;
   }
 }
 
 export default function FamilyHub() {
-  const activeModule = useAppStore((state) => state.activeModule)
+  const activeModule = useAppStore((state) => state.activeModule);
 
   return (
     <div className="h-screen flex flex-col bg-background">
@@ -39,5 +39,5 @@ export default function FamilyHub() {
 
       <SidebarMenu />
     </div>
-  )
+  );
 }

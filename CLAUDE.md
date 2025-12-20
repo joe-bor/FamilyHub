@@ -5,10 +5,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Commands
 
 ```bash
-npm run dev      # Start dev server at localhost:5173
-npm run build    # Type-check with tsc then build with Vite
-npm run lint     # Run ESLint
-npm run preview  # Preview production build
+npm run dev          # Start dev server at localhost:5173
+npm run build        # Type-check with tsc then build with Vite
+npm run lint         # Run Biome linter
+npm run lint:fix     # Fix lint issues automatically
+npm run format       # Format all files with Biome
+npm run format:check # Check formatting without changes
+npm run preview      # Preview production build
 ```
 
 ## Architecture

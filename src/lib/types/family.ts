@@ -1,8 +1,8 @@
 export interface FamilyMember {
-  id: string
-  name: string
-  color: string
-  avatar?: string
+  id: string;
+  name: string;
+  color: string;
+  avatar?: string;
 }
 
 export const familyMembers: FamilyMember[] = [
@@ -12,9 +12,12 @@ export const familyMembers: FamilyMember[] = [
   { id: "4", name: "Grandma", color: "bg-pink" },
   { id: "5", name: "Grandpa", color: "bg-purple" },
   { id: "6", name: "Family", color: "bg-yellow" },
-]
+];
 
-export const colorMap: Record<string, { bg: string; text: string; light: string }> = {
+export const colorMap: Record<
+  string,
+  { bg: string; text: string; light: string }
+> = {
   "bg-coral": {
     bg: "bg-[#e88470]",
     text: "text-[#8b3d32]",
@@ -50,4 +53,4 @@ export const colorMap: Record<string, { bg: string; text: string; light: string 
     text: "text-[#7a4f10]",
     light: "bg-[#fef0dc]",
   },
-}
+};
