@@ -22,7 +22,9 @@
       "Bash(gh pr create:*)",
       "Bash(mkdir:*)",
       "Bash(git restore:*)",
-      "Bash(ls:*)"
+      "Bash(ls:*)",
+      "Bash(find:*)",
+      "Bash(git pull:*)"
     ]
   },
   "hooks": {

@@ -3,6 +3,7 @@ import {
   endOfMonth,
   endOfWeek,
   format,
+  parseISO,
   startOfMonth,
   startOfWeek,
 } from "date-fns";
@@ -10,15 +11,16 @@ import { useMemo } from "react";
 import { useCalendarEvents, useCreateEvent } from "@/api";
 import {
   AddEventButton,
-  AddEventModal,
   CalendarViewSwitcher,
   DailyCalendar,
+  EventFormModal,
   FamilyFilterPills,
   MonthlyCalendar,
   ScheduleCalendar,
   WeeklyCalendar,
 } from "@/components/calendar";
 import type { CalendarEvent, CreateEventRequest } from "@/lib/types";
+import type { EventFormData } from "@/lib/validations";
 import { useCalendarStore, useIsViewingToday } from "@/stores";
 
 // Helper to format time consistently (24h -> 12h AM/PM)
@@ -117,15 +119,15 @@ export function CalendarModule() {
     // Future: Open event detail modal
   };
 
-  const handleAddEvent = (eventData: Omit<CalendarEvent, "id">) => {
+  const handleAddEvent = (formData: EventFormData) => {
     const request: CreateEventRequest = {
-      title: eventData.title,
-      startTime: formatTime(eventData.startTime),
-      endTime: formatTime(eventData.endTime),
-      date: eventData.date.toISOString(),
-      memberId: eventData.memberId,
-      isAllDay: eventData.isAllDay,
-      location: eventData.location,
+      title: formData.title,
+      startTime: formatTime(formData.startTime),
+      endTime: formatTime(formData.endTime),
+      date: parseISO(formData.date).toISOString(),
+      memberId: formData.memberId,
+      isAllDay: formData.isAllDay,
+      location: formData.location,
     };
     createEvent.mutate(request);
   };
@@ -200,10 +202,11 @@ export function CalendarModule() {
       <AddEventButton onClick={openAddEventModal} />
 
       {/* Modal */}
-      <AddEventModal
+      <EventFormModal
+        mode="add"
         isOpen={isAddEventModalOpen}
         onClose={closeAddEventModal}
-        onAdd={handleAddEvent}
+        onSubmit={handleAddEvent}
         isPending={createEvent.isPending}
       />
     </div>
