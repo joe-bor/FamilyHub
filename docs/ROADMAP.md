@@ -1,6 +1,6 @@
 # FamilyHub Development Roadmap
 
-**Last Updated:** December 20, 2024
+**Last Updated:** December 20, 2025
 
 ## Current Status
 
@@ -23,7 +23,7 @@
 - [x] CalendarModule orchestrator component
 - [x] TanStack Query API layer with mock handlers
 - [x] Loading states and error handling
-- [ ] Form validation with Zod
+- [x] Form validation with Zod
 - [ ] Optimize event rendering performance
 
 **Sprint 5: PWA & Responsive**
