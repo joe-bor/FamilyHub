@@ -1,0 +1,75 @@
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import type { CalendarEvent } from "@/lib/types";
+import type { EventFormData } from "@/lib/validations";
+import { EventForm } from "./event-form";
+
+interface EventFormModalProps {
+  mode: "add" | "edit";
+  isOpen: boolean;
+  onClose: () => void;
+  onSubmit: (data: EventFormData) => void;
+  isPending?: boolean;
+  /** For edit mode: the event to pre-populate the form with */
+  event?: CalendarEvent;
+}
+
+/**
+ * Transform a CalendarEvent to EventFormData for the form
+ * Handles date formatting and any field mapping
+ */
+function eventToFormData(event: CalendarEvent): Partial<EventFormData> {
+  // Format date as yyyy-MM-dd string
+  const dateStr =
+    event.date instanceof Date
+      ? event.date.toISOString().split("T")[0]
+      : String(event.date).split("T")[0];
+
+  return {
+    title: event.title,
+    date: dateStr,
+    startTime: event.startTime,
+    endTime: event.endTime,
+    memberId: event.memberId,
+    location: event.location,
+    isAllDay: event.isAllDay,
+  };
+}
+
+function EventFormModal({
+  mode,
+  isOpen,
+  onClose,
+  onSubmit,
+  isPending = false,
+  event,
+}: EventFormModalProps) {
+  const title = mode === "add" ? "Add Event" : "Edit Event";
+
+  // For edit mode, convert the event to form data
+  const defaultValues = event ? eventToFormData(event) : undefined;
+
+  return (
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent>
+        <DialogHeader onClose={onClose}>
+          <DialogTitle>{title}</DialogTitle>
+        </DialogHeader>
+        <EventForm
+          mode={mode}
+          defaultValues={defaultValues}
+          onSubmit={onSubmit}
+          onCancel={onClose}
+          isPending={isPending}
+        />
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+export { EventFormModal };
+export type { EventFormModalProps };
