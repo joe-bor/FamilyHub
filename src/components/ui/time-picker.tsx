@@ -1,5 +1,5 @@
 import { Clock } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Popover,
@@ -82,65 +82,126 @@ interface WheelColumnProps<T extends string | number> {
   value: T;
   onChange: (value: T) => void;
   formatItem?: (item: T) => string;
+  infiniteScroll?: boolean;
 }
+
+// Number of times to repeat items for infinite scroll effect
+const REPEAT_COUNT = 5;
 
 function WheelColumn<T extends string | number>({
   items,
   value,
   onChange,
   formatItem = (item) => String(item),
+  infiniteScroll = true,
 }: WheelColumnProps<T>) {
   const containerRef = useRef<HTMLDivElement>(null);
   const isScrollingRef = useRef(false);
-  const scrollTimeoutRef = useRef<NodeJS.Timeout>();
-  const hasInitializedRef = useRef(false);
+  const scrollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isRepositioningRef = useRef(false);
 
+  const itemCount = items.length;
   const selectedIndex = items.indexOf(value);
+
+  // For infinite scroll: repeat items 5x. Otherwise use items as-is.
+  const displayItems = useMemo(
+    () =>
+      infiniteScroll
+        ? Array.from({ length: REPEAT_COUNT }, () => items).flat()
+        : items,
+    [items, infiniteScroll],
+  );
+  const middleSetOffset = infiniteScroll
+    ? Math.floor(REPEAT_COUNT / 2) * itemCount
+    : 0;
+  const totalItemCount = displayItems.length;
+
+  // Get the scroll position for a given item index (in original items array)
+  const getScrollPosition = useCallback(
+    (index: number) => (middleSetOffset + index) * ITEM_HEIGHT,
+    [middleSetOffset],
+  );
 
   // Scroll to selected item on mount and when value changes externally
   useEffect(() => {
     if (containerRef.current && !isScrollingRef.current) {
-      const targetScroll = selectedIndex * ITEM_HEIGHT;
+      const targetScroll = getScrollPosition(selectedIndex);
 
-      // Use requestAnimationFrame to ensure DOM is ready
       requestAnimationFrame(() => {
         if (containerRef.current) {
           containerRef.current.scrollTop = targetScroll;
-          hasInitializedRef.current = true;
         }
       });
     }
-  }, [selectedIndex]);
+  }, [selectedIndex, getScrollPosition]);
+
+  // Handle infinite scroll repositioning (only when infiniteScroll is enabled)
+  const repositionIfNeeded = useCallback(() => {
+    if (!infiniteScroll) return;
+    if (!containerRef.current || isRepositioningRef.current) return;
+
+    const scrollTop = containerRef.current.scrollTop;
+    const totalHeight = totalItemCount * ITEM_HEIGHT;
+
+    // Define boundaries for repositioning (when user scrolls too far from center)
+    const lowerBound = itemCount * ITEM_HEIGHT;
+    const upperBound = totalHeight - itemCount * 2 * ITEM_HEIGHT;
+
+    if (scrollTop < lowerBound || scrollTop > upperBound) {
+      isRepositioningRef.current = true;
+
+      // Calculate current position within the item cycle
+      const currentOffset = scrollTop % (itemCount * ITEM_HEIGHT);
+      // Jump to equivalent position in middle set
+      const newScrollTop = middleSetOffset * ITEM_HEIGHT + currentOffset;
+
+      containerRef.current.scrollTop = newScrollTop;
+
+      requestAnimationFrame(() => {
+        isRepositioningRef.current = false;
+      });
+    }
+  }, [infiniteScroll, itemCount, middleSetOffset, totalItemCount]);
 
   const handleScroll = useCallback(() => {
-    if (!containerRef.current) return;
+    if (!containerRef.current || isRepositioningRef.current) return;
 
     isScrollingRef.current = true;
 
-    // Clear existing timeout
     if (scrollTimeoutRef.current) {
       clearTimeout(scrollTimeoutRef.current);
     }
 
-    // Debounce the selection
     scrollTimeoutRef.current = setTimeout(() => {
-      if (!containerRef.current) return;
+      if (!containerRef.current || isRepositioningRef.current) return;
 
       const scrollTop = containerRef.current.scrollTop;
       const index = Math.round(scrollTop / ITEM_HEIGHT);
-      const clampedIndex = Math.max(0, Math.min(index, items.length - 1));
+
+      // Get the actual item index (modulo original items length for infinite, clamped for finite)
+      const actualIndex = infiniteScroll
+        ? ((index % itemCount) + itemCount) % itemCount
+        : Math.max(0, Math.min(index, itemCount - 1));
 
       // Snap to position
-      containerRef.current.scrollTop = clampedIndex * ITEM_HEIGHT;
+      const snappedScroll = infiniteScroll
+        ? index * ITEM_HEIGHT
+        : actualIndex * ITEM_HEIGHT;
+      containerRef.current.scrollTop = snappedScroll;
 
-      const newValue = items[clampedIndex];
+      const newValue = items[actualIndex];
       if (newValue !== value) {
         onChange(newValue);
       }
 
+      // Reposition to middle set after snapping (only for infinite scroll)
+      if (infiniteScroll) {
+        repositionIfNeeded();
+      }
+
       isScrollingRef.current = false;
     }, 100);
-  }, [items, value, onChange]);
+  }, [items, itemCount, value, onChange, infiniteScroll, repositionIfNeeded]);
 
   // Cleanup timeout on unmount
   useEffect(() => {
@@ -151,14 +212,15 @@ function WheelColumn<T extends string | number>({
     };
   }, []);
 
-  const handleItemClick = (item: T, index: number) => {
+  const handleItemClick = (actualIndex: number) => {
     if (containerRef.current) {
+      const targetScroll = getScrollPosition(actualIndex);
       containerRef.current.scrollTo({
-        top: index * ITEM_HEIGHT,
+        top: targetScroll,
         behavior: "smooth",
       });
     }
-    onChange(item);
+    onChange(items[actualIndex]);
   };
 
   // Calculate padding to center first/last items
@@ -166,36 +228,44 @@ function WheelColumn<T extends string | number>({
 
   return (
     <div className="relative h-[200px] w-16 overflow-hidden">
-      {/* Selection highlight - z-0 so it's behind items */}
+      {/* Selection highlight - z-0, with accent color and subtle border */}
       <div
-        className="pointer-events-none absolute inset-x-0 top-1/2 -translate-y-1/2 rounded-md bg-accent"
+        className="pointer-events-none absolute inset-x-1 top-1/2 -translate-y-1/2 rounded-lg bg-primary/15 ring-1 ring-primary/30"
         style={{ height: ITEM_HEIGHT }}
       />
 
-      {/* Scrollable content - z-10 so items appear above highlight */}
+      {/* Scrollable content with touch optimizations */}
       <div
         ref={containerRef}
         onScroll={handleScroll}
         className="relative z-10 h-full overflow-y-auto scrollbar-hide"
         style={{
           scrollSnapType: "y mandatory",
+          WebkitOverflowScrolling: "touch",
+          touchAction: "pan-y",
+          overscrollBehavior: "contain",
         }}
       >
         {/* Top padding */}
         <div style={{ height: paddingHeight }} />
 
-        {items.map((item, index) => {
+        {displayItems.map((item, displayIndex) => {
+          // Calculate the actual index in the original items array
+          const actualIndex = infiniteScroll
+            ? displayIndex % itemCount
+            : displayIndex;
           const isSelected = item === value;
+
           return (
             <button
-              key={item}
+              key={`${item}-${displayIndex}`}
               type="button"
-              onClick={() => handleItemClick(item, index)}
+              onClick={() => handleItemClick(actualIndex)}
               className={cn(
-                "flex w-full items-center justify-center text-lg transition-all",
+                "flex w-full items-center justify-center transition-all duration-150",
                 isSelected
-                  ? "font-semibold text-foreground"
-                  : "text-muted-foreground",
+                  ? "text-xl font-bold text-primary"
+                  : "text-base text-muted-foreground/70",
               )}
               style={{
                 height: ITEM_HEIGHT,
@@ -313,6 +383,7 @@ function TimePicker({
             items={PERIODS}
             value={period}
             onChange={setPeriod}
+            infiniteScroll={false}
           />
         </div>
 
