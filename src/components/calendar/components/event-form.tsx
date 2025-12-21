@@ -97,7 +97,8 @@ function EventForm({
   };
 
   // Convert date string to Date object for DatePicker display
-  const dateAsDate = dateValue ? new Date(dateValue) : undefined;
+  // Append T00:00:00 to parse as local midnight (not UTC)
+  const dateAsDate = dateValue ? new Date(dateValue + "T00:00:00") : undefined;
 
   const isAdd = mode === "add";
   const submitText = isAdd ? "Add Event" : "Save Changes";
