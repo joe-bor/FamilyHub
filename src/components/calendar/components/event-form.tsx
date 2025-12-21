@@ -152,7 +152,6 @@ function EventForm({
             onChange={(time) => setValue("endTime", time)}
             placeholder="End time"
             error={!!errors.endTime}
-            minTime={startTimeValue}
           />
           <FormError message={errors.endTime?.message} />
         </div>
