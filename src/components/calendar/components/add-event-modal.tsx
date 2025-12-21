@@ -1,12 +1,15 @@
+import { zodResolver } from "@hookform/resolvers/zod";
 import { parseISO } from "date-fns";
 import { X } from "lucide-react";
-import type React from "react";
-import { useState } from "react";
+import { useEffect } from "react";
+import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
+import { FormError } from "@/components/ui/form-error";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { type CalendarEvent, colorMap, familyMembers } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { type EventFormData, eventFormSchema } from "@/lib/validations";
 
 interface AddEventModalProps {
   isOpen: boolean;
@@ -21,33 +24,47 @@ export function AddEventModal({
   onAdd,
   isPending = false,
 }: AddEventModalProps) {
-  const [title, setTitle] = useState("");
-  const [date, setDate] = useState("");
-  const [startTime, setStartTime] = useState("");
-  const [endTime, setEndTime] = useState("");
-  const [selectedMember, setSelectedMember] = useState(familyMembers[0].id);
+  const {
+    register,
+    handleSubmit,
+    setValue,
+    watch,
+    reset,
+    formState: { errors },
+  } = useForm<EventFormData>({
+    resolver: zodResolver(eventFormSchema),
+    defaultValues: {
+      title: "",
+      date: "",
+      startTime: "",
+      endTime: "",
+      memberId: familyMembers[0].id,
+    },
+  });
+
+  const selectedMember = watch("memberId");
+
+  // Reset form when modal closes
+  useEffect(() => {
+    if (!isOpen) {
+      reset();
+    }
+  }, [isOpen, reset]);
 
   if (!isOpen) return null;
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!title || !date || !startTime || !endTime || isPending) return;
+  const onSubmit = (data: EventFormData) => {
+    if (isPending) return;
 
     onAdd({
-      title,
-      // Use parseISO to correctly parse date string as local time, not UTC
-      date: parseISO(date),
-      startTime,
-      endTime,
-      memberId: selectedMember,
+      title: data.title,
+      date: parseISO(data.date),
+      startTime: data.startTime,
+      endTime: data.endTime,
+      memberId: data.memberId,
     });
 
-    // Reset form (modal close is handled by parent on success)
-    setTitle("");
-    setDate("");
-    setStartTime("");
-    setEndTime("");
-    setSelectedMember(familyMembers[0].id);
+    reset();
   };
 
   return (
@@ -56,6 +73,7 @@ export function AddEventModal({
       <div
         className="absolute inset-0 bg-foreground/20 backdrop-blur-sm"
         onClick={onClose}
+        onKeyDown={(e) => e.key === "Escape" && onClose()}
       />
 
       {/* Modal */}
@@ -67,16 +85,17 @@ export function AddEventModal({
           </Button>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="title">Event Name</Label>
             <Input
               id="title"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
+              {...register("title")}
               placeholder="Enter event name"
-              className="bg-input"
+              className={cn("bg-input", errors.title && "border-destructive")}
+              aria-invalid={!!errors.title}
             />
+            <FormError message={errors.title?.message} />
           </div>
 
           <div className="space-y-2">
@@ -84,10 +103,11 @@ export function AddEventModal({
             <Input
               id="date"
               type="date"
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-              className="bg-input"
+              {...register("date")}
+              className={cn("bg-input", errors.date && "border-destructive")}
+              aria-invalid={!!errors.date}
             />
+            <FormError message={errors.date?.message} />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
@@ -96,20 +116,28 @@ export function AddEventModal({
               <Input
                 id="startTime"
                 type="time"
-                value={startTime}
-                onChange={(e) => setStartTime(e.target.value)}
-                className="bg-input"
+                {...register("startTime")}
+                className={cn(
+                  "bg-input",
+                  errors.startTime && "border-destructive",
+                )}
+                aria-invalid={!!errors.startTime}
               />
+              <FormError message={errors.startTime?.message} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="endTime">End Time</Label>
               <Input
                 id="endTime"
                 type="time"
-                value={endTime}
-                onChange={(e) => setEndTime(e.target.value)}
-                className="bg-input"
+                {...register("endTime")}
+                className={cn(
+                  "bg-input",
+                  errors.endTime && "border-destructive",
+                )}
+                aria-invalid={!!errors.endTime}
               />
+              <FormError message={errors.endTime?.message} />
             </div>
           </div>
 
@@ -124,7 +152,7 @@ export function AddEventModal({
                   <button
                     key={member.id}
                     type="button"
-                    onClick={() => setSelectedMember(member.id)}
+                    onClick={() => setValue("memberId", member.id)}
                     className={cn(
                       "flex items-center gap-2 px-3 py-2 rounded-full text-sm font-medium transition-all",
                       isSelected
@@ -138,6 +166,7 @@ export function AddEventModal({
                 );
               })}
             </div>
+            <FormError message={errors.memberId?.message} />
           </div>
 
           <div className="flex gap-3 pt-4">
