@@ -2,7 +2,13 @@
 export { type ModuleType, useAppStore } from "./app-store";
 
 // Calendar Store
-export { useCalendarStore, useIsViewingToday } from "./calendar-store";
+export {
+  useCalendarActions,
+  useCalendarState,
+  useCalendarStore,
+  useFilterPillsState,
+  useIsViewingToday,
+} from "./calendar-store";
 
 // Module Stores
 export { useChoresStore } from "./chores-store";
