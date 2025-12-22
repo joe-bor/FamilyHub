@@ -7,7 +7,7 @@ import {
   startOfMonth,
   startOfWeek,
 } from "date-fns";
-import { useMemo } from "react";
+import { Profiler, useMemo } from "react";
 import { useCalendarEvents, useCreateEvent } from "@/api";
 import {
   AddEventButton,
@@ -19,6 +19,7 @@ import {
   ScheduleCalendar,
   WeeklyCalendar,
 } from "@/components/calendar";
+import { logProfilerData } from "@/lib/perf-utils";
 import type { CalendarEvent, CreateEventRequest } from "@/lib/types";
 import type { EventFormData } from "@/lib/validations";
 import { useCalendarStore, useIsViewingToday } from "@/stores";
@@ -188,27 +189,29 @@ export function CalendarModule() {
   };
 
   return (
-    <div className="flex-1 flex flex-col overflow-hidden">
-      {/* Toolbar */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 px-4 py-3 bg-card border-b border-border">
-        <CalendarViewSwitcher />
-        <FamilyFilterPills />
+    <Profiler id="CalendarModule" onRender={logProfilerData}>
+      <div className="flex-1 flex flex-col overflow-hidden">
+        {/* Toolbar */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 px-4 py-3 bg-card border-b border-border">
+          <CalendarViewSwitcher />
+          <FamilyFilterPills />
+        </div>
+
+        {/* Calendar View */}
+        {renderCalendarView()}
+
+        {/* FAB */}
+        <AddEventButton onClick={openAddEventModal} />
+
+        {/* Modal */}
+        <EventFormModal
+          mode="add"
+          isOpen={isAddEventModalOpen}
+          onClose={closeAddEventModal}
+          onSubmit={handleAddEvent}
+          isPending={createEvent.isPending}
+        />
       </div>
-
-      {/* Calendar View */}
-      {renderCalendarView()}
-
-      {/* FAB */}
-      <AddEventButton onClick={openAddEventModal} />
-
-      {/* Modal */}
-      <EventFormModal
-        mode="add"
-        isOpen={isAddEventModalOpen}
-        onClose={closeAddEventModal}
-        onSubmit={handleAddEvent}
-        isPending={createEvent.isPending}
-      />
-    </div>
+    </Profiler>
   );
 }
