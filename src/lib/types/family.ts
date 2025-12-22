@@ -14,6 +14,23 @@ export const familyMembers: FamilyMember[] = [
   { id: "6", name: "Family", color: "bg-yellow" },
 ];
 
+/**
+ * O(1) lookup map for family members by ID.
+ * Use getFamilyMember() instead of familyMembers.find() for better performance.
+ */
+export const familyMemberMap: Map<string, FamilyMember> = new Map(
+  familyMembers.map((m) => [m.id, m]),
+);
+
+/**
+ * Get a family member by ID with O(1) lookup.
+ * @param id - The family member ID
+ * @returns The family member or undefined if not found
+ */
+export function getFamilyMember(id: string): FamilyMember | undefined {
+  return familyMemberMap.get(id);
+}
+
 export const colorMap: Record<
   string,
   { bg: string; text: string; light: string }
