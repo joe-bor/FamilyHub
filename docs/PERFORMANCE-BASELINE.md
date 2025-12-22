@@ -1,98 +1,112 @@
-# Calendar Performance Baseline
+# Calendar Performance Optimization
 
 **Date:** December 22, 2024
 **Branch:** `perf/calendar-rendering-optimization`
 
-## Test Environment
+## Optimizations Implemented
 
-- **Device:** [Your device]
-- **Browser:** Chrome [version]
-- **React Version:** 19.2.0
-- **React Compiler:** Not enabled (baseline)
+### 1. React Compiler (Commit 1)
+Enabled `babel-plugin-react-compiler` for automatic memoization of components and values.
 
-## Measurement Methodology
+**Verification:** In React DevTools, optimized components show "Memo ✨" badge.
 
-1. **React DevTools Profiler** - Record interactions, measure render counts and durations
-2. **Chrome DevTools Performance** - Record 5-second traces
-3. **`<Profiler>` component** - Programmatic render timing
+### 2. Shared Time Utilities (Commit 2)
+Created `src/lib/time-utils.ts` with pre-compiled regex for time parsing.
 
-## Baseline Metrics
+**Before:** Each view had its own `parseTime()` function compiling regex on every call
+**After:** Single shared module with compiled `TIME_REGEX` constant
 
-### Daily View
+### 3. O(1) Family Member Lookup (Commits 2, 5)
+Replaced `familyMembers.find((m) => m.id === id)` with `getFamilyMember(id)` Map lookup.
 
-| Metric | Value | Notes |
-|--------|-------|-------|
-| Initial mount | ms | |
-| Navigation (prev/next) | ms | |
-| Filter toggle | ms | |
-| CalendarEventCard renders | count | Per navigation |
+**Before:** O(n) array search on every lookup (5 iterations max)
+**After:** O(1) Map.get() lookup
 
-### Weekly View
+**Files updated:**
+- `src/lib/types/family.ts` - Added `familyMemberMap` and `getFamilyMember()`
+- `src/components/calendar/components/calendar-event.tsx`
+- `src/components/calendar/views/monthly-calendar.tsx`
+- `src/components/calendar/views/schedule-calendar.tsx`
+- `src/components/chores-view.tsx`
 
-| Metric | Value | Notes |
-|--------|-------|-------|
-| Initial mount | ms | |
-| Navigation (prev/next) | ms | |
-| Filter toggle | ms | |
-| CalendarEventCard renders | count | Per navigation |
-| getEventsForDay() calls | 14 | Per render (7 headers + 7 columns) |
+### 4. Zustand Compound Selectors (Commit 3)
+Reduced Zustand store subscriptions using `useShallow` compound selectors.
 
-### Monthly View
+**Before:** CalendarModule had 10 separate `useCalendarStore()` calls
+**After:** 2 compound selectors (`useCalendarState`, `useCalendarActions`)
 
-| Metric | Value | Notes |
-|--------|-------|-------|
-| Initial mount | ms | |
-| Navigation (prev/next) | ms | |
-| Filter toggle | ms | |
-| getEventsForDay() calls | ~70 | Per render (35 days × 2) |
+**Why still needed:** React Compiler doesn't optimize external store subscriptions.
 
-### Schedule View
+### 5. Pre-computed Events by Date (Commit 4)
+Replaced per-cell filtering with single-pass pre-computation using `useMemo`.
 
-| Metric | Value | Notes |
-|--------|-------|-------|
-| Initial mount | ms | |
-| Navigation (prev/next) | ms | |
-| Filter toggle | ms | |
-| getGroupedEvents() calls | 1 | But iterates 14 days internally |
+**Weekly View:**
+- Before: `getEventsForDay()` called 14× per render (7 headers + 7 columns)
+- After: Single `eventsByDay` Map computed once via `useMemo`
 
-## Known Issues (Pre-optimization)
+**Monthly View:**
+- Before: `getEventsForDay()` + `getMembersWithEvents()` called ~70× per render
+- After: Single `dayData` Map with events + members computed once via `useMemo`
 
-1. **CalendarEventCard not memoized** - Re-renders on every parent update
-2. **O(n) family member lookups** - `familyMembers.find()` called per event
-3. **Duplicate parseTime()** - Regex compiled on every call in daily/weekly views
-4. **Multiple Zustand subscriptions** - 10 separate `useCalendarStore()` calls in CalendarModule
-5. **Redundant filtering** - getEventsForDay() called 14x (weekly) or 70x (monthly) per render
+**Daily View:**
+- Added `useMemo` for `dayEvents` filtering
+- Added `useMemo` for O(n²) `calculateEventColumns()` layout computation
+
+**Schedule View:**
+- Wrapped grouped events computation in `useMemo`
+- Fixed buggy time sorting (was using `parseInt` which only reads first digit)
 
 ---
 
-## Post-Optimization Metrics
+## Measurement Methodology
 
-_To be filled in after optimizations are complete._
+### Option 1: React DevTools Profiler
 
-### After React Compiler (Commit 1)
+1. Open React DevTools → Profiler tab
+2. Click Record, perform interactions, click Stop
+3. Examine:
+   - **Flamegraph:** Render duration per component
+   - **Ranked:** Slowest components
+   - **Commit count:** Number of re-renders
 
-| View | Mount | Navigation | Filter Toggle | Improvement |
-|------|-------|------------|---------------|-------------|
-| Daily | ms | ms | ms | % |
-| Weekly | ms | ms | ms | % |
-| Monthly | ms | ms | ms | % |
-| Schedule | ms | ms | ms | % |
+### Option 2: Console Profiler Output
 
-### After All Optimizations (Commit 6)
+The `<Profiler>` wrapper in `CalendarModule` logs render timing to console:
+```
+CalendarModule [mount]: actual=12.5ms, base=45.2ms
+CalendarModule [update]: actual=2.3ms, base=45.2ms
+```
 
-| View | Mount | Navigation | Filter Toggle | Total Improvement |
-|------|-------|------------|---------------|-------------------|
-| Daily | ms | ms | ms | % |
-| Weekly | ms | ms | ms | % |
-| Monthly | ms | ms | ms | % |
-| Schedule | ms | ms | ms | % |
+### Option 3: Chrome DevTools Performance
 
-## Summary
+1. Open DevTools → Performance tab
+2. Click Record, interact for 5 seconds, Stop
+3. Examine:
+   - **Scripting time:** JS execution
+   - **Rendering time:** Layout/paint
+   - **Main thread activity:** Long tasks
 
-| Optimization | Impact |
-|--------------|--------|
-| React Compiler | % improvement |
-| O(1) member lookups | % improvement |
-| Pre-computed eventsByDay | % improvement |
-| Zustand compound selectors | % improvement |
-| **Total** | **% improvement** |
+---
+
+## Expected Improvements
+
+| Optimization | Expected Impact |
+|--------------|-----------------|
+| React Compiler | 20-40% fewer re-renders (auto-memoization) |
+| O(1) member lookups | Negligible for 5 members, matters at scale |
+| Pre-computed eventsByDay | 70× fewer filter operations in monthly view |
+| Zustand compound selectors | 5× fewer subscription checks |
+| Shared time-utils | Regex compiled once vs per-call |
+
+---
+
+## Verification Checklist
+
+- [ ] React DevTools shows "Memo ✨" on CalendarEventCard, CalendarNavigation, etc.
+- [ ] Monthly view renders without calling `getEventsForDay` (function removed)
+- [ ] Weekly view `eventsByDay` computed once per filter/navigation change
+- [ ] Console shows Profiler output on calendar interactions
+- [ ] `npm run build` passes
+- [ ] All calendar views render correctly
+- [ ] Filter pills toggle correctly
+- [ ] Navigation (prev/next/today) works
