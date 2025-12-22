@@ -1,15 +1,12 @@
 import { Check } from "lucide-react";
 import { colorMap, familyMembers } from "@/lib/types";
 import { cn } from "@/lib/utils";
-import { useCalendarStore } from "@/stores";
+import { useFilterPillsState } from "@/stores";
 
 export function FamilyFilterPills() {
-  const filter = useCalendarStore((state) => state.filter);
-  const toggleMember = useCalendarStore((state) => state.toggleMember);
-  const toggleAllMembers = useCalendarStore((state) => state.toggleAllMembers);
-  const toggleAllDayEvents = useCalendarStore(
-    (state) => state.toggleAllDayEvents,
-  );
+  // Compound selector with shallow comparison (4 separate calls → 1)
+  const { filter, toggleMember, toggleAllMembers, toggleAllDayEvents } =
+    useFilterPillsState();
 
   const allSelected = filter.selectedMembers.length === familyMembers.length;
   const noneSelected = filter.selectedMembers.length === 0;

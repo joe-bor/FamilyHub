@@ -22,7 +22,11 @@ import {
 import { logProfilerData } from "@/lib/perf-utils";
 import type { CalendarEvent, CreateEventRequest } from "@/lib/types";
 import type { EventFormData } from "@/lib/validations";
-import { useCalendarStore, useIsViewingToday } from "@/stores";
+import {
+  useCalendarActions,
+  useCalendarState,
+  useIsViewingToday,
+} from "@/stores";
 
 // Helper to format time consistently (24h -> 12h AM/PM)
 function formatTime(time: string): string {
@@ -34,28 +38,20 @@ function formatTime(time: string): string {
 }
 
 export function CalendarModule() {
-  // Client state from Zustand
-  const currentDate = useCalendarStore((state) => state.currentDate);
-  const calendarView = useCalendarStore((state) => state.calendarView);
-  const filter = useCalendarStore((state) => state.filter);
-  const isAddEventModalOpen = useCalendarStore(
-    (state) => state.isAddEventModalOpen,
-  );
+  // Client state from Zustand (compound selector with shallow comparison)
+  const { currentDate, calendarView, filter, isAddEventModalOpen } =
+    useCalendarState();
   const isViewingToday = useIsViewingToday();
 
-  // Client actions from Zustand
-  const goToToday = useCalendarStore((state) => state.goToToday);
-  const goToPrevious = useCalendarStore((state) => state.goToPrevious);
-  const goToNext = useCalendarStore((state) => state.goToNext);
-  const selectDateAndSwitchToDaily = useCalendarStore(
-    (state) => state.selectDateAndSwitchToDaily,
-  );
-  const openAddEventModal = useCalendarStore(
-    (state) => state.openAddEventModal,
-  );
-  const closeAddEventModal = useCalendarStore(
-    (state) => state.closeAddEventModal,
-  );
+  // Client actions from Zustand (compound selector)
+  const {
+    goToToday,
+    goToPrevious,
+    goToNext,
+    selectDateAndSwitchToDaily,
+    openAddEventModal,
+    closeAddEventModal,
+  } = useCalendarActions();
 
   // Compute date range based on current view for API query
   const dateRange = useMemo(() => {

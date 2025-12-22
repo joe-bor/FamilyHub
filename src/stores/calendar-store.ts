@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+import { useShallow } from "zustand/shallow";
 import type { CalendarViewType, FilterState } from "@/lib/types";
 import { familyMembers } from "@/lib/types";
 
@@ -171,3 +172,49 @@ export const useIsViewingToday = () =>
         return true;
     }
   });
+
+/**
+ * Compound selector for calendar state.
+ * Combines multiple state values into a single subscription with shallow comparison.
+ */
+export const useCalendarState = () =>
+  useCalendarStore(
+    useShallow((state) => ({
+      currentDate: state.currentDate,
+      calendarView: state.calendarView,
+      filter: state.filter,
+      isAddEventModalOpen: state.isAddEventModalOpen,
+    })),
+  );
+
+/**
+ * Compound selector for calendar actions.
+ * Combines multiple actions into a single subscription.
+ */
+export const useCalendarActions = () =>
+  useCalendarStore(
+    useShallow((state) => ({
+      goToToday: state.goToToday,
+      goToPrevious: state.goToPrevious,
+      goToNext: state.goToNext,
+      setDate: state.setDate,
+      selectDateAndSwitchToDaily: state.selectDateAndSwitchToDaily,
+      setCalendarView: state.setCalendarView,
+      openAddEventModal: state.openAddEventModal,
+      closeAddEventModal: state.closeAddEventModal,
+    })),
+  );
+
+/**
+ * Compound selector for filter pills component.
+ * Combines filter state and toggle actions.
+ */
+export const useFilterPillsState = () =>
+  useCalendarStore(
+    useShallow((state) => ({
+      filter: state.filter,
+      toggleMember: state.toggleMember,
+      toggleAllMembers: state.toggleAllMembers,
+      toggleAllDayEvents: state.toggleAllDayEvents,
+    })),
+  );
