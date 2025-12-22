@@ -1,6 +1,8 @@
 import { Clock, MapPin } from "lucide-react";
 import type React from "react";
-import { type CalendarEvent, colorMap, familyMembers } from "@/lib/types";
+import { useMemo } from "react";
+import { compareEventsByTime } from "@/lib/time-utils";
+import { type CalendarEvent, colorMap, getFamilyMember } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import type { FilterState } from "../components/calendar-filter";
 
@@ -19,8 +21,9 @@ export function ScheduleCalendar({
 }: ScheduleCalendarProps) {
   const today = new Date();
 
-  // Get events for the next 14 days grouped by date
-  const getGroupedEvents = () => {
+  // Memoize grouped events for the next 14 days
+  // Fixed buggy time sorting (was using broken parseInt logic)
+  const groupedEvents = useMemo(() => {
     const grouped: { date: Date; events: CalendarEvent[] }[] = [];
 
     for (let i = 0; i < 14; i++) {
@@ -35,13 +38,7 @@ export function ScheduleCalendar({
           const allDayMatches = filter.showAllDayEvents || !event.isAllDay;
           return dateMatches && memberMatches && allDayMatches;
         })
-        .sort((a, b) => {
-          const timeA = a.startTime.includes("AM") ? 0 : 12;
-          const timeB = b.startTime.includes("AM") ? 0 : 12;
-          const hourA = Number.parseInt(a.startTime, 10) + timeA;
-          const hourB = Number.parseInt(b.startTime, 10) + timeB;
-          return hourA - hourB;
-        });
+        .sort(compareEventsByTime); // Fixed: use proper time comparison
 
       if (dayEvents.length > 0) {
         grouped.push({ date, events: dayEvents });
@@ -49,11 +46,7 @@ export function ScheduleCalendar({
     }
 
     return grouped;
-  };
-
-  const getMemberForEvent = (memberId: string) => {
-    return familyMembers.find((m) => m.id === memberId);
-  };
+  }, [events, currentDate, filter.selectedMembers, filter.showAllDayEvents]);
 
   const isToday = (date: Date) => {
     return date.toDateString() === today.toDateString();
@@ -70,8 +63,6 @@ export function ScheduleCalendar({
       day: "numeric",
     });
   };
-
-  const groupedEvents = getGroupedEvents();
 
   return (
     <div className="flex-1 overflow-y-auto bg-background p-4">
@@ -102,7 +93,7 @@ export function ScheduleCalendar({
               {/* Events list */}
               <div className="space-y-2 pl-2">
                 {dayEvents.map((event) => {
-                  const member = getMemberForEvent(event.memberId);
+                  const member = getFamilyMember(event.memberId);
                   return (
                     <div
                       key={event.id}

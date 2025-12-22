@@ -1,4 +1,9 @@
-import { useRef } from "react";
+import { useMemo, useRef } from "react";
+import {
+  compareEventsByTime,
+  getTimeInMinutes,
+  parseTime,
+} from "@/lib/time-utils";
 import { type CalendarEvent, colorMap, familyMembers } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { CalendarEventCard } from "../components/calendar-event";
@@ -18,20 +23,6 @@ interface DailyCalendarProps {
   onNext: () => void;
   onToday: () => void;
   isViewingToday: boolean;
-}
-
-function parseTime(timeStr: string): { hours: number; minutes: number } {
-  const match = timeStr.match(/(\d+):(\d+)\s*(AM|PM)/i);
-  if (!match) return { hours: 0, minutes: 0 };
-
-  let hours = Number.parseInt(match[1], 10);
-  const minutes = Number.parseInt(match[2], 10);
-  const period = match[3].toUpperCase();
-
-  if (period === "PM" && hours !== 12) hours += 12;
-  if (period === "AM" && hours === 12) hours = 0;
-
-  return { hours, minutes };
 }
 
 const START_HOUR = 6;
@@ -54,11 +45,6 @@ function getEventGridPosition(startTime: string, endTime: string) {
   const height = Math.max(bottom - top, 30); // Minimum 30px height
 
   return { top, height };
-}
-
-function getTimeInMinutes(timeStr: string): number {
-  const { hours, minutes } = parseTime(timeStr);
-  return hours * 60 + minutes;
 }
 
 function eventsOverlap(a: CalendarEvent, b: CalendarEvent): boolean {
@@ -153,7 +139,8 @@ export function DailyCalendar({
     });
   };
 
-  const getEventsForDay = () => {
+  // Memoize filtered and sorted events for the day
+  const dayEvents = useMemo(() => {
     return events
       .filter((event) => {
         const eventDate = new Date(event.date);
@@ -163,14 +150,14 @@ export function DailyCalendar({
         const allDayMatches = filter.showAllDayEvents || !event.isAllDay;
         return dateMatches && memberMatches && allDayMatches;
       })
-      .sort((a, b) => {
-        const timeA = parseTime(a.startTime);
-        const timeB = parseTime(b.startTime);
-        return (
-          timeA.hours * 60 + timeA.minutes - (timeB.hours * 60 + timeB.minutes)
-        );
-      });
-  };
+      .sort(compareEventsByTime);
+  }, [events, currentDate, filter.selectedMembers, filter.showAllDayEvents]);
+
+  // Memoize the O(n²) column layout calculation
+  const eventsWithLayout = useMemo(
+    () => calculateEventColumns(dayEvents),
+    [dayEvents],
+  );
 
   const timeSlots = [
     "6 AM",
@@ -192,9 +179,6 @@ export function DailyCalendar({
     "10 PM",
     "11 PM",
   ];
-
-  const dayEvents = getEventsForDay();
-  const eventsWithLayout = calculateEventColumns(dayEvents);
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden bg-background">

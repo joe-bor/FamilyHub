@@ -1,4 +1,5 @@
-import { useRef } from "react";
+import { useMemo, useRef } from "react";
+import { compareEventsByTime, parseTime } from "@/lib/time-utils";
 import { type CalendarEvent, colorMap, familyMembers } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { CalendarEventCard } from "../components/calendar-event";
@@ -18,20 +19,6 @@ interface WeeklyCalendarProps {
   onNext: () => void;
   onToday: () => void;
   isViewingToday: boolean;
-}
-
-function parseTime(timeStr: string): { hours: number; minutes: number } {
-  const match = timeStr.match(/(\d+):(\d+)\s*(AM|PM)/i);
-  if (!match) return { hours: 0, minutes: 0 };
-
-  let hours = Number.parseInt(match[1], 10);
-  const minutes = Number.parseInt(match[2], 10);
-  const period = match[3].toUpperCase();
-
-  if (period === "PM" && hours !== 12) hours += 12;
-  if (period === "AM" && hours === 12) hours = 0;
-
-  return { hours, minutes };
 }
 
 const ROW_HEIGHT = 80; // px per hour
@@ -65,7 +52,8 @@ export function WeeklyCalendar({
 
   useAutoScrollToNow(scrollContainerRef);
 
-  const getWeekDays = () => {
+  // Memoize week days calculation
+  const weekDays = useMemo(() => {
     const days = [];
     const startOfWeek = new Date(currentDate);
     startOfWeek.setDate(currentDate.getDate() - currentDate.getDay());
@@ -76,9 +64,39 @@ export function WeeklyCalendar({
       days.push(date);
     }
     return days;
-  };
+  }, [currentDate]);
 
-  const weekDays = getWeekDays();
+  // Pre-compute events for all 7 days in a single pass (was 14+ calls to getEventsForDay)
+  const eventsByDay = useMemo(() => {
+    const byDay = new Map<string, CalendarEvent[]>();
+
+    // Initialize all 7 days
+    for (const day of weekDays) {
+      byDay.set(day.toDateString(), []);
+    }
+
+    // Single pass through events - filter and group by date
+    for (const event of events) {
+      const eventDate = new Date(event.date);
+      const dateKey = eventDate.toDateString();
+      const dayEvents = byDay.get(dateKey);
+
+      if (dayEvents) {
+        const memberMatches = filter.selectedMembers.includes(event.memberId);
+        const allDayMatches = filter.showAllDayEvents || !event.isAllDay;
+        if (memberMatches && allDayMatches) {
+          dayEvents.push(event);
+        }
+      }
+    }
+
+    // Sort each day's events by start time
+    for (const dayEvents of byDay.values()) {
+      dayEvents.sort(compareEventsByTime);
+    }
+
+    return byDay;
+  }, [events, weekDays, filter.selectedMembers, filter.showAllDayEvents]);
 
   const formatWeekLabel = () => {
     const startOfWeek = weekDays[0];
@@ -107,22 +125,9 @@ export function WeeklyCalendar({
     return date.toDateString() === today.toDateString();
   };
 
+  // Helper to get events for a day from pre-computed map
   const getEventsForDay = (date: Date) => {
-    return events
-      .filter((event) => {
-        const eventDate = new Date(event.date);
-        const dateMatches = eventDate.toDateString() === date.toDateString();
-        const memberMatches = filter.selectedMembers.includes(event.memberId);
-        const allDayMatches = filter.showAllDayEvents || !event.isAllDay;
-        return dateMatches && memberMatches && allDayMatches;
-      })
-      .sort((a, b) => {
-        const timeA = parseTime(a.startTime);
-        const timeB = parseTime(b.startTime);
-        return (
-          timeA.hours * 60 + timeA.minutes - (timeB.hours * 60 + timeB.minutes)
-        );
-      });
+    return eventsByDay.get(date.toDateString()) ?? [];
   };
 
   const timeSlots = [
