@@ -1,7 +1,12 @@
 import { Check, RotateCcw, Star, Trophy } from "lucide-react";
 import { useState } from "react";
 import { generateSampleChores } from "@/lib/calendar-data";
-import { type ChoreItem, colorMap, familyMembers } from "@/lib/types";
+import {
+  type ChoreItem,
+  colorMap,
+  familyMembers,
+  getFamilyMember,
+} from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 export function ChoresView() {
@@ -29,7 +34,7 @@ export function ChoresView() {
     {} as Record<string, ChoreItem[]>,
   );
 
-  const getMember = (id: string) => familyMembers.find((m) => m.id === id);
+  const getMember = (id: string) => getFamilyMember(id);
 
   return (
     <div className="flex-1 p-6 overflow-y-auto">
