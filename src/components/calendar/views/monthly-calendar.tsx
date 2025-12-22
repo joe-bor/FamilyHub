@@ -1,4 +1,10 @@
-import { type CalendarEvent, colorMap, familyMembers } from "@/lib/types";
+import { useMemo } from "react";
+import {
+  type CalendarEvent,
+  colorMap,
+  type FamilyMember,
+  getFamilyMember,
+} from "@/lib/types";
 import { cn } from "@/lib/utils";
 import type { FilterState } from "../components/calendar-filter";
 import { CalendarNavigation } from "../components/calendar-navigation";
@@ -15,6 +21,11 @@ interface MonthlyCalendarProps {
   isViewingToday: boolean;
 }
 
+interface DayData {
+  events: CalendarEvent[];
+  members: FamilyMember[];
+}
+
 export function MonthlyCalendar({
   events,
   currentDate,
@@ -28,37 +39,72 @@ export function MonthlyCalendar({
 }: MonthlyCalendarProps) {
   const today = new Date();
 
-  const getDaysInMonth = () => {
+  // Memoize the days calculation
+  const days = useMemo(() => {
     const year = currentDate.getFullYear();
     const month = currentDate.getMonth();
 
     const firstDay = new Date(year, month, 1);
     const lastDay = new Date(year, month + 1, 0);
 
-    const days: Date[] = [];
+    const result: Date[] = [];
 
     // Add previous month's trailing days
-    const daysFromPrevMonth = firstDay.getDay(); // 0 = Sunday, 1 = Monday, etc.
-    const prevMonthLastDay = new Date(year, month, 0).getDate(); // Last day of previous month
+    const daysFromPrevMonth = firstDay.getDay();
+    const prevMonthLastDay = new Date(year, month, 0).getDate();
     for (let i = daysFromPrevMonth - 1; i >= 0; i--) {
-      days.push(new Date(year, month - 1, prevMonthLastDay - i));
+      result.push(new Date(year, month - 1, prevMonthLastDay - i));
     }
 
     // Add all days of the current month
     for (let i = 1; i <= lastDay.getDate(); i++) {
-      days.push(new Date(year, month, i));
+      result.push(new Date(year, month, i));
     }
 
     // Add next month's leading days to complete the final week
     let nextMonthDay = 1;
-    while (days.length % 7 !== 0) {
-      days.push(new Date(year, month + 1, nextMonthDay++));
+    while (result.length % 7 !== 0) {
+      result.push(new Date(year, month + 1, nextMonthDay++));
     }
 
-    return days;
-  };
+    return result;
+  }, [currentDate]);
 
-  const days = getDaysInMonth();
+  // Pre-compute all day data in a single pass (was 70+ function calls per render)
+  const dayData = useMemo(() => {
+    const data = new Map<string, DayData>();
+
+    // Initialize all days
+    for (const day of days) {
+      data.set(day.toDateString(), { events: [], members: [] });
+    }
+
+    // Single pass through events - filter and group by date
+    for (const event of events) {
+      const eventDate = new Date(event.date);
+      const dateKey = eventDate.toDateString();
+      const dayInfo = data.get(dateKey);
+
+      if (dayInfo) {
+        const memberMatches = filter.selectedMembers.includes(event.memberId);
+        const allDayMatches = filter.showAllDayEvents || !event.isAllDay;
+        if (memberMatches && allDayMatches) {
+          dayInfo.events.push(event);
+        }
+      }
+    }
+
+    // Compute unique members for each day using O(1) lookup
+    for (const dayInfo of data.values()) {
+      const memberIds = [...new Set(dayInfo.events.map((e) => e.memberId))];
+      dayInfo.members = memberIds
+        .map((id) => getFamilyMember(id))
+        .filter((m): m is FamilyMember => m !== undefined);
+    }
+
+    return data;
+  }, [days, events, filter.selectedMembers, filter.showAllDayEvents]);
+
   const weekDays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
   const isToday = (date: Date) => {
@@ -67,28 +113,6 @@ export function MonthlyCalendar({
 
   const isCurrentMonth = (date: Date) => {
     return date.getMonth() === currentDate.getMonth();
-  };
-
-  const getEventsForDay = (date: Date) => {
-    return events.filter((event) => {
-      const eventDate = new Date(event.date);
-      const dateMatches = eventDate.toDateString() === date.toDateString();
-      const memberMatches = filter.selectedMembers.includes(event.memberId);
-      const allDayMatches = filter.showAllDayEvents || !event.isAllDay;
-      return dateMatches && memberMatches && allDayMatches;
-    });
-  };
-
-  const getMemberForEvent = (memberId: string) => {
-    return familyMembers.find((m) => m.id === memberId);
-  };
-
-  const getMembersWithEvents = (date: Date) => {
-    const dayEvents = getEventsForDay(date);
-    const memberIds = [...new Set(dayEvents.map((e) => e.memberId))];
-    return memberIds
-      .map((id) => familyMembers.find((m) => m.id === id))
-      .filter(Boolean);
   };
 
   const formatMonthLabel = () => {
@@ -123,8 +147,9 @@ export function MonthlyCalendar({
       {/* Calendar grid */}
       <div className="grid grid-cols-7 gap-1 shrink-0">
         {days.map((date, index) => {
-          const dayEvents = getEventsForDay(date);
-          const busyMembers = getMembersWithEvents(date);
+          const { events: dayEvents, members: busyMembers } = dayData.get(
+            date.toDateString(),
+          ) ?? { events: [], members: [] };
 
           return (
             <div
@@ -174,7 +199,7 @@ export function MonthlyCalendar({
               </div>
               <div className="space-y-1">
                 {dayEvents.slice(0, 3).map((event) => {
-                  const member = getMemberForEvent(event.memberId);
+                  const member = getFamilyMember(event.memberId);
                   return (
                     <div
                       key={event.id}
