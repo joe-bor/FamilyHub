@@ -37,8 +37,8 @@ export function logProfilerData(
   phase: "mount" | "update" | "nested-update",
   actualDuration: number,
   baseDuration: number,
-  startTime: number,
-  commitTime: number,
+  _startTime: number,
+  _commitTime: number,
 ) {
   if (import.meta.env.DEV) {
     console.log(
