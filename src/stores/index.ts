@@ -6,6 +6,8 @@ export {
   useCalendarActions,
   useCalendarState,
   useCalendarStore,
+  useEditModalState,
+  useEventDetailState,
   useFilterPillsState,
   useIsViewingToday,
 } from "./calendar-store";

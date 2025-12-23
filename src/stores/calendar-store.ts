@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { useShallow } from "zustand/shallow";
-import type { CalendarViewType, FilterState } from "@/lib/types";
+import type { CalendarEvent, CalendarViewType, FilterState } from "@/lib/types";
 import { familyMembers } from "@/lib/types";
 
 interface CalendarState {
@@ -10,6 +10,14 @@ interface CalendarState {
   calendarView: CalendarViewType;
   filter: FilterState;
   isAddEventModalOpen: boolean;
+
+  // Event detail modal state
+  selectedEvent: CalendarEvent | null;
+  isDetailModalOpen: boolean;
+
+  // Edit modal state (separate from add)
+  editingEvent: CalendarEvent | null;
+  isEditModalOpen: boolean;
 
   // Navigation actions
   goToToday: () => void;
@@ -30,6 +38,14 @@ interface CalendarState {
   // Modal actions
   openAddEventModal: () => void;
   closeAddEventModal: () => void;
+
+  // Detail modal actions
+  openDetailModal: (event: CalendarEvent) => void;
+  closeDetailModal: () => void;
+
+  // Edit modal actions
+  openEditModal: (event: CalendarEvent) => void;
+  closeEditModal: () => void;
 }
 
 export const useCalendarStore = create<CalendarState>()(
@@ -43,6 +59,14 @@ export const useCalendarStore = create<CalendarState>()(
         showAllDayEvents: true,
       },
       isAddEventModalOpen: false,
+
+      // Event detail modal state
+      selectedEvent: null,
+      isDetailModalOpen: false,
+
+      // Edit modal state
+      editingEvent: null,
+      isEditModalOpen: false,
 
       // Navigation actions
       goToToday: () => set({ currentDate: new Date() }),
@@ -134,6 +158,21 @@ export const useCalendarStore = create<CalendarState>()(
       // Modal actions
       openAddEventModal: () => set({ isAddEventModalOpen: true }),
       closeAddEventModal: () => set({ isAddEventModalOpen: false }),
+
+      // Detail modal actions
+      openDetailModal: (event) =>
+        set({ selectedEvent: event, isDetailModalOpen: true }),
+      closeDetailModal: () =>
+        set({ selectedEvent: null, isDetailModalOpen: false }),
+
+      // Edit modal actions
+      openEditModal: (event) =>
+        set({
+          editingEvent: event,
+          isEditModalOpen: true,
+          isDetailModalOpen: false, // Close detail when opening edit
+        }),
+      closeEditModal: () => set({ editingEvent: null, isEditModalOpen: false }),
     }),
     {
       name: "family-hub-calendar",
@@ -202,6 +241,35 @@ export const useCalendarActions = () =>
       setCalendarView: state.setCalendarView,
       openAddEventModal: state.openAddEventModal,
       closeAddEventModal: state.closeAddEventModal,
+      openEditModal: state.openEditModal,
+      closeEditModal: state.closeEditModal,
+    })),
+  );
+
+/**
+ * Compound selector for event detail modal.
+ * Combines detail modal state and actions.
+ */
+export const useEventDetailState = () =>
+  useCalendarStore(
+    useShallow((state) => ({
+      selectedEvent: state.selectedEvent,
+      isDetailModalOpen: state.isDetailModalOpen,
+      openDetailModal: state.openDetailModal,
+      closeDetailModal: state.closeDetailModal,
+    })),
+  );
+
+/**
+ * Compound selector for edit modal state.
+ */
+export const useEditModalState = () =>
+  useCalendarStore(
+    useShallow((state) => ({
+      editingEvent: state.editingEvent,
+      isEditModalOpen: state.isEditModalOpen,
+      openEditModal: state.openEditModal,
+      closeEditModal: state.closeEditModal,
     })),
   );
 
