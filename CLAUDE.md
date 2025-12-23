@@ -67,7 +67,7 @@ src/
 │   │   └── sidebar-menu.tsx   # Settings slide-out menu
 │   │
 │   ├── calendar/
-│   │   ├── CalendarModule.tsx # Module orchestrator (wires API hooks to views)
+│   │   ├── calendar-module.tsx # Module orchestrator (wires API hooks to views)
 │   │   ├── views/             # DailyCalendar, WeeklyCalendar, MonthlyCalendar, ScheduleCalendar
 │   │   └── components/        # CalendarNavigation, CalendarEventCard, FamilyFilterPills, etc.
 │   │
