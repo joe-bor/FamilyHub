@@ -111,8 +111,7 @@ export function CalendarModule() {
     });
   }, [eventsResponse, filter]);
 
-  const handleEventClick = (event: CalendarEvent) => {
-    console.log("Event clicked:", event);
+  const handleEventClick = (_event: CalendarEvent) => {
     // Future: Open event detail modal
   };
 
