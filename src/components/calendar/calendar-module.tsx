@@ -8,11 +8,12 @@ import {
   startOfWeek,
 } from "date-fns";
 import { Profiler, useMemo } from "react";
-import { useCalendarEvents, useCreateEvent } from "@/api";
+import { useCalendarEvents, useCreateEvent, useDeleteEvent } from "@/api";
 import {
   AddEventButton,
   CalendarViewSwitcher,
   DailyCalendar,
+  EventDetailModal,
   EventFormModal,
   FamilyFilterPills,
   MonthlyCalendar,
@@ -25,6 +26,7 @@ import type { EventFormData } from "@/lib/validations";
 import {
   useCalendarActions,
   useCalendarState,
+  useEventDetailState,
   useIsViewingToday,
 } from "@/stores";
 
@@ -42,6 +44,14 @@ export function CalendarModule() {
   const { currentDate, calendarView, filter, isAddEventModalOpen } =
     useCalendarState();
   const isViewingToday = useIsViewingToday();
+
+  // Event detail modal state
+  const {
+    selectedEvent,
+    isDetailModalOpen,
+    openDetailModal,
+    closeDetailModal,
+  } = useEventDetailState();
 
   // Client actions from Zustand (compound selector)
   const {
@@ -101,6 +111,12 @@ export function CalendarModule() {
     },
   });
 
+  const deleteEvent = useDeleteEvent({
+    onSuccess: () => {
+      closeDetailModal();
+    },
+  });
+
   // Client-side filtering based on filter state
   const events = useMemo(() => {
     const rawEvents = eventsResponse?.data ?? [];
@@ -111,8 +127,18 @@ export function CalendarModule() {
     });
   }, [eventsResponse, filter]);
 
-  const handleEventClick = (_event: CalendarEvent) => {
-    // Future: Open event detail modal
+  const handleEventClick = (event: CalendarEvent) => {
+    openDetailModal(event);
+  };
+
+  const handleDeleteEvent = () => {
+    if (selectedEvent) {
+      deleteEvent.mutate(selectedEvent.id);
+    }
+  };
+
+  const handleEditClick = () => {
+    // Will be implemented in next commit with edit modal integration
   };
 
   const handleAddEvent = (formData: EventFormData) => {
@@ -198,13 +224,24 @@ export function CalendarModule() {
         {/* FAB */}
         <AddEventButton onClick={openAddEventModal} />
 
-        {/* Modal */}
+        {/* Add Event Modal */}
         <EventFormModal
           mode="add"
           isOpen={isAddEventModalOpen}
           onClose={closeAddEventModal}
           onSubmit={handleAddEvent}
           isPending={createEvent.isPending}
+        />
+
+        {/* Event Detail Modal */}
+        <EventDetailModal
+          event={selectedEvent}
+          isOpen={isDetailModalOpen}
+          onClose={closeDetailModal}
+          onEdit={handleEditClick}
+          onDelete={handleDeleteEvent}
+          isDeleting={deleteEvent.isPending}
+          deleteError={deleteEvent.error?.message}
         />
       </div>
     </Profiler>
