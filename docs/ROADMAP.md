@@ -1,6 +1,6 @@
 # FamilyHub Development Roadmap
 
-**Last Updated:** December 20, 2025
+**Last Updated:** December 22, 2025
 
 ## Current Status
 
@@ -16,7 +16,7 @@
 
 ## Phase 1B: Calendar Frontend Polish 🚧 CURRENT
 
-**Sprint 4: State Management & API Layer** ✅ COMPLETED (December 20, 2024)
+**Sprint 4: State Management & API Layer** ✅ COMPLETED (December 22, 2025)
 
 - [x] Zustand stores for UI state (app-store, calendar-store)
 - [x] Centralized types in `src/lib/types/`
@@ -24,7 +24,8 @@
 - [x] TanStack Query API layer with mock handlers
 - [x] Loading states and error handling
 - [x] Form validation with Zod
-- [ ] Optimize event rendering performance
+- [x] Optimize event rendering performance (React Compiler + algorithmic improvements)
+- [x] GitHub Actions CI workflow for PRs
 
 **Sprint 5: PWA & Responsive**
 

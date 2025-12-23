@@ -1,5 +1,7 @@
 # FamilyHub
 
+[![CI](https://github.com/joe-bor/FamilyHub/actions/workflows/ci.yml/badge.svg)](https://github.com/joe-bor/FamilyHub/actions/workflows/ci.yml)
+
 A modern family dashboard for managing calendars, meals, chores, and more. Designed for touchscreen displays with mobile PWA support.
 
 ## Quick Start

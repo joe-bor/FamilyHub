@@ -25,7 +25,10 @@ FamilyHub is a family organization app built with React 19, Vite, and Tailwind C
 - **src/stores/** - Zustand stores for UI state management (app, calendar view preferences)
 - **src/providers/** - React context providers (QueryProvider for TanStack Query)
 - **src/lib/types/** - Centralized TypeScript types (`calendar.ts`, `family.ts`, `chores.ts`, `meals.ts`)
+- **src/lib/validations/** - Zod schemas for form validation (`calendar.ts`)
 - **src/lib/utils.ts** - `cn()` utility for Tailwind class merging
+- **src/lib/time-utils.ts** - Shared time parsing utilities
+- **src/lib/perf-utils.ts** - Performance measurement utilities (dev only)
 
 ### Component Organization
 
@@ -52,15 +55,27 @@ src/
 │   ├── calendar-store.ts      # Calendar UI state (date, view, filters)
 │   └── index.ts               # Barrel exports + selectors (useIsViewingToday)
 │
-├── lib/types/                 # Centralized type definitions
-│   ├── calendar.ts            # CalendarEvent, API types, CalendarViewType, FilterState
-│   ├── family.ts              # FamilyMember, colorMap
-│   ├── chores.ts              # ChoreItem
-│   ├── meals.ts               # MealPlan
-│   └── index.ts               # Barrel exports
+├── lib/
+│   ├── types/                 # Centralized type definitions
+│   │   ├── calendar.ts        # CalendarEvent, API types, CalendarViewType, FilterState
+│   │   ├── family.ts          # FamilyMember, colorMap, familyMemberMap
+│   │   ├── chores.ts          # ChoreItem
+│   │   ├── meals.ts           # MealPlan
+│   │   └── index.ts           # Barrel exports
+│   ├── validations/           # Zod form schemas
+│   │   └── calendar.ts        # eventFormSchema
+│   ├── time-utils.ts          # parseTimeToMinutes, formatMinutesToTime
+│   └── perf-utils.ts          # measurePerformance (dev only)
 │
 ├── components/
-│   ├── ui/                    # Base primitives (button, input, label)
+│   ├── ui/                    # Base UI primitives
+│   │   ├── button, input, label   # Core form elements
+│   │   ├── dialog, popover        # Overlay containers (Radix)
+│   │   ├── calendar, date-picker  # Date selection (react-day-picker)
+│   │   ├── time-picker            # Wheel-style time selector
+│   │   ├── member-selector        # Family member pills
+│   │   ├── scroll-area            # Scrollable container (Radix)
+│   │   └── form-error             # Validation error display
 │   ├── shared/                # App-wide components
 │   │   ├── app-header.tsx     # Top bar (family name, date, weather, settings)
 │   │   ├── navigation-tabs.tsx # Left sidebar module tabs
@@ -69,7 +84,8 @@ src/
 │   ├── calendar/
 │   │   ├── calendar-module.tsx # Module orchestrator (wires API hooks to views)
 │   │   ├── views/             # DailyCalendar, WeeklyCalendar, MonthlyCalendar, ScheduleCalendar
-│   │   └── components/        # CalendarNavigation, CalendarEventCard, FamilyFilterPills, etc.
+│   │   └── components/        # CalendarNavigation, CalendarEventCard, FamilyFilterPills,
+│   │                          # EventFormModal, EventForm, AddEventButton
 │   │
 │   └── *-view.tsx             # Other module views (ChoresView, MealsView, ListsView, PhotosView)
 ```
@@ -96,6 +112,11 @@ Uses a hybrid approach: **TanStack Query** for server state (API data) and **Zus
 - `currentDate`, `calendarView`, `filter` - Calendar UI preferences
 - `goToPrevious`, `goToNext`, `goToToday` - View-aware navigation actions
 - `useIsViewingToday` - Computed selector for "Today" button state
+
+**Compound selectors** (optimized with shallow comparison):
+- `useCalendarState` - Returns `{ currentDate, calendarView, filter }`
+- `useCalendarActions` - Returns `{ goToPrevious, goToNext, goToToday, setCalendarView }`
+- `useFilterPillsState` - Returns `{ filter, setFilter }`
 
 **Usage pattern:**
 ```typescript
@@ -154,3 +175,18 @@ const variants = cva("base-classes", {
 ```
 
 Always use `cn()` for className merging. Import alias: `@/` maps to `src/`.
+
+### Performance
+
+**React Compiler** is enabled via `babel-plugin-react-compiler` for automatic memoization.
+
+**Optimizations applied:**
+- O(1) member lookups via `familyMemberMap` and `getFamilyMember()`
+- Pre-computed events by date using single-pass `useMemo` in calendar views
+- Compound Zustand selectors with shallow comparison to reduce re-renders
+
+See `docs/PERFORMANCE-BASELINE.md` for benchmark details.
+
+### CI/CD
+
+GitHub Actions runs lint and build checks on all PRs (`.github/workflows/ci.yml`).
