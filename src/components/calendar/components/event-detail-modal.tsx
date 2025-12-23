@@ -1,5 +1,6 @@
 import { format } from "date-fns";
-import { Calendar, Clock, MapPin, Pencil, Trash2 } from "lucide-react";
+import { Calendar, Clock, Loader2, MapPin, Pencil, Trash2 } from "lucide-react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -31,10 +32,31 @@ function EventDetailModal({
   isDeleting = false,
   deleteError,
 }: EventDetailModalProps) {
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
+  // Reset confirmation state when modal closes or event changes
+  useEffect(() => {
+    if (!isOpen) {
+      setShowDeleteConfirm(false);
+    }
+  }, [isOpen]);
+
   if (!event) return null;
 
   const member = getFamilyMember(event.memberId);
   const colors = member ? colorMap[member.color] : null;
+
+  const handleDeleteClick = () => {
+    setShowDeleteConfirm(true);
+  };
+
+  const handleCancelDelete = () => {
+    setShowDeleteConfirm(false);
+  };
+
+  const handleConfirmDelete = () => {
+    onDelete();
+  };
 
   // Format date for display (e.g., "Monday, December 23, 2025")
   const formattedDate = format(event.date, "EEEE, MMMM d, yyyy");
@@ -100,25 +122,60 @@ function EventDetailModal({
           )}
         </div>
 
-        <DialogFooter>
-          <Button
-            variant="outline"
-            onClick={onEdit}
-            disabled={isDeleting}
-            className="flex-1 min-h-[48px]"
-          >
-            <Pencil className="w-4 h-4 mr-2" />
-            Edit
-          </Button>
-          <Button
-            variant="destructive"
-            onClick={onDelete}
-            disabled={isDeleting}
-            className="flex-1 min-h-[48px]"
-          >
-            <Trash2 className="w-4 h-4 mr-2" />
-            {isDeleting ? "Deleting..." : "Delete"}
-          </Button>
+        <DialogFooter className="flex-col gap-3">
+          {showDeleteConfirm ? (
+            <>
+              <p className="text-sm text-muted-foreground text-center w-full">
+                Are you sure you want to delete this event?
+              </p>
+              <div className="flex gap-3 w-full">
+                <Button
+                  variant="outline"
+                  onClick={handleCancelDelete}
+                  disabled={isDeleting}
+                  className="flex-1 min-h-[48px]"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  variant="destructive"
+                  onClick={handleConfirmDelete}
+                  disabled={isDeleting}
+                  className="flex-1 min-h-[48px]"
+                >
+                  {isDeleting ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Deleting...
+                    </>
+                  ) : (
+                    "Delete Event"
+                  )}
+                </Button>
+              </div>
+            </>
+          ) : (
+            <div className="flex gap-3 w-full">
+              <Button
+                variant="outline"
+                onClick={onEdit}
+                disabled={isDeleting}
+                className="flex-1 min-h-[48px]"
+              >
+                <Pencil className="w-4 h-4 mr-2" />
+                Edit
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={handleDeleteClick}
+                disabled={isDeleting}
+                className="flex-1 min-h-[48px]"
+              >
+                <Trash2 className="w-4 h-4 mr-2" />
+                Delete
+              </Button>
+            </div>
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>
