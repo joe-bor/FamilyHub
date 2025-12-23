@@ -24,7 +24,11 @@
       "Bash(git restore:*)",
       "Bash(ls:*)",
       "Bash(find:*)",
-      "Bash(git pull:*)"
+      "Bash(git pull:*)",
+      "Bash(npm run lint:*)",
+      "Bash(git stash:*)",
+      "Bash(gh pr view:*)",
+      "Bash(git -C /Users/joe.bor/code/family-hub check-ignore dist/)"
     ]
   },
   "hooks": {
