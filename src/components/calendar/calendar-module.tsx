@@ -8,7 +8,12 @@ import {
   startOfWeek,
 } from "date-fns";
 import { Profiler, useMemo } from "react";
-import { useCalendarEvents, useCreateEvent, useDeleteEvent } from "@/api";
+import {
+  useCalendarEvents,
+  useCreateEvent,
+  useDeleteEvent,
+  useUpdateEvent,
+} from "@/api";
 import {
   AddEventButton,
   CalendarViewSwitcher,
@@ -21,11 +26,16 @@ import {
   WeeklyCalendar,
 } from "@/components/calendar";
 import { logProfilerData } from "@/lib/perf-utils";
-import type { CalendarEvent, CreateEventRequest } from "@/lib/types";
+import type {
+  CalendarEvent,
+  CreateEventRequest,
+  UpdateEventRequest,
+} from "@/lib/types";
 import type { EventFormData } from "@/lib/validations";
 import {
   useCalendarActions,
   useCalendarState,
+  useEditModalState,
   useEventDetailState,
   useIsViewingToday,
 } from "@/stores";
@@ -52,6 +62,10 @@ export function CalendarModule() {
     openDetailModal,
     closeDetailModal,
   } = useEventDetailState();
+
+  // Edit modal state
+  const { editingEvent, isEditModalOpen, openEditModal, closeEditModal } =
+    useEditModalState();
 
   // Client actions from Zustand (compound selector)
   const {
@@ -117,6 +131,12 @@ export function CalendarModule() {
     },
   });
 
+  const updateEvent = useUpdateEvent({
+    onSuccess: () => {
+      closeEditModal();
+    },
+  });
+
   // Client-side filtering based on filter state
   const events = useMemo(() => {
     const rawEvents = eventsResponse?.data ?? [];
@@ -138,7 +158,25 @@ export function CalendarModule() {
   };
 
   const handleEditClick = () => {
-    // Will be implemented in next commit with edit modal integration
+    if (selectedEvent) {
+      openEditModal(selectedEvent);
+    }
+  };
+
+  const handleUpdateEvent = (formData: EventFormData) => {
+    if (!editingEvent) return;
+
+    const request: UpdateEventRequest = {
+      id: editingEvent.id,
+      title: formData.title,
+      startTime: formatTime(formData.startTime),
+      endTime: formatTime(formData.endTime),
+      date: parseISO(formData.date).toISOString(),
+      memberId: formData.memberId,
+      isAllDay: formData.isAllDay,
+      location: formData.location,
+    };
+    updateEvent.mutate(request);
   };
 
   const handleAddEvent = (formData: EventFormData) => {
@@ -231,6 +269,16 @@ export function CalendarModule() {
           onClose={closeAddEventModal}
           onSubmit={handleAddEvent}
           isPending={createEvent.isPending}
+        />
+
+        {/* Edit Event Modal */}
+        <EventFormModal
+          mode="edit"
+          isOpen={isEditModalOpen}
+          onClose={closeEditModal}
+          onSubmit={handleUpdateEvent}
+          isPending={updateEvent.isPending}
+          event={editingEvent ?? undefined}
         />
 
         {/* Event Detail Modal */}
