@@ -3,6 +3,8 @@
  * Centralizes time parsing logic and compiles regex once for reuse.
  */
 
+import { format, parseISO, startOfDay } from "date-fns";
+
 // Compile regex once, reuse across all calls
 const TIME_REGEX = /(\d+):(\d+)\s*(AM|PM)/i;
 
@@ -52,4 +54,43 @@ export function compareEventsByTime(
   b: { startTime: string },
 ): number {
   return getTimeInMinutes(a.startTime) - getTimeInMinutes(b.startTime);
+}
+
+/**
+ * Convert 24-hour time format to 12-hour format with AM/PM.
+ * Example: "16:00" -> "4:00 PM", "09:30" -> "9:30 AM"
+ */
+export function format24hTo12h(time24h: string): string {
+  const [hours, minutes] = time24h.split(":");
+  const hour = Number.parseInt(hours, 10);
+  const ampm = hour >= 12 ? "PM" : "AM";
+  const hour12 = hour % 12 || 12;
+  return `${hour12}:${minutes} ${ampm}`;
+}
+
+/**
+ * Convert 12-hour time format to 24-hour format.
+ * Example: "4:00 PM" -> "16:00", "9:30 AM" -> "09:30"
+ */
+export function format12hTo24h(time12h: string): string {
+  const { hours, minutes } = parseTime(time12h);
+  return `${hours.toString().padStart(2, "0")}:${minutes.toString().padStart(2, "0")}`;
+}
+
+/**
+ * Format a Date to a local date string (yyyy-MM-dd).
+ * Uses date-fns format() which respects local timezone,
+ * avoiding the timezone shift bug from toISOString().
+ */
+export function formatLocalDate(date: Date): string {
+  return format(date, "yyyy-MM-dd");
+}
+
+/**
+ * Parse a date string (yyyy-MM-dd) to a local Date at midnight.
+ * Uses date-fns to ensure consistent local timezone handling,
+ * avoiding the browser-specific quirk of appending "T00:00:00".
+ */
+export function parseLocalDate(dateStr: string): Date {
+  return startOfDay(parseISO(dateStr));
 }
