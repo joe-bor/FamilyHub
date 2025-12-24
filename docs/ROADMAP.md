@@ -1,6 +1,6 @@
 # FamilyHub Development Roadmap
 
-**Last Updated:** December 22, 2025
+**Last Updated:** December 24, 2025
 
 ## Current Status
 
@@ -26,6 +26,9 @@
 - [x] Form validation with Zod
 - [x] Optimize event rendering performance (React Compiler + algorithmic improvements)
 - [x] GitHub Actions CI workflow for PRs
+- [x] Event detail view with edit/delete actions (EventDetailModal)
+- [x] Full CRUD operations (create, read, update, delete) with optimistic updates
+- [x] Centralized date/time utilities in `time-utils.ts` (timezone-safe operations)
 
 **Sprint 5: PWA & Responsive**
 

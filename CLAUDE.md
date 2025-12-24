@@ -27,7 +27,7 @@ FamilyHub is a family organization app built with React 19, Vite, and Tailwind C
 - **src/lib/types/** - Centralized TypeScript types (`calendar.ts`, `family.ts`, `chores.ts`, `meals.ts`)
 - **src/lib/validations/** - Zod schemas for form validation (`calendar.ts`)
 - **src/lib/utils.ts** - `cn()` utility for Tailwind class merging
-- **src/lib/time-utils.ts** - Shared time parsing utilities
+- **src/lib/time-utils.ts** - Centralized date/time utilities (parsing, formatting, timezone-safe operations)
 - **src/lib/perf-utils.ts** - Performance measurement utilities (dev only)
 
 ### Component Organization
@@ -64,7 +64,7 @@ src/
 │   │   └── index.ts           # Barrel exports
 │   ├── validations/           # Zod form schemas
 │   │   └── calendar.ts        # eventFormSchema
-│   ├── time-utils.ts          # parseTimeToMinutes, formatMinutesToTime
+│   ├── time-utils.ts          # Time/date utilities (see Date/Time Handling section)
 │   └── perf-utils.ts          # measurePerformance (dev only)
 │
 ├── components/
@@ -85,7 +85,7 @@ src/
 │   │   ├── calendar-module.tsx # Module orchestrator (wires API hooks to views)
 │   │   ├── views/             # DailyCalendar, WeeklyCalendar, MonthlyCalendar, ScheduleCalendar
 │   │   └── components/        # CalendarNavigation, CalendarEventCard, FamilyFilterPills,
-│   │                          # EventFormModal, EventForm, AddEventButton
+│   │                          # EventFormModal, EventForm, EventDetailModal, AddEventButton
 │   │
 │   └── *-view.tsx             # Other module views (ChoresView, MealsView, ListsView, PhotosView)
 ```
@@ -112,10 +112,14 @@ Uses a hybrid approach: **TanStack Query** for server state (API data) and **Zus
 - `currentDate`, `calendarView`, `filter` - Calendar UI preferences
 - `goToPrevious`, `goToNext`, `goToToday` - View-aware navigation actions
 - `useIsViewingToday` - Computed selector for "Today" button state
+- `selectedEvent`, `isDetailModalOpen` - Event detail modal state
+- `editingEvent`, `isEditModalOpen` - Edit modal state
 
 **Compound selectors** (optimized with shallow comparison):
-- `useCalendarState` - Returns `{ currentDate, calendarView, filter }`
-- `useCalendarActions` - Returns `{ goToPrevious, goToNext, goToToday, setCalendarView }`
+- `useCalendarState` - Returns `{ currentDate, calendarView, filter, isAddEventModalOpen }`
+- `useCalendarActions` - Returns navigation + modal actions
+- `useEventDetailState` - Returns `{ selectedEvent, isDetailModalOpen, openDetailModal, closeDetailModal }`
+- `useEditModalState` - Returns `{ editingEvent, isEditModalOpen, openEditModal, closeEditModal }`
 - `useFilterPillsState` - Returns `{ filter, setFilter }`
 
 **Usage pattern:**
@@ -186,6 +190,43 @@ Always use `cn()` for className merging. Import alias: `@/` maps to `src/`.
 - Compound Zustand selectors with shallow comparison to reduce re-renders
 
 See `docs/PERFORMANCE-BASELINE.md` for benchmark details.
+
+### Date/Time Handling
+
+**IMPORTANT:** All date/time operations must use centralized utilities from `src/lib/time-utils.ts` to avoid timezone bugs.
+
+**Common Pitfalls (DO NOT USE):**
+```typescript
+// ❌ WRONG: new Date() parses date strings as UTC midnight
+new Date("2025-12-23") // → Dec 22 at 4pm in PST!
+
+// ❌ WRONG: toISOString() converts to UTC, shifting dates
+date.toISOString() // → Wrong date for users west of UTC
+```
+
+**Correct Utilities:**
+```typescript
+import { parseLocalDate, formatLocalDate, format24hTo12h, format12hTo24h } from "@/lib/time-utils"
+
+// ✅ Parse date string to local Date at midnight
+parseLocalDate("2025-12-23") // → Dec 23 at 00:00 local time
+
+// ✅ Format Date to yyyy-MM-dd in local timezone
+formatLocalDate(new Date()) // → "2025-12-23"
+
+// ✅ Convert time formats
+format24hTo12h("16:00") // → "4:00 PM"
+format12hTo24h("4:00 PM") // → "16:00"
+```
+
+**Available Utilities in `time-utils.ts`:**
+- `parseTime(timeStr)` - Parse "4:00 PM" → `{ hours: 16, minutes: 0 }`
+- `getTimeInMinutes(timeStr)` - Convert time to minutes since midnight
+- `compareEventsByTime(a, b)` - Comparator for sorting events
+- `format24hTo12h(time)` - Convert "16:00" → "4:00 PM" (for API)
+- `format12hTo24h(time)` - Convert "4:00 PM" → "16:00" (for forms)
+- `formatLocalDate(date)` - Date → "yyyy-MM-dd" (local timezone)
+- `parseLocalDate(dateStr)` - "yyyy-MM-dd" → Date at local midnight
 
 ### CI/CD
 
