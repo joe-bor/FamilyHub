@@ -4,6 +4,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { parseTime } from "@/lib/time-utils";
 import type { CalendarEvent } from "@/lib/types";
 import type { EventFormData } from "@/lib/validations";
 import { EventForm } from "./event-form";
@@ -19,8 +20,17 @@ interface EventFormModalProps {
 }
 
 /**
+ * Convert 12h time (e.g., "4:00 PM") to 24h format (e.g., "16:00")
+ * The form/TimePicker uses 24h format internally
+ */
+function convertTo24hFormat(timeStr: string): string {
+  const { hours, minutes } = parseTime(timeStr);
+  return `${hours.toString().padStart(2, "0")}:${minutes.toString().padStart(2, "0")}`;
+}
+
+/**
  * Transform a CalendarEvent to EventFormData for the form
- * Handles date formatting and any field mapping
+ * Handles date formatting and time conversion (12h -> 24h)
  */
 function eventToFormData(event: CalendarEvent): Partial<EventFormData> {
   // Format date as yyyy-MM-dd string
@@ -32,8 +42,8 @@ function eventToFormData(event: CalendarEvent): Partial<EventFormData> {
   return {
     title: event.title,
     date: dateStr,
-    startTime: event.startTime,
-    endTime: event.endTime,
+    startTime: convertTo24hFormat(event.startTime),
+    endTime: convertTo24hFormat(event.endTime),
     memberId: event.memberId,
     location: event.location,
     isAllDay: event.isAllDay,
