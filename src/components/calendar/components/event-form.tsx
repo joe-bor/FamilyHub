@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { MemberSelector } from "@/components/ui/member-selector";
 import { TimePicker } from "@/components/ui/time-picker";
+import { parseLocalDate } from "@/lib/time-utils";
 import { familyMembers } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { type EventFormData, eventFormSchema } from "@/lib/validations";
@@ -97,8 +98,8 @@ function EventForm({
   };
 
   // Convert date string to Date object for DatePicker display
-  // Append T00:00:00 to parse as local midnight (not UTC)
-  const dateAsDate = dateValue ? new Date(dateValue + "T00:00:00") : undefined;
+  // Use parseLocalDate to ensure consistent local timezone handling
+  const dateAsDate = dateValue ? parseLocalDate(dateValue) : undefined;
 
   const isAdd = mode === "add";
   const submitText = isAdd ? "Add Event" : "Save Changes";
