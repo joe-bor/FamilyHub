@@ -1,3 +1,4 @@
+import { format } from "date-fns";
 import {
   Dialog,
   DialogContent,
@@ -33,10 +34,11 @@ function convertTo24hFormat(timeStr: string): string {
  * Handles date formatting and time conversion (12h -> 24h)
  */
 function eventToFormData(event: CalendarEvent): Partial<EventFormData> {
-  // Format date as yyyy-MM-dd string
+  // Format date as yyyy-MM-dd string using local timezone (not UTC)
+  // toISOString() would convert to UTC and shift the date incorrectly
   const dateStr =
     event.date instanceof Date
-      ? event.date.toISOString().split("T")[0]
+      ? format(event.date, "yyyy-MM-dd")
       : String(event.date).split("T")[0];
 
   return {
