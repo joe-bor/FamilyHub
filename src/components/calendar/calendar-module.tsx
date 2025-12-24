@@ -3,7 +3,6 @@ import {
   endOfMonth,
   endOfWeek,
   format,
-  parseISO,
   startOfMonth,
   startOfWeek,
 } from "date-fns";
@@ -26,6 +25,7 @@ import {
   WeeklyCalendar,
 } from "@/components/calendar";
 import { logProfilerData } from "@/lib/perf-utils";
+import { format24hTo12h } from "@/lib/time-utils";
 import type {
   CalendarEvent,
   CreateEventRequest,
@@ -39,15 +39,6 @@ import {
   useEventDetailState,
   useIsViewingToday,
 } from "@/stores";
-
-// Helper to format time consistently (24h -> 12h AM/PM)
-function formatTime(time: string): string {
-  const [hours, minutes] = time.split(":");
-  const hour = Number.parseInt(hours, 10);
-  const ampm = hour >= 12 ? "PM" : "AM";
-  const hour12 = hour % 12 || 12;
-  return `${hour12}:${minutes} ${ampm}`;
-}
 
 export function CalendarModule() {
   // Client state from Zustand (compound selector with shallow comparison)
@@ -169,9 +160,9 @@ export function CalendarModule() {
     const request: UpdateEventRequest = {
       id: editingEvent.id,
       title: formData.title,
-      startTime: formatTime(formData.startTime),
-      endTime: formatTime(formData.endTime),
-      date: parseISO(formData.date).toISOString(),
+      startTime: format24hTo12h(formData.startTime),
+      endTime: format24hTo12h(formData.endTime),
+      date: formData.date, // Already "yyyy-MM-dd", pass as-is to avoid timezone shift
       memberId: formData.memberId,
       isAllDay: formData.isAllDay,
       location: formData.location,
@@ -182,9 +173,9 @@ export function CalendarModule() {
   const handleAddEvent = (formData: EventFormData) => {
     const request: CreateEventRequest = {
       title: formData.title,
-      startTime: formatTime(formData.startTime),
-      endTime: formatTime(formData.endTime),
-      date: parseISO(formData.date).toISOString(),
+      startTime: format24hTo12h(formData.startTime),
+      endTime: format24hTo12h(formData.endTime),
+      date: formData.date, // Already "yyyy-MM-dd", pass as-is to avoid timezone shift
       memberId: formData.memberId,
       isAllDay: formData.isAllDay,
       location: formData.location,
