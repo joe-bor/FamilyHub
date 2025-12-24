@@ -1,7 +1,7 @@
 import { Clock, MapPin } from "lucide-react";
 import type React from "react";
 import { useMemo } from "react";
-import { compareEventsByTime } from "@/lib/time-utils";
+import { compareEventsByTime, formatLocalDate } from "@/lib/time-utils";
 import { type CalendarEvent, colorMap, getFamilyMember } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import type { FilterState } from "../components/calendar-filter";
@@ -77,7 +77,7 @@ export function ScheduleCalendar({
       ) : (
         <div className="space-y-6 max-w-3xl mx-auto">
           {groupedEvents.map(({ date, events: dayEvents }) => (
-            <div key={date.toISOString()}>
+            <div key={formatLocalDate(date)}>
               {/* Date header */}
               <div
                 className={cn(
