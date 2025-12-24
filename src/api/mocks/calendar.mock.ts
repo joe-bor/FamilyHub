@@ -1,5 +1,6 @@
 import { isWithinInterval, parseISO, startOfDay } from "date-fns";
 import { ApiErrorCode, ApiException } from "@/api/client";
+import { parseLocalDate } from "@/lib/time-utils";
 import type {
   ApiResponse,
   CalendarEvent,
@@ -237,7 +238,7 @@ export const calendarMockHandlers = {
       title: request.title,
       startTime: request.startTime,
       endTime: request.endTime,
-      date: new Date(request.date),
+      date: parseLocalDate(request.date), // Parse as local date, not UTC
       memberId: request.memberId,
       isAllDay: request.isAllDay,
       location: request.location,
@@ -268,7 +269,7 @@ export const calendarMockHandlers = {
       title: request.title ?? existingEvent.title,
       startTime: request.startTime ?? existingEvent.startTime,
       endTime: request.endTime ?? existingEvent.endTime,
-      date: request.date ? new Date(request.date) : existingEvent.date,
+      date: request.date ? parseLocalDate(request.date) : existingEvent.date, // Parse as local date, not UTC
       memberId: request.memberId ?? existingEvent.memberId,
       isAllDay: request.isAllDay ?? existingEvent.isAllDay,
       location: request.location ?? existingEvent.location,
