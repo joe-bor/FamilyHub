@@ -74,9 +74,8 @@ function EventDetailModal({
             <div
               className={cn(
                 "w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm shrink-0",
-                colors?.bg ? `bg-[${colors.bg}]` : "bg-muted-foreground",
+                colors?.bg || "bg-muted-foreground",
               )}
-              style={{ backgroundColor: colors?.bg }}
             >
               {member?.name.charAt(0)}
             </div>
