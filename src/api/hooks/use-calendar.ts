@@ -2,6 +2,7 @@ import type { UseQueryOptions } from "@tanstack/react-query";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { ApiException } from "@/api/client";
 import { calendarService } from "@/api/services";
+import { parseLocalDate } from "@/lib/time-utils";
 import type {
   ApiResponse,
   CalendarEvent,
@@ -104,7 +105,7 @@ export function useUpdateEvent(callbacks?: UpdateEventCallbacks) {
                     ...event,
                     ...updatedEvent,
                     date: updatedEvent.date
-                      ? new Date(updatedEvent.date)
+                      ? parseLocalDate(updatedEvent.date) // Parse as local date, not UTC
                       : event.date,
                   }
                 : event,
