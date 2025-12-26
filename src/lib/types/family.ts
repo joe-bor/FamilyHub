@@ -1,73 +1,104 @@
+/**
+ * Available colors for family members.
+ */
+export type FamilyColor =
+  | "coral"
+  | "teal"
+  | "green"
+  | "purple"
+  | "yellow"
+  | "pink"
+  | "orange";
+
+/**
+ * A family member with name, color, and optional avatar.
+ */
 export interface FamilyMember {
   id: string;
   name: string;
-  color: string;
-  avatar?: string;
+  color: FamilyColor;
+  avatarUrl?: string;
+  email?: string;
 }
 
-export const familyMembers: FamilyMember[] = [
-  { id: "1", name: "Mom", color: "bg-coral" },
-  { id: "2", name: "Dad", color: "bg-teal" },
-  { id: "3", name: "Ethan", color: "bg-green" },
-  { id: "4", name: "Grandma", color: "bg-pink" },
-  { id: "5", name: "Grandpa", color: "bg-purple" },
-  { id: "6", name: "Family", color: "bg-yellow" },
-];
-
 /**
- * O(1) lookup map for family members by ID.
- * Use getFamilyMember() instead of familyMembers.find() for better performance.
+ * Family data stored in localStorage.
  */
-export const familyMemberMap: Map<string, FamilyMember> = new Map(
-  familyMembers.map((m) => [m.id, m]),
-);
+export interface FamilyData {
+  id: string;
+  name: string;
+  members: FamilyMember[];
+  createdAt: string;
+  setupComplete: boolean;
+}
 
 /**
- * Get a family member by ID with O(1) lookup.
+ * Get a family member by ID from an array.
+ * @param members - The array of family members
  * @param id - The family member ID
  * @returns The family member or undefined if not found
  */
-export function getFamilyMember(id: string): FamilyMember | undefined {
-  return familyMemberMap.get(id);
+export function getFamilyMember(
+  members: FamilyMember[],
+  id: string,
+): FamilyMember | undefined {
+  return members.find((m) => m.id === id);
 }
 
+/**
+ * Color map for family member styling.
+ * Maps color name to bg, text, and light variants.
+ */
 export const colorMap: Record<
-  string,
+  FamilyColor,
   { bg: string; text: string; light: string }
 > = {
-  "bg-coral": {
+  coral: {
     bg: "bg-[#e88470]",
     text: "text-[#8b3d32]",
     light: "bg-[#fbe9e6]",
   },
-  "bg-teal": {
+  teal: {
     bg: "bg-[#5cb8b2]",
     text: "text-[#2d6360]",
     light: "bg-[#e0f4f3]",
   },
-  "bg-pink": {
+  pink: {
     bg: "bg-[#e896b8]",
     text: "text-[#8b4660]",
     light: "bg-[#fce8f0]",
   },
-  "bg-green": {
+  green: {
     bg: "bg-[#7bc67b]",
     text: "text-[#3d6b3d]",
     light: "bg-[#e6f5e6]",
   },
-  "bg-purple": {
+  purple: {
     bg: "bg-[#9b7bcf]",
     text: "text-[#523d70]",
     light: "bg-[#ede6f7]",
   },
-  "bg-yellow": {
+  yellow: {
     bg: "bg-[#f5c842]",
     text: "text-[#7a5f10]",
     light: "bg-[#fef6dc]",
   },
-  "bg-orange": {
+  orange: {
     bg: "bg-[#f5a442]",
     text: "text-[#7a4f10]",
     light: "bg-[#fef0dc]",
   },
 };
+
+/**
+ * List of all available family colors.
+ */
+export const familyColors: FamilyColor[] = [
+  "coral",
+  "teal",
+  "green",
+  "purple",
+  "yellow",
+  "pink",
+  "orange",
+];
