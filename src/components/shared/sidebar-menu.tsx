@@ -8,6 +8,8 @@ import {
   Users,
   X,
 } from "lucide-react";
+import { useState } from "react";
+import { FamilySettingsModal } from "@/components/settings";
 import { Button } from "@/components/ui/button";
 import { colorMap } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -21,11 +23,18 @@ export function SidebarMenu() {
   const familyName = useFamilyName();
   const familyMembers = useFamilyMembers();
 
+  // Family settings modal state
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+
   if (!isOpen) return null;
+
+  const handleOpenSettings = () => {
+    setIsSettingsOpen(true);
+  };
 
   const menuItems = [
     { icon: Home, label: "Home", active: true },
-    { icon: Users, label: "Family Members" },
+    { icon: Users, label: "Family Settings", action: handleOpenSettings },
     { icon: Bell, label: "Notifications" },
     { icon: Palette, label: "Customize" },
     { icon: Settings, label: "Settings" },
@@ -99,6 +108,7 @@ export function SidebarMenu() {
               return (
                 <button
                   key={index}
+                  onClick={item.action}
                   className={cn(
                     "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors",
                     item.active
@@ -122,6 +132,12 @@ export function SidebarMenu() {
           </button>
         </div>
       </aside>
+
+      {/* Family Settings Modal */}
+      <FamilySettingsModal
+        open={isSettingsOpen}
+        onOpenChange={setIsSettingsOpen}
+      />
     </>
   );
 }
