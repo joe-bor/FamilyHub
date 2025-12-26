@@ -1,6 +1,6 @@
 # FamilyHub Development Roadmap
 
-**Last Updated:** December 24, 2025
+**Last Updated:** December 25, 2025
 
 ## Current Status
 
@@ -30,12 +30,31 @@
 - [x] Full CRUD operations (create, read, update, delete) with optimistic updates
 - [x] Centralized date/time utilities in `time-utils.ts` (timezone-safe operations)
 
-**Sprint 5: PWA & Responsive**
+**Sprint 5: Family Setup & Responsive**
 
-- [ ] PWA manifest and service worker (Workbox)
-- [ ] Responsive breakpoints testing (320px - 2560px)
-- [ ] Touch target optimization
-- [ ] Offline calendar viewing
+Family Onboarding (localStorage-backed):
+- [ ] Welcome screen with "Get Started" CTA
+- [ ] Family name input screen
+- [ ] Add family members screen (name + color picker)
+- [ ] localStorage persistence layer for family data
+- [ ] First-run detection (redirect to setup if no family exists)
+
+Family Settings (in existing SidebarMenu):
+- [ ] Edit family name
+- [ ] Member list with edit/remove functionality
+- [ ] Add new member flow
+- [ ] Color picker component (7 predefined colors)
+- [ ] Reset/delete family option
+
+Responsive Design:
+- [ ] Onboarding screens (mobile-first, 320px - 2560px)
+- [ ] Calendar views responsive refinement
+- [ ] Touch target optimization (48px minimum)
+
+PWA Basics:
+- [ ] PWA manifest (installable, app icon, splash screen)
+- [ ] Static asset caching (JS, CSS, images)
+- [ ] (Deferred: Offline calendar viewing → Phase 2 with real backend)
 
 **Sprint 6: Testing & Polish**
 
