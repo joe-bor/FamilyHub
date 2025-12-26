@@ -4,8 +4,9 @@ import {
   getTimeInMinutes,
   parseTime,
 } from "@/lib/time-utils";
-import { type CalendarEvent, colorMap, familyMembers } from "@/lib/types";
+import { type CalendarEvent, colorMap } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { useFamilyMembers } from "@/stores";
 import { CalendarEventCard } from "../components/calendar-event";
 import type { FilterState } from "../components/calendar-filter";
 import { CalendarNavigation } from "../components/calendar-navigation";
@@ -120,6 +121,7 @@ export function DailyCalendar({
   onToday,
   isViewingToday,
 }: DailyCalendarProps) {
+  const familyMembers = useFamilyMembers();
   const today = new Date();
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 

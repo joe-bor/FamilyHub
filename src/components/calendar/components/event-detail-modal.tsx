@@ -12,6 +12,7 @@ import {
 import type { CalendarEvent } from "@/lib/types";
 import { colorMap, getFamilyMember } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { useFamilyMembers } from "@/stores";
 
 interface EventDetailModalProps {
   event: CalendarEvent | null;
@@ -33,6 +34,7 @@ function EventDetailModal({
   deleteError,
 }: EventDetailModalProps) {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const familyMembers = useFamilyMembers();
 
   // Reset confirmation state when modal closes or event changes
   useEffect(() => {
@@ -43,7 +45,7 @@ function EventDetailModal({
 
   if (!event) return null;
 
-  const member = getFamilyMember(event.memberId);
+  const member = getFamilyMember(familyMembers, event.memberId);
   const colors = member ? colorMap[member.color] : null;
 
   const handleDeleteClick = () => {

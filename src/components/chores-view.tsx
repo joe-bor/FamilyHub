@@ -1,15 +1,12 @@
 import { Check, RotateCcw, Star, Trophy } from "lucide-react";
 import { useState } from "react";
 import { generateSampleChores } from "@/lib/calendar-data";
-import {
-  type ChoreItem,
-  colorMap,
-  familyMembers,
-  getFamilyMember,
-} from "@/lib/types";
+import { type ChoreItem, colorMap, getFamilyMember } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { useFamilyMembers } from "@/stores";
 
 export function ChoresView() {
+  const familyMembers = useFamilyMembers();
   const [chores, setChores] = useState<ChoreItem[]>(generateSampleChores());
 
   const toggleChore = (id: string) => {
@@ -34,7 +31,7 @@ export function ChoresView() {
     {} as Record<string, ChoreItem[]>,
   );
 
-  const getMember = (id: string) => getFamilyMember(id);
+  const getMember = (id: string) => getFamilyMember(familyMembers, id);
 
   return (
     <div className="flex-1 p-6 overflow-y-auto">

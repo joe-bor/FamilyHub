@@ -2,7 +2,6 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { useShallow } from "zustand/shallow";
 import type { CalendarEvent, CalendarViewType, FilterState } from "@/lib/types";
-import { familyMembers } from "@/lib/types";
 
 interface CalendarState {
   // Client-only state (server state is now in TanStack Query)
@@ -32,8 +31,9 @@ interface CalendarState {
   // Filter actions
   setFilter: (filter: FilterState) => void;
   toggleMember: (memberId: string) => void;
-  toggleAllMembers: () => void;
+  toggleAllMembers: (allMemberIds: string[]) => void;
   toggleAllDayEvents: () => void;
+  initializeSelectedMembers: (memberIds: string[]) => void;
 
   // Modal actions
   openAddEventModal: () => void;
@@ -55,7 +55,7 @@ export const useCalendarStore = create<CalendarState>()(
       currentDate: new Date(),
       calendarView: "weekly",
       filter: {
-        selectedMembers: familyMembers.map((m) => m.id),
+        selectedMembers: [], // Will be initialized when family members are loaded
         showAllDayEvents: true,
       },
       isAddEventModalOpen: false,
@@ -135,17 +135,27 @@ export const useCalendarStore = create<CalendarState>()(
         set({ filter: { ...filter, selectedMembers: newSelectedMembers } });
       },
 
-      toggleAllMembers: () => {
+      toggleAllMembers: (allMemberIds) => {
         const { filter } = get();
         const allSelected =
-          filter.selectedMembers.length === familyMembers.length;
+          filter.selectedMembers.length === allMemberIds.length;
 
         set({
           filter: {
             ...filter,
-            selectedMembers: allSelected ? [] : familyMembers.map((m) => m.id),
+            selectedMembers: allSelected ? [] : allMemberIds,
           },
         });
+      },
+
+      initializeSelectedMembers: (memberIds) => {
+        const { filter } = get();
+        // Only initialize if empty (first load or after reset)
+        if (filter.selectedMembers.length === 0) {
+          set({
+            filter: { ...filter, selectedMembers: memberIds },
+          });
+        }
       },
 
       toggleAllDayEvents: () => {
@@ -284,5 +294,6 @@ export const useFilterPillsState = () =>
       toggleMember: state.toggleMember,
       toggleAllMembers: state.toggleAllMembers,
       toggleAllDayEvents: state.toggleAllDayEvents,
+      initializeSelectedMembers: state.initializeSelectedMembers,
     })),
   );
