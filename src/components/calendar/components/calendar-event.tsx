@@ -1,5 +1,7 @@
-import { type CalendarEvent, colorMap, getFamilyMember } from "@/lib/types";
+import type { CalendarEvent } from "@/lib/types";
+import { colorMap, getFamilyMember } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { useFamilyMembers } from "@/stores";
 
 interface CalendarEventCardProps {
   event: CalendarEvent;
@@ -12,8 +14,9 @@ export function CalendarEventCard({
   onClick,
   variant = "default",
 }: CalendarEventCardProps) {
-  const member = getFamilyMember(event.memberId);
-  const colors = member ? colorMap[member.color] : colorMap["bg-coral"];
+  const familyMembers = useFamilyMembers();
+  const member = getFamilyMember(familyMembers, event.memberId);
+  const colors = member ? colorMap[member.color] : colorMap.coral;
 
   if (variant === "large") {
     return (

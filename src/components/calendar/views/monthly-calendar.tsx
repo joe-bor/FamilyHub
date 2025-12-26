@@ -6,6 +6,7 @@ import {
   getFamilyMember,
 } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { useFamilyMembers } from "@/stores";
 import type { FilterState } from "../components/calendar-filter";
 import { CalendarNavigation } from "../components/calendar-navigation";
 
@@ -37,6 +38,7 @@ export function MonthlyCalendar({
   onToday,
   isViewingToday,
 }: MonthlyCalendarProps) {
+  const familyMembers = useFamilyMembers();
   const today = new Date();
 
   // Memoize the days calculation
@@ -98,12 +100,18 @@ export function MonthlyCalendar({
     for (const dayInfo of data.values()) {
       const memberIds = [...new Set(dayInfo.events.map((e) => e.memberId))];
       dayInfo.members = memberIds
-        .map((id) => getFamilyMember(id))
+        .map((id) => getFamilyMember(familyMembers, id))
         .filter((m): m is FamilyMember => m !== undefined);
     }
 
     return data;
-  }, [days, events, filter.selectedMembers, filter.showAllDayEvents]);
+  }, [
+    days,
+    events,
+    filter.selectedMembers,
+    filter.showAllDayEvents,
+    familyMembers,
+  ]);
 
   const weekDays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
@@ -199,7 +207,7 @@ export function MonthlyCalendar({
               </div>
               <div className="space-y-1">
                 {dayEvents.slice(0, 3).map((event) => {
-                  const member = getFamilyMember(event.memberId);
+                  const member = getFamilyMember(familyMembers, event.memberId);
                   return (
                     <div
                       key={event.id}

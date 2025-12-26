@@ -9,14 +9,17 @@ import {
   X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { colorMap, familyMembers } from "@/lib/types";
+import { colorMap } from "@/lib/types";
 import { cn } from "@/lib/utils";
-import { useAppStore } from "@/stores";
+import { useAppStore, useFamilyMembers, useFamilyName } from "@/stores";
 
 export function SidebarMenu() {
   const isOpen = useAppStore((state) => state.isSidebarOpen);
   const closeSidebar = useAppStore((state) => state.closeSidebar);
-  const familyName = useAppStore((state) => state.familyName);
+
+  // From family-store
+  const familyName = useFamilyName();
+  const familyMembers = useFamilyMembers();
 
   if (!isOpen) return null;
 
@@ -43,7 +46,7 @@ export function SidebarMenu() {
         <div className="flex items-center justify-between p-6 border-b border-border">
           <div>
             <h2 className="text-lg font-bold text-foreground">
-              {familyName} Family
+              {familyName || "Family Hub"}
             </h2>
             <p className="text-sm text-muted-foreground">Calendar Settings</p>
           </div>
@@ -58,27 +61,33 @@ export function SidebarMenu() {
             Family Members
           </h3>
           <div className="space-y-2">
-            {familyMembers.map((member) => {
-              const colors = colorMap[member.color];
-              return (
-                <button
-                  key={member.id}
-                  className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-muted transition-colors"
-                >
-                  <div
-                    className={cn(
-                      "w-8 h-8 rounded-full flex items-center justify-center text-card text-sm font-bold",
-                      colors?.bg,
-                    )}
+            {familyMembers.length > 0 ? (
+              familyMembers.map((member) => {
+                const colors = colorMap[member.color];
+                return (
+                  <button
+                    key={member.id}
+                    className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-muted transition-colors"
                   >
-                    {member.name.charAt(0)}
-                  </div>
-                  <span className="text-sm font-medium text-foreground">
-                    {member.name}
-                  </span>
-                </button>
-              );
-            })}
+                    <div
+                      className={cn(
+                        "w-8 h-8 rounded-full flex items-center justify-center text-card text-sm font-bold",
+                        colors?.bg,
+                      )}
+                    >
+                      {member.name.charAt(0)}
+                    </div>
+                    <span className="text-sm font-medium text-foreground">
+                      {member.name}
+                    </span>
+                  </button>
+                );
+              })
+            ) : (
+              <p className="text-sm text-muted-foreground px-3">
+                No family members yet
+              </p>
+            )}
           </div>
         </div>
 

@@ -1,14 +1,22 @@
 import { Cloud, Menu, Settings, Sun } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { colorMap, familyMembers } from "@/lib/types";
-import { useAppStore, useCalendarStore } from "@/stores";
+import { colorMap } from "@/lib/types";
+import {
+  useAppStore,
+  useCalendarStore,
+  useFamilyMembers,
+  useFamilyName,
+} from "@/stores";
 
 export function AppHeader() {
   // From calendar-store
   const currentDate = useCalendarStore((state) => state.currentDate);
 
+  // From family-store
+  const familyName = useFamilyName();
+  const familyMembers = useFamilyMembers();
+
   // From app-store
-  const familyName = useAppStore((state) => state.familyName);
   const openSidebar = useAppStore((state) => state.openSidebar);
 
   const formatDate = (date: Date) => {
@@ -40,7 +48,7 @@ export function AppHeader() {
         </Button>
         <div>
           <h1 className="text-xl font-bold text-foreground">
-            {familyName} Family
+            {familyName || "Family Hub"}
           </h1>
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <span>{formatDate(currentDate)}</span>
@@ -61,15 +69,17 @@ export function AppHeader() {
         </div>
 
         {/* Family member indicators */}
-        <div className="flex items-center gap-1.5">
-          {familyMembers.slice(0, 6).map((member) => (
-            <div
-              key={member.id}
-              className={`w-3 h-3 rounded-full ${colorMap[member.color]?.bg || "bg-gray-300"}`}
-              title={member.name}
-            />
-          ))}
-        </div>
+        {familyMembers.length > 0 && (
+          <div className="flex items-center gap-1.5">
+            {familyMembers.slice(0, 6).map((member) => (
+              <div
+                key={member.id}
+                className={`w-3 h-3 rounded-full ${colorMap[member.color]?.bg || "bg-gray-300"}`}
+                title={member.name}
+              />
+            ))}
+          </div>
+        )}
 
         {/* Settings */}
         <Button

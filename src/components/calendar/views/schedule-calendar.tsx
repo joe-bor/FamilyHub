@@ -4,6 +4,7 @@ import { useMemo } from "react";
 import { compareEventsByTime, formatLocalDate } from "@/lib/time-utils";
 import { type CalendarEvent, colorMap, getFamilyMember } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { useFamilyMembers } from "@/stores";
 import type { FilterState } from "../components/calendar-filter";
 
 interface ScheduleCalendarProps {
@@ -19,6 +20,7 @@ export function ScheduleCalendar({
   onEventClick,
   filter,
 }: ScheduleCalendarProps) {
+  const familyMembers = useFamilyMembers();
   const today = new Date();
 
   // Memoize grouped events for the next 14 days
@@ -93,7 +95,7 @@ export function ScheduleCalendar({
               {/* Events list */}
               <div className="space-y-2 pl-2">
                 {dayEvents.map((event) => {
-                  const member = getFamilyMember(event.memberId);
+                  const member = getFamilyMember(familyMembers, event.memberId);
                   return (
                     <div
                       key={event.id}

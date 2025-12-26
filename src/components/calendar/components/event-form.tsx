@@ -10,9 +10,9 @@ import { Label } from "@/components/ui/label";
 import { MemberSelector } from "@/components/ui/member-selector";
 import { TimePicker } from "@/components/ui/time-picker";
 import { parseLocalDate } from "@/lib/time-utils";
-import { familyMembers } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { type EventFormData, eventFormSchema } from "@/lib/validations";
+import { useFamilyMembers } from "@/stores";
 
 interface EventFormProps {
   mode: "add" | "edit";
@@ -22,38 +22,6 @@ interface EventFormProps {
   isPending?: boolean;
 }
 
-/**
- * Get smart defaults for add mode
- * - Date: today
- * - Start time: next 15-min slot
- * - End time: 1 hour after start
- * - Member: first family member
- */
-function getAddModeDefaults(): Partial<EventFormData> {
-  const now = new Date();
-
-  // Round up to next 15-min interval (e.g., 9:23 -> 9:30)
-  const minutes = now.getMinutes();
-  const roundedMinutes = Math.ceil(minutes / 15) * 15;
-  now.setMinutes(roundedMinutes, 0, 0);
-
-  // If we rounded to 60, the hour increments automatically
-  if (roundedMinutes === 60) {
-    now.setMinutes(0);
-  }
-
-  // End time = start time + 1 hour
-  const endTime = new Date(now.getTime() + 60 * 60 * 1000);
-
-  return {
-    title: "",
-    date: format(new Date(), "yyyy-MM-dd"),
-    startTime: format(now, "HH:mm"),
-    endTime: format(endTime, "HH:mm"),
-    memberId: familyMembers[0].id,
-  };
-}
-
 function EventForm({
   mode,
   defaultValues,
@@ -61,13 +29,47 @@ function EventForm({
   onCancel,
   isPending = false,
 }: EventFormProps) {
+  const familyMembers = useFamilyMembers();
+
+  /**
+   * Get smart defaults for add mode
+   * - Date: today
+   * - Start time: next 15-min slot
+   * - End time: 1 hour after start
+   * - Member: first family member
+   */
+  const getAddModeDefaults = useMemo((): Partial<EventFormData> => {
+    const now = new Date();
+
+    // Round up to next 15-min interval (e.g., 9:23 -> 9:30)
+    const minutes = now.getMinutes();
+    const roundedMinutes = Math.ceil(minutes / 15) * 15;
+    now.setMinutes(roundedMinutes, 0, 0);
+
+    // If we rounded to 60, the hour increments automatically
+    if (roundedMinutes === 60) {
+      now.setMinutes(0);
+    }
+
+    // End time = start time + 1 hour
+    const endTime = new Date(now.getTime() + 60 * 60 * 1000);
+
+    return {
+      title: "",
+      date: format(new Date(), "yyyy-MM-dd"),
+      startTime: format(now, "HH:mm"),
+      endTime: format(endTime, "HH:mm"),
+      memberId: familyMembers[0]?.id ?? "",
+    };
+  }, [familyMembers]);
+
   // Use smart defaults for add mode, or provided defaults for edit mode
   const initialValues = useMemo(() => {
     if (mode === "add") {
-      return { ...getAddModeDefaults(), ...defaultValues };
+      return { ...getAddModeDefaults, ...defaultValues };
     }
     return defaultValues || {};
-  }, [mode, defaultValues]);
+  }, [mode, defaultValues, getAddModeDefaults]);
 
   const {
     register,
@@ -162,7 +164,8 @@ function EventForm({
       <div className="space-y-2">
         <Label>Assign To</Label>
         <MemberSelector
-          value={memberIdValue || familyMembers[0].id}
+          members={familyMembers}
+          value={memberIdValue || familyMembers[0]?.id || ""}
           onChange={(memberId) => setValue("memberId", memberId)}
           error={!!errors.memberId}
         />
