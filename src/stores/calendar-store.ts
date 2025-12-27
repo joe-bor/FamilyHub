@@ -7,6 +7,7 @@ interface CalendarState {
   // Client-only state (server state is now in TanStack Query)
   currentDate: Date;
   calendarView: CalendarViewType;
+  hasUserSetView: boolean; // Track if user explicitly changed view (for smart defaulting)
   filter: FilterState;
   isAddEventModalOpen: boolean;
 
@@ -54,6 +55,7 @@ export const useCalendarStore = create<CalendarState>()(
       // Initial state
       currentDate: new Date(),
       calendarView: "weekly",
+      hasUserSetView: false,
       filter: {
         selectedMembers: [], // Will be initialized when family members are loaded
         showAllDayEvents: true,
@@ -120,7 +122,8 @@ export const useCalendarStore = create<CalendarState>()(
         }),
 
       // View actions
-      setCalendarView: (view) => set({ calendarView: view }),
+      setCalendarView: (view) =>
+        set({ calendarView: view, hasUserSetView: true }),
 
       // Filter actions
       setFilter: (filter) => set({ filter }),
@@ -190,10 +193,15 @@ export const useCalendarStore = create<CalendarState>()(
       partialize: (state) => ({
         filter: state.filter,
         calendarView: state.calendarView,
+        hasUserSetView: state.hasUserSetView,
       }),
     },
   ),
 );
+
+// Selector: hasUserSetView (for smart defaulting)
+export const useHasUserSetView = () =>
+  useCalendarStore((state) => state.hasUserSetView);
 
 // Computed selector: isViewingToday
 export const useIsViewingToday = () =>
