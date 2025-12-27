@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { useIsMobile } from "@/hooks";
 import {
   type CalendarEvent,
   colorMap,
@@ -39,7 +40,11 @@ export function MonthlyCalendar({
   isViewingToday,
 }: MonthlyCalendarProps) {
   const familyMembers = useFamilyMembers();
+  const isMobile = useIsMobile();
   const today = new Date();
+
+  // Show fewer events on mobile to save space
+  const eventsToShow = isMobile ? 2 : 3;
 
   // Memoize the days calculation
   const days = useMemo(() => {
@@ -141,19 +146,20 @@ export function MonthlyCalendar({
       />
 
       {/* Weekday headers */}
-      <div className="grid grid-cols-7 gap-1 mb-2 shrink-0">
+      <div className="grid grid-cols-7 gap-0.5 sm:gap-1 mb-2 shrink-0">
         {weekDays.map((day) => (
           <div
             key={day}
-            className="text-center py-2 text-sm font-medium text-muted-foreground"
+            className="text-center py-1 sm:py-2 text-xs sm:text-sm font-medium text-muted-foreground"
           >
-            {day}
+            {day.slice(0, 1)}
+            <span className="hidden sm:inline">{day.slice(1)}</span>
           </div>
         ))}
       </div>
 
       {/* Calendar grid */}
-      <div className="grid grid-cols-7 gap-1 shrink-0">
+      <div className="grid grid-cols-7 gap-0.5 sm:gap-1 shrink-0">
         {days.map((date, index) => {
           const { events: dayEvents, members: busyMembers } = dayData.get(
             date.toDateString(),
@@ -164,7 +170,7 @@ export function MonthlyCalendar({
               key={index}
               onClick={() => onDateSelect?.(date)}
               className={cn(
-                "min-h-[100px] p-2 rounded-lg border cursor-pointer transition-colors overflow-hidden",
+                "min-h-[60px] sm:min-h-[100px] p-1.5 sm:p-2 rounded-lg border cursor-pointer transition-colors overflow-hidden",
                 "bg-card hover:bg-accent/50",
                 isToday(date) &&
                   "ring-2 ring-primary ring-offset-2 ring-offset-background bg-primary/10 border-primary",
@@ -205,29 +211,30 @@ export function MonthlyCalendar({
                   </div>
                 )}
               </div>
-              <div className="space-y-1">
-                {dayEvents.slice(0, 3).map((event) => {
+              <div className="space-y-0.5 sm:space-y-1">
+                {dayEvents.slice(0, eventsToShow).map((event) => {
                   const member = getFamilyMember(familyMembers, event.memberId);
                   return (
-                    <div
+                    <button
+                      type="button"
                       key={event.id}
                       onClick={(e) => {
                         e.stopPropagation();
                         onEventClick?.(event);
                       }}
                       className={cn(
-                        "text-xs px-1.5 py-0.5 rounded truncate",
+                        "text-xs px-1.5 py-1 sm:py-0.5 rounded truncate text-left w-full min-h-[28px] sm:min-h-0",
                         member ? colorMap[member.color]?.bg : "bg-muted",
                         "text-white font-medium",
                       )}
                     >
                       {event.title}
-                    </div>
+                    </button>
                   );
                 })}
-                {dayEvents.length > 3 && (
+                {dayEvents.length > eventsToShow && (
                   <div className="text-xs text-muted-foreground font-medium">
-                    +{dayEvents.length - 3} more
+                    +{dayEvents.length - eventsToShow} more
                   </div>
                 )}
               </div>
