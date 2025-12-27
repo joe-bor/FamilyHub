@@ -8,6 +8,7 @@ export {
   useEditModalState,
   useEventDetailState,
   useFilterPillsState,
+  useHasUserSetView,
   useIsViewingToday,
 } from "./calendar-store";
 // Module Stores
