@@ -37,7 +37,8 @@ export function MemberCard({
           variant="ghost"
           size="icon"
           onClick={onEdit}
-          className="h-9 w-9"
+          className="h-11 w-11"
+          aria-label={`Edit ${member.name}`}
         >
           <Pencil className="h-4 w-4" />
         </Button>
@@ -48,11 +49,12 @@ export function MemberCard({
           onClick={onRemove}
           disabled={!canRemove}
           className={cn(
-            "h-9 w-9",
+            "h-11 w-11",
             canRemove
               ? "text-destructive hover:text-destructive"
               : "text-muted-foreground",
           )}
+          aria-label={`Remove ${member.name}`}
         >
           <Trash2 className="h-4 w-4" />
         </Button>

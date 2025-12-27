@@ -1,7 +1,13 @@
+import { useMemo } from "react";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { useShallow } from "zustand/shallow";
-import type { FamilyColor, FamilyData, FamilyMember } from "@/lib/types";
+import {
+  type FamilyColor,
+  type FamilyData,
+  type FamilyMember,
+  familyColors,
+} from "@/lib/types";
 
 interface FamilyState {
   // State
@@ -120,7 +126,12 @@ export const useFamilyStore = create<FamilyState>()(
     }),
     {
       name: "family-hub-family",
-      onRehydrateStorage: () => (state) => {
+      onRehydrateStorage: () => (state, error) => {
+        if (error) {
+          console.error("Failed to rehydrate family store:", error);
+          // Clear corrupted data - will trigger onboarding
+          localStorage.removeItem("family-hub-family");
+        }
         state?.setHasHydrated(true);
       },
     },
@@ -163,12 +174,12 @@ export const useFamilyMemberById = (id: string) =>
 
 /**
  * Get the family member map for O(1) lookups.
+ * Memoized to prevent creating new Map on every render.
  */
-export const useFamilyMemberMap = () =>
-  useFamilyStore((state) => {
-    const members = state.family?.members ?? [];
-    return new Map(members.map((m) => [m.id, m]));
-  });
+export const useFamilyMemberMap = () => {
+  const members = useFamilyMembers();
+  return useMemo(() => new Map(members.map((m) => [m.id, m])), [members]);
+};
 
 /**
  * Compound selector for family actions.
@@ -194,18 +205,12 @@ export const useFamilyData = () => useFamilyStore((state) => state.family);
 
 /**
  * Get unused colors (colors not assigned to any member).
+ * Memoized to prevent creating new array on every render.
  */
 export const useUnusedColors = (): FamilyColor[] => {
   const members = useFamilyMembers();
-  const usedColors = new Set(members.map((m) => m.color));
-  const allColors: FamilyColor[] = [
-    "coral",
-    "teal",
-    "green",
-    "purple",
-    "yellow",
-    "pink",
-    "orange",
-  ];
-  return allColors.filter((c) => !usedColors.has(c));
+  return useMemo(() => {
+    const usedColors = new Set(members.map((m) => m.color));
+    return familyColors.filter((c) => !usedColors.has(c));
+  }, [members]);
 };

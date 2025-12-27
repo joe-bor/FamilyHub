@@ -1,16 +1,6 @@
 import { Check } from "lucide-react";
-import { colorMap, type FamilyColor } from "@/lib/types";
+import { colorMap, type FamilyColor, familyColors } from "@/lib/types";
 import { cn } from "@/lib/utils";
-
-const COLORS: FamilyColor[] = [
-  "coral",
-  "teal",
-  "green",
-  "purple",
-  "yellow",
-  "pink",
-  "orange",
-];
 
 interface ColorPickerProps {
   value?: FamilyColor;
@@ -28,7 +18,7 @@ export function ColorPicker({
   return (
     <div className="space-y-2">
       <div className="flex flex-wrap gap-3 justify-center">
-        {COLORS.map((color) => {
+        {familyColors.map((color) => {
           const colors = colorMap[color];
           const isSelected = value === color;
           const isUsed = usedColors.includes(color) && !isSelected;
