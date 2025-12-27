@@ -25,30 +25,7 @@ Persisted data is not validated after loading from localStorage. If the data str
 
 ## Medium Priority (Future Sprint)
 
-### 2. Cross-Tab Synchronization
-**Source:** PR #10 Review (Sprint 5)
-**File:** `src/stores/family-store.ts`
-**Status:** Deferred to Phase 2
-
-**Problem:**
-If user opens app in 2 browser tabs, changes in one tab don't sync to the other.
-
-**Suggested Fix:**
-```typescript
-// Add to family-store.ts
-if (typeof window !== 'undefined') {
-  window.addEventListener('storage', (e) => {
-    if (e.key === 'family-hub-family') {
-      // Rehydrate store with new data
-      useFamilyStore.persist.rehydrate();
-    }
-  });
-}
-```
-
----
-
-### 3. Orphaned Events Warning
+### 2. Orphaned Events Warning
 **Source:** PR #10 Review (Sprint 5)
 **Files:** `src/stores/family-store.ts`, `src/components/settings/family-settings-modal.tsx`
 **Status:** Deferred to Backend Integration
@@ -66,7 +43,7 @@ When a member is deleted:
 
 ---
 
-### 4. Duplicate Member Name Validation
+### 3. Duplicate Member Name Validation
 **Source:** PR #10 Review (Sprint 5)
 **File:** `src/lib/validations/family.ts`
 **Status:** Deferred
@@ -88,21 +65,9 @@ memberFormSchema.refine(
 
 ---
 
-### 5. Mobile Responsiveness Refinements
-**Source:** PR #10 Review (Sprint 5)
-**Files:** Multiple onboarding components
-**Status:** Part of Sprint 5 Responsive Work
-
-**Issues:**
-- Fixed modal width on small phones (`sm:max-w-md`)
-- Fixed padding (`p-6`) should be `p-4 md:p-6`
-- ~~Touch targets below WCAG 44px minimum~~ ✅ Fixed in PR #10
-
----
-
 ## Low Priority (Nice to Have)
 
-### 6. Form Accessibility (aria-describedby)
+### 4. Form Accessibility (aria-describedby)
 **Source:** PR #10 Review (Sprint 5)
 **Files:** All form components
 **Status:** Enhancement
@@ -139,6 +104,8 @@ These items should be addressed when integrating with the backend API:
 | Touch Targets WCAG Compliance | Sprint 5 | #10 | Dec 27, 2025 |
 | Selector Memoization (useFamilyMemberMap, useUnusedColors) | Sprint 5 | #10 | Dec 27, 2025 |
 | Aria-labels on Icon Buttons | Sprint 5 | #10 | Dec 27, 2025 |
+| Cross-Tab Synchronization | Sprint 5 | #10 | Dec 27, 2025 |
+| Mobile Responsiveness (modal width, padding) | Sprint 5 | #10 | Dec 27, 2025 |
 
 ---
 

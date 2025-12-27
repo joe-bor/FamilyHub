@@ -28,7 +28,9 @@
       "Bash(npm run lint:*)",
       "Bash(git stash:*)",
       "Bash(gh pr view:*)",
-      "Bash(git -C /Users/joe.bor/code/family-hub check-ignore dist/)"
+      "Bash(git -C /Users/joe.bor/code/family-hub check-ignore dist/)",
+      "Bash(gh pr comment:*)",
+      "Bash(npm run lint:fix:*)"
     ]
   },
   "hooks": {

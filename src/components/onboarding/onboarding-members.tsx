@@ -58,7 +58,7 @@ export function OnboardingMembers({
   const canComplete = members.length >= 1;
 
   return (
-    <div className="flex flex-col min-h-screen p-6 bg-background">
+    <div className="flex flex-col min-h-screen p-4 md:p-6 bg-background">
       {/* Header with back button */}
       <div className="flex items-center gap-2 mb-8">
         <Button variant="ghost" size="icon" onClick={onBack}>
