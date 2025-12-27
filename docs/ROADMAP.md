@@ -51,7 +51,7 @@ Family Settings (in existing SidebarMenu): ✅ PR #10
 Responsive Design:
 - [ ] Onboarding screens (mobile-first, 320px - 2560px) - needs refinement
 - [ ] Calendar views responsive refinement
-- [ ] Touch target optimization (48px minimum) - needs refinement
+- [x] Touch target optimization (44px minimum) - PR #10
 
 PWA Basics:
 - [ ] PWA manifest (installable, app icon, splash screen)

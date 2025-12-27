@@ -8,32 +8,7 @@ This document tracks known technical debt, deferred improvements, and future enh
 
 ## High Priority (Address Soon)
 
-### 1. localStorage Error Handling
-**Source:** PR #10 Review (Sprint 5)
-**File:** `src/stores/family-store.ts`
-**Status:** Deferred
-
-**Problem:**
-The Zustand persist middleware has no error handling:
-- QuotaExceededError fails silently
-- Disabled localStorage has no fallback
-- Corrupted data has no recovery mechanism
-- Failed hydration hangs the app on loading
-
-**Suggested Fix:**
-```typescript
-onRehydrateStorage: () => (state, error) => {
-  if (error) {
-    console.error('Failed to rehydrate family store:', error);
-    // Clear corrupted data or show error UI
-  }
-  state?.setHasHydrated(true);
-},
-```
-
----
-
-### 2. Data Validation on Rehydration
+### 1. Data Validation on Rehydration
 **Source:** PR #10 Review (Sprint 5)
 **File:** `src/stores/family-store.ts`
 **Status:** Deferred
@@ -48,22 +23,9 @@ Persisted data is not validated after loading from localStorage. If the data str
 
 ---
 
-### 3. Remove Dead Code from AppStore
-**Source:** PR #10 Review (Sprint 5)
-**File:** `src/stores/app-store.ts`
-**Status:** Ready to Fix
-
-**Problem:**
-`familyName` and `setFamilyName` are unused since PR #10 migrated to `family-store.ts`.
-
-**Fix:**
-Remove lines 9, 16, 23, 31 from `src/stores/app-store.ts`.
-
----
-
 ## Medium Priority (Future Sprint)
 
-### 4. Cross-Tab Synchronization
+### 2. Cross-Tab Synchronization
 **Source:** PR #10 Review (Sprint 5)
 **File:** `src/stores/family-store.ts`
 **Status:** Deferred to Phase 2
@@ -86,7 +48,7 @@ if (typeof window !== 'undefined') {
 
 ---
 
-### 5. Orphaned Events Warning
+### 3. Orphaned Events Warning
 **Source:** PR #10 Review (Sprint 5)
 **Files:** `src/stores/family-store.ts`, `src/components/settings/family-settings-modal.tsx`
 **Status:** Deferred to Backend Integration
@@ -104,7 +66,7 @@ When a member is deleted:
 
 ---
 
-### 6. Duplicate Member Name Validation
+### 4. Duplicate Member Name Validation
 **Source:** PR #10 Review (Sprint 5)
 **File:** `src/lib/validations/family.ts`
 **Status:** Deferred
@@ -126,7 +88,7 @@ memberFormSchema.refine(
 
 ---
 
-### 7. Mobile Responsiveness Refinements
+### 5. Mobile Responsiveness Refinements
 **Source:** PR #10 Review (Sprint 5)
 **Files:** Multiple onboarding components
 **Status:** Part of Sprint 5 Responsive Work
@@ -134,29 +96,13 @@ memberFormSchema.refine(
 **Issues:**
 - Fixed modal width on small phones (`sm:max-w-md`)
 - Fixed padding (`p-6`) should be `p-4 md:p-6`
-- Touch targets below WCAG 44px minimum (`h-9 w-9` = 36px)
+- ~~Touch targets below WCAG 44px minimum~~ ✅ Fixed in PR #10
 
 ---
 
 ## Low Priority (Nice to Have)
 
-### 8. Color Picker Code Duplication
-**Source:** PR #10 Review (Sprint 5)
-**File:** `src/components/ui/color-picker.tsx`
-**Status:** Minor Cleanup
-
-**Problem:**
-Colors are hardcoded in `color-picker.tsx` instead of importing from `@/lib/types/family`.
-
-**Fix:**
-```typescript
-import { familyColors } from "@/lib/types/family";
-// Use familyColors instead of local COLORS constant
-```
-
----
-
-### 9. Form Accessibility (aria-describedby)
+### 6. Form Accessibility (aria-describedby)
 **Source:** PR #10 Review (Sprint 5)
 **Files:** All form components
 **Status:** Enhancement
@@ -187,7 +133,12 @@ These items should be addressed when integrating with the backend API:
 
 | Item | Sprint | PR | Date |
 |------|--------|----|----|
-| *None yet* | | | |
+| localStorage Error Handling | Sprint 5 | #10 | Dec 27, 2025 |
+| Remove Dead Code from AppStore | Sprint 5 | #10 | Dec 27, 2025 |
+| Color Picker Code Duplication | Sprint 5 | #10 | Dec 27, 2025 |
+| Touch Targets WCAG Compliance | Sprint 5 | #10 | Dec 27, 2025 |
+| Selector Memoization (useFamilyMemberMap, useUnusedColors) | Sprint 5 | #10 | Dec 27, 2025 |
+| Aria-labels on Icon Buttons | Sprint 5 | #10 | Dec 27, 2025 |
 
 ---
 
