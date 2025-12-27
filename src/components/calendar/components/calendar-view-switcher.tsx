@@ -27,14 +27,14 @@ export function CalendarViewSwitcher() {
           key={v.id}
           onClick={() => setCalendarView(v.id)}
           className={cn(
-            "flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-all",
+            "flex items-center justify-center gap-1.5 px-2 sm:px-3 py-1.5 min-h-11 min-w-11 rounded-md text-sm font-medium transition-all",
             calendarView === v.id
               ? "bg-background text-foreground shadow-sm"
               : "text-muted-foreground hover:text-foreground hover:bg-background/50",
           )}
         >
           {v.icon}
-          <span>{v.label}</span>
+          <span className="hidden sm:inline">{v.label}</span>
         </button>
       ))}
     </div>
