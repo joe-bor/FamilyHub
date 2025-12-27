@@ -8,24 +8,13 @@ This document tracks known technical debt, deferred improvements, and future enh
 
 ## High Priority (Address Soon)
 
-### 1. Data Validation on Rehydration
-**Source:** PR #10 Review (Sprint 5)
-**File:** `src/stores/family-store.ts`
-**Status:** Deferred
-
-**Problem:**
-Persisted data is not validated after loading from localStorage. If the data structure changes in a future release or gets corrupted, the app could crash.
-
-**Suggested Fix:**
-- Add Zod schema validation after hydration
-- Add `version` field to storage config for migrations
-- Clear invalid data and restart onboarding if validation fails
+_No high priority items at this time._
 
 ---
 
 ## Medium Priority (Future Sprint)
 
-### 2. Orphaned Events Warning
+### 1. Orphaned Events Warning
 **Source:** PR #10 Review (Sprint 5)
 **Files:** `src/stores/family-store.ts`, `src/components/settings/family-settings-modal.tsx`
 **Status:** Deferred to Backend Integration
@@ -43,37 +32,9 @@ When a member is deleted:
 
 ---
 
-### 3. Duplicate Member Name Validation
-**Source:** PR #10 Review (Sprint 5)
-**File:** `src/lib/validations/family.ts`
-**Status:** Deferred
-
-**Problem:**
-Users can add members with duplicate names (e.g., two "John"s).
-
-**Suggested Fix:**
-Add Zod refinement with context:
-```typescript
-memberFormSchema.refine(
-  (data, ctx) => {
-    const existingNames = ctx.existingMembers?.map(m => m.name.toLowerCase());
-    return !existingNames?.includes(data.name.toLowerCase());
-  },
-  { message: "A member with this name already exists" }
-);
-```
-
----
-
 ## Low Priority (Nice to Have)
 
-### 4. Form Accessibility (aria-describedby)
-**Source:** PR #10 Review (Sprint 5)
-**Files:** All form components
-**Status:** Enhancement
-
-**Problem:**
-Form error messages aren't linked to inputs via `aria-describedby`. Screen reader users won't hear validation errors when focused on inputs.
+_No low priority items at this time._
 
 ---
 
@@ -98,6 +59,9 @@ These items should be addressed when integrating with the backend API:
 
 | Item | Sprint | PR | Date |
 |------|--------|----|----|
+| Data Validation on Rehydration (Zod schema) | Sprint 5 | - | Dec 27, 2025 |
+| Duplicate Member Name Validation | Sprint 5 | - | Dec 27, 2025 |
+| Form Accessibility (aria-describedby) | Sprint 5 | - | Dec 27, 2025 |
 | localStorage Error Handling | Sprint 5 | #10 | Dec 27, 2025 |
 | Remove Dead Code from AppStore | Sprint 5 | #10 | Dec 27, 2025 |
 | Color Picker Code Duplication | Sprint 5 | #10 | Dec 27, 2025 |

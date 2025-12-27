@@ -56,19 +56,26 @@ export function OnboardingFamilyName({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="familyName" className="sr-only">
+            <Label htmlFor="onboarding-family-name" className="sr-only">
               Family Name
             </Label>
             <Input
-              id="familyName"
+              id="onboarding-family-name"
               placeholder="The Smiths"
               className="text-center text-lg h-14"
               autoComplete="off"
               autoFocus
+              aria-describedby={
+                errors.name ? "onboarding-family-name-error" : undefined
+              }
+              aria-invalid={errors.name ? "true" : undefined}
               {...register("name")}
             />
             {errors.name && (
-              <p className="text-sm text-destructive text-center">
+              <p
+                id="onboarding-family-name-error"
+                className="text-sm text-destructive text-center"
+              >
                 {errors.name.message}
               </p>
             )}

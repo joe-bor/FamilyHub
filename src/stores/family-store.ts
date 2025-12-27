@@ -8,6 +8,7 @@ import {
   type FamilyMember,
   familyColors,
 } from "@/lib/types";
+import { validateFamilyData } from "@/lib/validations/family";
 
 interface FamilyState {
   // State
@@ -131,6 +132,14 @@ export const useFamilyStore = create<FamilyState>()(
           console.error("Failed to rehydrate family store:", error);
           // Clear corrupted data - will trigger onboarding
           localStorage.removeItem("family-hub-family");
+        } else if (state?.family) {
+          // Validate the structure of rehydrated data
+          const validatedData = validateFamilyData(state.family);
+          if (!validatedData) {
+            console.warn("Invalid family data structure, resetting store");
+            localStorage.removeItem("family-hub-family");
+            state.resetFamily();
+          }
         }
         state?.setHasHydrated(true);
       },
