@@ -227,70 +227,73 @@ export function WeeklyCalendar({
       </div>
 
       {/* Calendar grid with events */}
-      <div className="flex-1 overflow-y-auto" ref={scrollContainerRef}>
-        <div className="grid min-h-full" style={{ gridTemplateColumns }}>
-          {/* Time column */}
-          <div className="bg-card border-r border-border">
-            {timeSlots.map((time, index) => (
-              <div
-                key={index}
-                className="h-20 flex items-start justify-end pr-2 pt-1 border-b border-border/50"
-              >
-                <span className="text-xs text-foreground/70 font-semibold">
-                  {time}
-                </span>
-              </div>
-            ))}
-          </div>
-
-          {/* Day columns */}
-          {weekDays.map((date, dayIndex) => {
-            const dayEvents = getEventsForDay(date);
-            const isTodayColumn = isToday(date);
-
-            return (
-              <div
-                key={dayIndex}
-                className={cn(
-                  "border-l border-border relative",
-                  isTodayColumn && "bg-primary/5",
-                )}
-              >
-                {timeSlots.map((_, index) => (
-                  <div
-                    key={index}
-                    className={cn(
-                      "h-20 border-b border-border/50",
-                      index % 2 === 0 && !isTodayColumn && "bg-muted/20",
-                    )}
-                  />
-                ))}
-
-                {isTodayColumn && <CurrentTimeIndicator />}
-
-                <div className="absolute inset-0 px-0.5">
-                  {dayEvents.map((event) => {
-                    const { top, height } = getEventPosition(
-                      event.startTime,
-                      event.endTime,
-                    );
-                    return (
-                      <div
-                        key={event.id}
-                        className="absolute left-0.5 right-0.5 overflow-hidden rounded-xl"
-                        style={{ top: `${top}px`, height: `${height}px` }}
-                      >
-                        <CalendarEventCard
-                          event={event}
-                          onClick={() => onEventClick?.(event)}
-                        />
-                      </div>
-                    );
-                  })}
+      <div className="flex-1 overflow-auto" ref={scrollContainerRef}>
+        {/* Min-width wrapper enables horizontal scroll on narrow screens */}
+        <div className="min-w-[640px]">
+          <div className="grid min-h-full" style={{ gridTemplateColumns }}>
+            {/* Time column */}
+            <div className="bg-card border-r border-border">
+              {timeSlots.map((time, index) => (
+                <div
+                  key={index}
+                  className="h-20 flex items-start justify-end pr-2 pt-1 border-b border-border/50"
+                >
+                  <span className="text-xs text-foreground/70 font-semibold">
+                    {time}
+                  </span>
                 </div>
-              </div>
-            );
-          })}
+              ))}
+            </div>
+
+            {/* Day columns */}
+            {weekDays.map((date, dayIndex) => {
+              const dayEvents = getEventsForDay(date);
+              const isTodayColumn = isToday(date);
+
+              return (
+                <div
+                  key={dayIndex}
+                  className={cn(
+                    "border-l border-border relative",
+                    isTodayColumn && "bg-primary/5",
+                  )}
+                >
+                  {timeSlots.map((_, index) => (
+                    <div
+                      key={index}
+                      className={cn(
+                        "h-20 border-b border-border/50",
+                        index % 2 === 0 && !isTodayColumn && "bg-muted/20",
+                      )}
+                    />
+                  ))}
+
+                  {isTodayColumn && <CurrentTimeIndicator />}
+
+                  <div className="absolute inset-0 px-0.5">
+                    {dayEvents.map((event) => {
+                      const { top, height } = getEventPosition(
+                        event.startTime,
+                        event.endTime,
+                      );
+                      return (
+                        <div
+                          key={event.id}
+                          className="absolute left-0.5 right-0.5 overflow-hidden rounded-xl"
+                          style={{ top: `${top}px`, height: `${height}px` }}
+                        >
+                          <CalendarEventCard
+                            event={event}
+                            onClick={() => onEventClick?.(event)}
+                          />
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
       </div>
     </div>

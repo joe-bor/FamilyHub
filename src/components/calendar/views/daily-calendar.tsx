@@ -197,7 +197,7 @@ export function DailyCalendar({
 
       {/* Day info header */}
       <div className="flex border-b border-border bg-card shrink-0">
-        <div className="w-16 shrink-0" />
+        <div className="w-12 sm:w-16 shrink-0" />
         <div
           className={cn(
             "flex-1 text-center py-4",
@@ -228,7 +228,7 @@ export function DailyCalendar({
       {/* Calendar grid */}
       <div className="flex-1 flex overflow-y-auto" ref={scrollContainerRef}>
         {/* Time column */}
-        <div className="w-16 shrink-0 bg-card border-r border-border">
+        <div className="w-12 sm:w-16 shrink-0 bg-card border-r border-border">
           {timeSlots.map((time, index) => (
             <div
               key={index}
