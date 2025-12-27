@@ -1,10 +1,12 @@
 # FamilyHub Development Roadmap
 
-**Last Updated:** December 25, 2025
+**Last Updated:** December 27, 2025
 
 ## Current Status
 
-**Phase 1B: Calendar Frontend Polish** - Sprint 4 Complete
+**Phase 1B: Calendar Frontend Polish** - Sprint 5 In Progress
+
+> **Note:** See [TECHNICAL-DEBT.md](./TECHNICAL-DEBT.md) for known issues and deferred improvements.
 
 ---
 
@@ -30,26 +32,26 @@
 - [x] Full CRUD operations (create, read, update, delete) with optimistic updates
 - [x] Centralized date/time utilities in `time-utils.ts` (timezone-safe operations)
 
-**Sprint 5: Family Setup & Responsive**
+**Sprint 5: Family Setup & Responsive** 🚧 IN PROGRESS
 
-Family Onboarding (localStorage-backed):
-- [ ] Welcome screen with "Get Started" CTA
-- [ ] Family name input screen
-- [ ] Add family members screen (name + color picker)
-- [ ] localStorage persistence layer for family data
-- [ ] First-run detection (redirect to setup if no family exists)
+Family Onboarding (localStorage-backed): ✅ PR #10
+- [x] Welcome screen with "Get Started" CTA
+- [x] Family name input screen
+- [x] Add family members screen (name + color picker)
+- [x] localStorage persistence layer for family data
+- [x] First-run detection (redirect to setup if no family exists)
 
-Family Settings (in existing SidebarMenu):
-- [ ] Edit family name
-- [ ] Member list with edit/remove functionality
-- [ ] Add new member flow
-- [ ] Color picker component (7 predefined colors)
-- [ ] Reset/delete family option
+Family Settings (in existing SidebarMenu): ✅ PR #10
+- [x] Edit family name
+- [x] Member list with edit/remove functionality
+- [x] Add new member flow
+- [x] Color picker component (7 predefined colors)
+- [x] Reset/delete family option
 
 Responsive Design:
-- [ ] Onboarding screens (mobile-first, 320px - 2560px)
+- [ ] Onboarding screens (mobile-first, 320px - 2560px) - needs refinement
 - [ ] Calendar views responsive refinement
-- [ ] Touch target optimization (48px minimum)
+- [ ] Touch target optimization (48px minimum) - needs refinement
 
 PWA Basics:
 - [ ] PWA manifest (installable, app icon, splash screen)
