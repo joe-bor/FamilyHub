@@ -47,6 +47,10 @@ src/
 │   │   └── delay.ts           # Simulated network delay
 │   └── index.ts               # Barrel exports
 │
+├── hooks/                     # Custom React hooks
+│   ├── use-is-mobile.ts       # Mobile detection using matchMedia
+│   └── index.ts               # Barrel exports
+│
 ├── providers/                 # React context providers
 │   └── query-provider.tsx     # TanStack Query setup with DevTools
 │
