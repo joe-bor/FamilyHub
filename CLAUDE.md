@@ -51,9 +51,10 @@ src/
 │   └── query-provider.tsx     # TanStack Query setup with DevTools
 │
 ├── stores/                    # Zustand UI state management
-│   ├── app-store.ts           # App-wide state (activeTab, sidebar, familyName)
+│   ├── app-store.ts           # App-wide state (activeModule, sidebar)
 │   ├── calendar-store.ts      # Calendar UI state (date, view, filters)
-│   └── index.ts               # Barrel exports + selectors (useIsViewingToday)
+│   ├── family-store.ts        # Family data with localStorage persistence
+│   └── index.ts               # Barrel exports + selectors
 │
 ├── lib/
 │   ├── types/                 # Centralized type definitions
@@ -104,9 +105,15 @@ Uses a hybrid approach: **TanStack Query** for server state (API data) and **Zus
 **Zustand (UI State):**
 
 **app-store.ts:**
-- `activeTab` - Current module (calendar, chores, meals, lists, photos)
+- `activeModule` - Current module (calendar, chores, meals, lists, photos)
 - `isSidebarOpen` / `openSidebar` / `closeSidebar` - Sidebar state
-- `familyName` - Display name for family
+
+**family-store.ts:** (localStorage-persisted)
+- `family` - Family data (name, members, setupComplete)
+- `useFamilyName()` - Get family name
+- `useFamilyMembers()` - Get family members array
+- `useSetupComplete()` - Check if onboarding is complete
+- `useFamilyActions()` - CRUD operations for family/members
 
 **calendar-store.ts:**
 - `currentDate`, `calendarView`, `filter` - Calendar UI preferences
