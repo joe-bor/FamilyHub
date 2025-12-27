@@ -214,3 +214,19 @@ export const useUnusedColors = (): FamilyColor[] => {
     return familyColors.filter((c) => !usedColors.has(c));
   }, [members]);
 };
+
+// ============================================================================
+// Cross-Tab Synchronization
+// ============================================================================
+
+/**
+ * Listen for localStorage changes from other tabs and rehydrate the store.
+ * This ensures family data stays in sync across multiple browser tabs.
+ */
+if (typeof window !== "undefined") {
+  window.addEventListener("storage", (event) => {
+    if (event.key === "family-hub-family") {
+      useFamilyStore.persist.rehydrate();
+    }
+  });
+}

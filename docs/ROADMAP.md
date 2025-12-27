@@ -49,7 +49,7 @@ Family Settings (in existing SidebarMenu): ✅ PR #10
 - [x] Reset/delete family option
 
 Responsive Design:
-- [ ] Onboarding screens (mobile-first, 320px - 2560px) - needs refinement
+- [x] Onboarding screens (mobile-first, 320px - 2560px) - PR #10
 - [ ] Calendar views responsive refinement
 - [x] Touch target optimization (44px minimum) - PR #10
 
