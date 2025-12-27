@@ -134,6 +134,7 @@ export function OnboardingMembers({
         mode={editingMember ? "edit" : "add"}
         member={editingMember ?? undefined}
         usedColors={usedColorsForForm as FamilyColor[]}
+        existingNames={members.map((m) => m.name)}
         onSubmit={handleFormSubmit}
       />
     </div>

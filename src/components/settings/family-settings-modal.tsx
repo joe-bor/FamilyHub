@@ -132,9 +132,16 @@ export function FamilySettingsModal({
                     id="familyName"
                     placeholder="Enter family name"
                     {...register("name")}
+                    aria-describedby={
+                      errors.name ? "family-name-error" : undefined
+                    }
+                    aria-invalid={errors.name ? "true" : undefined}
                   />
                   {errors.name && (
-                    <p className="text-sm text-destructive">
+                    <p
+                      id="family-name-error"
+                      className="text-sm text-destructive"
+                    >
                       {errors.name.message}
                     </p>
                   )}
@@ -222,6 +229,7 @@ export function FamilySettingsModal({
         mode={editingMember ? "edit" : "add"}
         member={editingMember ?? undefined}
         usedColors={usedColorsForForm as FamilyColor[]}
+        existingNames={familyMembers.map((m) => m.name)}
         onSubmit={handleMemberFormSubmit}
       />
 

@@ -1,7 +1,6 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { useForm } from "react-hook-form";
-import type { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { ColorPicker } from "@/components/ui/color-picker";
 import {
@@ -13,9 +12,10 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { FamilyColor, FamilyMember } from "@/lib/types";
-import { memberFormSchema } from "@/lib/validations/family";
-
-type MemberFormData = z.infer<typeof memberFormSchema>;
+import {
+  createMemberFormSchema,
+  type MemberFormData,
+} from "@/lib/validations/family";
 
 interface MemberFormModalProps {
   open: boolean;
@@ -23,6 +23,7 @@ interface MemberFormModalProps {
   mode: "add" | "edit";
   member?: FamilyMember;
   usedColors: FamilyColor[];
+  existingNames: string[];
   onSubmit: (data: MemberFormData) => void;
 }
 
@@ -32,8 +33,20 @@ export function MemberFormModal({
   mode,
   member,
   usedColors,
+  existingNames,
   onSubmit,
 }: MemberFormModalProps) {
+  // Create schema with duplicate name validation
+  // In edit mode, exclude current member's name from duplicate check
+  const schema = useMemo(
+    () =>
+      createMemberFormSchema(
+        existingNames,
+        mode === "edit" ? member?.name : undefined,
+      ),
+    [existingNames, mode, member?.name],
+  );
+
   const {
     register,
     handleSubmit,
@@ -42,7 +55,7 @@ export function MemberFormModal({
     reset,
     formState: { errors },
   } = useForm<MemberFormData>({
-    resolver: zodResolver(memberFormSchema),
+    resolver: zodResolver(schema),
     defaultValues: {
       name: "",
       color: undefined,
@@ -78,15 +91,19 @@ export function MemberFormModal({
 
         <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">
           <div className="space-y-2">
-            <Label htmlFor="name">Name</Label>
+            <Label htmlFor="member-name">Name</Label>
             <Input
-              id="name"
+              id="member-name"
               placeholder="Enter name"
               {...register("name")}
               autoComplete="off"
+              aria-describedby={errors.name ? "member-name-error" : undefined}
+              aria-invalid={errors.name ? "true" : undefined}
             />
             {errors.name && (
-              <p className="text-sm text-destructive">{errors.name.message}</p>
+              <p id="member-name-error" className="text-sm text-destructive">
+                {errors.name.message}
+              </p>
             )}
           </div>
 

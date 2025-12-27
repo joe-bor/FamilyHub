@@ -7,6 +7,8 @@ interface ColorPickerProps {
   onChange: (color: FamilyColor) => void;
   usedColors?: FamilyColor[];
   error?: string;
+  /** ID for the error message element, used for aria-describedby */
+  errorId?: string;
 }
 
 export function ColorPicker({
@@ -14,10 +16,15 @@ export function ColorPicker({
   onChange,
   usedColors = [],
   error,
+  errorId = "color-picker-error",
 }: ColorPickerProps) {
   return (
-    <div className="space-y-2">
-      <div className="flex flex-wrap gap-3 justify-center">
+    <fieldset className="space-y-2 border-0 p-0 m-0">
+      <legend className="sr-only">Select a color</legend>
+      <div
+        aria-describedby={error ? errorId : undefined}
+        className="flex flex-wrap gap-3 justify-center"
+      >
         {familyColors.map((color) => {
           const colors = colorMap[color];
           const isSelected = value === color;
@@ -43,7 +50,11 @@ export function ColorPicker({
           );
         })}
       </div>
-      {error && <p className="text-sm text-destructive text-center">{error}</p>}
-    </div>
+      {error && (
+        <p id={errorId} className="text-sm text-destructive text-center">
+          {error}
+        </p>
+      )}
+    </fieldset>
   );
 }
