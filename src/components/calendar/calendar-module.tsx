@@ -6,7 +6,7 @@ import {
   startOfMonth,
   startOfWeek,
 } from "date-fns";
-import { Profiler, useMemo } from "react";
+import { Profiler, useEffect, useMemo } from "react";
 import {
   useCalendarEvents,
   useCreateEvent,
@@ -24,6 +24,7 @@ import {
   ScheduleCalendar,
   WeeklyCalendar,
 } from "@/components/calendar";
+import { useIsMobile } from "@/hooks";
 import { logProfilerData } from "@/lib/perf-utils";
 import { format24hTo12h } from "@/lib/time-utils";
 import type {
@@ -35,12 +36,26 @@ import type { EventFormData } from "@/lib/validations";
 import {
   useCalendarActions,
   useCalendarState,
+  useCalendarStore,
   useEditModalState,
   useEventDetailState,
+  useHasUserSetView,
   useIsViewingToday,
 } from "@/stores";
 
 export function CalendarModule() {
+  // Mobile detection for smart view defaulting
+  const isMobile = useIsMobile();
+  const hasUserSetView = useHasUserSetView();
+
+  // Smart default: switch to schedule on mobile for first-time users
+  useEffect(() => {
+    if (!hasUserSetView && isMobile) {
+      // Apply smart default without marking as user-set
+      useCalendarStore.setState({ calendarView: "schedule" });
+    }
+  }, [hasUserSetView, isMobile]);
+
   // Client state from Zustand (compound selector with shallow comparison)
   const { currentDate, calendarView, filter, isAddEventModalOpen } =
     useCalendarState();
