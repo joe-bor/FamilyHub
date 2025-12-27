@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Background circle -->
+  <circle cx="256" cy="256" r="240" fill="#8B5CF6"/>
+
+  <!-- House shape -->
+  <path d="M256 100 L400 220 L400 400 L112 400 L112 220 Z" fill="white"/>
+
+  <!-- Roof -->
+  <path d="M256 80 L420 230 L400 250 L256 130 L112 250 L92 230 Z" fill="white"/>
+
+  <!-- Door -->
+  <rect x="216" y="300" width="80" height="100" rx="4" fill="#8B5CF6"/>
+
+  <!-- Calendar grid on house -->
+  <g fill="#8B5CF6">
+    <rect x="140" y="250" width="45" height="35" rx="3"/>
+    <rect x="195" y="250" width="45" height="35" rx="3"/>
+    <rect x="272" y="250" width="45" height="35" rx="3"/>
+    <rect x="327" y="250" width="45" height="35" rx="3"/>
+  </g>
+</svg>
