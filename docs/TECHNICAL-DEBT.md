@@ -53,6 +53,22 @@ These items should be addressed when integrating with the backend API:
    - `PUT /api/family/members/:id` - Update member
    - `DELETE /api/family/members/:id` - Remove member
 
+4. **PWA API Response Caching**: Add service worker caching for API responses to enable offline functionality.
+   - **Files:** `vite.config.ts` (workbox runtimeCaching)
+   - **Suggested Config:**
+     ```typescript
+     {
+       urlPattern: /\/api\/.*/,
+       handler: "NetworkFirst",
+       options: {
+         cacheName: "api-cache",
+         expiration: { maxAgeSeconds: 3600 },
+         networkTimeoutSeconds: 3
+       }
+     }
+     ```
+   - This enables showing cached data when offline and falls back gracefully.
+
 ---
 
 ## Completed Items
