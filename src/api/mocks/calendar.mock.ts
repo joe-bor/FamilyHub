@@ -11,6 +11,9 @@ import type {
 } from "@/lib/types";
 import { simulateApiCall } from "./delay";
 
+// localStorage key for persisting mock events
+const STORAGE_KEY = "family-hub-calendar-events";
+
 // Event templates for generating sample data
 const eventTemplates = [
   {
@@ -158,8 +161,53 @@ function generateSampleEvents(): CalendarEvent[] {
   return events;
 }
 
-// In-memory storage for mock data
-let mockEvents: CalendarEvent[] = generateSampleEvents();
+// Persistence helpers
+function saveEventsToStorage(events: CalendarEvent[]): void {
+  try {
+    // Serialize events, converting Date objects to ISO strings
+    const serialized = events.map((event) => ({
+      ...event,
+      date: event.date instanceof Date ? event.date.toISOString() : event.date,
+    }));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(serialized));
+  } catch (error) {
+    console.error("Failed to save calendar events to localStorage:", error);
+  }
+}
+
+function loadEventsFromStorage(): CalendarEvent[] | null {
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (!stored) return null;
+
+    const parsed = JSON.parse(stored) as Array<
+      CalendarEvent & { date: string }
+    >;
+    // Deserialize: convert ISO date strings back to Date objects
+    return parsed.map((event) => ({
+      ...event,
+      date: new Date(event.date),
+    }));
+  } catch (error) {
+    console.error("Failed to load calendar events from localStorage:", error);
+    return null;
+  }
+}
+
+function initializeMockEvents(): CalendarEvent[] {
+  // Try to load from localStorage first
+  const stored = loadEventsFromStorage();
+  if (stored && stored.length > 0) {
+    return stored;
+  }
+  // Generate sample events and persist them
+  const generated = generateSampleEvents();
+  saveEventsToStorage(generated);
+  return generated;
+}
+
+// In-memory storage for mock data (initialized from localStorage or generated)
+let mockEvents: CalendarEvent[] = initializeMockEvents();
 
 function createApiResponse<T>(data: T): ApiResponse<T> {
   return {
@@ -245,6 +293,7 @@ export const calendarMockHandlers = {
     };
 
     mockEvents = [...mockEvents, newEvent];
+    saveEventsToStorage(mockEvents);
 
     return createMutationResponse(newEvent, "Event created successfully");
   },
@@ -280,6 +329,7 @@ export const calendarMockHandlers = {
       updatedEvent,
       ...mockEvents.slice(index + 1),
     ];
+    saveEventsToStorage(mockEvents);
 
     return createMutationResponse(updatedEvent, "Event updated successfully");
   },
@@ -297,10 +347,12 @@ export const calendarMockHandlers = {
     }
 
     mockEvents = mockEvents.filter((e) => e.id !== id);
+    saveEventsToStorage(mockEvents);
   },
 
   // Utility for resetting mock data (useful for testing)
   resetMockData(): void {
     mockEvents = generateSampleEvents();
+    saveEventsToStorage(mockEvents);
   },
 };
