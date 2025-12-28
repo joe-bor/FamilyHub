@@ -18,8 +18,11 @@ export default defineConfig({
         name: "FamilyHub",
         short_name: "FamilyHub",
         description: "Your family's command center",
+        id: "/",
+        scope: "/",
         start_url: "/",
         display: "standalone",
+        orientation: "portrait",
         background_color: "#faf8f5",
         theme_color: "#faf8f5",
         icons: [
@@ -43,6 +46,8 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ["**/*.{js,css,html,ico,png,svg,woff,woff2}"],
+        navigateFallback: "/index.html",
+        navigateFallbackDenylist: [/^\/api/],
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
