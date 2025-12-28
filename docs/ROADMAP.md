@@ -1,10 +1,10 @@
 # FamilyHub Development Roadmap
 
-**Last Updated:** December 27, 2025
+**Last Updated:** December 28, 2025
 
 ## Current Status
 
-**Phase 1B: Calendar Frontend Polish** - Sprint 5 In Progress
+**Phase 1B: Calendar Frontend Polish** - Sprint 5 Complete
 
 > **Note:** See [TECHNICAL-DEBT.md](./TECHNICAL-DEBT.md) for known issues and deferred improvements.
 
@@ -32,7 +32,7 @@
 - [x] Full CRUD operations (create, read, update, delete) with optimistic updates
 - [x] Centralized date/time utilities in `time-utils.ts` (timezone-safe operations)
 
-**Sprint 5: Family Setup & Responsive** 🚧 IN PROGRESS
+**Sprint 5: Family Setup & Responsive** ✅ COMPLETED (December 28, 2025)
 
 Family Onboarding (localStorage-backed): ✅ PR #10
 - [x] Welcome screen with "Get Started" CTA
@@ -53,10 +53,10 @@ Responsive Design:
 - [x] Calendar views responsive refinement (smart defaults, monthly fixes, touch targets)
 - [x] Touch target optimization (44px minimum) - PR #10
 
-PWA Basics:
-- [ ] PWA manifest (installable, app icon, splash screen)
-- [ ] Static asset caching (JS, CSS, images)
-- [ ] (Deferred: Offline calendar viewing → Phase 2 with real backend)
+PWA Basics: ✅ PR #13
+- [x] PWA manifest (installable, app icon, splash screen)
+- [x] Static asset caching (JS, CSS, images, fonts via Workbox)
+- [x] (Deferred: Offline calendar viewing → Phase 2 with real backend)
 
 **Sprint 6: Testing & Polish**
 

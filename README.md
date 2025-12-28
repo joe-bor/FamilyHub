@@ -21,7 +21,7 @@ npm run build    # Type-check and build for production
 
 ## Current Status
 
-**Phase 1B: Calendar Frontend Polish** - API layer complete, PWA next
+**Phase 1B: Calendar Frontend Polish** - Sprint 5 complete (Family onboarding, responsive design, PWA)
 
 See [ROADMAP.md](docs/ROADMAP.md) for sprint checklists and future plans.
 
