@@ -10,14 +10,15 @@
         "noStaticElementInteractions": "off",
         "noSvgWithoutTitle": "off"
       },
-      "suspicious": {
-        "noArrayIndexKey": "off"
-      },
       "style": {
         "noNonNullAssertion": "off"
       },
       "correctness": {
         "noUnusedImports": "warn"
+      },
+      "suspicious": {
+        "noArrayIndexKey": "off",
+        "noFocusedTests": "error"
       }
     }
   },
@@ -63,7 +64,8 @@
       "**/*.json",
       "!!dist",
       "!!node_modules",
-      "!!.husky"
+      "!!.husky",
+      "!!coverage"
     ]
   }
 }
