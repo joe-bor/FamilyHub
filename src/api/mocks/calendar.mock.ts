@@ -11,130 +11,67 @@ import type {
 } from "@/lib/types";
 import { simulateApiCall } from "./delay";
 
-// localStorage key for persisting mock events
+// localStorage keys
 const STORAGE_KEY = "family-hub-calendar-events";
+const FAMILY_STORAGE_KEY = "family-hub-family";
 
-// Event templates for generating sample data
+// Event templates for generating sample data (memberId assigned dynamically)
 const eventTemplates = [
-  {
-    title: "Coffee with Diana",
-    memberId: "1",
-    startTime: "9:00 AM",
-    endTime: "10:00 AM",
-  },
-  {
-    title: "Pickup Day Cleaning",
-    memberId: "6",
-    startTime: "8:00 AM",
-    endTime: "9:00 AM",
-  },
-  {
-    title: "Soccer Practice",
-    memberId: "4",
-    startTime: "4:00 PM",
-    endTime: "5:30 PM",
-  },
-  {
-    title: "Emma's Birthday Party",
-    memberId: "3",
-    startTime: "2:00 PM",
-    endTime: "5:00 PM",
-  },
-  {
-    title: "Grocery Run",
-    memberId: "1",
-    startTime: "11:00 AM",
-    endTime: "12:00 PM",
-  },
-  {
-    title: "Dogo's Bath Day!",
-    memberId: "6",
-    startTime: "10:00 AM",
-    endTime: "11:00 AM",
-  },
-  {
-    title: "Amelia's Baby Shower",
-    memberId: "1",
-    startTime: "1:00 PM",
-    endTime: "3:00 PM",
-  },
-  {
-    title: "Tutoring",
-    memberId: "3",
-    startTime: "3:30 PM",
-    endTime: "4:30 PM",
-  },
-  {
-    title: "Mincey Toss",
-    memberId: "4",
-    startTime: "9:00 AM",
-    endTime: "10:00 AM",
-  },
+  { title: "Coffee with Diana", startTime: "9:00 AM", endTime: "10:00 AM" },
+  { title: "Pickup Day Cleaning", startTime: "8:00 AM", endTime: "9:00 AM" },
+  { title: "Soccer Practice", startTime: "4:00 PM", endTime: "5:30 PM" },
+  { title: "Emma's Birthday Party", startTime: "2:00 PM", endTime: "5:00 PM" },
+  { title: "Grocery Run", startTime: "11:00 AM", endTime: "12:00 PM" },
+  { title: "Dogo's Bath Day!", startTime: "10:00 AM", endTime: "11:00 AM" },
+  { title: "Amelia's Baby Shower", startTime: "1:00 PM", endTime: "3:00 PM" },
+  { title: "Tutoring", startTime: "3:30 PM", endTime: "4:30 PM" },
+  { title: "Mincey Toss", startTime: "9:00 AM", endTime: "10:00 AM" },
   {
     title: "House Cleaner Estimate",
-    memberId: "2",
     startTime: "10:00 AM",
     endTime: "11:00 AM",
   },
-  {
-    title: "Dance Group",
-    memberId: "5",
-    startTime: "5:00 PM",
-    endTime: "6:30 PM",
-  },
-  {
-    title: "Lunch With Mom",
-    memberId: "1",
-    startTime: "12:00 PM",
-    endTime: "1:30 PM",
-  },
-  {
-    title: "Harvest Festival",
-    memberId: "6",
-    startTime: "10:00 AM",
-    endTime: "2:00 PM",
-  },
-  {
-    title: "Pop Rally",
-    memberId: "3",
-    startTime: "2:00 PM",
-    endTime: "3:00 PM",
-  },
-  {
-    title: "Volleyball Practice",
-    memberId: "3",
-    startTime: "4:00 PM",
-    endTime: "5:30 PM",
-  },
-  {
-    title: "Math Tutoring",
-    memberId: "4",
-    startTime: "3:00 PM",
-    endTime: "4:00 PM",
-  },
-  {
-    title: "Luna Vet Checkup",
-    memberId: "1",
-    startTime: "2:00 PM",
-    endTime: "3:00 PM",
-  },
-  {
-    title: "Volleyball Game",
-    memberId: "3",
-    startTime: "6:00 PM",
-    endTime: "8:00 PM",
-  },
-  {
-    title: "Reading Time",
-    memberId: "5",
-    startTime: "7:00 PM",
-    endTime: "8:00 PM",
-  },
+  { title: "Dance Group", startTime: "5:00 PM", endTime: "6:30 PM" },
+  { title: "Lunch With Mom", startTime: "12:00 PM", endTime: "1:30 PM" },
+  { title: "Harvest Festival", startTime: "10:00 AM", endTime: "2:00 PM" },
+  { title: "Pop Rally", startTime: "2:00 PM", endTime: "3:00 PM" },
+  { title: "Volleyball Practice", startTime: "4:00 PM", endTime: "5:30 PM" },
+  { title: "Math Tutoring", startTime: "3:00 PM", endTime: "4:00 PM" },
+  { title: "Luna Vet Checkup", startTime: "2:00 PM", endTime: "3:00 PM" },
+  { title: "Volleyball Game", startTime: "6:00 PM", endTime: "8:00 PM" },
+  { title: "Reading Time", startTime: "7:00 PM", endTime: "8:00 PM" },
 ];
 
+// Get family member IDs from localStorage
+function getFamilyMemberIds(): string[] {
+  try {
+    const stored = localStorage.getItem(FAMILY_STORAGE_KEY);
+    if (!stored) return [];
+
+    const parsed = JSON.parse(stored);
+    const members = parsed?.state?.family?.members;
+    if (!Array.isArray(members)) return [];
+
+    return members.map((m: { id: string }) => m.id);
+  } catch {
+    return [];
+  }
+}
+
 function generateSampleEvents(): CalendarEvent[] {
+  const memberIds = getFamilyMemberIds();
+
+  // Don't generate sample events if no family members exist yet
+  if (memberIds.length === 0) {
+    return [];
+  }
+
   const today = new Date();
   const events: CalendarEvent[] = [];
+
+  // Helper to pick a random member
+  const getRandomMemberId = () =>
+    memberIds[Math.floor(Math.random() * memberIds.length)];
 
   // Distribute events across the week
   for (let i = 0; i < 7; i++) {
@@ -153,7 +90,7 @@ function generateSampleEvents(): CalendarEvent[] {
         startTime: template.startTime,
         endTime: template.endTime,
         date: new Date(date),
-        memberId: template.memberId,
+        memberId: getRandomMemberId(),
       });
     }
   }
@@ -200,10 +137,23 @@ function initializeMockEvents(): CalendarEvent[] {
   if (stored && stored.length > 0) {
     return stored;
   }
-  // Generate sample events and persist them
+  // Try to generate sample events (requires family to exist)
   const generated = generateSampleEvents();
-  saveEventsToStorage(generated);
+  if (generated.length > 0) {
+    saveEventsToStorage(generated);
+  }
   return generated;
+}
+
+// Lazy initialization: generate sample events if empty and family now exists
+function ensureSampleEventsExist(): void {
+  if (mockEvents.length === 0) {
+    const generated = generateSampleEvents();
+    if (generated.length > 0) {
+      mockEvents = generated;
+      saveEventsToStorage(mockEvents);
+    }
+  }
 }
 
 // In-memory storage for mock data (initialized from localStorage or generated)
@@ -231,6 +181,9 @@ export const calendarMockHandlers = {
     params?: GetEventsParams,
   ): Promise<ApiResponse<CalendarEvent[]>> {
     await simulateApiCall();
+
+    // Lazy init: generate sample events if family was created after module load
+    ensureSampleEventsExist();
 
     let events = [...mockEvents];
 
