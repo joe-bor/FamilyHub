@@ -7,9 +7,13 @@ import { z } from "zod";
 export const familyNameSchema = z.object({
   name: z
     .string()
-    .min(1, "Family name is required")
-    .max(50, "Family name must be 50 characters or less")
-    .trim(),
+    .transform((val) => val.trim())
+    .pipe(
+      z
+        .string()
+        .min(1, "Family name is required")
+        .max(50, "Family name must be 50 characters or less"),
+    ),
 });
 
 export type FamilyNameFormData = z.infer<typeof familyNameSchema>;
@@ -34,9 +38,13 @@ const familyColorSchema = z.enum([
 export const memberFormSchema = z.object({
   name: z
     .string()
-    .min(1, "Name is required")
-    .max(30, "Name must be 30 characters or less")
-    .trim(),
+    .transform((val) => val.trim())
+    .pipe(
+      z
+        .string()
+        .min(1, "Name is required")
+        .max(30, "Name must be 30 characters or less"),
+    ),
   color: familyColorSchema.refine((val) => val !== undefined, {
     message: "Please select a color",
   }),
@@ -60,12 +68,16 @@ export const createMemberFormSchema = (
   return z.object({
     name: z
       .string()
-      .min(1, "Name is required")
-      .max(30, "Name must be 30 characters or less")
-      .trim()
-      .refine((val) => !lowerNames.includes(val.toLowerCase()), {
-        message: "A member with this name already exists",
-      }),
+      .transform((val) => val.trim())
+      .pipe(
+        z
+          .string()
+          .min(1, "Name is required")
+          .max(30, "Name must be 30 characters or less")
+          .refine((val) => !lowerNames.includes(val.toLowerCase()), {
+            message: "A member with this name already exists",
+          }),
+      ),
     color: familyColorSchema.refine((val) => val !== undefined, {
       message: "Please select a color",
     }),
