@@ -256,6 +256,7 @@ GitHub Actions runs lint and build checks on all PRs (`.github/workflows/ci.yml`
 - Unit/integration tests: `src/**/*.test.tsx` (co-located with components)
 - E2E tests: `e2e/` directory
 - Test utilities: `src/test/`
+- MSW mock handlers: `src/test/mocks/`
 
 **Custom render helper:**
 ```typescript
@@ -271,7 +272,6 @@ await user.click(screen.getByRole("button"))
 
 **Test patterns:**
 ```typescript
-import { describe, expect, it } from "vitest"
 import { render, screen } from "@/test/test-utils"
 
 describe("Component", () => {
@@ -282,7 +282,30 @@ describe("Component", () => {
 })
 ```
 
+**API mocking with MSW:**
+```typescript
+import { server } from "@/test/mocks/server"
+import { http, HttpResponse } from "msw"
+
+beforeAll(() => server.listen())
+afterEach(() => server.resetHandlers())
+afterAll(() => server.close())
+
+it("handles API response", async () => {
+  server.use(
+    http.get("/api/events", () => HttpResponse.json({ events: [] }))
+  )
+  // test code...
+})
+```
+
+**Coverage thresholds:** Pending - will be enabled at 70% statements, 60% branches once more tests exist.
+
+**Playwright browsers:** Chromium, Firefox, WebKit, Mobile Chrome (iPhone 14).
+
 **Notes:**
-- Zustand stores hydrate synchronously in tests (no loading state)
+- Browser APIs are mocked globally: `matchMedia`, `ResizeObserver`, `IntersectionObserver`
+- localStorage/sessionStorage are cleared before each test (Zustand isolation)
 - QueryClient is created fresh for each test with retry disabled
 - jest-dom matchers available globally (`toBeInTheDocument`, etc.)
+- `noFocusedTests` Biome rule prevents `.only`/`.skip` in commits
