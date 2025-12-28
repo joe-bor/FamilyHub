@@ -12,6 +12,11 @@ npm run lint:fix     # Fix lint issues automatically
 npm run format       # Format all files with Biome
 npm run format:check # Check formatting without changes
 npm run preview      # Preview production build
+npm run test         # Run Vitest in watch mode
+npm run test:ui      # Open Vitest UI
+npm run test:coverage # Run tests with coverage report
+npm run test:e2e     # Run Playwright E2E tests
+npm run test:e2e:ui  # Open Playwright UI
 ```
 
 ## Architecture
@@ -242,3 +247,42 @@ format12hTo24h("4:00 PM") // → "16:00"
 ### CI/CD
 
 GitHub Actions runs lint and build checks on all PRs (`.github/workflows/ci.yml`).
+
+### Testing
+
+**Stack:** Vitest + Testing Library for unit/integration tests, Playwright for E2E tests.
+
+**Test files location:**
+- Unit/integration tests: `src/**/*.test.tsx` (co-located with components)
+- E2E tests: `e2e/` directory
+- Test utilities: `src/test/`
+
+**Custom render helper:**
+```typescript
+import { render, renderWithUser, screen } from "@/test/test-utils"
+
+// Basic render - wraps component with QueryClientProvider
+render(<MyComponent />)
+
+// With user events pre-configured
+const { user } = renderWithUser(<MyButton />)
+await user.click(screen.getByRole("button"))
+```
+
+**Test patterns:**
+```typescript
+import { describe, expect, it } from "vitest"
+import { render, screen } from "@/test/test-utils"
+
+describe("Component", () => {
+  it("renders correctly", () => {
+    render(<Component />)
+    expect(screen.getByText("Hello")).toBeInTheDocument()
+  })
+})
+```
+
+**Notes:**
+- Zustand stores hydrate synchronously in tests (no loading state)
+- QueryClient is created fresh for each test with retry disabled
+- jest-dom matchers available globally (`toBeInTheDocument`, etc.)
