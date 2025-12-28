@@ -49,14 +49,13 @@ describe("family validations", () => {
       }
     });
 
-    it("trims whitespace-only input (transforms to empty string)", () => {
-      // Note: Zod's .trim() is a transform that runs after validation
-      // so "   " passes min(1) check (length 3) but gets trimmed to ""
-      // This is documented behavior - validation passes but output is empty
+    it("rejects whitespace-only input after trim", () => {
+      // Trim runs before validation via .transform().pipe() pattern
+      // so "   " becomes "" which fails min(1) check
       const result = familyNameSchema.safeParse({ name: "   " });
-      expect(result.success).toBe(true);
-      if (result.success) {
-        expect(result.data.name).toBe("");
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(result.error.issues[0].message).toBe("Family name is required");
       }
     });
 
