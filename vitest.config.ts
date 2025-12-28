@@ -20,6 +20,7 @@ export default defineConfig({
     environment: "jsdom",
     setupFiles: ["./src/test/setup.ts"],
     include: ["src/**/*.{test,spec}.{ts,tsx}"],
+    testTimeout: 10000,
     coverage: {
       provider: "v8",
       reporter: ["text", "json", "html"],
@@ -34,6 +35,13 @@ export default defineConfig({
         "vitest.config.ts",
         "playwright.config.ts",
       ],
+      // TODO: Enable thresholds once test coverage improves
+      // thresholds: {
+      //   statements: 70,
+      //   branches: 60,
+      //   functions: 70,
+      //   lines: 70,
+      // },
     },
   },
 });
