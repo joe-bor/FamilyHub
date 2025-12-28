@@ -30,7 +30,8 @@
       "Bash(gh pr view:*)",
       "Bash(git -C /Users/joe.bor/code/family-hub check-ignore dist/)",
       "Bash(gh pr comment:*)",
-      "Bash(npm run lint:fix:*)"
+      "Bash(npm run lint:fix:*)",
+      "Bash(npm run test:coverage:*)"
     ]
   },
   "hooks": {
