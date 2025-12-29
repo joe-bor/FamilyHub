@@ -138,6 +138,7 @@ export function resetFamilyStore(): void {
 
 /**
  * Seed calendar store with initial state for testing.
+ * Uses direct setState to avoid side effects from actions (like hasUserSetView).
  *
  * @example
  * seedCalendarStore({
@@ -151,38 +152,39 @@ export function seedCalendarStore(data: {
   calendarView?: CalendarViewType;
   filter?: Partial<FilterState>;
 }): void {
-  const store = useCalendarStore.getState();
+  const currentState = useCalendarStore.getState();
 
-  if (data.currentDate) {
-    store.setDate(data.currentDate);
-  }
-
-  if (data.calendarView) {
-    store.setCalendarView(data.calendarView);
-  }
-
-  if (data.filter) {
-    const currentFilter = useCalendarStore.getState().filter;
-    store.setFilter({
-      selectedMembers:
-        data.filter.selectedMembers ?? currentFilter.selectedMembers,
-      showAllDayEvents:
-        data.filter.showAllDayEvents ?? currentFilter.showAllDayEvents,
-    });
-  }
+  // Use direct setState to avoid triggering action side effects
+  useCalendarStore.setState({
+    ...(data.currentDate && { currentDate: data.currentDate }),
+    ...(data.calendarView && { calendarView: data.calendarView }),
+    ...(data.filter && {
+      filter: {
+        selectedMembers:
+          data.filter.selectedMembers ?? currentState.filter.selectedMembers,
+        showAllDayEvents:
+          data.filter.showAllDayEvents ?? currentState.filter.showAllDayEvents,
+      },
+    }),
+  });
 }
 
 /**
  * Reset the calendar store to its initial state.
+ * Uses direct setState to ensure clean state without side effects.
  */
 export function resetCalendarStore(): void {
-  const store = useCalendarStore.getState();
-  store.setDate(new Date());
-  store.setCalendarView("weekly");
-  store.setFilter({ selectedMembers: [], showAllDayEvents: true });
-  store.closeAddEventModal();
-  store.closeDetailModal();
-  store.closeEditModal();
+  useCalendarStore.setState({
+    currentDate: new Date(),
+    calendarView: "weekly",
+    hasUserSetView: false,
+    filter: { selectedMembers: [], showAllDayEvents: true },
+    isAddEventModalOpen: false,
+    selectedEvent: null,
+    isDetailModalOpen: false,
+    editingEvent: null,
+    isEditModalOpen: false,
+  });
 }
 
 /**

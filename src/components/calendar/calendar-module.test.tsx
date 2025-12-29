@@ -10,6 +10,7 @@ import {
   it,
   vi,
 } from "vitest";
+import { useCalendarStore } from "@/stores";
 import { createTestEvent, testEvents, testMembers } from "@/test/fixtures";
 import {
   API_BASE,
@@ -21,18 +22,20 @@ import {
 import {
   render,
   renderWithUser,
+  resetCalendarStore,
   screen,
   seedCalendarStore,
   seedFamilyStore,
 } from "@/test/test-utils";
 import { CalendarModule } from "./calendar-module";
 
-// Mock useIsMobile hook for consistent viewport
+// Controllable mock for useIsMobile
+let mockIsMobile = false;
 vi.mock("@/hooks", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/hooks")>();
   return {
     ...actual,
-    useIsMobile: () => false,
+    useIsMobile: () => mockIsMobile,
   };
 });
 
@@ -42,6 +45,8 @@ describe("CalendarModule", () => {
   afterEach(() => {
     server.resetHandlers();
     resetMockEvents();
+    resetCalendarStore();
+    mockIsMobile = false; // Reset mobile mock
   });
   afterAll(() => server.close());
 
@@ -307,13 +312,14 @@ describe("CalendarModule", () => {
         expect(screen.getByRole("dialog")).toBeInTheDocument();
       });
 
-      // Verify modal shows event details
+      // Verify modal shows event details (scope to dialog to avoid duplicate text matches)
+      const dialog = screen.getByRole("dialog");
       expect(
-        screen.getByRole("heading", { name: "Team Standup" }),
+        within(dialog).getByRole("heading", { name: "Team Standup" }),
       ).toBeInTheDocument();
-      expect(screen.getByText("9:00 AM – 9:30 AM")).toBeInTheDocument();
-      expect(screen.getByText("Conference Room A")).toBeInTheDocument();
-      expect(screen.getByText(testMembers[0].name)).toBeInTheDocument();
+      expect(within(dialog).getByText("9:00 AM – 9:30 AM")).toBeInTheDocument();
+      expect(within(dialog).getByText("Conference Room A")).toBeInTheDocument();
+      expect(within(dialog).getByText(testMembers[0].name)).toBeInTheDocument();
     });
 
     it("closes detail modal when close button clicked", async () => {
@@ -467,6 +473,7 @@ describe("CalendarModule", () => {
   describe("Date Navigation", () => {
     it("navigates to previous day when Previous button clicked", async () => {
       seedMockEvents([]);
+      seedCalendarStore({ calendarView: "daily" });
       const today = new Date();
       const yesterday = new Date(today);
       yesterday.setDate(yesterday.getDate() - 1);
@@ -495,6 +502,7 @@ describe("CalendarModule", () => {
 
     it("navigates to next day when Next button clicked", async () => {
       seedMockEvents([]);
+      seedCalendarStore({ calendarView: "daily" });
       const today = new Date();
       const tomorrow = new Date(today);
       tomorrow.setDate(tomorrow.getDate() + 1);
@@ -521,6 +529,7 @@ describe("CalendarModule", () => {
 
     it("returns to today when Today button clicked", async () => {
       seedMockEvents([]);
+      seedCalendarStore({ calendarView: "daily" });
 
       const { user } = renderWithUser(<CalendarModule />);
 
@@ -605,6 +614,47 @@ describe("CalendarModule", () => {
 
       // Should not show other member's event
       expect(screen.queryByText("Lunch with Team")).not.toBeInTheDocument();
+    });
+  });
+
+  describe("Mobile Smart Defaults", () => {
+    it("defaults to schedule view on mobile for first-time users", async () => {
+      // Set mobile mock to true for this test
+      mockIsMobile = true;
+
+      // Seed as first-time user (hasUserSetView: false is already the default after reset)
+      seedMockEvents([]);
+
+      render(<CalendarModule />);
+
+      await waitFor(() => {
+        expect(screen.queryByText("Loading events...")).not.toBeInTheDocument();
+      });
+
+      // The store should have been updated to schedule view
+      const { calendarView } = useCalendarStore.getState();
+      expect(calendarView).toBe("schedule");
+    });
+
+    it("respects user preference on mobile", async () => {
+      // Set mobile mock to true
+      mockIsMobile = true;
+
+      // User has explicitly set a view preference
+      seedCalendarStore({ calendarView: "daily" });
+      // Mark as user-set by calling setState directly
+      useCalendarStore.setState({ hasUserSetView: true });
+      seedMockEvents([]);
+
+      render(<CalendarModule />);
+
+      await waitFor(() => {
+        expect(screen.queryByText("Loading events...")).not.toBeInTheDocument();
+      });
+
+      // Should keep user's preference, not switch to schedule
+      const { calendarView } = useCalendarStore.getState();
+      expect(calendarView).toBe("daily");
     });
   });
 });
