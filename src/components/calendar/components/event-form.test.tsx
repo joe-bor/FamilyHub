@@ -202,7 +202,7 @@ describe("EventForm", () => {
       expect(mockOnSubmit).not.toHaveBeenCalled();
     });
 
-    it("allows whitespace-only title (documents current behavior)", async () => {
+    it("rejects whitespace-only title", async () => {
       const { user } = renderWithUser(
         <EventForm
           mode="add"
@@ -215,13 +215,8 @@ describe("EventForm", () => {
       await user.type(titleInput, "   ");
       await user.click(screen.getByRole("button", { name: /add event/i }));
 
-      // Note: Current validation allows whitespace-only titles.
-      // If validation is updated to reject whitespace, update this test.
-      expect(mockOnSubmit).toHaveBeenCalledWith(
-        expect.objectContaining({
-          title: "   ",
-        }),
-      );
+      expect(screen.getByText("Event name is required")).toBeInTheDocument();
+      expect(mockOnSubmit).not.toHaveBeenCalled();
     });
   });
 
