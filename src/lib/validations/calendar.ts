@@ -21,8 +21,13 @@ export const eventFormSchema = z
   .object({
     title: z
       .string()
-      .min(1, "Event name is required")
-      .max(100, "Event name must be 100 characters or less"),
+      .transform((val) => val.trim())
+      .pipe(
+        z
+          .string()
+          .min(1, "Event name is required")
+          .max(100, "Event name must be 100 characters or less"),
+      ),
     date: z
       .string()
       .min(1, "Date is required")
