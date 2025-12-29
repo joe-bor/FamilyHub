@@ -345,6 +345,56 @@ describe("CalendarModule", () => {
     });
   });
 
+  describe("Edit Event Flow", () => {
+    it("opens edit modal from detail modal and updates event", async () => {
+      const event = createTestEvent({ title: "Original Title" });
+      seedMockEvents([event]);
+
+      const { user } = renderWithUser(<CalendarModule />);
+
+      // Wait for event to load
+      await waitFor(() => {
+        expect(screen.getByText("Original Title")).toBeInTheDocument();
+      });
+
+      // Click event to open detail modal
+      await user.click(screen.getByText("Original Title"));
+
+      await waitFor(() => {
+        expect(screen.getByRole("dialog")).toBeInTheDocument();
+      });
+
+      // Click edit button
+      await user.click(screen.getByRole("button", { name: /edit/i }));
+
+      // Edit modal should open with form
+      await waitFor(() => {
+        expect(screen.getByLabelText(/event name/i)).toHaveValue(
+          "Original Title",
+        );
+      });
+
+      // Update the title
+      const titleInput = screen.getByLabelText(/event name/i);
+      await user.clear(titleInput);
+      await user.type(titleInput, "Updated Title");
+
+      // Submit
+      await user.click(screen.getByRole("button", { name: /save changes/i }));
+
+      // Modal should close
+      await waitFor(() => {
+        expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+      });
+
+      // Updated event should appear
+      await waitFor(() => {
+        expect(screen.getByText("Updated Title")).toBeInTheDocument();
+        expect(screen.queryByText("Original Title")).not.toBeInTheDocument();
+      });
+    });
+  });
+
   describe("View Switching", () => {
     it("renders weekly view with events", async () => {
       seedMockEvents(testEvents);
