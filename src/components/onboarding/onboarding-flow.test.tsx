@@ -61,7 +61,7 @@ describe("OnboardingFlow", () => {
       expect(screen.getByText("What's your family name?")).toBeInTheDocument();
 
       // Click back
-      await user.click(screen.getByRole("button", { name: "" })); // Back button has no text, just icon
+      await user.click(screen.getByRole("button", { name: /go back/i }));
 
       expect(screen.getByText("Welcome to FamilyHub")).toBeInTheDocument();
     });
@@ -110,7 +110,7 @@ describe("OnboardingFlow", () => {
       await user.click(screen.getByRole("button", { name: /continue/i }));
 
       // Go back
-      await user.click(screen.getByRole("button", { name: "" }));
+      await user.click(screen.getByRole("button", { name: /go back/i }));
 
       expect(screen.getByRole("textbox")).toHaveValue("The Johnsons");
     });
@@ -231,7 +231,7 @@ describe("OnboardingFlow", () => {
       const { user } = renderWithUser(<OnboardingFlow />);
       await navigateToMembersStep(user);
 
-      await user.click(screen.getByRole("button", { name: "" })); // Back button
+      await user.click(screen.getByRole("button", { name: /go back/i }));
 
       expect(screen.getByText("What's your family name?")).toBeInTheDocument();
     });

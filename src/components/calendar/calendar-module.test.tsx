@@ -1,4 +1,4 @@
-import { waitFor } from "@testing-library/react";
+import { waitFor, within } from "@testing-library/react";
 import { HttpResponse, http } from "msw";
 import {
   afterAll,
@@ -201,9 +201,10 @@ describe("CalendarModule", () => {
 
       // Submit the form (find button within dialog)
       const dialog = screen.getByRole("dialog");
-      const submitButton = dialog.querySelector('button[type="submit"]');
-      expect(submitButton).toBeInTheDocument();
-      await user.click(submitButton!);
+      const submitButton = within(dialog).getByRole("button", {
+        name: /add event/i,
+      });
+      await user.click(submitButton);
 
       // Modal should close after successful submission
       await waitFor(() => {
@@ -253,8 +254,10 @@ describe("CalendarModule", () => {
       // Fill and submit
       await user.type(screen.getByLabelText(/event name/i), "Failing Event");
       const dialog = screen.getByRole("dialog");
-      const submitButton = dialog.querySelector('button[type="submit"]');
-      await user.click(submitButton!);
+      const submitButton = within(dialog).getByRole("button", {
+        name: /add event/i,
+      });
+      await user.click(submitButton);
 
       // Modal should stay open after failed request
       await waitFor(() => {
