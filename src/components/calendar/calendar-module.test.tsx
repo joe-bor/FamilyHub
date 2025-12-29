@@ -283,8 +283,67 @@ describe("CalendarModule", () => {
     });
   });
 
-  // Note: Edit and Delete flows with full modal interactions are tested in E2E tests (Playwright)
-  // These unit tests verify the API hooks and basic component rendering
+  describe("Event Detail Modal", () => {
+    it("opens detail modal when event is clicked", async () => {
+      const event = createTestEvent({
+        title: "Team Standup",
+        startTime: "9:00 AM",
+        endTime: "9:30 AM",
+        location: "Conference Room A",
+      });
+      seedMockEvents([event]);
+
+      const { user } = renderWithUser(<CalendarModule />);
+
+      await waitFor(() => {
+        expect(screen.getByText("Team Standup")).toBeInTheDocument();
+      });
+
+      // Click the event
+      await user.click(screen.getByText("Team Standup"));
+
+      // Detail modal should open with event info
+      await waitFor(() => {
+        expect(screen.getByRole("dialog")).toBeInTheDocument();
+      });
+
+      // Verify modal shows event details
+      expect(
+        screen.getByRole("heading", { name: "Team Standup" }),
+      ).toBeInTheDocument();
+      expect(screen.getByText("9:00 AM – 9:30 AM")).toBeInTheDocument();
+      expect(screen.getByText("Conference Room A")).toBeInTheDocument();
+      expect(screen.getByText(testMembers[0].name)).toBeInTheDocument();
+    });
+
+    it("closes detail modal when close button clicked", async () => {
+      const event = createTestEvent({ title: "Closeable Event" });
+      seedMockEvents([event]);
+
+      const { user } = renderWithUser(<CalendarModule />);
+
+      await waitFor(() => {
+        expect(screen.getByText("Closeable Event")).toBeInTheDocument();
+      });
+
+      await user.click(screen.getByText("Closeable Event"));
+
+      await waitFor(() => {
+        expect(screen.getByRole("dialog")).toBeInTheDocument();
+      });
+
+      // Close the modal (dialog has a close button in header)
+      const dialog = screen.getByRole("dialog");
+      const closeButton = within(dialog).getByRole("button", {
+        name: /close/i,
+      });
+      await user.click(closeButton);
+
+      await waitFor(() => {
+        expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+      });
+    });
+  });
 
   describe("View Switching", () => {
     it("renders weekly view with events", async () => {
