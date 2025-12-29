@@ -395,6 +395,75 @@ describe("CalendarModule", () => {
     });
   });
 
+  describe("Delete Event Flow", () => {
+    it("deletes event after confirmation", async () => {
+      const event = createTestEvent({ title: "Event to Delete" });
+      seedMockEvents([event]);
+
+      const { user } = renderWithUser(<CalendarModule />);
+
+      await waitFor(() => {
+        expect(screen.getByText("Event to Delete")).toBeInTheDocument();
+      });
+
+      // Open detail modal
+      await user.click(screen.getByText("Event to Delete"));
+
+      await waitFor(() => {
+        expect(screen.getByRole("dialog")).toBeInTheDocument();
+      });
+
+      // Click delete
+      await user.click(screen.getByRole("button", { name: /delete/i }));
+
+      // Confirm deletion
+      expect(screen.getByText(/are you sure/i)).toBeInTheDocument();
+      await user.click(screen.getByRole("button", { name: /delete event/i }));
+
+      // Modal should close and event should be gone
+      await waitFor(() => {
+        expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+      });
+
+      await waitFor(() => {
+        expect(screen.queryByText("Event to Delete")).not.toBeInTheDocument();
+      });
+
+      // Verify mock storage is empty
+      expect(getMockEvents()).toHaveLength(0);
+    });
+
+    it("cancels delete when cancel button clicked", async () => {
+      const event = createTestEvent({ title: "Keep This Event" });
+      seedMockEvents([event]);
+
+      const { user } = renderWithUser(<CalendarModule />);
+
+      await waitFor(() => {
+        expect(screen.getByText("Keep This Event")).toBeInTheDocument();
+      });
+
+      await user.click(screen.getByText("Keep This Event"));
+
+      await waitFor(() => {
+        expect(screen.getByRole("dialog")).toBeInTheDocument();
+      });
+
+      // Click delete then cancel
+      await user.click(screen.getByRole("button", { name: /delete/i }));
+      await user.click(screen.getByRole("button", { name: /cancel/i }));
+
+      // Should return to edit/delete buttons
+      expect(screen.getByRole("button", { name: /edit/i })).toBeInTheDocument();
+      expect(
+        screen.getByRole("button", { name: /delete/i }),
+      ).toBeInTheDocument();
+
+      // Event should still exist
+      expect(getMockEvents()).toHaveLength(1);
+    });
+  });
+
   describe("View Switching", () => {
     it("renders weekly view with events", async () => {
       seedMockEvents(testEvents);
