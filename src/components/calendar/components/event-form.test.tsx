@@ -218,6 +218,25 @@ describe("EventForm", () => {
       expect(screen.getByText("Event name is required")).toBeInTheDocument();
       expect(mockOnSubmit).not.toHaveBeenCalled();
     });
+
+    it("shows error when end time is before start time", async () => {
+      const { user } = renderWithUser(
+        <EventForm
+          mode="add"
+          defaultValues={{ startTime: "14:00", endTime: "13:00" }}
+          onSubmit={mockOnSubmit}
+          onCancel={mockOnCancel}
+        />,
+      );
+
+      await user.type(screen.getByLabelText(/event name/i), "Test Event");
+      await user.click(screen.getByRole("button", { name: /add event/i }));
+
+      expect(
+        screen.getByText("End time must be after start time"),
+      ).toBeInTheDocument();
+      expect(mockOnSubmit).not.toHaveBeenCalled();
+    });
   });
 
   describe("Form Submission", () => {
