@@ -464,6 +464,91 @@ describe("CalendarModule", () => {
     });
   });
 
+  describe("Date Navigation", () => {
+    it("navigates to previous day when Previous button clicked", async () => {
+      seedMockEvents([]);
+      const today = new Date();
+      const yesterday = new Date(today);
+      yesterday.setDate(yesterday.getDate() - 1);
+
+      const { user } = renderWithUser(<CalendarModule />);
+
+      await waitFor(() => {
+        expect(screen.queryByText("Loading events...")).not.toBeInTheDocument();
+      });
+
+      // Click previous
+      await user.click(screen.getByRole("button", { name: /previous/i }));
+
+      // Date label should update to yesterday
+      const expectedLabel = yesterday.toLocaleDateString("en-US", {
+        weekday: "long",
+        month: "long",
+        day: "numeric",
+        year: "numeric",
+      });
+
+      await waitFor(() => {
+        expect(screen.getByText(expectedLabel)).toBeInTheDocument();
+      });
+    });
+
+    it("navigates to next day when Next button clicked", async () => {
+      seedMockEvents([]);
+      const today = new Date();
+      const tomorrow = new Date(today);
+      tomorrow.setDate(tomorrow.getDate() + 1);
+
+      const { user } = renderWithUser(<CalendarModule />);
+
+      await waitFor(() => {
+        expect(screen.queryByText("Loading events...")).not.toBeInTheDocument();
+      });
+
+      await user.click(screen.getByRole("button", { name: /next/i }));
+
+      const expectedLabel = tomorrow.toLocaleDateString("en-US", {
+        weekday: "long",
+        month: "long",
+        day: "numeric",
+        year: "numeric",
+      });
+
+      await waitFor(() => {
+        expect(screen.getByText(expectedLabel)).toBeInTheDocument();
+      });
+    });
+
+    it("returns to today when Today button clicked", async () => {
+      seedMockEvents([]);
+
+      const { user } = renderWithUser(<CalendarModule />);
+
+      await waitFor(() => {
+        expect(screen.queryByText("Loading events...")).not.toBeInTheDocument();
+      });
+
+      // Navigate away first
+      await user.click(screen.getByRole("button", { name: /next/i }));
+      await user.click(screen.getByRole("button", { name: /next/i }));
+
+      // Click today
+      await user.click(screen.getByRole("button", { name: /today/i }));
+
+      const today = new Date();
+      const expectedLabel = today.toLocaleDateString("en-US", {
+        weekday: "long",
+        month: "long",
+        day: "numeric",
+        year: "numeric",
+      });
+
+      await waitFor(() => {
+        expect(screen.getByText(expectedLabel)).toBeInTheDocument();
+      });
+    });
+  });
+
   describe("View Switching", () => {
     it("renders weekly view with events", async () => {
       seedMockEvents(testEvents);
