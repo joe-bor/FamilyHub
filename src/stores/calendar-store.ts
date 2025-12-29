@@ -85,9 +85,28 @@ export const useCalendarStore = create<CalendarState>()(
           case "schedule":
             newDate.setDate(currentDate.getDate() - 7);
             break;
-          case "monthly":
-            newDate.setMonth(currentDate.getMonth() - 1);
+          case "monthly": {
+            // Handle month navigation with day clamping to avoid overflow
+            // (e.g., Mar 31 → Feb 28, not Mar 3)
+            const targetMonth = currentDate.getMonth() - 1;
+            const targetYear =
+              targetMonth < 0
+                ? currentDate.getFullYear() - 1
+                : currentDate.getFullYear();
+            const normalizedMonth = targetMonth < 0 ? 11 : targetMonth;
+            // Get last day of target month (day 0 of next month = last day of target month)
+            const lastDayOfTargetMonth = new Date(
+              targetYear,
+              normalizedMonth + 1,
+              0,
+            ).getDate();
+            const clampedDay = Math.min(
+              currentDate.getDate(),
+              lastDayOfTargetMonth,
+            );
+            newDate.setFullYear(targetYear, normalizedMonth, clampedDay);
             break;
+          }
         }
 
         set({ currentDate: newDate });
@@ -105,9 +124,28 @@ export const useCalendarStore = create<CalendarState>()(
           case "schedule":
             newDate.setDate(currentDate.getDate() + 7);
             break;
-          case "monthly":
-            newDate.setMonth(currentDate.getMonth() + 1);
+          case "monthly": {
+            // Handle month navigation with day clamping to avoid overflow
+            // (e.g., Jan 31 → Feb 28, not Mar 3)
+            const targetMonth = currentDate.getMonth() + 1;
+            const targetYear =
+              targetMonth > 11
+                ? currentDate.getFullYear() + 1
+                : currentDate.getFullYear();
+            const normalizedMonth = targetMonth > 11 ? 0 : targetMonth;
+            // Get last day of target month (day 0 of next month = last day of target month)
+            const lastDayOfTargetMonth = new Date(
+              targetYear,
+              normalizedMonth + 1,
+              0,
+            ).getDate();
+            const clampedDay = Math.min(
+              currentDate.getDate(),
+              lastDayOfTargetMonth,
+            );
+            newDate.setFullYear(targetYear, normalizedMonth, clampedDay);
             break;
+          }
         }
 
         set({ currentDate: newDate });
