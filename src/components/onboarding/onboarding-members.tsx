@@ -61,7 +61,12 @@ export function OnboardingMembers({
     <div className="flex flex-col min-h-screen p-4 md:p-6 bg-background">
       {/* Header with back button */}
       <div className="flex items-center gap-2 mb-8">
-        <Button variant="ghost" size="icon" onClick={onBack}>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={onBack}
+          aria-label="Go back"
+        >
           <ArrowLeft className="h-5 w-5" />
         </Button>
         <span className="text-sm text-muted-foreground">Step 2 of 2</span>
