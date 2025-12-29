@@ -1,10 +1,10 @@
 # FamilyHub Development Roadmap
 
-**Last Updated:** December 28, 2025
+**Last Updated:** December 29, 2025
 
 ## Current Status
 
-**Phase 1B: Calendar Frontend Polish** - Sprint 5 Complete
+**Phase 1B: Calendar Frontend Polish** - Sprint 6 In Progress
 
 > **Note:** See [TECHNICAL-DEBT.md](./TECHNICAL-DEBT.md) for known issues and deferred improvements.
 
@@ -58,11 +58,21 @@ PWA Basics: ✅ PR #13
 - [x] Static asset caching (JS, CSS, images, fonts via Workbox)
 - [x] (Deferred: Offline calendar viewing → Phase 2 with real backend)
 
-**Sprint 6: Testing & Polish**
+**Sprint 6: Testing & Polish** 🚧 CURRENT
 
-- [ ] Component tests (Vitest + Testing Library)
-- [ ] E2E tests (Playwright)
-- [ ] Performance optimization
+Component Tests: ✅ COMPLETED (December 29, 2025)
+- [x] Store tests: calendar-store (97%), family-store (85%), app-store (100%)
+- [x] Validation tests: 100% coverage for all Zod schemas
+- [x] Time utility tests: 100% coverage
+- [x] Integration tests: CalendarModule, EventForm, OnboardingFlow
+- [x] Total: 391 tests across 10 test files
+
+E2E Tests:
+- [ ] Playwright test suites (config ready, tests not written)
+
+Performance Optimization:
+- [ ] Bundle analysis and optimization
+- [ ] Performance profiling
 
 ## Phase 2: Backend Development ⏳ NEXT
 
