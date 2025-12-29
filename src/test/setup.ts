@@ -38,6 +38,10 @@ global.IntersectionObserver = vi.fn().mockImplementation(() => ({
   thresholds: [],
 }));
 
+// Mock scrollTo (used by calendar views for auto-scrolling)
+Element.prototype.scrollTo = vi.fn();
+window.scrollTo = vi.fn();
+
 // =============================================================================
 // Test Lifecycle
 // =============================================================================

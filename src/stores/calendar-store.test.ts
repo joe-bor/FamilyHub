@@ -300,9 +300,62 @@ describe("CalendarStore", () => {
       useCalendarStore.getState().goToNext();
 
       const date = useCalendarStore.getState().currentDate;
-      // JavaScript Date auto-corrects Jan 31 + 1 month to Mar 3 (since Feb 31 doesn't exist)
-      // This is expected JavaScript behavior
-      expect(date.getMonth()).toBe(2); // March (due to JS date overflow)
+      // Day should be clamped to last day of February (28 in non-leap year)
+      expect(date.getMonth()).toBe(1); // February
+      expect(date.getDate()).toBe(28);
+    });
+
+    it("handles month length differences in leap year (Jan 31 → Feb 29)", () => {
+      resetStore({
+        currentDate: new Date(2024, 0, 31, 12, 0, 0), // January 31, 2024 (leap year)
+        calendarView: "monthly",
+      });
+
+      useCalendarStore.getState().goToNext();
+
+      const date = useCalendarStore.getState().currentDate;
+      expect(date.getMonth()).toBe(1); // February
+      expect(date.getDate()).toBe(29); // Leap year has 29 days
+    });
+
+    it("handles backward month length differences (Mar 31 → Feb 28)", () => {
+      resetStore({
+        currentDate: new Date(2025, 2, 31, 12, 0, 0), // March 31, 2025
+        calendarView: "monthly",
+      });
+
+      useCalendarStore.getState().goToPrevious();
+
+      const date = useCalendarStore.getState().currentDate;
+      // Day should be clamped to last day of February (28 in non-leap year)
+      expect(date.getMonth()).toBe(1); // February
+      expect(date.getDate()).toBe(28);
+    });
+
+    it("handles backward month length differences in leap year (Mar 31 → Feb 29)", () => {
+      resetStore({
+        currentDate: new Date(2024, 2, 31, 12, 0, 0), // March 31, 2024 (leap year)
+        calendarView: "monthly",
+      });
+
+      useCalendarStore.getState().goToPrevious();
+
+      const date = useCalendarStore.getState().currentDate;
+      expect(date.getMonth()).toBe(1); // February
+      expect(date.getDate()).toBe(29); // Leap year has 29 days
+    });
+
+    it("preserves day when target month has enough days", () => {
+      resetStore({
+        currentDate: new Date(2025, 0, 15, 12, 0, 0), // January 15
+        calendarView: "monthly",
+      });
+
+      useCalendarStore.getState().goToNext();
+
+      const date = useCalendarStore.getState().currentDate;
+      expect(date.getMonth()).toBe(1); // February
+      expect(date.getDate()).toBe(15); // Day preserved
     });
   });
 

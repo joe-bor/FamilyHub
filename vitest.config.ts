@@ -15,6 +15,14 @@ export default defineConfig({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  define: {
+    // Disable internal mock API in tests so MSW can intercept HTTP requests
+    "import.meta.env.VITE_USE_MOCK_API": JSON.stringify("false"),
+    // Use absolute URL for fetch in Node.js environment
+    "import.meta.env.VITE_API_BASE_URL": JSON.stringify(
+      "http://localhost:3000/api",
+    ),
+  },
   test: {
     globals: true,
     environment: "jsdom",

@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 import { type ModuleType, useAppStore } from "./app-store";
 
 describe("AppStore", () => {
@@ -10,21 +10,8 @@ describe("AppStore", () => {
     });
   });
 
-  afterEach(() => {
-    useAppStore.setState({
-      activeModule: "calendar",
-      isSidebarOpen: false,
-    });
-  });
-
   describe("initial state", () => {
     it("initializes with activeModule = 'calendar'", () => {
-      // Reset to initial state
-      useAppStore.setState({
-        activeModule: "calendar",
-        isSidebarOpen: false,
-      });
-
       expect(useAppStore.getState().activeModule).toBe("calendar");
     });
 
