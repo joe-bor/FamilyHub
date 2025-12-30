@@ -54,12 +54,9 @@ const createProfileSchema = (existingNames: string[], currentName?: string) => {
     email: z
       .string()
       .transform((val) => val.trim())
-      .pipe(
-        z
-          .string()
-          .email("Please enter a valid email")
-          .optional()
-          .or(z.literal("")),
+      .refine(
+        (val) => val === "" || z.string().email().safeParse(val).success,
+        { message: "Please enter a valid email" },
       ),
   });
 };

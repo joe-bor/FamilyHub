@@ -1,6 +1,6 @@
 # FamilyHub Development Roadmap
 
-**Last Updated:** December 29, 2025
+**Last Updated:** December 30, 2025
 
 ## Current Status
 
@@ -66,6 +66,12 @@ Component Tests: ✅ COMPLETED (December 29, 2025)
 - [x] Time utility tests: 100% coverage
 - [x] Integration tests: CalendarModule, EventForm, OnboardingFlow
 - [x] Total: 391 tests across 10 test files
+
+Sidebar Polish: ✅ COMPLETED (December 30, 2025)
+- [x] Remove non-functional menu items (Home, Notifications, Customize, Settings, Help, Sign Out)
+- [x] Add MemberProfileModal (avatar upload, name, color, email fields)
+- [x] Wire sidebar member buttons to open profile modal
+- [x] Avatar display in sidebar (show uploaded image or initials fallback)
 
 E2E Tests:
 - [ ] Playwright test suites (config ready, tests not written)
