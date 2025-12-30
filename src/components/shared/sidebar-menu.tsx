@@ -1,13 +1,4 @@
-import {
-  Bell,
-  HelpCircle,
-  Home,
-  LogOut,
-  Palette,
-  Settings,
-  Users,
-  X,
-} from "lucide-react";
+import { Users, X } from "lucide-react";
 import { useState } from "react";
 import { FamilySettingsModal } from "@/components/settings";
 import { Button } from "@/components/ui/button";
@@ -33,12 +24,7 @@ export function SidebarMenu() {
   };
 
   const menuItems = [
-    { icon: Home, label: "Home", active: true },
     { icon: Users, label: "Family Settings", action: handleOpenSettings },
-    { icon: Bell, label: "Notifications" },
-    { icon: Palette, label: "Customize" },
-    { icon: Settings, label: "Settings" },
-    { icon: HelpCircle, label: "Help & Support" },
   ];
 
   return (
@@ -109,12 +95,7 @@ export function SidebarMenu() {
                 <button
                   key={index}
                   onClick={item.action}
-                  className={cn(
-                    "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors",
-                    item.active
-                      ? "bg-primary text-primary-foreground"
-                      : "text-muted-foreground hover:bg-muted hover:text-foreground",
-                  )}
+                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors text-muted-foreground hover:bg-muted hover:text-foreground"
                 >
                   <Icon className="h-5 w-5" />
                   {item.label}
@@ -123,14 +104,6 @@ export function SidebarMenu() {
             })}
           </div>
         </nav>
-
-        {/* Footer */}
-        <div className="p-4 border-t border-border">
-          <button className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-destructive hover:bg-destructive/10 transition-colors">
-            <LogOut className="h-5 w-5" />
-            Sign Out
-          </button>
-        </div>
       </aside>
 
       {/* Family Settings Modal */}
