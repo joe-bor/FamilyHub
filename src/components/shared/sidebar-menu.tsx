@@ -1,6 +1,6 @@
 import { Users, X } from "lucide-react";
 import { useState } from "react";
-import { FamilySettingsModal } from "@/components/settings";
+import { FamilySettingsModal, MemberProfileModal } from "@/components/settings";
 import { Button } from "@/components/ui/button";
 import { colorMap } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -14,10 +14,15 @@ export function SidebarMenu() {
   const familyName = useFamilyName();
   const familyMembers = useFamilyMembers();
 
-  // Family settings modal state
+  // Modal state
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [selectedMemberId, setSelectedMemberId] = useState<string | null>(null);
 
   if (!isOpen) return null;
+
+  const handleOpenMemberProfile = (memberId: string) => {
+    setSelectedMemberId(memberId);
+  };
 
   const handleOpenSettings = () => {
     setIsSettingsOpen(true);
@@ -62,16 +67,25 @@ export function SidebarMenu() {
                 return (
                   <button
                     key={member.id}
+                    onClick={() => handleOpenMemberProfile(member.id)}
                     className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-muted transition-colors"
                   >
-                    <div
-                      className={cn(
-                        "w-8 h-8 rounded-full flex items-center justify-center text-card text-sm font-bold",
-                        colors?.bg,
-                      )}
-                    >
-                      {member.name.charAt(0)}
-                    </div>
+                    {member.avatarUrl ? (
+                      <img
+                        src={member.avatarUrl}
+                        alt={member.name}
+                        className="w-8 h-8 rounded-full object-cover"
+                      />
+                    ) : (
+                      <div
+                        className={cn(
+                          "w-8 h-8 rounded-full flex items-center justify-center text-card text-sm font-bold",
+                          colors?.bg,
+                        )}
+                      >
+                        {member.name.charAt(0)}
+                      </div>
+                    )}
                     <span className="text-sm font-medium text-foreground">
                       {member.name}
                     </span>
@@ -111,6 +125,15 @@ export function SidebarMenu() {
         open={isSettingsOpen}
         onOpenChange={setIsSettingsOpen}
       />
+
+      {/* Member Profile Modal */}
+      {selectedMemberId && (
+        <MemberProfileModal
+          open={!!selectedMemberId}
+          onOpenChange={(open) => !open && setSelectedMemberId(null)}
+          memberId={selectedMemberId}
+        />
+      )}
     </>
   );
 }
