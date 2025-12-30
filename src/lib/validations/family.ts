@@ -85,6 +85,48 @@ export const createMemberFormSchema = (
 };
 
 /**
+ * Creates a member profile schema with duplicate name and email validation.
+ * Used in MemberProfileModal for editing member profiles.
+ * @param existingNames - Array of existing member names to check against
+ * @param currentName - Current member name (for edit mode, to exclude self)
+ */
+export const createMemberProfileSchema = (
+  existingNames: string[],
+  currentName?: string,
+) => {
+  const lowerNames = existingNames
+    .filter((n) => n.toLowerCase() !== currentName?.toLowerCase())
+    .map((n) => n.toLowerCase());
+
+  return z.object({
+    name: z
+      .string()
+      .transform((val) => val.trim())
+      .pipe(
+        z
+          .string()
+          .min(1, "Name is required")
+          .max(30, "Name must be 30 characters or less")
+          .refine((val) => !lowerNames.includes(val.toLowerCase()), {
+            message: "A member with this name already exists",
+          }),
+      ),
+    color: familyColorSchema,
+    email: z
+      .string()
+      .transform((val) => val.trim())
+      .refine(
+        (val) => val === "" || z.string().email().safeParse(val).success,
+        { message: "Please enter a valid email" },
+      ),
+  });
+};
+
+export type MemberProfileFormData = z.infer<
+  ReturnType<typeof createMemberProfileSchema>
+>;
+
+/**
  * Schema for validating a single family member from localStorage.
  */
 export const familyMemberSchema = z.object({

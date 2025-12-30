@@ -2,7 +2,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Camera, Trash2, X } from "lucide-react";
 import { useEffect, useRef } from "react";
 import { useForm } from "react-hook-form";
-import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { ColorPicker } from "@/components/ui/color-picker";
 import {
@@ -16,52 +15,14 @@ import { Label } from "@/components/ui/label";
 import { colorMap, type FamilyColor } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import {
+  createMemberProfileSchema,
+  type MemberProfileFormData,
+} from "@/lib/validations/family";
+import {
   useFamilyActions,
   useFamilyMemberById,
   useFamilyMembers,
 } from "@/stores";
-
-/**
- * Schema for member profile form.
- */
-const createProfileSchema = (existingNames: string[], currentName?: string) => {
-  const lowerNames = existingNames
-    .filter((n) => n.toLowerCase() !== currentName?.toLowerCase())
-    .map((n) => n.toLowerCase());
-
-  return z.object({
-    name: z
-      .string()
-      .transform((val) => val.trim())
-      .pipe(
-        z
-          .string()
-          .min(1, "Name is required")
-          .max(30, "Name must be 30 characters or less")
-          .refine((val) => !lowerNames.includes(val.toLowerCase()), {
-            message: "A member with this name already exists",
-          }),
-      ),
-    color: z.enum([
-      "coral",
-      "teal",
-      "green",
-      "purple",
-      "yellow",
-      "pink",
-      "orange",
-    ]),
-    email: z
-      .string()
-      .transform((val) => val.trim())
-      .refine(
-        (val) => val === "" || z.string().email().safeParse(val).success,
-        { message: "Please enter a valid email" },
-      ),
-  });
-};
-
-type ProfileFormData = z.infer<ReturnType<typeof createProfileSchema>>;
 
 interface MemberProfileModalProps {
   open: boolean;
@@ -91,8 +52,10 @@ export function MemberProfileModal({
     watch,
     reset,
     formState: { errors, isDirty },
-  } = useForm<ProfileFormData>({
-    resolver: zodResolver(createProfileSchema(existingNames, member?.name)),
+  } = useForm<MemberProfileFormData>({
+    resolver: zodResolver(
+      createMemberProfileSchema(existingNames, member?.name),
+    ),
     defaultValues: {
       name: member?.name ?? "",
       color: member?.color ?? "coral",
@@ -115,7 +78,7 @@ export function MemberProfileModal({
 
   if (!member) return null;
 
-  const onSubmit = (data: ProfileFormData) => {
+  const onSubmit = (data: MemberProfileFormData) => {
     updateMember(memberId, {
       name: data.name,
       color: data.color,
