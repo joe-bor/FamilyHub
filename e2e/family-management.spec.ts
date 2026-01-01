@@ -29,8 +29,8 @@ test.describe("Family Member Management", () => {
     // OPEN SIDEBAR
     // ============================================
 
-    // Click menu button in header (first button in header)
-    const menuButton = page.locator("header button").first();
+    // Click menu button in header
+    const menuButton = page.getByRole("button", { name: "Menu" });
     await menuButton.click();
 
     // Wait for sidebar to appear
@@ -137,8 +137,7 @@ test.describe("Family Member Management", () => {
     // ============================================
 
     // Close the settings modal
-    // Click the X button in the modal header
-    await page.locator('[role="dialog"] button').first().click();
+    await page.getByRole("button", { name: "Close" }).click();
 
     // Verify modal is closed
     await expect(page.getByRole("dialog")).toBeHidden();
