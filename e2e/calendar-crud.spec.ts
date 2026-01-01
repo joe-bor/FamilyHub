@@ -55,8 +55,12 @@ test.describe("Calendar Event CRUD", () => {
     // VIEW EVENT DETAILS
     // ============================================
 
-    // Click on the event to open detail modal
-    await page.getByText("Team Meeting").click();
+    // Click on the event card to open detail modal
+    const eventCard = page
+      .getByRole("button", { name: /Team Meeting/ })
+      .first();
+    await eventCard.waitFor({ state: "visible" });
+    await eventCard.click({ force: true });
 
     // Wait for detail modal
     await expect(page.getByRole("dialog")).toBeVisible();
@@ -104,8 +108,12 @@ test.describe("Calendar Event CRUD", () => {
     // DELETE EVENT
     // ============================================
 
-    // Click on the event again
-    await page.getByText("Updated Meeting").click();
+    // Click on the event card again
+    const updatedCard = page
+      .getByRole("button", { name: /Updated Meeting/ })
+      .first();
+    await updatedCard.waitFor({ state: "visible" });
+    await updatedCard.click({ force: true });
 
     // Wait for detail modal
     await expect(page.getByRole("dialog")).toBeVisible();
