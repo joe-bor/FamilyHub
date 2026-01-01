@@ -1,9 +1,5 @@
+import { lazy, Suspense } from "react";
 import { CalendarModule } from "@/components/calendar";
-import { ChoresView } from "@/components/chores-view";
-import { ListsView } from "@/components/lists-view";
-import { MealsView } from "@/components/meals-view";
-import { OnboardingFlow } from "@/components/onboarding";
-import { PhotosView } from "@/components/photos-view";
 import { AppHeader, NavigationTabs, SidebarMenu } from "@/components/shared";
 import {
   type ModuleType,
@@ -12,18 +8,61 @@ import {
   useSetupComplete,
 } from "@/stores";
 
+// Lazy load non-primary modules for code splitting
+const ChoresView = lazy(() =>
+  import("@/components/chores-view").then((m) => ({ default: m.ChoresView })),
+);
+const MealsView = lazy(() =>
+  import("@/components/meals-view").then((m) => ({ default: m.MealsView })),
+);
+const ListsView = lazy(() =>
+  import("@/components/lists-view").then((m) => ({ default: m.ListsView })),
+);
+const PhotosView = lazy(() =>
+  import("@/components/photos-view").then((m) => ({ default: m.PhotosView })),
+);
+const OnboardingFlow = lazy(() =>
+  import("@/components/onboarding").then((m) => ({
+    default: m.OnboardingFlow,
+  })),
+);
+
+function ModuleLoader() {
+  return (
+    <div className="flex-1 flex items-center justify-center">
+      <div className="animate-pulse text-muted-foreground">Loading...</div>
+    </div>
+  );
+}
+
 function renderModule(activeModule: ModuleType) {
   switch (activeModule) {
     case "calendar":
       return <CalendarModule />;
     case "chores":
-      return <ChoresView />;
+      return (
+        <Suspense fallback={<ModuleLoader />}>
+          <ChoresView />
+        </Suspense>
+      );
     case "meals":
-      return <MealsView />;
+      return (
+        <Suspense fallback={<ModuleLoader />}>
+          <MealsView />
+        </Suspense>
+      );
     case "lists":
-      return <ListsView />;
+      return (
+        <Suspense fallback={<ModuleLoader />}>
+          <ListsView />
+        </Suspense>
+      );
     case "photos":
-      return <PhotosView />;
+      return (
+        <Suspense fallback={<ModuleLoader />}>
+          <PhotosView />
+        </Suspense>
+      );
     default:
       return null;
   }
@@ -45,7 +84,19 @@ export default function FamilyHub() {
 
   // Show onboarding if setup not complete
   if (!setupComplete) {
-    return <OnboardingFlow />;
+    return (
+      <Suspense
+        fallback={
+          <div className="h-screen flex items-center justify-center bg-background">
+            <div className="animate-pulse text-muted-foreground">
+              Loading...
+            </div>
+          </div>
+        }
+      >
+        <OnboardingFlow />
+      </Suspense>
+    );
   }
 
   return (

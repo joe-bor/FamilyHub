@@ -1,6 +1,6 @@
 # Technical Debt & Deferred Improvements
 
-**Last Updated:** December 27, 2025
+**Last Updated:** January 1, 2026
 
 This document tracks known technical debt, deferred improvements, and future enhancements identified during code reviews. Items are prioritized and linked to relevant sprints.
 
@@ -34,7 +34,46 @@ When a member is deleted:
 
 ## Low Priority (Nice to Have)
 
-_No low priority items at this time._
+### 1. Web Vitals Tracking
+**Source:** Sprint 6 Performance Optimization
+**Status:** Deferred - Quick Wins Only
+
+**Description:**
+Add client-side Core Web Vitals tracking (LCP, FID, CLS) for production monitoring.
+
+**Suggested Implementation:**
+- Install `web-vitals` library
+- Report metrics to analytics or logging service
+- Track performance trends over time
+
+---
+
+### 2. Lighthouse CI Integration
+**Source:** Sprint 6 Performance Optimization
+**Status:** Deferred - Quick Wins Only
+
+**Description:**
+Automated performance budgets and regression detection in CI.
+
+**Suggested Implementation:**
+- Add `@lhci/cli` to GitHub Actions workflow
+- Configure performance budgets (e.g., LCP < 2.5s, bundle size limits)
+- Fail PRs that exceed budgets
+- Track historical performance data
+
+---
+
+### 3. Production Monitoring (RUM)
+**Source:** Sprint 6 Performance Optimization
+**Status:** Deferred - Quick Wins Only
+
+**Description:**
+Real User Monitoring to understand actual user experience.
+
+**Suggested Implementation:**
+- Integrate Sentry Performance or similar RUM solution
+- Track page load times, API latency, errors by user segment
+- Set up alerting for performance regressions
 
 ---
 
