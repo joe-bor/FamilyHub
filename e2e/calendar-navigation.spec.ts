@@ -49,7 +49,7 @@ test.describe("Calendar View Navigation", () => {
     // ============================================
 
     // Get the view switcher container
-    const viewSwitcher = page.locator(".bg-muted.rounded-lg.p-1");
+    const viewSwitcher = page.getByTestId("view-switcher");
 
     // Click Week view (second button)
     await viewSwitcher.locator("button").nth(1).click();
@@ -63,25 +63,21 @@ test.describe("Calendar View Navigation", () => {
     await viewSwitcher.locator("button").nth(2).click();
 
     // Monthly view shows a calendar grid - look for typical month structure
-    // Should have multiple week rows
-    await page.waitForTimeout(300); // Allow view transition
 
     // Click Schedule view (fourth button)
     await viewSwitcher.locator("button").nth(3).click();
 
     // Schedule view shows a list format
-    await page.waitForTimeout(300);
 
     // Go back to Day view (first button)
     await viewSwitcher.locator("button").nth(0).click();
-    await page.waitForTimeout(300);
 
     // ============================================
     // DATE NAVIGATION
     // ============================================
 
-    // Get the current date label
-    const dateLabel = page.locator("h2").first();
+    // Get the current date label (the first h2 heading on the page)
+    const dateLabel = page.getByRole("heading", { level: 2 }).first();
     const initialDateText = await dateLabel.textContent();
 
     // Click Previous button
