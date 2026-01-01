@@ -301,6 +301,31 @@ it("handles API response", async () => {
 
 **Coverage thresholds:** Pending - will be enabled at 70% statements, 60% branches once more tests exist.
 
+**E2E test patterns:**
+```typescript
+import { clearStorage, seedFamily, waitForCalendar, createTestMember } from "./helpers/test-helpers"
+
+test.beforeEach(async ({ page }) => {
+  await page.goto("/")
+  await clearStorage(page)
+  await seedFamily(page, {
+    name: "Test Family",
+    members: [createTestMember("Alice", "coral")]
+  })
+  await page.reload()
+  await waitForCalendar(page)
+})
+
+// Use semantic selectors (no data-testid)
+await page.getByRole("button", { name: "Add event" }).click()
+await page.getByLabel("Event Name").fill("Meeting")
+await expect(page.getByRole("dialog")).toBeVisible()
+
+// Scope selectors to avoid strict mode violations
+const dialog = page.getByRole("dialog")
+await expect(dialog.getByText("Alice")).toBeVisible()
+```
+
 **Playwright browsers:** Chromium, Firefox, WebKit, Mobile Chrome (iPhone 14).
 
 **Notes:**

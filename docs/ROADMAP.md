@@ -73,8 +73,12 @@ Sidebar Polish: ✅ COMPLETED (December 30, 2025)
 - [x] Wire sidebar member buttons to open profile modal
 - [x] Avatar display in sidebar (show uploaded image or initials fallback)
 
-E2E Tests:
-- [ ] Playwright test suites (config ready, tests not written)
+E2E Tests: ✅ COMPLETED (January 1, 2026)
+- [x] Playwright test suites for 4 critical user flows
+- [x] Onboarding flow (first-time user experience)
+- [x] Calendar CRUD (create, view, edit, delete events)
+- [x] Calendar navigation (views, dates, member filtering)
+- [x] Family management (settings, member CRUD)
 
 Performance Optimization:
 - [ ] Bundle analysis and optimization
