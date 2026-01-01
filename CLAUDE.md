@@ -303,7 +303,7 @@ it("handles API response", async () => {
 
 **E2E test patterns:**
 ```typescript
-import { clearStorage, seedFamily, waitForCalendar, createTestMember } from "./helpers/test-helpers"
+import { clearStorage, seedFamily, waitForCalendar, waitForHydration, createTestMember } from "./helpers/test-helpers"
 
 test.beforeEach(async ({ page }) => {
   await page.goto("/")
@@ -313,6 +313,7 @@ test.beforeEach(async ({ page }) => {
     members: [createTestMember("Alice", "coral")]
   })
   await page.reload()
+  await waitForHydration(page)
   await waitForCalendar(page)
 })
 
