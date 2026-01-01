@@ -325,9 +325,15 @@ await expect(page.getByRole("dialog")).toBeVisible()
 // Scope selectors to avoid strict mode violations
 const dialog = page.getByRole("dialog")
 await expect(dialog.getByText("Alice")).toBeVisible()
+
+// Event cards: use getByRole("button") + force:true for reliable clicks
+// (avoids false-positive interception from CSS overflow-hidden wrappers)
+const eventCard = page.getByRole("button", { name: /Team Meeting/ }).first()
+await eventCard.waitFor({ state: "visible" })
+await eventCard.click({ force: true })
 ```
 
-**Playwright browsers:** Chromium, Firefox, WebKit, Mobile Chrome (iPhone 14).
+**Playwright browsers:** Chromium-only for PR checks, full matrix (Chromium, Firefox, WebKit, Mobile Chrome) on main branch.
 
 **Notes:**
 - Browser APIs are mocked globally: `matchMedia`, `ResizeObserver`, `IntersectionObserver`
