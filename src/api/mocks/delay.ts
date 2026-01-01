@@ -44,7 +44,13 @@ export async function simulateApiCall(options?: {
   delayMax?: number;
   failureRate?: number;
 }): Promise<void> {
-  const { delayMin = 200, delayMax = 600, failureRate = 0.05 } = options ?? {};
+  // Disable random failures and reduce delay during E2E tests for stability
+  const isE2E = import.meta.env.VITE_E2E === "true";
+  const {
+    delayMin = isE2E ? 50 : 200,
+    delayMax = isE2E ? 100 : 600,
+    failureRate = isE2E ? 0 : 0.05,
+  } = options ?? {};
 
   await delay(delayMin, delayMax);
   maybeFailWithNetworkError(failureRate / 2);
