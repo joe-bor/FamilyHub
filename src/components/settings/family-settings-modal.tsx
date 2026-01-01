@@ -106,6 +106,7 @@ export function FamilySettingsModal({
               <Button
                 variant="ghost"
                 size="icon"
+                aria-label="Close"
                 onClick={() => onOpenChange(false)}
                 className="h-8 w-8"
               >

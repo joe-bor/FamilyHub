@@ -21,7 +21,10 @@ export function CalendarViewSwitcher() {
   const setCalendarView = useCalendarStore((state) => state.setCalendarView);
 
   return (
-    <div className="flex items-center gap-1 bg-muted rounded-lg p-1">
+    <div
+      data-testid="view-switcher"
+      className="flex items-center gap-1 bg-muted rounded-lg p-1"
+    >
       {views.map((v) => (
         <button
           key={v.id}
