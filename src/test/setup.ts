@@ -43,6 +43,46 @@ Element.prototype.scrollTo = vi.fn();
 window.scrollTo = vi.fn();
 
 // =============================================================================
+// Zustand Store Reset
+// =============================================================================
+
+// Import stores directly to reset them (avoid circular deps with test-utils)
+import { useAppStore } from "@/stores/app-store";
+import { useCalendarStore } from "@/stores/calendar-store";
+import { useFamilyStore } from "@/stores/family-store";
+
+/**
+ * Reset all Zustand stores to initial state.
+ * Called after each test to prevent state leakage.
+ */
+function resetAllStores(): void {
+  // Reset family store
+  useFamilyStore.setState({
+    family: null,
+    _hasHydrated: false,
+  });
+
+  // Reset calendar store
+  useCalendarStore.setState({
+    currentDate: new Date(),
+    calendarView: "weekly",
+    hasUserSetView: false,
+    filter: { selectedMembers: [], showAllDayEvents: true },
+    isAddEventModalOpen: false,
+    selectedEvent: null,
+    isDetailModalOpen: false,
+    editingEvent: null,
+    isEditModalOpen: false,
+  });
+
+  // Reset app store
+  useAppStore.setState({
+    activeModule: "calendar",
+    isSidebarOpen: false,
+  });
+}
+
+// =============================================================================
 // Test Lifecycle
 // =============================================================================
 
@@ -56,4 +96,6 @@ beforeEach(() => {
 afterEach(() => {
   cleanup();
   vi.clearAllMocks();
+  vi.useRealTimers();
+  resetAllStores();
 });

@@ -335,9 +335,40 @@ await eventCard.click({ force: true })
 
 **Playwright browsers:** Chromium-only for PR checks, full matrix (Chromium, Firefox, WebKit, Mobile Chrome) on main branch.
 
+**Zustand store testing:**
+```typescript
+import { seedFamilyStore, resetFamilyStore, seedCalendarStore } from "@/test/test-utils"
+
+describe("ComponentWithStore", () => {
+  beforeEach(() => {
+    // Seed stores with test data BEFORE rendering
+    seedFamilyStore({
+      name: "Test Family",
+      members: testMembers,
+      setupComplete: true,
+    });
+    seedCalendarStore({
+      currentDate: new Date("2025-01-15"),
+      calendarView: "weekly",
+    });
+  });
+
+  // afterEach cleanup is handled globally by setup.ts
+  // No need for individual afterEach unless you need specific cleanup
+
+  it("uses store data", () => {
+    render(<MyComponent />);
+    // Store is pre-seeded, component has access
+  });
+});
+```
+
+**Important:** All Zustand stores are **automatically reset** after each test by `src/test/setup.ts`. This prevents state leakage between tests. If your component shows a loading state when store isn't hydrated, use `resetFamilyStore()` in `beforeEach` to set `_hasHydrated: true`.
+
 **Notes:**
+- All Zustand stores are reset globally after each test (see `setup.ts`)
 - Browser APIs are mocked globally: `matchMedia`, `ResizeObserver`, `IntersectionObserver`
-- localStorage/sessionStorage are cleared before each test (Zustand isolation)
+- localStorage/sessionStorage are cleared before each test
 - QueryClient is created fresh for each test with retry disabled
 - jest-dom matchers available globally (`toBeInTheDocument`, etc.)
 - `noFocusedTests` Biome rule prevents `.only`/`.skip` in commits

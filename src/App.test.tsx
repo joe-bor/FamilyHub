@@ -1,7 +1,12 @@
+import { beforeEach } from "vitest";
 import FamilyHub from "./App";
-import { render, screen } from "./test/test-utils";
+import { render, resetFamilyStore, screen } from "./test/test-utils";
 
 describe("App", () => {
+  beforeEach(() => {
+    // Reset and mark as hydrated so App shows onboarding (not loading state)
+    resetFamilyStore();
+  });
   it("renders without crashing", async () => {
     render(<FamilyHub />);
 
