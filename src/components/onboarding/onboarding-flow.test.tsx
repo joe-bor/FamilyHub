@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 import { useFamilyStore } from "@/stores";
 import {
   render,
@@ -13,10 +13,7 @@ describe("OnboardingFlow", () => {
   beforeEach(() => {
     resetFamilyStore();
   });
-
-  afterEach(() => {
-    resetFamilyStore();
-  });
+  // afterEach cleanup handled globally by setup.ts
 
   describe("Welcome Step", () => {
     it("renders welcome screen initially", () => {

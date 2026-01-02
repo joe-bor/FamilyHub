@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { CalendarEvent } from "@/lib/types";
 import { useCalendarStore } from "./calendar-store";
 
@@ -48,10 +48,7 @@ describe("CalendarStore", () => {
   beforeEach(() => {
     resetStore();
   });
-
-  afterEach(() => {
-    vi.useRealTimers();
-  });
+  // afterEach cleanup (timers, mocks, stores) handled globally by setup.ts
 
   describe("initial state", () => {
     it("initializes with calendarView = 'weekly'", () => {
