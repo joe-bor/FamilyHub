@@ -39,7 +39,12 @@
       "Bash(gh pr list:*)",
       "Bash(grep:*)",
       "Bash(gh pr review:*)",
-      "Bash(npm run test:e2e:*)"
+      "Bash(npm run test:e2e:*)",
+      "Bash(wc:*)",
+      "Bash(npm ls:*)",
+      "Bash(npm uninstall:*)",
+      "Bash(gh run list:*)",
+      "Bash(gh run view:*)"
     ]
   },
   "hooks": {
