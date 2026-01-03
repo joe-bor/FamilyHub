@@ -97,11 +97,12 @@ export function ScheduleCalendar({
                 {dayEvents.map((event) => {
                   const member = getFamilyMember(familyMembers, event.memberId);
                   return (
-                    <div
+                    <button
+                      type="button"
                       key={event.id}
                       onClick={() => onEventClick?.(event)}
                       className={cn(
-                        "flex items-start gap-3 p-3 rounded-xl cursor-pointer transition-all hover:scale-[1.01]",
+                        "flex items-start gap-3 p-3 rounded-xl cursor-pointer transition-all hover:scale-[1.01] text-left w-full",
                         member ? colorMap[member.color]?.light : "bg-muted",
                         "border-l-4",
                         member
@@ -150,7 +151,7 @@ export function ScheduleCalendar({
                           </span>
                         </div>
                       </div>
-                    </div>
+                    </button>
                   );
                 })}
               </div>
