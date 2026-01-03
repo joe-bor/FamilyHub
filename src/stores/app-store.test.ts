@@ -1,14 +1,8 @@
-import { beforeEach, describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 import { type ModuleType, useAppStore } from "./app-store";
 
 describe("AppStore", () => {
-  // Reset store between tests
-  beforeEach(() => {
-    useAppStore.setState({
-      activeModule: "calendar",
-      isSidebarOpen: false,
-    });
-  });
+  // Store reset handled globally by setup.ts afterEach via resetAllStores()
 
   describe("initial state", () => {
     it("initializes with activeModule = 'calendar'", () => {
