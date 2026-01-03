@@ -365,6 +365,22 @@ describe("ComponentWithStore", () => {
 
 **Important:** All Zustand stores are **automatically reset** after each test by `src/test/setup.ts`. This prevents state leakage between tests. If your component shows a loading state when store isn't hydrated, use `resetFamilyStore()` in `beforeEach` to set `_hasHydrated: true`.
 
+**Race condition pattern:** When testing components that compute defaults from store state (e.g., forms using `useFamilyMembers()`), wait for store-dependent elements before interacting:
+```typescript
+it("submits form with store data", async () => {
+  const { user } = renderWithUser(<EventForm onSubmit={mockOnSubmit} />);
+
+  // Wait for store state to propagate to the component
+  await screen.findByRole("button", { name: testMembers[0].name });
+
+  // Now safe to interact with the form
+  await user.type(screen.getByLabelText(/event name/i), "Test");
+  await user.click(screen.getByRole("button", { name: /submit/i }));
+
+  expect(mockOnSubmit).toHaveBeenCalled();
+});
+```
+
 **Notes:**
 - All Zustand stores are reset globally after each test (see `setup.ts`)
 - Browser APIs are mocked globally: `matchMedia`, `ResizeObserver`, `IntersectionObserver`
