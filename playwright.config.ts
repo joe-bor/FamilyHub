@@ -1,21 +1,12 @@
 import { defineConfig, devices } from "@playwright/test";
 
-// Full browser matrix for thorough testing
-const allBrowsers = [
+// Full browser matrix - runs on all CI builds and locally
+const projects = [
   { name: "chromium", use: { ...devices["Desktop Chrome"] } },
   { name: "firefox", use: { ...devices["Desktop Firefox"] } },
   { name: "webkit", use: { ...devices["Desktop Safari"] } },
   { name: "mobile-chrome", use: { ...devices["iPhone 14"] } },
 ];
-
-// Chromium-only for fast PR checks
-const chromiumOnly = [
-  { name: "chromium", use: { ...devices["Desktop Chrome"] } },
-];
-
-// Use full matrix on main branch, chromium-only on PRs
-const isMainBranch = process.env.GITHUB_REF === "refs/heads/main";
-const projects = process.env.CI && !isMainBranch ? chromiumOnly : allBrowsers;
 
 export default defineConfig({
   testDir: "./e2e",

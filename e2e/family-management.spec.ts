@@ -144,9 +144,9 @@ test.describe("Family Member Management", () => {
     // CLOSE SETTINGS
     // ============================================
 
-    // Close the settings modal
-    const closeButton = page.getByRole("button", { name: "Close" });
-    await closeButton.click();
+    // Close the settings modal using Escape (more reliable than clicking Close button
+    // which can be unstable due to layout shift after member removal)
+    await page.keyboard.press("Escape");
 
     // Wait for dialog close animation to complete
     await expect(page.getByRole("dialog")).toBeHidden({ timeout: 10000 });
