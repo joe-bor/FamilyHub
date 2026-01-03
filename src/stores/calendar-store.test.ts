@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { CalendarEvent } from "@/lib/types";
+import { seedCalendarStore } from "@/test/test-utils";
 import { useCalendarStore } from "./calendar-store";
 
 // Mock event for testing modals
@@ -23,30 +24,10 @@ const mockEvent2: CalendarEvent = {
   isAllDay: false,
 };
 
-// Helper to reset store to a known state
-function resetStore(
-  overrides: Partial<ReturnType<typeof useCalendarStore.getState>> = {},
-) {
-  useCalendarStore.setState({
-    currentDate: new Date("2025-06-15T12:00:00"),
-    calendarView: "weekly",
-    hasUserSetView: false,
-    filter: {
-      selectedMembers: [],
-      showAllDayEvents: true,
-    },
-    isAddEventModalOpen: false,
-    selectedEvent: null,
-    isDetailModalOpen: false,
-    editingEvent: null,
-    isEditModalOpen: false,
-    ...overrides,
-  });
-}
-
 describe("CalendarStore", () => {
+  // Seed a known date for test predictability (global afterEach resets other state)
   beforeEach(() => {
-    resetStore();
+    seedCalendarStore({ currentDate: new Date("2025-06-15T12:00:00") });
   });
   // afterEach cleanup (timers, mocks, stores) handled globally by setup.ts
 
@@ -82,7 +63,7 @@ describe("CalendarStore", () => {
 
   describe("date navigation - daily view", () => {
     beforeEach(() => {
-      resetStore({
+      seedCalendarStore({
         currentDate: new Date(2025, 5, 15, 12, 0, 0), // June 15, 2025
         calendarView: "daily",
       });
@@ -102,7 +83,7 @@ describe("CalendarStore", () => {
     });
 
     it("handles month boundary forward (Jun 30 → Jul 1)", () => {
-      resetStore({
+      seedCalendarStore({
         currentDate: new Date(2025, 5, 30, 12, 0, 0), // June 30
         calendarView: "daily",
       });
@@ -115,7 +96,7 @@ describe("CalendarStore", () => {
     });
 
     it("handles month boundary backward (Jul 1 → Jun 30)", () => {
-      resetStore({
+      seedCalendarStore({
         currentDate: new Date(2025, 6, 1, 12, 0, 0), // July 1
         calendarView: "daily",
       });
@@ -128,7 +109,7 @@ describe("CalendarStore", () => {
     });
 
     it("handles year boundary forward (Dec 31 → Jan 1)", () => {
-      resetStore({
+      seedCalendarStore({
         currentDate: new Date(2025, 11, 31, 12, 0, 0), // December 31
         calendarView: "daily",
       });
@@ -142,7 +123,7 @@ describe("CalendarStore", () => {
     });
 
     it("handles year boundary backward (Jan 1 → Dec 31)", () => {
-      resetStore({
+      seedCalendarStore({
         currentDate: new Date(2025, 0, 1, 12, 0, 0), // January 1
         calendarView: "daily",
       });
@@ -156,7 +137,7 @@ describe("CalendarStore", () => {
     });
 
     it("handles leap year (Feb 28, 2024 → Feb 29, 2024)", () => {
-      resetStore({
+      seedCalendarStore({
         currentDate: new Date(2024, 1, 28, 12, 0, 0), // February 28, 2024
         calendarView: "daily",
       });
@@ -171,7 +152,7 @@ describe("CalendarStore", () => {
 
   describe("date navigation - weekly view", () => {
     beforeEach(() => {
-      resetStore({
+      seedCalendarStore({
         currentDate: new Date(2025, 5, 15, 12, 0, 0), // June 15, 2025
         calendarView: "weekly",
       });
@@ -190,7 +171,7 @@ describe("CalendarStore", () => {
     });
 
     it("handles crossing month boundary (Jun 28 + 7 = Jul 5)", () => {
-      resetStore({
+      seedCalendarStore({
         currentDate: new Date(2025, 5, 28, 12, 0, 0), // June 28
         calendarView: "weekly",
       });
@@ -203,7 +184,7 @@ describe("CalendarStore", () => {
     });
 
     it("handles crossing year boundary", () => {
-      resetStore({
+      seedCalendarStore({
         currentDate: new Date(2025, 11, 28, 12, 0, 0), // December 28
         calendarView: "weekly",
       });
@@ -219,7 +200,7 @@ describe("CalendarStore", () => {
 
   describe("date navigation - schedule view", () => {
     beforeEach(() => {
-      resetStore({
+      seedCalendarStore({
         currentDate: new Date(2025, 5, 15, 12, 0, 0), // June 15, 2025
         calendarView: "schedule",
       });
@@ -240,7 +221,7 @@ describe("CalendarStore", () => {
 
   describe("date navigation - monthly view", () => {
     beforeEach(() => {
-      resetStore({
+      seedCalendarStore({
         currentDate: new Date(2025, 5, 15, 12, 0, 0), // June 15, 2025
         calendarView: "monthly",
       });
@@ -263,7 +244,7 @@ describe("CalendarStore", () => {
     });
 
     it("handles year boundary forward (Dec → Jan)", () => {
-      resetStore({
+      seedCalendarStore({
         currentDate: new Date(2025, 11, 15, 12, 0, 0), // December 15
         calendarView: "monthly",
       });
@@ -276,7 +257,7 @@ describe("CalendarStore", () => {
     });
 
     it("handles year boundary backward (Jan → Dec)", () => {
-      resetStore({
+      seedCalendarStore({
         currentDate: new Date(2025, 0, 15, 12, 0, 0), // January 15
         calendarView: "monthly",
       });
@@ -289,7 +270,7 @@ describe("CalendarStore", () => {
     });
 
     it("handles month length differences (Jan 31 → Feb 28)", () => {
-      resetStore({
+      seedCalendarStore({
         currentDate: new Date(2025, 0, 31, 12, 0, 0), // January 31
         calendarView: "monthly",
       });
@@ -303,7 +284,7 @@ describe("CalendarStore", () => {
     });
 
     it("handles month length differences in leap year (Jan 31 → Feb 29)", () => {
-      resetStore({
+      seedCalendarStore({
         currentDate: new Date(2024, 0, 31, 12, 0, 0), // January 31, 2024 (leap year)
         calendarView: "monthly",
       });
@@ -316,7 +297,7 @@ describe("CalendarStore", () => {
     });
 
     it("handles backward month length differences (Mar 31 → Feb 28)", () => {
-      resetStore({
+      seedCalendarStore({
         currentDate: new Date(2025, 2, 31, 12, 0, 0), // March 31, 2025
         calendarView: "monthly",
       });
@@ -330,7 +311,7 @@ describe("CalendarStore", () => {
     });
 
     it("handles backward month length differences in leap year (Mar 31 → Feb 29)", () => {
-      resetStore({
+      seedCalendarStore({
         currentDate: new Date(2024, 2, 31, 12, 0, 0), // March 31, 2024 (leap year)
         calendarView: "monthly",
       });
@@ -343,7 +324,7 @@ describe("CalendarStore", () => {
     });
 
     it("preserves day when target month has enough days", () => {
-      resetStore({
+      seedCalendarStore({
         currentDate: new Date(2025, 0, 15, 12, 0, 0), // January 15
         calendarView: "monthly",
       });
@@ -361,7 +342,7 @@ describe("CalendarStore", () => {
       vi.useFakeTimers();
       vi.setSystemTime(new Date(2025, 6, 20, 10, 0, 0)); // July 20, 2025
 
-      resetStore({ currentDate: new Date(2020, 0, 1, 10, 0, 0) });
+      seedCalendarStore({ currentDate: new Date(2020, 0, 1, 10, 0, 0) });
 
       useCalendarStore.getState().goToToday();
 
@@ -374,7 +355,7 @@ describe("CalendarStore", () => {
       vi.useFakeTimers();
       vi.setSystemTime(new Date(2025, 5, 15, 12, 0, 0)); // June 15, 2025
 
-      resetStore({ currentDate: new Date(2000, 0, 1) });
+      seedCalendarStore({ currentDate: new Date(2000, 0, 1) });
 
       useCalendarStore.getState().goToToday();
 
@@ -386,7 +367,7 @@ describe("CalendarStore", () => {
       vi.useFakeTimers();
       vi.setSystemTime(new Date(2025, 5, 15, 12, 0, 0)); // June 15, 2025
 
-      resetStore({ currentDate: new Date(2099, 11, 31) });
+      seedCalendarStore({ currentDate: new Date(2099, 11, 31) });
 
       useCalendarStore.getState().goToToday();
 
@@ -767,7 +748,7 @@ describe("CalendarStore", () => {
     describe("daily view", () => {
       it("returns true when viewing today", () => {
         // Set currentDate to today (June 15, 2025)
-        resetStore({
+        seedCalendarStore({
           calendarView: "daily",
           currentDate: new Date(2025, 5, 15, 10, 0, 0),
         });
@@ -780,7 +761,7 @@ describe("CalendarStore", () => {
       });
 
       it("returns false when viewing other day", () => {
-        resetStore({
+        seedCalendarStore({
           calendarView: "daily",
           currentDate: new Date(2025, 5, 16, 10, 0, 0), // June 16
         });
@@ -795,7 +776,7 @@ describe("CalendarStore", () => {
     describe("weekly view", () => {
       it("returns true when today is in current week", () => {
         // June 15, 2025 is a Sunday. Set currentDate to any day in that week.
-        resetStore({
+        seedCalendarStore({
           calendarView: "weekly",
           currentDate: new Date(2025, 5, 15, 10, 0, 0), // Sunday
         });
@@ -816,7 +797,7 @@ describe("CalendarStore", () => {
 
       it("returns false when today is not in current week", () => {
         // June 1, 2025 is a different week from June 15
-        resetStore({
+        seedCalendarStore({
           calendarView: "weekly",
           currentDate: new Date(2025, 5, 1, 10, 0, 0), // June 1
         });
@@ -837,7 +818,7 @@ describe("CalendarStore", () => {
 
     describe("monthly view", () => {
       it("returns true when viewing current month", () => {
-        resetStore({
+        seedCalendarStore({
           calendarView: "monthly",
           currentDate: new Date(2025, 5, 1, 10, 0, 0), // June 1, 2025
         });
@@ -851,7 +832,7 @@ describe("CalendarStore", () => {
       });
 
       it("returns false when viewing other month", () => {
-        resetStore({
+        seedCalendarStore({
           calendarView: "monthly",
           currentDate: new Date(2025, 6, 15, 10, 0, 0), // July 15, 2025
         });
@@ -863,7 +844,7 @@ describe("CalendarStore", () => {
       });
 
       it("returns false for same month in different year", () => {
-        resetStore({
+        seedCalendarStore({
           calendarView: "monthly",
           currentDate: new Date(2024, 5, 15, 10, 0, 0), // June 15, 2024
         });
@@ -877,7 +858,7 @@ describe("CalendarStore", () => {
 
     describe("schedule view", () => {
       it("behaves same as weekly view", () => {
-        resetStore({
+        seedCalendarStore({
           calendarView: "schedule",
           currentDate: new Date(2025, 5, 15, 10, 0, 0),
         });
