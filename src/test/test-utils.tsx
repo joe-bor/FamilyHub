@@ -3,11 +3,13 @@ import { type RenderOptions, render } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { ReactElement, ReactNode } from "react";
 import type {
+  CalendarEvent,
   CalendarViewType,
   FamilyData,
   FamilyMember,
   FilterState,
 } from "@/lib/types";
+import type { ModuleType } from "@/stores/app-store";
 import { useAppStore } from "@/stores/app-store";
 import { useCalendarStore } from "@/stores/calendar-store";
 import { useFamilyStore } from "@/stores/family-store";
@@ -150,14 +152,23 @@ export function resetFamilyStore(): void {
 export function seedCalendarStore(data: {
   currentDate?: Date;
   calendarView?: CalendarViewType;
+  hasUserSetView?: boolean;
   filter?: Partial<FilterState>;
+  isAddEventModalOpen?: boolean;
+  selectedEvent?: CalendarEvent | null;
+  isDetailModalOpen?: boolean;
+  editingEvent?: CalendarEvent | null;
+  isEditModalOpen?: boolean;
 }): void {
   const currentState = useCalendarStore.getState();
 
   // Use direct setState to avoid triggering action side effects
   useCalendarStore.setState({
-    ...(data.currentDate && { currentDate: data.currentDate }),
-    ...(data.calendarView && { calendarView: data.calendarView }),
+    ...(data.currentDate !== undefined && { currentDate: data.currentDate }),
+    ...(data.calendarView !== undefined && { calendarView: data.calendarView }),
+    ...(data.hasUserSetView !== undefined && {
+      hasUserSetView: data.hasUserSetView,
+    }),
     ...(data.filter && {
       filter: {
         selectedMembers:
@@ -165,6 +176,19 @@ export function seedCalendarStore(data: {
         showAllDayEvents:
           data.filter.showAllDayEvents ?? currentState.filter.showAllDayEvents,
       },
+    }),
+    ...(data.isAddEventModalOpen !== undefined && {
+      isAddEventModalOpen: data.isAddEventModalOpen,
+    }),
+    ...(data.selectedEvent !== undefined && {
+      selectedEvent: data.selectedEvent,
+    }),
+    ...(data.isDetailModalOpen !== undefined && {
+      isDetailModalOpen: data.isDetailModalOpen,
+    }),
+    ...(data.editingEvent !== undefined && { editingEvent: data.editingEvent }),
+    ...(data.isEditModalOpen !== undefined && {
+      isEditModalOpen: data.isEditModalOpen,
     }),
   });
 }
@@ -194,6 +218,33 @@ export function resetAppStore(): void {
   const store = useAppStore.getState();
   store.setActiveModule("calendar");
   store.closeSidebar();
+}
+
+/**
+ * Seed the app store with initial state for testing.
+ *
+ * @example
+ * seedAppStore({
+ *   activeModule: "chores",
+ *   isSidebarOpen: true,
+ * });
+ */
+export function seedAppStore(data: {
+  activeModule?: ModuleType;
+  isSidebarOpen?: boolean;
+}): void {
+  const store = useAppStore.getState();
+
+  if (data.activeModule !== undefined) {
+    store.setActiveModule(data.activeModule);
+  }
+  if (data.isSidebarOpen !== undefined) {
+    if (data.isSidebarOpen) {
+      store.openSidebar();
+    } else {
+      store.closeSidebar();
+    }
+  }
 }
 
 /**
