@@ -31,7 +31,10 @@ export function FamilyFilterPills() {
   };
 
   return (
-    <div className="flex items-center gap-1.5">
+    <div
+      className="flex items-center gap-1.5"
+      data-testid="family-filter-pills"
+    >
       <button
         onClick={handleToggleAll}
         className={cn(
@@ -77,6 +80,7 @@ export function FamilyFilterPills() {
                 : "bg-muted text-muted-foreground hover:bg-muted/80 opacity-50",
             )}
             title={member.name}
+            aria-label={`Filter by ${member.name}`}
           >
             <span
               className={cn(

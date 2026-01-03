@@ -42,7 +42,7 @@ export async function seedFamily(
   const familyData: FamilyStorageData = {
     state: {
       family: {
-        id: "test-family-" + Date.now(),
+        id: `test-family-${Date.now()}`,
         name: options.name,
         members: options.members,
         createdAt: new Date().toISOString(),

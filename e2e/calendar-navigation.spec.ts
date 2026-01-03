@@ -112,8 +112,11 @@ test.describe("Calendar View Navigation", () => {
     await expect(page.getByText("Alice's Task")).toBeVisible();
 
     // Find and click Alice's filter pill to toggle OFF
-    // The pill has Alice's name or initial
-    const alicePill = page.getByRole("button", { name: /Alice/i }).first();
+    // Use aria-label to target filter pills specifically (not event cards)
+    const filterPills = page.getByTestId("family-filter-pills");
+    const alicePill = filterPills.getByRole("button", {
+      name: /Filter by Alice/i,
+    });
     await alicePill.click();
 
     // Wait for filter to apply and verify event is hidden
@@ -125,8 +128,10 @@ test.describe("Calendar View Navigation", () => {
     // Verify event reappears
     await expect(page.getByText("Alice's Task")).toBeVisible();
 
-    // Test "All" toggle
-    const allToggle = page.getByRole("button", { name: /^(All|Some|None)$/i });
+    // Test "All" toggle (scoped to filter pills)
+    const allToggle = filterPills.getByRole("button", {
+      name: /^(All|Some|None)$/i,
+    });
     await allToggle.click();
 
     // If it was "All", now it's "None" - event should be hidden
