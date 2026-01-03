@@ -84,6 +84,10 @@ describe("EventForm", () => {
         />,
       );
 
+      // Wait for family members to be available in the form
+      // This ensures store state has propagated and form has correct default memberId
+      await screen.findByRole("button", { name: testMembers[0].name });
+
       // Fill title and submit to verify first member is selected
       await user.type(screen.getByLabelText(/event name/i), "Test Event");
       await user.click(screen.getByRole("button", { name: /add event/i }));
@@ -249,6 +253,10 @@ describe("EventForm", () => {
         />,
       );
 
+      // Wait for family members to be available in the form
+      // This ensures store state has propagated and form has correct default memberId
+      await screen.findByRole("button", { name: testMembers[0].name });
+
       // Fill in the title
       const titleInput = screen.getByLabelText(/event name/i);
       await user.type(titleInput, "New Team Meeting");
@@ -358,6 +366,10 @@ describe("EventForm", () => {
           onCancel={mockOnCancel}
         />,
       );
+
+      // Wait for family members to be available in the form
+      // This ensures store state has propagated and form has correct default memberId
+      await screen.findByRole("button", { name: testMembers[0].name });
 
       // Click on second member
       const secondMember = screen.getByRole("button", {
