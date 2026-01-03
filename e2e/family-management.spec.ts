@@ -112,12 +112,16 @@ test.describe("Family Member Management", () => {
     // Save changes
     await page.getByRole("button", { name: "Save" }).click();
 
-    // Wait for modal to close
+    // Wait for modal to close and animation to complete
     await expect(editFormHeading).toBeHidden();
 
-    // Verify name is updated (scope to dialog)
-    await expect(dialog.getByText("Robert")).toBeVisible();
-    await expect(dialog.getByText("Bob")).not.toBeVisible();
+    // Wait for the edit button to update (confirms state propagation)
+    await expect(
+      page.getByRole("button", { name: "Edit Robert" }),
+    ).toBeVisible();
+
+    // Verify Bob is no longer in the list
+    await expect(page.getByRole("button", { name: "Edit Bob" })).toBeHidden();
 
     // ============================================
     // REMOVE MEMBER (can only remove if > 1 member)
@@ -126,21 +130,26 @@ test.describe("Family Member Management", () => {
     // Now we have Alice and Robert, so we can remove Robert
     await page.getByRole("button", { name: "Remove Robert" }).click();
 
-    // Verify Robert is removed (scope to dialog)
-    await expect(dialog.getByText("Robert")).not.toBeVisible();
+    // Verify Robert is removed
+    await expect(
+      page.getByRole("button", { name: "Edit Robert" }),
+    ).toBeHidden();
 
-    // Alice should still be there (scope to dialog)
-    await expect(dialog.getByText("Alice")).toBeVisible();
+    // Alice should still be there
+    await expect(
+      page.getByRole("button", { name: "Edit Alice" }),
+    ).toBeVisible();
 
     // ============================================
     // CLOSE SETTINGS
     // ============================================
 
     // Close the settings modal
-    await page.getByRole("button", { name: "Close" }).click();
+    const closeButton = page.getByRole("button", { name: "Close" });
+    await closeButton.click();
 
-    // Verify modal is closed
-    await expect(page.getByRole("dialog")).toBeHidden();
+    // Wait for dialog close animation to complete
+    await expect(page.getByRole("dialog")).toBeHidden({ timeout: 10000 });
 
     // Verify we're back to the main app
     await expect(page.getByRole("button", { name: "Add event" })).toBeVisible();
