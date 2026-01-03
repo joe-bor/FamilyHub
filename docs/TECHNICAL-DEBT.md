@@ -77,30 +77,6 @@ Real User Monitoring to understand actual user experience.
 
 ---
 
-### 4. Test Pattern Standardization
-**Source:** Sprint 6 Test Infrastructure (PR #24)
-**Files:** `src/stores/calendar-store.test.ts`, `src/stores/family-store.test.ts`, `src/stores/app-store.test.ts`
-**Status:** Low Priority - Functional but inconsistent
-
-**Description:**
-Store test files use custom `resetStore()` helpers instead of the standard seeders from `test-utils.tsx`. While functional, this creates inconsistency with component tests.
-
-**Current State:**
-- `setup.ts` provides global store reset via `resetAllStores()` in afterEach
-- Component tests use `seedFamilyStore()`, `seedCalendarStore()` from test-utils
-- Store tests use local `resetStore()` helpers with override parameters
-
-**Redundant Code (Minor):**
-- `src/stores/family-store.test.ts:49` - `localStorage.clear()` (already in setup.ts beforeEach)
-- `src/stores/app-store.test.ts:5-11` - Manual state reset (could rely on setup.ts)
-
-**Suggested Refactor (Optional):**
-- Align store tests to use `seedCalendarStore()` / `seedFamilyStore()` from test-utils
-- Remove redundant `localStorage.clear()` calls
-- This is cosmetic - tests work correctly as-is
-
----
-
 ## Backend Compatibility Notes
 
 These items should be addressed when integrating with the backend API:
@@ -138,6 +114,7 @@ These items should be addressed when integrating with the backend API:
 
 | Item | Sprint | PR | Date |
 |------|--------|----|----|
+| Test Pattern Standardization | Sprint 6 | #25 | Jan 3, 2026 |
 | Data Validation on Rehydration (Zod schema) | Sprint 5 | - | Dec 27, 2025 |
 | Duplicate Member Name Validation | Sprint 5 | - | Dec 27, 2025 |
 | Form Accessibility (aria-describedby) | Sprint 5 | - | Dec 27, 2025 |

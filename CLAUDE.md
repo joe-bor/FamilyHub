@@ -337,7 +337,7 @@ await eventCard.click({ force: true })
 
 **Zustand store testing:**
 ```typescript
-import { seedFamilyStore, resetFamilyStore, seedCalendarStore } from "@/test/test-utils"
+import { seedFamilyStore, resetFamilyStore, seedCalendarStore, seedAppStore } from "@/test/test-utils"
 
 describe("ComponentWithStore", () => {
   beforeEach(() => {
@@ -362,6 +362,12 @@ describe("ComponentWithStore", () => {
   });
 });
 ```
+
+**Available store seeders:**
+- `seedFamilyStore({ name, members, setupComplete? })` - Seeds family with members
+- `seedCalendarStore({ currentDate?, calendarView?, hasUserSetView?, filter?, isAddEventModalOpen?, selectedEvent?, isDetailModalOpen?, editingEvent?, isEditModalOpen? })` - Seeds any calendar state field
+- `seedAppStore({ activeModule?, isSidebarOpen? })` - Seeds app state
+- `resetFamilyStore()`, `resetCalendarStore()`, `resetAppStore()`, `resetAllStores()` - Reset utilities (called globally in setup.ts afterEach)
 
 **Important:** All Zustand stores are **automatically reset** after each test by `src/test/setup.ts`. This prevents state leakage between tests. If your component shows a loading state when store isn't hydrated, use `resetFamilyStore()` in `beforeEach` to set `_hasHydrated: true`.
 
