@@ -19,14 +19,6 @@ const createMockMember = (
   ...overrides,
 });
 
-// Helper to reset store to a known state
-function resetStore() {
-  useFamilyStore.setState({
-    family: null,
-    _hasHydrated: false,
-  });
-}
-
 // Helper to initialize family with members
 function initializeWithMembers(
   members: Omit<FamilyMember, "id">[],
@@ -45,14 +37,18 @@ function initializeWithMembers(
 describe("FamilyStore", () => {
   let consoleErrorSpy: MockInstance;
 
+  // localStorage is cleared globally by setup.ts beforeEach
+  // Store is reset globally by setup.ts afterEach via resetAllStores()
   beforeEach(() => {
-    localStorage.clear();
-    resetStore();
+    // Reset to initial state for tests that verify hydration behavior
+    useFamilyStore.setState({ family: null, _hasHydrated: false });
     // Spy on console methods to verify error handling
     vi.spyOn(console, "warn").mockImplementation(() => {});
     consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
   });
 
+  // Keep vi.restoreAllMocks() - needed for console spy restoration
+  // (vi.clearAllMocks in setup.ts only clears call history, not implementations)
   afterEach(() => {
     vi.restoreAllMocks();
   });
@@ -130,7 +126,7 @@ describe("FamilyStore", () => {
     });
 
     it("does nothing if family is null", () => {
-      resetStore();
+      useFamilyStore.getState().resetFamily();
 
       useFamilyStore.getState().addMember(createMockMember({ name: "Alice" }));
 
@@ -183,7 +179,7 @@ describe("FamilyStore", () => {
     });
 
     it("does nothing if family is null", () => {
-      resetStore();
+      useFamilyStore.getState().resetFamily();
 
       useFamilyStore.getState().updateMember("some-id", { name: "New Name" });
 
@@ -226,7 +222,7 @@ describe("FamilyStore", () => {
     });
 
     it("does nothing if family is null", () => {
-      resetStore();
+      useFamilyStore.getState().resetFamily();
 
       useFamilyStore.getState().removeMember("some-id");
 
@@ -262,7 +258,7 @@ describe("FamilyStore", () => {
     });
 
     it("does nothing if family is null", () => {
-      resetStore();
+      useFamilyStore.getState().resetFamily();
 
       useFamilyStore.getState().updateFamilyName("New Name");
 
@@ -299,7 +295,7 @@ describe("FamilyStore", () => {
     });
 
     it("does nothing if family is null", () => {
-      resetStore();
+      useFamilyStore.getState().resetFamily();
 
       useFamilyStore.getState().setMembers([]);
 
@@ -327,7 +323,7 @@ describe("FamilyStore", () => {
     });
 
     it("does nothing if family is null", () => {
-      resetStore();
+      useFamilyStore.getState().resetFamily();
 
       useFamilyStore.getState().completeSetup();
 
@@ -354,7 +350,7 @@ describe("FamilyStore", () => {
     });
 
     it("works when family is already null", () => {
-      resetStore();
+      useFamilyStore.getState().resetFamily();
 
       useFamilyStore.getState().resetFamily();
 
@@ -401,7 +397,7 @@ describe("FamilyStore", () => {
       expect(storedData).not.toBeNull();
 
       // Reset the store (this also writes to localStorage, clearing it)
-      resetStore();
+      useFamilyStore.getState().resetFamily();
       expect(useFamilyStore.getState().family).toBeNull();
 
       // Restore the original localStorage data
