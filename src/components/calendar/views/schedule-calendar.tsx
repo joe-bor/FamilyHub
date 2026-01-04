@@ -54,20 +54,29 @@ export function ScheduleCalendar({
     return date.toDateString() === today.toDateString();
   };
 
-  const formatDate = (date: Date) => {
-    if (isToday(date)) return "Today";
+  const isTomorrow = (date: Date) => {
     const tomorrow = new Date(today);
     tomorrow.setDate(today.getDate() + 1);
-    if (date.toDateString() === tomorrow.toDateString()) return "Tomorrow";
+    return date.toDateString() === tomorrow.toDateString();
+  };
+
+  const formatDateLabel = (date: Date) => {
+    if (isToday(date)) return "Today";
+    if (isTomorrow(date)) return "Tomorrow";
     return date.toLocaleDateString("en-US", {
       weekday: "long",
+    });
+  };
+
+  const formatDateSuffix = (date: Date) => {
+    return date.toLocaleDateString("en-US", {
       month: "short",
       day: "numeric",
     });
   };
 
   return (
-    <div className="flex-1 overflow-y-auto bg-background p-4">
+    <div className="flex-1 overflow-y-auto bg-background p-4 scroll-pt-12">
       {groupedEvents.length === 0 ? (
         <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
           <Calendar className="w-16 h-16 mb-4 opacity-50" />
@@ -80,20 +89,25 @@ export function ScheduleCalendar({
         <div className="space-y-6 max-w-3xl mx-auto">
           {groupedEvents.map(({ date, events: dayEvents }) => (
             <div key={formatLocalDate(date)}>
-              {/* Date header */}
+              {/* Date header - sticky with solid background and subtle today indicator */}
               <div
                 className={cn(
-                  "sticky top-0 z-10 py-2 px-3 mb-3 rounded-lg font-semibold",
-                  isToday(date)
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-muted text-foreground",
+                  "sticky top-0 z-10 py-2.5 px-3 mb-3",
+                  "bg-background shadow-sm border-b border-border/50",
+                  "flex items-center gap-2",
                 )}
               >
-                {formatDate(date)}
+                {isToday(date) && (
+                  <span className="w-2 h-2 rounded-full bg-primary" />
+                )}
+                <span className="font-semibold">{formatDateLabel(date)}</span>
+                <span className="text-muted-foreground text-sm font-normal">
+                  · {formatDateSuffix(date)}
+                </span>
               </div>
 
-              {/* Events list */}
-              <div className="space-y-2 pl-2">
+              {/* Events list - simplified cards with colored left border */}
+              <div className="space-y-1.5">
                 {dayEvents.map((event) => {
                   const member = getFamilyMember(familyMembers, event.memberId);
                   return (
@@ -102,54 +116,35 @@ export function ScheduleCalendar({
                       key={event.id}
                       onClick={() => onEventClick?.(event)}
                       className={cn(
-                        "flex items-start gap-3 p-3 rounded-xl cursor-pointer transition-all hover:scale-[1.01] text-left w-full",
-                        member ? colorMap[member.color]?.light : "bg-muted",
+                        "flex flex-col p-2.5 rounded-lg cursor-pointer text-left w-full",
+                        "transition-all hover:shadow-md hover:scale-[1.005]",
+                        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
                         "border-l-4",
                         member
                           ? colorMap[member.color]?.bg
                           : "border-muted-foreground",
+                        member ? colorMap[member.color]?.light : "bg-muted",
                       )}
                     >
-                      <div
-                        className={cn(
-                          "w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm shrink-0",
-                          member
-                            ? colorMap[member.color]?.bg
-                            : "bg-muted-foreground",
-                        )}
-                      >
-                        {member?.name.charAt(0)}
-                      </div>
-
-                      <div className="flex-1 min-w-0">
-                        <h3 className="font-semibold text-foreground truncate">
-                          {event.title}
-                        </h3>
-                        <div className="flex items-center gap-3 mt-1 text-sm text-muted-foreground">
-                          <div className="flex items-center gap-1">
-                            <Clock className="w-3.5 h-3.5" />
-                            <span>
-                              {event.startTime} - {event.endTime}
-                            </span>
-                          </div>
-                          {event.location && (
+                      <h3 className="font-medium text-foreground truncate">
+                        {event.title}
+                      </h3>
+                      <div className="flex items-center gap-2 mt-1 text-sm text-foreground/70">
+                        <div className="flex items-center gap-1">
+                          <Clock className="w-3.5 h-3.5" />
+                          <span>
+                            {event.startTime} - {event.endTime}
+                          </span>
+                        </div>
+                        {event.location && (
+                          <>
+                            <span className="text-foreground/40">·</span>
                             <div className="flex items-center gap-1">
                               <MapPin className="w-3.5 h-3.5" />
                               <span className="truncate">{event.location}</span>
                             </div>
-                          )}
-                        </div>
-                        <div className="mt-1">
-                          <span
-                            className={cn(
-                              "text-xs font-medium px-2 py-0.5 rounded-full",
-                              member ? colorMap[member.color]?.bg : "bg-muted",
-                              "text-white",
-                            )}
-                          >
-                            {member?.name}
-                          </span>
-                        </div>
+                          </>
+                        )}
                       </div>
                     </button>
                   );
