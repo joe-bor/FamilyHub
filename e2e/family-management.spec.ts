@@ -4,6 +4,7 @@ import {
   createTestMember,
   seedFamily,
   waitForCalendar,
+  waitForDialogAnimation,
   waitForHydration,
 } from "./helpers/test-helpers";
 
@@ -64,6 +65,9 @@ test.describe("Family Member Management", () => {
     // Click Add button
     await page.getByRole("button", { name: "Add" }).click();
 
+    // Wait for nested dialog animation (WebKit renders async)
+    await waitForDialogAnimation(page);
+
     // Wait for member form modal - it's a nested dialog
     const memberFormHeading = page.getByRole("heading", {
       name: "Add Family Member",
@@ -94,6 +98,9 @@ test.describe("Family Member Management", () => {
 
     // Click edit button for Bob
     await page.getByRole("button", { name: "Edit Bob" }).click();
+
+    // Wait for nested dialog animation (WebKit renders async)
+    await waitForDialogAnimation(page);
 
     // Wait for edit modal
     const editFormHeading = page.getByRole("heading", {
@@ -148,8 +155,9 @@ test.describe("Family Member Management", () => {
     // which can be unstable due to layout shift after member removal)
     await page.keyboard.press("Escape");
 
-    // Wait for dialog close animation to complete
-    await expect(page.getByRole("dialog")).toBeHidden({ timeout: 10000 });
+    // Wait for close animation to complete (WebKit renders async)
+    await waitForDialogAnimation(page);
+    await expect(page.getByRole("dialog")).toBeHidden();
 
     // Verify we're back to the main app
     await expect(page.getByRole("button", { name: "Add event" })).toBeVisible();
