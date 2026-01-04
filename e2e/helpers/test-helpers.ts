@@ -118,3 +118,12 @@ export function getTodayDateString(): string {
   const day = String(today.getDate()).padStart(2, "0");
   return `${year}-${month}-${day}`;
 }
+
+/**
+ * Wait for Radix UI dialog animations to complete.
+ * WebKit renders animations asynchronously unlike Chromium,
+ * causing flaky tests when checking dialog visibility immediately.
+ */
+export async function waitForDialogAnimation(page: Page): Promise<void> {
+  await page.waitForTimeout(300); // 200ms animation + 100ms buffer
+}
