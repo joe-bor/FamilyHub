@@ -246,7 +246,7 @@ format12hTo24h("4:00 PM") // → "16:00"
 
 ### CI/CD
 
-GitHub Actions runs lint and build checks on all PRs (`.github/workflows/ci.yml`).
+GitHub Actions runs lint, tests, E2E tests, and build on all PRs (`.github/workflows/ci.yml`).
 
 ### Testing
 
@@ -303,7 +303,15 @@ it("handles API response", async () => {
 
 **E2E test patterns:**
 ```typescript
-import { clearStorage, seedFamily, waitForCalendar, waitForHydration, createTestMember } from "./helpers/test-helpers"
+import {
+  clearStorage,
+  seedFamily,
+  waitForCalendar,
+  waitForHydration,
+  waitForDialogOpen,
+  waitForDialogClosed,
+  createTestMember
+} from "./helpers/test-helpers"
 
 test.beforeEach(async ({ page }) => {
   await page.goto("/")
@@ -319,12 +327,16 @@ test.beforeEach(async ({ page }) => {
 
 // Use semantic selectors (no data-testid)
 await page.getByRole("button", { name: "Add event" }).click()
+await waitForDialogOpen(page)  // Wait for Radix dialog animation
 await page.getByLabel("Event Name").fill("Meeting")
-await expect(page.getByRole("dialog")).toBeVisible()
 
 // Scope selectors to avoid strict mode violations
 const dialog = page.getByRole("dialog")
 await expect(dialog.getByText("Alice")).toBeVisible()
+
+// Close dialog and wait for animation
+await page.keyboard.press("Escape")
+await waitForDialogClosed(page)
 
 // Event cards: use getByRole("button") + force:true for reliable clicks
 // (avoids false-positive interception from CSS overflow-hidden wrappers)
@@ -333,7 +345,7 @@ await eventCard.waitFor({ state: "visible" })
 await eventCard.click({ force: true })
 ```
 
-**Playwright browsers:** Chromium-only for PR checks, full matrix (Chromium, Firefox, WebKit, Mobile Chrome) on main branch.
+**Playwright browsers:** Full matrix (Chromium, Firefox, WebKit, Mobile Chrome) on all CI builds. Uses `reducedMotion: "reduce"` in CI for animation stability.
 
 **Zustand store testing:**
 ```typescript
