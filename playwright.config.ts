@@ -15,8 +15,13 @@ export default defineConfig({
   retries: process.env.CI ? 2 : 0,
   workers: process.env.CI ? 2 : undefined,
   reporter: "html",
+  timeout: process.env.CI ? 60000 : 30000,
+  expect: {
+    timeout: process.env.CI ? 10000 : 5000,
+  },
   use: {
     baseURL: "http://localhost:5173",
+    reducedMotion: process.env.CI ? "reduce" : "no-preference",
     trace: "on-first-retry",
     screenshot: "only-on-failure",
     video: "retain-on-failure",

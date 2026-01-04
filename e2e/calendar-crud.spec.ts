@@ -4,7 +4,7 @@ import {
   createTestMember,
   seedFamily,
   waitForCalendar,
-  waitForDialogAnimation,
+  waitForDialogOpen,
   waitForHydration,
 } from "./helpers/test-helpers";
 
@@ -63,9 +63,8 @@ test.describe("Calendar Event CRUD", () => {
     await eventCard.waitFor({ state: "visible" });
     await eventCard.click({ force: true });
 
-    // Wait for dialog animation (WebKit renders async)
-    await waitForDialogAnimation(page);
-    await expect(page.getByRole("dialog")).toBeVisible();
+    // Wait for dialog to fully open
+    await waitForDialogOpen(page);
 
     // Verify event title in modal
     await expect(
@@ -117,9 +116,8 @@ test.describe("Calendar Event CRUD", () => {
     await updatedCard.waitFor({ state: "visible" });
     await updatedCard.click({ force: true });
 
-    // Wait for dialog animation (WebKit renders async)
-    await waitForDialogAnimation(page);
-    await expect(page.getByRole("dialog")).toBeVisible();
+    // Wait for dialog to fully open
+    await waitForDialogOpen(page);
     await expect(
       page.getByRole("heading", { name: "Updated Meeting" }),
     ).toBeVisible();

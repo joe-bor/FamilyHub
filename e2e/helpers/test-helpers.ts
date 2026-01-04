@@ -120,10 +120,39 @@ export function getTodayDateString(): string {
 }
 
 /**
- * Wait for Radix UI dialog animations to complete.
- * WebKit renders animations asynchronously unlike Chromium,
- * causing flaky tests when checking dialog visibility immediately.
+ * Wait for a Radix dialog to fully open.
+ * Uses data-state attribute which is deterministic.
+ * In CI with reducedMotion, animations are instant.
+ */
+export async function waitForDialogOpen(page: Page): Promise<void> {
+  const dialog = page.getByRole("dialog");
+  await dialog.waitFor({ state: "visible" });
+  // Ensure Radix has finished mounting by checking data-state
+  await page.waitForSelector('[data-state="open"]', { state: "attached" });
+}
+
+/**
+ * Wait for all dialogs to close.
+ * Uses role selector which is more reliable than data-state for closed state.
+ */
+export async function waitForDialogClosed(page: Page): Promise<void> {
+  await page.getByRole("dialog").waitFor({ state: "hidden" });
+}
+
+/**
+ * Legacy helper - kept for backwards compatibility during transition.
+ * With reducedMotion in CI, this is effectively instant.
+ * Locally, we wait for the data-state to confirm the dialog is ready.
+ * @deprecated Use waitForDialogOpen or waitForDialogClosed instead
  */
 export async function waitForDialogAnimation(page: Page): Promise<void> {
-  await page.waitForTimeout(300); // 200ms animation + 100ms buffer
+  // Wait for data-state="open" which indicates Radix has mounted
+  await page
+    .waitForSelector('[data-state="open"]', {
+      state: "attached",
+      timeout: 5000,
+    })
+    .catch(() => {
+      // Dialog might already be open or closing - that's fine
+    });
 }

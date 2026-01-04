@@ -125,3 +125,14 @@
 ::-webkit-scrollbar-thumb:hover {
   background: oklch(0.75 0.02 85);
 }
+
+/* Reduce motion for accessibility and CI stability */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
