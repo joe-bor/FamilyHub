@@ -4,6 +4,7 @@ import {
   createTestMember,
   seedFamily,
   waitForCalendar,
+  waitForDialogAnimation,
   waitForHydration,
 } from "./helpers/test-helpers";
 
@@ -51,26 +52,30 @@ test.describe("Calendar View Navigation", () => {
     // Get the view switcher container
     const viewSwitcher = page.getByTestId("view-switcher");
 
-    // Click Week view (second button)
-    await viewSwitcher.locator("button").nth(1).click();
+    // Click Week view (second button) - force click for mobile touch handling
+    await viewSwitcher.locator("button").nth(1).click({ force: true });
+    await waitForDialogAnimation(page);
 
     // Verify we're on weekly view by looking for the week grid structure
     // The weekly view has 7 day columns - use exact match to avoid matching "Month"
     await expect(page.getByText("Mon", { exact: true })).toBeVisible();
     await expect(page.getByText("Tue", { exact: true })).toBeVisible();
 
-    // Click Month view (third button)
-    await viewSwitcher.locator("button").nth(2).click();
+    // Click Month view (third button) - force click for mobile touch handling
+    await viewSwitcher.locator("button").nth(2).click({ force: true });
+    await waitForDialogAnimation(page);
 
     // Monthly view shows a calendar grid - look for typical month structure
 
-    // Click Schedule view (fourth button)
-    await viewSwitcher.locator("button").nth(3).click();
+    // Click Schedule view (fourth button) - force click for mobile touch handling
+    await viewSwitcher.locator("button").nth(3).click({ force: true });
+    await waitForDialogAnimation(page);
 
     // Schedule view shows a list format
 
-    // Go back to Day view (first button)
-    await viewSwitcher.locator("button").nth(0).click();
+    // Go back to Day view (first button) - force click for mobile touch handling
+    await viewSwitcher.locator("button").nth(0).click({ force: true });
+    await waitForDialogAnimation(page);
 
     // ============================================
     // DATE NAVIGATION
