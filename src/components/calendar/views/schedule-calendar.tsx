@@ -89,19 +89,25 @@ export function ScheduleCalendar({
         <div className="space-y-6 max-w-3xl mx-auto">
           {groupedEvents.map(({ date, events: dayEvents }) => (
             <div key={formatLocalDate(date)}>
-              {/* Date header - sticky with solid background and subtle today indicator */}
+              {/* Date header - sticky with colored background for Today */}
               <div
                 className={cn(
-                  "sticky top-0 z-10 py-2.5 px-3 mb-3",
-                  "bg-background shadow-sm border-b border-border/50",
+                  "sticky top-0 z-10 py-2 px-3 mb-3 rounded-lg",
                   "flex items-center gap-2",
+                  isToday(date)
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-muted/80",
                 )}
               >
-                {isToday(date) && (
-                  <span className="w-2 h-2 rounded-full bg-primary" />
-                )}
                 <span className="font-semibold">{formatDateLabel(date)}</span>
-                <span className="text-muted-foreground text-sm font-normal">
+                <span
+                  className={cn(
+                    "text-sm font-normal",
+                    isToday(date)
+                      ? "text-primary-foreground/80"
+                      : "text-muted-foreground",
+                  )}
+                >
                   · {formatDateSuffix(date)}
                 </span>
               </div>
@@ -116,20 +122,20 @@ export function ScheduleCalendar({
                       key={event.id}
                       onClick={() => onEventClick?.(event)}
                       className={cn(
-                        "flex flex-col p-2.5 rounded-lg cursor-pointer text-left w-full",
+                        "flex flex-col p-3 rounded-lg cursor-pointer text-left w-full",
                         "transition-all hover:shadow-md hover:scale-[1.005]",
                         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
-                        "border-l-4",
+                        "border-l-4 ring-1 ring-inset ring-black/5",
                         member
                           ? colorMap[member.color]?.bg
                           : "border-muted-foreground",
                         member ? colorMap[member.color]?.light : "bg-muted",
                       )}
                     >
-                      <h3 className="font-medium text-foreground truncate">
+                      <h3 className="font-semibold text-foreground truncate">
                         {event.title}
                       </h3>
-                      <div className="flex items-center gap-2 mt-1 text-sm text-foreground/70">
+                      <div className="flex items-center gap-2 mt-1 text-sm text-muted-foreground">
                         <div className="flex items-center gap-1">
                           <Clock className="w-3.5 h-3.5" />
                           <span>
@@ -138,7 +144,7 @@ export function ScheduleCalendar({
                         </div>
                         {event.location && (
                           <>
-                            <span className="text-foreground/40">·</span>
+                            <span className="text-muted-foreground/50">·</span>
                             <div className="flex items-center gap-1">
                               <MapPin className="w-3.5 h-3.5" />
                               <span className="truncate">{event.location}</span>
