@@ -4,19 +4,19 @@ export type ModuleType = "calendar" | "lists" | "chores" | "meals" | "photos";
 
 interface AppState {
   // State
-  activeModule: ModuleType;
+  activeModule: ModuleType | null; // null = home dashboard (mobile only)
   isSidebarOpen: boolean;
 
   // Actions
-  setActiveModule: (module: ModuleType) => void;
+  setActiveModule: (module: ModuleType | null) => void;
   openSidebar: () => void;
   closeSidebar: () => void;
   toggleSidebar: () => void;
 }
 
 export const useAppStore = create<AppState>((set) => ({
-  // Initial state
-  activeModule: "calendar",
+  // Initial state - null shows home dashboard on mobile, desktop redirects to calendar
+  activeModule: null,
   isSidebarOpen: false,
 
   // Actions
