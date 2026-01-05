@@ -76,8 +76,25 @@ export async function waitForHydration(page: Page): Promise<void> {
 /**
  * Wait for the calendar module to be fully loaded
  * The FAB (Add event button) is a reliable indicator
+ *
+ * On mobile (<640px), the app starts on home dashboard,
+ * so we need to navigate to calendar first.
  */
 export async function waitForCalendar(page: Page): Promise<void> {
+  // Check if we're on the mobile home dashboard by looking for the "Home" heading
+  const homeHeading = page.getByRole("heading", { name: "Home", level: 1 });
+  const isOnHomeDashboard = await homeHeading.isVisible().catch(() => false);
+
+  if (isOnHomeDashboard) {
+    // We're on mobile home dashboard - click Calendar card to navigate
+    // Use the button within main content area (not nav tabs)
+    await page
+      .locator("main")
+      .getByRole("button", { name: "Calendar" })
+      .click();
+  }
+
+  // Now wait for calendar to load
   await page
     .getByRole("button", { name: "Add event" })
     .waitFor({ state: "visible", timeout: 10000 });

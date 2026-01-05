@@ -1,5 +1,9 @@
 import { expect, test } from "@playwright/test";
-import { clearStorage, waitForHydration } from "./helpers/test-helpers";
+import {
+  clearStorage,
+  waitForCalendar,
+  waitForHydration,
+} from "./helpers/test-helpers";
 
 test.describe("First-Time User Onboarding", () => {
   test.beforeEach(async ({ page }) => {
@@ -80,10 +84,9 @@ test.describe("First-Time User Onboarding", () => {
     await completeButton.click();
 
     // Verify main app is showing
-    // The FAB (Add event button) indicates calendar is loaded
-    await expect(page.getByRole("button", { name: "Add event" })).toBeVisible({
-      timeout: 10000,
-    });
+    // On mobile, this shows home dashboard first; on desktop, shows calendar
+    // waitForCalendar handles both cases by navigating from home if needed
+    await waitForCalendar(page);
 
     // Verify family name appears in header
     await expect(page.getByText("The Johnsons")).toBeVisible();
@@ -93,9 +96,8 @@ test.describe("First-Time User Onboarding", () => {
     await waitForHydration(page);
 
     // Should still be on main app (not onboarding)
-    await expect(page.getByRole("button", { name: "Add event" })).toBeVisible({
-      timeout: 10000,
-    });
+    // On mobile, this will be home dashboard; waitForCalendar handles it
+    await waitForCalendar(page);
 
     // Family name should still be visible
     await expect(page.getByText("The Johnsons")).toBeVisible();
