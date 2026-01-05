@@ -1,6 +1,8 @@
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useEffect } from "react";
 import { CalendarModule } from "@/components/calendar";
+import { HomeDashboard } from "@/components/home";
 import { AppHeader, NavigationTabs, SidebarMenu } from "@/components/shared";
+import { useIsMobile } from "@/hooks";
 import {
   type ModuleType,
   useAppStore,
@@ -35,7 +37,11 @@ function ModuleLoader() {
   );
 }
 
-function renderModule(activeModule: ModuleType) {
+function renderModule(activeModule: ModuleType | null) {
+  if (activeModule === null) {
+    return <HomeDashboard />;
+  }
+
   switch (activeModule) {
     case "calendar":
       return <CalendarModule />;
@@ -70,8 +76,17 @@ function renderModule(activeModule: ModuleType) {
 
 export default function FamilyHub() {
   const activeModule = useAppStore((state) => state.activeModule);
+  const setActiveModule = useAppStore((state) => state.setActiveModule);
   const hasHydrated = useHasHydrated();
   const setupComplete = useSetupComplete();
+  const isMobile = useIsMobile();
+
+  // On desktop, redirect null (home) to calendar since home is mobile-only
+  useEffect(() => {
+    if (!isMobile && activeModule === null) {
+      setActiveModule("calendar");
+    }
+  }, [isMobile, activeModule, setActiveModule]);
 
   // Wait for store to hydrate from localStorage
   if (!hasHydrated) {
