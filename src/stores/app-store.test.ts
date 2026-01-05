@@ -5,8 +5,8 @@ describe("AppStore", () => {
   // Store reset handled globally by setup.ts afterEach via resetAllStores()
 
   describe("initial state", () => {
-    it("initializes with activeModule = 'calendar'", () => {
-      expect(useAppStore.getState().activeModule).toBe("calendar");
+    it("initializes with activeModule = null (home dashboard)", () => {
+      expect(useAppStore.getState().activeModule).toBe(null);
     });
 
     it("initializes with isSidebarOpen = false", () => {
@@ -27,6 +27,13 @@ describe("AppStore", () => {
       useAppStore.getState().setActiveModule(module);
 
       expect(useAppStore.getState().activeModule).toBe(module);
+    });
+
+    it("sets activeModule to null (home dashboard)", () => {
+      useAppStore.getState().setActiveModule("calendar");
+      useAppStore.getState().setActiveModule(null);
+
+      expect(useAppStore.getState().activeModule).toBe(null);
     });
 
     it("switching modules does not affect other state", () => {
