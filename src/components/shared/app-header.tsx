@@ -70,26 +70,31 @@ export function AppHeader() {
           <h1 className="text-xl font-bold text-foreground">
             {familyName || "Family Hub"}
           </h1>
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <span>{formatDate(currentDate)}</span>
-            <span>•</span>
-            <span>{formatTime(new Date())}</span>
-          </div>
+          {/* Date/time - hidden on mobile (device shows in status bar) */}
+          {!isMobile && (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <span>{formatDate(currentDate)}</span>
+              <span>•</span>
+              <span>{formatTime(new Date())}</span>
+            </div>
+          )}
         </div>
       </div>
 
       <div className="flex items-center gap-6">
-        {/* Weather */}
-        <div className="flex items-center gap-2 text-muted-foreground">
-          <div className="relative">
-            <Sun className="h-5 w-5 text-yellow-500" />
-            <Cloud className="h-4 w-4 text-gray-400 absolute -bottom-1 -right-1" />
+        {/* Weather - hidden on mobile (future: widget on desktop) */}
+        {!isMobile && (
+          <div className="flex items-center gap-2 text-muted-foreground">
+            <div className="relative">
+              <Sun className="h-5 w-5 text-yellow-500" />
+              <Cloud className="h-4 w-4 text-gray-400 absolute -bottom-1 -right-1" />
+            </div>
+            <span className="text-sm font-medium">72°</span>
           </div>
-          <span className="text-sm font-medium">72°</span>
-        </div>
+        )}
 
-        {/* Family member indicators */}
-        {familyMembers.length > 0 && (
+        {/* Family member indicators - hidden on mobile (used for calendar filtering) */}
+        {!isMobile && familyMembers.length > 0 && (
           <div className="flex items-center gap-1.5">
             {familyMembers.slice(0, 6).map((member) => (
               <div
