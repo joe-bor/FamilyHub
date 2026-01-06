@@ -44,7 +44,9 @@
       "Bash(npm ls:*)",
       "Bash(npm uninstall:*)",
       "Bash(gh run list:*)",
-      "Bash(gh run view:*)"
+      "Bash(gh run view:*)",
+      "Bash(gh run watch:*)",
+      "Bash(gh pr checks:*)"
     ]
   },
   "hooks": {
