@@ -1,241 +1,92 @@
-import { useMemo } from "react";
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
-import { useShallow } from "zustand/shallow";
-import {
-  type FamilyColor,
-  type FamilyData,
-  type FamilyMember,
-  familyColors,
-} from "@/lib/types";
-import { validateFamilyData } from "@/lib/validations/family";
+import { syncFamilyFromStorage } from "@/api/hooks/use-family";
+import { queryClient } from "@/providers/query-provider";
 
-interface FamilyState {
-  // State
-  family: FamilyData | null;
+/**
+ * Minimal family store - only handles hydration state.
+ *
+ * All family data and CRUD operations are now handled by TanStack Query hooks
+ * in src/api/hooks/use-family.ts. This store only tracks whether we've
+ * completed the initial localStorage read (hydration).
+ *
+ * @see useFamily, useFamilyMembers, useCreateFamily, etc. in @/api
+ */
+interface FamilyHydrationState {
+  /**
+   * Whether the initial localStorage read has completed.
+   * Used to gate app rendering until we know if there's existing family data.
+   */
   _hasHydrated: boolean;
-
-  // Actions
-  initializeFamily: (name: string) => void;
-  updateFamilyName: (name: string) => void;
-  addMember: (member: Omit<FamilyMember, "id">) => void;
-  updateMember: (
-    id: string,
-    updates: Partial<Omit<FamilyMember, "id">>,
-  ) => void;
-  removeMember: (id: string) => void;
-  completeSetup: () => void;
-  resetFamily: () => void;
-  setMembers: (members: FamilyMember[]) => void;
   setHasHydrated: (state: boolean) => void;
 }
 
-export const useFamilyStore = create<FamilyState>()(
-  persist(
-    (set, get) => ({
-      // Initial state
-      family: null,
-      _hasHydrated: false,
-
-      // Actions
-      initializeFamily: (name) => {
-        set({
-          family: {
-            id: crypto.randomUUID(),
-            name,
-            members: [],
-            createdAt: new Date().toISOString(),
-            setupComplete: false,
-          },
-        });
-      },
-
-      updateFamilyName: (name) => {
-        const { family } = get();
-        if (family) {
-          set({ family: { ...family, name } });
-        }
-      },
-
-      addMember: (member) => {
-        const { family } = get();
-        if (family) {
-          const newMember: FamilyMember = {
-            ...member,
-            id: crypto.randomUUID(),
-          };
-          set({
-            family: {
-              ...family,
-              members: [...family.members, newMember],
-            },
-          });
-        }
-      },
-
-      updateMember: (id, updates) => {
-        const { family } = get();
-        if (family) {
-          set({
-            family: {
-              ...family,
-              members: family.members.map((m) =>
-                m.id === id ? { ...m, ...updates } : m,
-              ),
-            },
-          });
-        }
-      },
-
-      removeMember: (id) => {
-        const { family } = get();
-        if (family) {
-          set({
-            family: {
-              ...family,
-              members: family.members.filter((m) => m.id !== id),
-            },
-          });
-        }
-      },
-
-      completeSetup: () => {
-        const { family } = get();
-        if (family) {
-          set({
-            family: { ...family, setupComplete: true },
-          });
-        }
-      },
-
-      resetFamily: () => {
-        set({ family: null });
-      },
-
-      setMembers: (members) => {
-        const { family } = get();
-        if (family) {
-          set({
-            family: { ...family, members },
-          });
-        }
-      },
-
-      setHasHydrated: (state) => {
-        set({ _hasHydrated: state });
-      },
-    }),
-    {
-      name: "family-hub-family",
-      onRehydrateStorage: () => (state, error) => {
-        if (error) {
-          console.error("Failed to rehydrate family store:", error);
-          // Clear corrupted data - will trigger onboarding
-          localStorage.removeItem("family-hub-family");
-        } else if (state?.family) {
-          // Validate the structure of rehydrated data
-          const validatedData = validateFamilyData(state.family);
-          if (!validatedData) {
-            console.warn("Invalid family data structure, resetting store");
-            localStorage.removeItem("family-hub-family");
-            state.resetFamily();
-          }
-        }
-        state?.setHasHydrated(true);
-      },
-    },
-  ),
-);
+export const useFamilyStore = create<FamilyHydrationState>()((set) => ({
+  _hasHydrated: false,
+  setHasHydrated: (state) => set({ _hasHydrated: state }),
+}));
 
 // ============================================================================
-// Selectors
+// Hydration Initialization
 // ============================================================================
 
 /**
- * Get all family members.
+ * Check if localStorage has family data and mark as hydrated.
+ * This runs immediately on module load.
  */
-export const useFamilyMembers = () =>
-  useFamilyStore((state) => state.family?.members ?? []);
+function initializeHydration(): void {
+  // In SSR/test environments, skip hydration
+  if (typeof window === "undefined") {
+    useFamilyStore.getState().setHasHydrated(true);
+    return;
+  }
 
-/**
- * Get family name.
- */
-export const useFamilyName = () =>
-  useFamilyStore((state) => state.family?.name ?? "");
+  // Check if family data exists in localStorage
+  try {
+    const stored = localStorage.getItem("family-hub-family");
+    // We don't need to validate the data here - TanStack Query's initialData
+    // will handle reading it, and the API layer validates on mutations
+    // Just mark as hydrated since we've checked localStorage
+    useFamilyStore.getState().setHasHydrated(true);
 
-/**
- * Check if setup is complete.
- */
-export const useSetupComplete = () =>
-  useFamilyStore((state) => state.family?.setupComplete ?? false);
+    // If there's stored data, it will be read by useFamily's initialData
+    if (stored) {
+      // Sync to query cache immediately (in case useFamily hasn't been called yet)
+      syncFamilyFromStorage(queryClient);
+    }
+  } catch (error) {
+    console.error("Failed to check localStorage for family data:", error);
+    // Still mark as hydrated to prevent infinite loading
+    useFamilyStore.getState().setHasHydrated(true);
+  }
+}
+
+// Run hydration check immediately
+initializeHydration();
+
+// ============================================================================
+// Selector
+// ============================================================================
 
 /**
  * Check if store has hydrated from localStorage.
+ * Use this to gate app rendering until we know the hydration state.
  */
 export const useHasHydrated = () =>
   useFamilyStore((state) => state._hasHydrated);
-
-/**
- * Get a family member by ID.
- */
-export const useFamilyMemberById = (id: string) =>
-  useFamilyStore((state) => state.family?.members.find((m) => m.id === id));
-
-/**
- * Get the family member map for O(1) lookups.
- * Memoized to prevent creating new Map on every render.
- */
-export const useFamilyMemberMap = () => {
-  const members = useFamilyMembers();
-  return useMemo(() => new Map(members.map((m) => [m.id, m])), [members]);
-};
-
-/**
- * Compound selector for family actions.
- */
-export const useFamilyActions = () =>
-  useFamilyStore(
-    useShallow((state) => ({
-      initializeFamily: state.initializeFamily,
-      updateFamilyName: state.updateFamilyName,
-      addMember: state.addMember,
-      updateMember: state.updateMember,
-      removeMember: state.removeMember,
-      completeSetup: state.completeSetup,
-      resetFamily: state.resetFamily,
-      setMembers: state.setMembers,
-    })),
-  );
-
-/**
- * Get family data (null if not initialized).
- */
-export const useFamilyData = () => useFamilyStore((state) => state.family);
-
-/**
- * Get unused colors (colors not assigned to any member).
- * Memoized to prevent creating new array on every render.
- */
-export const useUnusedColors = (): FamilyColor[] => {
-  const members = useFamilyMembers();
-  return useMemo(() => {
-    const usedColors = new Set(members.map((m) => m.color));
-    return familyColors.filter((c) => !usedColors.has(c));
-  }, [members]);
-};
 
 // ============================================================================
 // Cross-Tab Synchronization
 // ============================================================================
 
 /**
- * Listen for localStorage changes from other tabs and rehydrate the store.
+ * Listen for localStorage changes from other tabs and sync the query cache.
  * This ensures family data stays in sync across multiple browser tabs.
  */
 if (typeof window !== "undefined") {
   window.addEventListener("storage", (event) => {
     if (event.key === "family-hub-family") {
-      useFamilyStore.persist.rehydrate();
+      // Sync the TanStack Query cache with the new localStorage data
+      syncFamilyFromStorage(queryClient);
     }
   });
 }
