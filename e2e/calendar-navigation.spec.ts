@@ -35,7 +35,10 @@ test.describe("Calendar View Navigation", () => {
     // ============================================
 
     // Create an event so we can test filtering
-    await page.getByRole("button", { name: "Add event" }).click();
+    // Use force:true because on mobile the sticky header can intercept pointer events
+    await page
+      .getByRole("button", { name: "Add event" })
+      .click({ force: true });
     await expect(page.getByRole("dialog")).toBeVisible();
     await page.getByLabel("Event Name").fill("Alice's Task");
     await page.getByRole("button", { name: "Add Event" }).click();
