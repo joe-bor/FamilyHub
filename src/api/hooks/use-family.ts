@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo } from "react";
 import type { ApiException } from "@/api/client";
 import { familyService } from "@/api/services";
+import { FAMILY_STORAGE_KEY } from "@/lib/constants";
 import type {
   AddMemberRequest,
   CreateFamilyRequest,
@@ -16,12 +17,6 @@ import type {
   UpdateMemberRequest,
 } from "@/lib/types";
 import { familyColors } from "@/lib/types";
-
-// ============================================================================
-// Constants
-// ============================================================================
-
-const STORAGE_KEY = "family-hub-family";
 
 // ============================================================================
 // Query Keys Factory
@@ -44,7 +39,7 @@ export const familyKeys = {
 function writeFamilyToStorage(family: FamilyData | null): void {
   try {
     if (family === null) {
-      localStorage.removeItem(STORAGE_KEY);
+      localStorage.removeItem(FAMILY_STORAGE_KEY);
     } else {
       // Match Zustand persist format for compatibility
       const stored = {
@@ -54,10 +49,12 @@ function writeFamilyToStorage(family: FamilyData | null): void {
         },
         version: 0,
       };
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(stored));
+      localStorage.setItem(FAMILY_STORAGE_KEY, JSON.stringify(stored));
     }
   } catch (error) {
-    console.error("Failed to write family to localStorage:", error);
+    if (import.meta.env.DEV) {
+      console.error("Failed to write family to localStorage:", error);
+    }
   }
 }
 
@@ -66,13 +63,15 @@ function writeFamilyToStorage(family: FamilyData | null): void {
  */
 export function readFamilyFromStorage(): FamilyData | null {
   try {
-    const stored = localStorage.getItem(STORAGE_KEY);
+    const stored = localStorage.getItem(FAMILY_STORAGE_KEY);
     if (!stored) return null;
 
     const parsed = JSON.parse(stored);
     return parsed?.state?.family ?? null;
   } catch (error) {
-    console.error("Failed to read family from localStorage:", error);
+    if (import.meta.env.DEV) {
+      console.error("Failed to read family from localStorage:", error);
+    }
     return null;
   }
 }
@@ -283,6 +282,9 @@ interface AddMemberCallbacks {
 
 /**
  * Add a new member to the family.
+ *
+ * TODO: Wire up to FamilySettingsModal "Add Member" button when UI is implemented.
+ * Currently exported for API completeness.
  */
 export function useAddMember(callbacks?: AddMemberCallbacks) {
   const queryClient = useQueryClient();
@@ -322,8 +324,24 @@ export function useAddMember(callbacks?: AddMemberCallbacks) {
       callbacks?.onError?.(error);
     },
     onSuccess: (response) => {
-      // Refetch to get the server-assigned ID
-      queryClient.invalidateQueries({ queryKey: familyKeys.family() });
+      // Replace temp member with server response (which has real ID)
+      const currentData = queryClient.getQueryData<FamilyApiResponse>(
+        familyKeys.family(),
+      );
+      if (currentData?.data) {
+        const updatedFamily: FamilyData = {
+          ...currentData.data,
+          members: currentData.data.members.map((m) =>
+            m.id.startsWith("temp-") ? response.data : m,
+          ),
+        };
+        queryClient.setQueryData<FamilyApiResponse>(familyKeys.family(), {
+          ...currentData,
+          data: updatedFamily,
+        });
+        // Write-through to localStorage
+        writeFamilyToStorage(updatedFamily);
+      }
       callbacks?.onSuccess?.(response);
     },
   });
@@ -415,6 +433,9 @@ interface RemoveMemberCallbacks {
 
 /**
  * Remove a member from the family.
+ *
+ * TODO: Wire up to FamilySettingsModal member deletion when UI is implemented.
+ * Currently exported for API completeness.
  */
 export function useRemoveMember(callbacks?: RemoveMemberCallbacks) {
   const queryClient = useQueryClient();

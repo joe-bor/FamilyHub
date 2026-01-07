@@ -1,4 +1,5 @@
 import { ApiErrorCode, ApiException } from "@/api/client";
+import { FAMILY_STORAGE_KEY } from "@/lib/constants";
 import type {
   AddMemberRequest,
   CreateFamilyRequest,
@@ -12,9 +13,6 @@ import type {
 } from "@/lib/types";
 import { simulateApiCall } from "./delay";
 
-// localStorage key (same as Zustand store for compatibility)
-const STORAGE_KEY = "family-hub-family";
-
 // ============================================================================
 // Persistence Helpers
 // ============================================================================
@@ -26,7 +24,7 @@ const STORAGE_KEY = "family-hub-family";
 function saveFamilyToStorage(family: FamilyData | null): void {
   try {
     if (family === null) {
-      localStorage.removeItem(STORAGE_KEY);
+      localStorage.removeItem(FAMILY_STORAGE_KEY);
     } else {
       // Match Zustand persist format: { state: { family, _hasHydrated }, version }
       const stored = {
@@ -36,10 +34,12 @@ function saveFamilyToStorage(family: FamilyData | null): void {
         },
         version: 0,
       };
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(stored));
+      localStorage.setItem(FAMILY_STORAGE_KEY, JSON.stringify(stored));
     }
   } catch (error) {
-    console.error("Failed to save family data to localStorage:", error);
+    if (import.meta.env.DEV) {
+      console.error("Failed to save family data to localStorage:", error);
+    }
   }
 }
 
@@ -48,13 +48,15 @@ function saveFamilyToStorage(family: FamilyData | null): void {
  */
 function loadFamilyFromStorage(): FamilyData | null {
   try {
-    const stored = localStorage.getItem(STORAGE_KEY);
+    const stored = localStorage.getItem(FAMILY_STORAGE_KEY);
     if (!stored) return null;
 
     const parsed = JSON.parse(stored);
     return parsed?.state?.family ?? null;
   } catch (error) {
-    console.error("Failed to load family data from localStorage:", error);
+    if (import.meta.env.DEV) {
+      console.error("Failed to load family data from localStorage:", error);
+    }
     return null;
   }
 }
