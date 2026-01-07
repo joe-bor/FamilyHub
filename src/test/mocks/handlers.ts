@@ -1,15 +1,24 @@
 import { HttpResponse, http } from "msw";
 import { parseLocalDate } from "@/lib/time-utils";
 import type {
+  AddMemberRequest,
   ApiResponse,
   CalendarEvent,
   CreateEventRequest,
+  CreateFamilyRequest,
+  FamilyData,
+  FamilyMember,
   MutationResponse,
   UpdateEventRequest,
+  UpdateFamilyRequest,
+  UpdateMemberRequest,
 } from "@/lib/types";
 
 // In-memory storage for mock calendar events (reset between tests)
 let mockEvents: CalendarEvent[] = [];
+
+// In-memory storage for mock family data (reset between tests)
+let mockFamily: FamilyData | null = null;
 
 /**
  * Reset mock data between tests
@@ -30,6 +39,27 @@ export function seedMockEvents(events: CalendarEvent[]): void {
  */
 export function getMockEvents(): CalendarEvent[] {
   return [...mockEvents];
+}
+
+/**
+ * Reset mock family data between tests
+ */
+export function resetMockFamily(): void {
+  mockFamily = null;
+}
+
+/**
+ * Seed mock family for testing
+ */
+export function seedMockFamily(family: FamilyData | null): void {
+  mockFamily = family;
+}
+
+/**
+ * Get current mock family (for assertions)
+ */
+export function getMockFamily(): FamilyData | null {
+  return mockFamily;
 }
 
 function createApiResponse<T>(data: T): ApiResponse<T> {
@@ -193,6 +223,168 @@ export const handlers = [
     }
 
     mockEvents = mockEvents.filter((e) => e.id !== id);
+
+    return new HttpResponse(null, { status: 204 });
+  }),
+
+  // ============================================================================
+  // Family API Handlers
+  // ============================================================================
+
+  // GET /family - Get family data
+  http.get(`${API_BASE}/family`, () => {
+    return HttpResponse.json(createApiResponse(mockFamily));
+  }),
+
+  // POST /family - Create new family
+  http.post(`${API_BASE}/family`, async ({ request }) => {
+    if (mockFamily) {
+      return HttpResponse.json(
+        { message: "Family already exists" },
+        { status: 409 },
+      );
+    }
+
+    const body = (await request.json()) as CreateFamilyRequest;
+    mockFamily = {
+      id: `family-${Date.now()}`,
+      name: body.name,
+      members: body.members.map((m) => ({
+        ...m,
+        id: `member-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+      })),
+      createdAt: new Date().toISOString(),
+      setupComplete: true,
+    };
+
+    return HttpResponse.json(
+      createMutationResponse(mockFamily, "Family created successfully"),
+    );
+  }),
+
+  // PATCH /family - Update family
+  http.patch(`${API_BASE}/family`, async ({ request }) => {
+    if (!mockFamily) {
+      return HttpResponse.json(
+        { message: "No family exists" },
+        { status: 404 },
+      );
+    }
+
+    const body = (await request.json()) as UpdateFamilyRequest;
+    mockFamily = {
+      ...mockFamily,
+      name: body.name ?? mockFamily.name,
+    };
+
+    return HttpResponse.json(
+      createMutationResponse(mockFamily, "Family updated successfully"),
+    );
+  }),
+
+  // DELETE /family - Delete family
+  http.delete(`${API_BASE}/family`, () => {
+    mockFamily = null;
+    return new HttpResponse(null, { status: 204 });
+  }),
+
+  // POST /family/members - Add member
+  http.post(`${API_BASE}/family/members`, async ({ request }) => {
+    if (!mockFamily) {
+      return HttpResponse.json(
+        { message: "No family exists" },
+        { status: 404 },
+      );
+    }
+
+    const body = (await request.json()) as AddMemberRequest;
+    const newMember: FamilyMember = {
+      id: `member-${Date.now()}`,
+      name: body.name,
+      color: body.color,
+      avatarUrl: body.avatarUrl,
+      email: body.email,
+    };
+
+    mockFamily = {
+      ...mockFamily,
+      members: [...mockFamily.members, newMember],
+    };
+
+    return HttpResponse.json(
+      createMutationResponse(newMember, "Member added successfully"),
+    );
+  }),
+
+  // PATCH /family/members/:id - Update member
+  http.patch(`${API_BASE}/family/members/:id`, async ({ params, request }) => {
+    if (!mockFamily) {
+      return HttpResponse.json(
+        { message: "No family exists" },
+        { status: 404 },
+      );
+    }
+
+    const { id } = params;
+    const body = (await request.json()) as Omit<UpdateMemberRequest, "id">;
+
+    const index = mockFamily.members.findIndex((m) => m.id === id);
+    if (index === -1) {
+      return HttpResponse.json(
+        { message: `Member with id "${id}" not found` },
+        { status: 404 },
+      );
+    }
+
+    const existingMember = mockFamily.members[index];
+    const updatedMember: FamilyMember = {
+      ...existingMember,
+      name: body.name ?? existingMember.name,
+      color: body.color ?? existingMember.color,
+      avatarUrl:
+        body.avatarUrl !== undefined
+          ? body.avatarUrl
+          : existingMember.avatarUrl,
+      email: body.email !== undefined ? body.email : existingMember.email,
+    };
+
+    mockFamily = {
+      ...mockFamily,
+      members: [
+        ...mockFamily.members.slice(0, index),
+        updatedMember,
+        ...mockFamily.members.slice(index + 1),
+      ],
+    };
+
+    return HttpResponse.json(
+      createMutationResponse(updatedMember, "Member updated successfully"),
+    );
+  }),
+
+  // DELETE /family/members/:id - Remove member
+  http.delete(`${API_BASE}/family/members/:id`, ({ params }) => {
+    if (!mockFamily) {
+      return HttpResponse.json(
+        { message: "No family exists" },
+        { status: 404 },
+      );
+    }
+
+    const { id } = params;
+    const index = mockFamily.members.findIndex((m) => m.id === id);
+
+    if (index === -1) {
+      return HttpResponse.json(
+        { message: `Member with id "${id}" not found` },
+        { status: 404 },
+      );
+    }
+
+    mockFamily = {
+      ...mockFamily,
+      members: mockFamily.members.filter((m) => m.id !== id),
+    };
 
     return new HttpResponse(null, { status: 204 });
   }),

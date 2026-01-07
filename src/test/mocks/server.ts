@@ -2,9 +2,12 @@ import { setupServer } from "msw/node";
 import {
   API_BASE,
   getMockEvents,
+  getMockFamily,
   handlers,
   resetMockEvents,
+  resetMockFamily,
   seedMockEvents,
+  seedMockFamily,
 } from "./handlers";
 
 /**
@@ -50,9 +53,18 @@ export function setupMswServer() {
   afterEach(() => {
     server.resetHandlers();
     resetMockEvents();
+    resetMockFamily();
   });
   afterAll(() => server.close());
 }
 
 // Re-export mock data helpers and constants
-export { API_BASE, getMockEvents, resetMockEvents, seedMockEvents };
+export {
+  API_BASE,
+  getMockEvents,
+  getMockFamily,
+  resetMockEvents,
+  resetMockFamily,
+  seedMockEvents,
+  seedMockFamily,
+};

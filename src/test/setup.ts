@@ -50,17 +50,23 @@ window.scrollTo = vi.fn();
 import { useAppStore } from "@/stores/app-store";
 import { useCalendarStore } from "@/stores/calendar-store";
 import { useFamilyStore } from "@/stores/family-store";
+import { resetTestQueryClient } from "@/test/test-utils";
+
+// localStorage key for family data
+const FAMILY_STORAGE_KEY = "family-hub-family";
 
 /**
  * Reset all Zustand stores to initial state.
  * Called after each test to prevent state leakage.
  */
 function resetAllStores(): void {
-  // Reset family store
+  // Reset family store (now only has hydration state)
   useFamilyStore.setState({
-    family: null,
     _hasHydrated: false,
   });
+
+  // Clear family data from localStorage
+  localStorage.removeItem(FAMILY_STORAGE_KEY);
 
   // Reset calendar store
   useCalendarStore.setState({
@@ -98,4 +104,5 @@ afterEach(() => {
   vi.clearAllMocks();
   vi.useRealTimers();
   resetAllStores();
+  resetTestQueryClient();
 });
