@@ -102,3 +102,71 @@ export const familyColors: FamilyColor[] = [
   "pink",
   "orange",
 ];
+
+// ============================================================================
+// API Request/Response Types
+// ============================================================================
+
+/**
+ * Request to create a new family (during onboarding).
+ */
+export interface CreateFamilyRequest {
+  name: string;
+  members: Array<Omit<FamilyMember, "id">>;
+}
+
+/**
+ * Request to update family properties.
+ */
+export interface UpdateFamilyRequest {
+  name?: string;
+}
+
+/**
+ * Request to add a new member to the family.
+ */
+export interface AddMemberRequest {
+  name: string;
+  color: FamilyColor;
+  avatarUrl?: string;
+  email?: string;
+}
+
+/**
+ * Request to update an existing member.
+ */
+export interface UpdateMemberRequest {
+  id: string;
+  name?: string;
+  color?: FamilyColor;
+  avatarUrl?: string;
+  email?: string;
+}
+
+/**
+ * API response wrapper for family data.
+ * Returns null when no family exists (triggers onboarding).
+ */
+export interface FamilyApiResponse {
+  data: FamilyData | null;
+  meta?: {
+    timestamp: number;
+    requestId: string;
+  };
+}
+
+/**
+ * Mutation response for family operations.
+ */
+export interface FamilyMutationResponse {
+  data: FamilyData;
+  message?: string;
+}
+
+/**
+ * Mutation response for member operations.
+ */
+export interface MemberMutationResponse {
+  data: FamilyMember;
+  message?: string;
+}
