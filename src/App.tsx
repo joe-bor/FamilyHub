@@ -1,14 +1,10 @@
 import { lazy, Suspense, useEffect } from "react";
+import { useSetupComplete } from "@/api";
 import { CalendarModule } from "@/components/calendar";
 import { HomeDashboard } from "@/components/home";
 import { AppHeader, NavigationTabs, SidebarMenu } from "@/components/shared";
 import { useIsMobile } from "@/hooks";
-import {
-  type ModuleType,
-  useAppStore,
-  useHasHydrated,
-  useSetupComplete,
-} from "@/stores";
+import { type ModuleType, useAppStore, useHasHydrated } from "@/stores";
 
 // Lazy load non-primary modules for code splitting
 const ChoresView = lazy(() =>

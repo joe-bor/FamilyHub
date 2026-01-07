@@ -2,6 +2,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { format } from "date-fns";
 import { useEffect, useMemo } from "react";
 import { useForm } from "react-hook-form";
+import { useFamilyMembers } from "@/api";
 import { Button } from "@/components/ui/button";
 import { DatePicker } from "@/components/ui/date-picker";
 import { FormError } from "@/components/ui/form-error";
@@ -12,7 +13,6 @@ import { TimePicker } from "@/components/ui/time-picker";
 import { parseLocalDate } from "@/lib/time-utils";
 import { cn } from "@/lib/utils";
 import { type EventFormData, eventFormSchema } from "@/lib/validations";
-import { useFamilyMembers } from "@/stores";
 
 interface EventFormProps {
   mode: "add" | "edit";

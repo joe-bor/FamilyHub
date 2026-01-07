@@ -1,13 +1,9 @@
 import { Cloud, Home, Menu, Settings, Sun } from "lucide-react";
+import { useFamilyMembers, useFamilyName } from "@/api";
 import { Button } from "@/components/ui/button";
 import { useIsMobile } from "@/hooks";
 import { colorMap } from "@/lib/types";
-import {
-  useAppStore,
-  useCalendarStore,
-  useFamilyMembers,
-  useFamilyName,
-} from "@/stores";
+import { useAppStore, useCalendarStore } from "@/stores";
 
 export function AppHeader() {
   // From calendar-store

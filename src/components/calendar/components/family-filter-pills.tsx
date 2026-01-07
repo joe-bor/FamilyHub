@@ -1,8 +1,9 @@
 import { Check } from "lucide-react";
 import { useEffect } from "react";
+import { useFamilyMembers } from "@/api";
 import { colorMap } from "@/lib/types";
 import { cn } from "@/lib/utils";
-import { useFamilyMembers, useFilterPillsState } from "@/stores";
+import { useFilterPillsState } from "@/stores";
 
 export function FamilyFilterPills() {
   const familyMembers = useFamilyMembers();

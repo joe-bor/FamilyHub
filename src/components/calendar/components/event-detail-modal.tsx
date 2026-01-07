@@ -1,6 +1,7 @@
 import { format } from "date-fns";
 import { Calendar, Clock, Loader2, MapPin, Pencil, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useFamilyMembers } from "@/api";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -12,7 +13,6 @@ import {
 import type { CalendarEvent } from "@/lib/types";
 import { colorMap, getFamilyMember } from "@/lib/types";
 import { cn } from "@/lib/utils";
-import { useFamilyMembers } from "@/stores";
 
 interface EventDetailModalProps {
   event: CalendarEvent | null;
