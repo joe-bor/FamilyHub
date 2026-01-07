@@ -9,7 +9,8 @@ const ReactQueryDevtools = lazy(() =>
   })),
 );
 
-const queryClient = new QueryClient({
+// Exported for cross-tab sync in family-store.ts
+export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       staleTime: 1000 * 60 * 5, // 5 minutes
