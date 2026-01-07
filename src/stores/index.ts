@@ -1,16 +1,4 @@
 // App Store
-
-// Re-export family data selectors from API layer for backwards compatibility
-// These now use TanStack Query instead of Zustand
-export {
-  useFamilyData,
-  useFamilyMemberById,
-  useFamilyMemberMap,
-  useFamilyMembers,
-  useFamilyName,
-  useSetupComplete,
-  useUnusedColors,
-} from "@/api";
 export { type ModuleType, useAppStore } from "./app-store";
 // Calendar Store
 export {

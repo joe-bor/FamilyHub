@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { useFamilyMembers } from "@/api";
 import { useIsMobile } from "@/hooks";
 import {
   type CalendarEvent,
@@ -7,7 +8,6 @@ import {
   getFamilyMember,
 } from "@/lib/types";
 import { cn } from "@/lib/utils";
-import { useFamilyMembers } from "@/stores";
 import type { FilterState } from "../components/calendar-filter";
 import { CalendarNavigation } from "../components/calendar-navigation";
 

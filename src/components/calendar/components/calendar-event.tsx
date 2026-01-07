@@ -1,7 +1,7 @@
+import { useFamilyMembers } from "@/api";
 import type { CalendarEvent } from "@/lib/types";
 import { colorMap, getFamilyMember } from "@/lib/types";
 import { cn } from "@/lib/utils";
-import { useFamilyMembers } from "@/stores";
 
 interface CalendarEventCardProps {
   event: CalendarEvent;

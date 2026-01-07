@@ -1,10 +1,10 @@
 import { Clock, MapPin } from "lucide-react";
 import type React from "react";
 import { useMemo } from "react";
+import { useFamilyMembers } from "@/api";
 import { compareEventsByTime, formatLocalDate } from "@/lib/time-utils";
 import { type CalendarEvent, colorMap, getFamilyMember } from "@/lib/types";
 import { cn } from "@/lib/utils";
-import { useFamilyMembers } from "@/stores";
 import type { FilterState } from "../components/calendar-filter";
 
 interface ScheduleCalendarProps {

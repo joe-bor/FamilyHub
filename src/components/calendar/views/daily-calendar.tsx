@@ -1,4 +1,5 @@
 import { useMemo, useRef } from "react";
+import { useFamilyMembers } from "@/api";
 import {
   compareEventsByTime,
   getTimeInMinutes,
@@ -6,7 +7,6 @@ import {
 } from "@/lib/time-utils";
 import { type CalendarEvent, colorMap } from "@/lib/types";
 import { cn } from "@/lib/utils";
-import { useFamilyMembers } from "@/stores";
 import { CalendarEventCard } from "../components/calendar-event";
 import type { FilterState } from "../components/calendar-filter";
 import { CalendarNavigation } from "../components/calendar-navigation";

@@ -1,10 +1,11 @@
 import { Users, X } from "lucide-react";
 import { useState } from "react";
+import { useFamilyMembers, useFamilyName } from "@/api";
 import { FamilySettingsModal, MemberProfileModal } from "@/components/settings";
 import { Button } from "@/components/ui/button";
 import { colorMap } from "@/lib/types";
 import { cn } from "@/lib/utils";
-import { useAppStore, useFamilyMembers, useFamilyName } from "@/stores";
+import { useAppStore } from "@/stores";
 
 export function SidebarMenu() {
   const isOpen = useAppStore((state) => state.isSidebarOpen);

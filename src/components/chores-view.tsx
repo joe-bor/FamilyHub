@@ -1,9 +1,9 @@
 import { Check, RotateCcw, Star, Trophy } from "lucide-react";
 import { useState } from "react";
+import { useFamilyMembers } from "@/api";
 import { generateSampleChores } from "@/lib/calendar-data";
 import { type ChoreItem, colorMap, getFamilyMember } from "@/lib/types";
 import { cn } from "@/lib/utils";
-import { useFamilyMembers } from "@/stores";
 
 export function ChoresView() {
   const familyMembers = useFamilyMembers();
