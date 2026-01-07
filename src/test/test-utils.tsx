@@ -3,6 +3,7 @@ import { type RenderOptions, render } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { ReactElement, ReactNode } from "react";
 import { type FamilyApiResponse, familyKeys } from "@/api";
+import { FAMILY_STORAGE_KEY } from "@/lib/constants";
 import type {
   CalendarEvent,
   CalendarViewType,
@@ -15,9 +16,6 @@ import { useAppStore } from "@/stores/app-store";
 import { useCalendarStore } from "@/stores/calendar-store";
 import { useFamilyStore } from "@/stores/family-store";
 import { resetMockFamily, seedMockFamily } from "./mocks/handlers";
-
-// localStorage key for family data (matches the API layer)
-const FAMILY_STORAGE_KEY = "family-hub-family";
 
 /**
  * Creates a fresh QueryClient for each test with testing-optimized defaults
