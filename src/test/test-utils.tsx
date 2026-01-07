@@ -2,6 +2,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { type RenderOptions, render } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { ReactElement, ReactNode } from "react";
+import { type FamilyApiResponse, familyKeys } from "@/api";
 import type {
   CalendarEvent,
   CalendarViewType,
@@ -13,6 +14,10 @@ import type { ModuleType } from "@/stores/app-store";
 import { useAppStore } from "@/stores/app-store";
 import { useCalendarStore } from "@/stores/calendar-store";
 import { useFamilyStore } from "@/stores/family-store";
+import { resetMockFamily, seedMockFamily } from "./mocks/handlers";
+
+// localStorage key for family data (matches the API layer)
+const FAMILY_STORAGE_KEY = "family-hub-family";
 
 /**
  * Creates a fresh QueryClient for each test with testing-optimized defaults
@@ -32,16 +37,39 @@ function createTestQueryClient() {
   });
 }
 
+/**
+ * Global test query client - used by seedFamilyStore and resetFamilyStore.
+ * This is reset before each test in setup.ts.
+ */
+let testQueryClient: QueryClient = createTestQueryClient();
+
+/**
+ * Get the current test query client.
+ * Use this when you need to interact with the query cache in tests.
+ */
+export function getTestQueryClient(): QueryClient {
+  return testQueryClient;
+}
+
+/**
+ * Reset the test query client (called in setup.ts afterEach).
+ */
+export function resetTestQueryClient(): void {
+  testQueryClient.clear();
+  testQueryClient = createTestQueryClient();
+}
+
 interface AllProvidersProps {
   children: ReactNode;
   queryClient?: QueryClient;
 }
 
 /**
- * Wrapper component that includes all providers needed for testing
+ * Wrapper component that includes all providers needed for testing.
+ * Uses the global test query client by default for consistent state across seeding and rendering.
  */
 function AllProviders({ children, queryClient }: AllProvidersProps) {
-  const client = queryClient ?? createTestQueryClient();
+  const client = queryClient ?? testQueryClient;
 
   return <QueryClientProvider client={client}>{children}</QueryClientProvider>;
 }
@@ -100,8 +128,8 @@ export { customRender as render, renderWithUser, createTestQueryClient };
 // =============================================================================
 
 /**
- * Seed the family store with test data.
- * Call this before rendering components that depend on family data.
+ * Seed family data for tests.
+ * Seeds both the TanStack Query cache and localStorage (for components that read directly).
  *
  * @example
  * seedFamilyStore({
@@ -113,28 +141,54 @@ export { customRender as render, renderWithUser, createTestQueryClient };
 export function seedFamilyStore(
   data: Partial<FamilyData> & { members: FamilyMember[] },
 ): void {
-  const store = useFamilyStore.getState();
+  // Build the full family data object
+  const familyData: FamilyData = {
+    id: data.id ?? crypto.randomUUID(),
+    name: data.name ?? "Test Family",
+    members: data.members,
+    createdAt: data.createdAt ?? new Date().toISOString(),
+    setupComplete: data.setupComplete !== false, // Default to true
+  };
 
-  // First initialize the family
-  store.initializeFamily(data.name ?? "Test Family");
+  // Seed TanStack Query cache
+  const response: FamilyApiResponse = {
+    data: familyData,
+    meta: { timestamp: Date.now(), requestId: "test-seed" },
+  };
+  testQueryClient.setQueryData(familyKeys.family(), response);
 
-  // Then set members
-  store.setMembers(data.members);
+  // Seed MSW mock (for background refetches that hit the API)
+  seedMockFamily(familyData);
 
-  // Complete setup if specified (default to true for convenience)
-  if (data.setupComplete !== false) {
-    store.completeSetup();
-  }
+  // Seed localStorage (for components/hooks that read directly from it)
+  const stored = {
+    state: { family: familyData, _hasHydrated: true },
+    version: 0,
+  };
+  localStorage.setItem(FAMILY_STORAGE_KEY, JSON.stringify(stored));
 
-  // Mark as hydrated (simulates localStorage rehydration)
-  store.setHasHydrated(true);
+  // Mark Zustand store as hydrated
+  useFamilyStore.getState().setHasHydrated(true);
 }
 
 /**
- * Reset the family store to its initial state.
+ * Reset family data to empty state.
+ * Clears query cache, localStorage, MSW mock, and marks store as hydrated.
  */
 export function resetFamilyStore(): void {
-  useFamilyStore.getState().resetFamily();
+  // Clear query cache
+  testQueryClient.setQueryData(familyKeys.family(), {
+    data: null,
+    meta: { timestamp: Date.now(), requestId: "test-reset" },
+  });
+
+  // Clear MSW mock
+  resetMockFamily();
+
+  // Clear localStorage
+  localStorage.removeItem(FAMILY_STORAGE_KEY);
+
+  // Mark as hydrated (so app doesn't show loading)
   useFamilyStore.getState().setHasHydrated(true);
 }
 
@@ -252,6 +306,7 @@ export function seedAppStore(data: {
  * Call this in afterEach to ensure test isolation.
  */
 export function resetAllStores(): void {
+  resetTestQueryClient();
   resetFamilyStore();
   resetCalendarStore();
   resetAppStore();
