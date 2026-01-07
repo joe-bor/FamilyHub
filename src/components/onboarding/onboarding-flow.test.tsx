@@ -1,5 +1,13 @@
-import { beforeEach, describe, expect, it } from "vitest";
-import { useFamilyStore } from "@/stores";
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+} from "vitest";
+import { getMockFamily, resetMockFamily, server } from "@/test/mocks/server";
 import {
   render,
   renderWithUser,
@@ -10,6 +18,14 @@ import {
 import { OnboardingFlow } from "./onboarding-flow";
 
 describe("OnboardingFlow", () => {
+  // Setup MSW server for this test suite
+  beforeAll(() => server.listen({ onUnhandledRequest: "error" }));
+  afterEach(() => {
+    server.resetHandlers();
+    resetMockFamily();
+  });
+  afterAll(() => server.close());
+
   beforeEach(() => {
     resetFamilyStore();
   });
@@ -265,12 +281,15 @@ describe("OnboardingFlow", () => {
       // Complete setup
       await user.click(screen.getByRole("button", { name: /complete setup/i }));
 
-      // Verify store was updated
-      const state = useFamilyStore.getState();
-      expect(state.family.name).toBe("The Test Family");
-      expect(state.family.members).toHaveLength(1);
-      expect(state.family.members[0].name).toBe("Parent One");
-      expect(state.family.setupComplete).toBe(true);
+      // Wait for mutation to complete by checking MSW mock data
+      await waitFor(() => {
+        const mockFamily = getMockFamily();
+        expect(mockFamily).not.toBeNull();
+        expect(mockFamily?.name).toBe("The Test Family");
+        expect(mockFamily?.members).toHaveLength(1);
+        expect(mockFamily?.members[0].name).toBe("Parent One");
+        expect(mockFamily?.setupComplete).toBe(true);
+      });
     });
 
     it("allows adding multiple members before completing", async () => {
@@ -320,9 +339,12 @@ describe("OnboardingFlow", () => {
       // Complete
       await user.click(screen.getByRole("button", { name: /complete setup/i }));
 
-      // Verify store
-      const state = useFamilyStore.getState();
-      expect(state.family.members).toHaveLength(2);
+      // Wait for mutation to complete by checking MSW mock data
+      await waitFor(() => {
+        const mockFamily = getMockFamily();
+        expect(mockFamily).not.toBeNull();
+        expect(mockFamily?.members).toHaveLength(2);
+      });
     });
   });
 });
