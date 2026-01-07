@@ -2,6 +2,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Camera, Trash2, X } from "lucide-react";
 import { useEffect, useRef } from "react";
 import { useForm } from "react-hook-form";
+import { useFamilyMemberById, useFamilyMembers, useUpdateMember } from "@/api";
 import { Button } from "@/components/ui/button";
 import { ColorPicker } from "@/components/ui/color-picker";
 import {
@@ -18,11 +19,6 @@ import {
   createMemberProfileSchema,
   type MemberProfileFormData,
 } from "@/lib/validations/family";
-import {
-  useFamilyActions,
-  useFamilyMemberById,
-  useFamilyMembers,
-} from "@/stores";
 
 interface MemberProfileModalProps {
   open: boolean;
@@ -37,7 +33,7 @@ export function MemberProfileModal({
 }: MemberProfileModalProps) {
   const member = useFamilyMemberById(memberId);
   const familyMembers = useFamilyMembers();
-  const { updateMember } = useFamilyActions();
+  const updateMemberMutation = useUpdateMember();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const existingNames = familyMembers.map((m) => m.name);
@@ -79,7 +75,8 @@ export function MemberProfileModal({
   if (!member) return null;
 
   const onSubmit = (data: MemberProfileFormData) => {
-    updateMember(memberId, {
+    updateMemberMutation.mutate({
+      id: memberId,
       name: data.name,
       color: data.color,
       email: data.email || undefined,
@@ -104,13 +101,13 @@ export function MemberProfileModal({
     const reader = new FileReader();
     reader.onload = (e) => {
       const base64 = e.target?.result as string;
-      updateMember(memberId, { avatarUrl: base64 });
+      updateMemberMutation.mutate({ id: memberId, avatarUrl: base64 });
     };
     reader.readAsDataURL(file);
   };
 
   const handleRemoveAvatar = () => {
-    updateMember(memberId, { avatarUrl: undefined });
+    updateMemberMutation.mutate({ id: memberId, avatarUrl: undefined });
   };
 
   const colors = colorMap[member.color];
