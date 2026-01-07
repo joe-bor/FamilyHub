@@ -1,8 +1,8 @@
 import { useState } from "react";
 import type { z } from "zod";
+import { useCreateFamily } from "@/api";
 import type { FamilyMember } from "@/lib/types";
 import type { memberFormSchema } from "@/lib/validations/family";
-import { useFamilyStore } from "@/stores";
 import { OnboardingFamilyName } from "./onboarding-family-name";
 import { OnboardingMembers } from "./onboarding-members";
 import { OnboardingWelcome } from "./onboarding-welcome";
@@ -14,14 +14,13 @@ type Step = "welcome" | "family-name" | "members";
 export function OnboardingFlow() {
   const [step, setStep] = useState<Step>("welcome");
 
-  // Draft state - only persisted to store on final completion
+  // Draft state - only persisted via API on final completion
+  // Members have local IDs for UI purposes (React keys, edit/remove)
   const [draftName, setDraftName] = useState("");
   const [draftMembers, setDraftMembers] = useState<FamilyMember[]>([]);
 
-  // Store actions
-  const initializeFamily = useFamilyStore((state) => state.initializeFamily);
-  const setMembers = useFamilyStore((state) => state.setMembers);
-  const completeSetup = useFamilyStore((state) => state.completeSetup);
+  // API mutation for creating family
+  const createFamily = useCreateFamily();
 
   // Navigation handlers
   const handleWelcomeNext = () => {
@@ -41,10 +40,10 @@ export function OnboardingFlow() {
     setStep("family-name");
   };
 
-  // Member management (draft state)
+  // Member management (draft state with local IDs)
   const handleAddMember = (data: MemberFormData) => {
     const newMember: FamilyMember = {
-      id: crypto.randomUUID(),
+      id: crypto.randomUUID(), // Local ID for UI, server will assign real IDs
       name: data.name,
       color: data.color,
     };
@@ -63,11 +62,12 @@ export function OnboardingFlow() {
     setDraftMembers((prev) => prev.filter((m) => m.id !== id));
   };
 
-  // Final completion - persist to store
+  // Final completion - persist via API (strip local IDs, server assigns real ones)
   const handleComplete = () => {
-    initializeFamily(draftName);
-    setMembers(draftMembers);
-    completeSetup();
+    createFamily.mutate({
+      name: draftName,
+      members: draftMembers.map(({ name, color }) => ({ name, color })),
+    });
   };
 
   switch (step) {

@@ -3,6 +3,15 @@ import { AlertTriangle, Plus, X } from "lucide-react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import type { z } from "zod";
+import {
+  useAddMember,
+  useDeleteFamily,
+  useFamilyMembers,
+  useFamilyName,
+  useRemoveMember,
+  useUpdateFamily,
+  useUpdateMember,
+} from "@/api";
 import { MemberCard, MemberFormModal } from "@/components/onboarding";
 import { Button } from "@/components/ui/button";
 import {
@@ -19,7 +28,6 @@ import {
   familyNameSchema,
   type memberFormSchema,
 } from "@/lib/validations/family";
-import { useFamilyActions, useFamilyMembers, useFamilyName } from "@/stores";
 
 type FamilyNameFormData = z.infer<typeof familyNameSchema>;
 type MemberFormData = z.infer<typeof memberFormSchema>;
@@ -35,13 +43,15 @@ export function FamilySettingsModal({
 }: FamilySettingsModalProps) {
   const familyName = useFamilyName();
   const familyMembers = useFamilyMembers();
-  const {
-    updateFamilyName,
-    addMember,
-    updateMember,
-    removeMember,
-    resetFamily,
-  } = useFamilyActions();
+
+  // API mutations
+  const updateFamilyMutation = useUpdateFamily();
+  const addMemberMutation = useAddMember();
+  const updateMemberMutation = useUpdateMember();
+  const removeMemberMutation = useRemoveMember();
+  const deleteFamilyMutation = useDeleteFamily({
+    onSuccess: () => onOpenChange(false),
+  });
 
   const [isMemberFormOpen, setIsMemberFormOpen] = useState(false);
   const [editingMember, setEditingMember] = useState<FamilyMember | null>(null);
@@ -59,7 +69,7 @@ export function FamilySettingsModal({
   });
 
   const onSaveName = (data: FamilyNameFormData) => {
-    updateFamilyName(data.name);
+    updateFamilyMutation.mutate({ name: data.name });
     resetForm({ name: data.name });
   };
 
@@ -81,17 +91,20 @@ export function FamilySettingsModal({
 
   const handleMemberFormSubmit = (data: MemberFormData) => {
     if (editingMember) {
-      updateMember(editingMember.id, data);
+      updateMemberMutation.mutate({ id: editingMember.id, ...data });
     } else {
-      addMember(data);
+      addMemberMutation.mutate(data);
     }
     setEditingMember(null);
   };
 
+  const handleRemoveMember = (memberId: string) => {
+    removeMemberMutation.mutate(memberId);
+  };
+
   // Reset family
   const handleResetFamily = () => {
-    resetFamily();
-    onOpenChange(false);
+    deleteFamilyMutation.mutate();
   };
 
   const canAddMore = familyMembers.length < 7;
@@ -180,7 +193,7 @@ export function FamilySettingsModal({
                     key={member.id}
                     member={member}
                     onEdit={() => handleEditMember(member)}
-                    onRemove={() => removeMember(member.id)}
+                    onRemove={() => handleRemoveMember(member.id)}
                     canRemove={familyMembers.length > 1}
                   />
                 ))}
