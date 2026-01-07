@@ -23,6 +23,7 @@ import {
   render,
   renderWithUser,
   resetCalendarStore,
+  resetFamilyStore,
   screen,
   seedCalendarStore,
   seedFamilyStore,
@@ -46,6 +47,7 @@ describe("CalendarModule", () => {
     server.resetHandlers();
     resetMockEvents();
     resetCalendarStore();
+    resetFamilyStore();
     mockIsMobile = false; // Reset mobile mock
   });
   afterAll(() => server.close());
