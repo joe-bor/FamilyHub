@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { syncFamilyFromStorage } from "@/api/hooks/use-family";
+import { FAMILY_STORAGE_KEY } from "@/lib/constants";
 import { queryClient } from "@/providers/query-provider";
 
 /**
@@ -42,7 +43,7 @@ function initializeHydration(): void {
 
   // Check if family data exists in localStorage
   try {
-    const stored = localStorage.getItem("family-hub-family");
+    const stored = localStorage.getItem(FAMILY_STORAGE_KEY);
     // We don't need to validate the data here - TanStack Query's initialData
     // will handle reading it, and the API layer validates on mutations
     // Just mark as hydrated since we've checked localStorage
@@ -54,7 +55,9 @@ function initializeHydration(): void {
       syncFamilyFromStorage(queryClient);
     }
   } catch (error) {
-    console.error("Failed to check localStorage for family data:", error);
+    if (import.meta.env.DEV) {
+      console.error("Failed to check localStorage for family data:", error);
+    }
     // Still mark as hydrated to prevent infinite loading
     useFamilyStore.getState().setHasHydrated(true);
   }
@@ -84,7 +87,7 @@ export const useHasHydrated = () =>
  */
 if (typeof window !== "undefined") {
   window.addEventListener("storage", (event) => {
-    if (event.key === "family-hub-family") {
+    if (event.key === FAMILY_STORAGE_KEY) {
       // Sync the TanStack Query cache with the new localStorage data
       syncFamilyFromStorage(queryClient);
     }
