@@ -1,6 +1,6 @@
 # Technical Debt & Deferred Improvements
 
-**Last Updated:** January 6, 2026
+**Last Updated:** January 7, 2026
 
 This document tracks known technical debt, deferred improvements, and future enhancements identified during code reviews. Items are prioritized and linked to relevant sprints.
 
@@ -8,75 +8,44 @@ This document tracks known technical debt, deferred improvements, and future enh
 
 ## High Priority (Address Soon)
 
-### 1. Missing Family API Service Layer
-**Source:** Deployment Readiness Review (Pre-Backend)
-**Files:** `src/stores/family-store.ts`, `src/components/onboarding/*`, `src/components/settings/*`
-**Status:** Required before backend integration
+### 1. Outdated TODO Comments in use-family.ts
+**Source:** PR #32 Code Review
+**Files:** `src/api/hooks/use-family.ts`
+**Status:** Quick fix
 
 **Problem:**
-Calendar events have a proper API abstraction layer, but family data does not:
-
-```
-Calendar (good pattern):
-  Component → useCalendarEvents() → calendarService → USE_MOCK_API toggle
-                                                    ↳ mock handlers OR httpClient
-
-Family (missing abstraction):
-  Component → useFamilyActions() → Zustand store → localStorage directly
+Lines 286-287 and 437-438 contain outdated TODO comments:
+```typescript
+* TODO: Wire up to FamilySettingsModal "Add Member" button when UI is implemented.
+* TODO: Wire up to FamilySettingsModal member deletion when UI is implemented.
 ```
 
-This architectural inconsistency means:
-1. Calendar: Just flip `VITE_USE_MOCK_API=false` and implement backend endpoints ✅
-2. Family: Requires creating entire service layer + refactoring all consumers ❌
+These features ARE already wired up in `family-settings-modal.tsx`. The comments should be removed.
 
-**Required Work:**
+**Fix:** Remove the outdated TODO comments.
 
-1. **Create `src/api/services/family.service.ts`**
-   ```typescript
-   export const familyService = {
-     getFamily(): Promise<ApiResponse<FamilyData>>
-     createFamily(name: string): Promise<MutationResponse<FamilyData>>
-     updateFamily(updates: Partial<FamilyData>): Promise<MutationResponse<FamilyData>>
-     addMember(member: CreateMemberRequest): Promise<MutationResponse<FamilyMember>>
-     updateMember(id: string, updates: UpdateMemberRequest): Promise<MutationResponse<FamilyMember>>
-     removeMember(id: string): Promise<void>
-   }
-   ```
+---
 
-2. **Create `src/api/mocks/family.mock.ts`**
-   - Move localStorage logic from Zustand store to mock handlers
-   - Mirror the pattern in `calendar.mock.ts`
+### 2. Missing Family Mutation Tests
+**Source:** PR #32 Code Review
+**Files:** `src/api/hooks/use-family.test.tsx`
+**Status:** Should add for completeness
 
-3. **Create `src/api/hooks/use-family.ts`**
-   ```typescript
-   export const useFamily = () => useQuery(...)
-   export const useCreateFamily = () => useMutation(...)
-   export const useUpdateFamily = () => useMutation(...)
-   export const useAddMember = () => useMutation(...)
-   export const useUpdateMember = () => useMutation(...)
-   export const useRemoveMember = () => useMutation(...)
-   ```
+**Problem:**
+The test file (372 lines) only tests read operations:
+- ✅ Selectors tested (`useFamilyData`, `useFamilyMembers`, etc.)
+- ✅ Memoization tested (`useFamilyMemberMap`, `useUnusedColors`)
+- ❌ `useCreateFamily` not tested
+- ❌ `useAddMember` not tested
+- ❌ Optimistic updates not tested
+- ❌ Rollback on error not tested
 
-4. **Refactor Zustand store**
-   - Keep for UI-only state (hydration status, optimistic cache)
-   - Remove direct CRUD actions that should go through API
-
-5. **Update consumers** (grep for `useFamilyActions`, `useFamilyStore`):
-   - `src/components/onboarding/family-name-step.tsx`
-   - `src/components/onboarding/family-members-step.tsx`
-   - `src/components/settings/family-settings-modal.tsx`
-   - `src/components/settings/member-profile-modal.tsx`
-   - `src/App.tsx`
-
-**API Endpoints Required:**
-- `GET    /family` - Get current family
-- `POST   /family` - Create family
-- `PATCH  /family` - Update family name
-- `POST   /family/members` - Add member
-- `PATCH  /family/members/:id` - Update member
-- `DELETE /family/members/:id` - Remove member
-
-**Estimated Scope:** Medium (1-2 days)
+**Suggested Fix:**
+Add mutation tests covering:
+- Successful mutations update query cache
+- Optimistic updates show immediately
+- Rollback restores previous state on error
+- localStorage write-through works
 
 ---
 
@@ -151,15 +120,16 @@ See `.env.example` for environment variable documentation.
 
 ### Migration Checklist
 
-**Phase 1: Family Service Layer** (do this FIRST)
-- [ ] Complete High Priority item #1 (familyService abstraction)
-- [ ] This unblocks all backend work
+**Phase 1: Family Service Layer** ✅ COMPLETED (PR #32)
+- [x] Complete familyService abstraction
+- [x] All family hooks use TanStack Query
+- [x] Both calendar and family ready for backend
 
 **Phase 2: Backend Implementation**
 - [ ] Set `VITE_USE_MOCK_API=false` in production
 - [ ] Set `VITE_API_BASE_URL` to backend URL
-- [ ] Implement calendar endpoints (already abstracted)
-- [ ] Implement family endpoints (after Phase 1)
+- [ ] Implement calendar endpoints
+- [ ] Implement family endpoints
 
 **Phase 3: Authentication**
 - [ ] Add auth system (JWT recommended for API)
@@ -178,12 +148,13 @@ DELETE /calendar/events/:id
 ```
 Types: `src/lib/types/calendar.ts`
 
-**Family** (requires familyService first):
+**Family** (ready to use):
 ```
-GET    /family
-POST   /family                   body: { name: string }
-PATCH  /family                   body: { name: string }
-POST   /family/members           body: CreateMemberRequest
+GET    /family                   → FamilyApiResponse { data: FamilyData | null }
+POST   /family                   body: CreateFamilyRequest
+PATCH  /family                   body: UpdateFamilyRequest
+DELETE /family
+POST   /family/members           body: AddMemberRequest
 PATCH  /family/members/:id       body: UpdateMemberRequest
 DELETE /family/members/:id
 ```
@@ -217,6 +188,7 @@ Types: `src/lib/types/family.ts`
 
 | Item | Sprint | PR | Date |
 |------|--------|----|----|
+| Family API Service Layer (TanStack Query migration) | Sprint 6.5 | #32 | Jan 7, 2026 |
 | Test Pattern Standardization | Sprint 6 | #25 | Jan 3, 2026 |
 | Data Validation on Rehydration (Zod schema) | Sprint 5 | - | Dec 27, 2025 |
 | Duplicate Member Name Validation | Sprint 5 | - | Dec 27, 2025 |

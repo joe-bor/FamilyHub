@@ -1,12 +1,15 @@
 # FamilyHub Development Roadmap
 
-**Last Updated:** January 1, 2026
+**Last Updated:** January 7, 2026
 
 ## Current Status
 
-**Phase 1B: Calendar Frontend Polish** - ✅ COMPLETED
+**Phase 1C: Backend Preparation** - ✅ COMPLETED
 
 > **Note:** See [TECHNICAL-DEBT.md](./TECHNICAL-DEBT.md) for known issues and deferred improvements.
+>
+> Both calendar and family data now use TanStack Query with service abstractions.
+> The frontend is ready for backend integration - just flip `VITE_USE_MOCK_API=false`.
 
 ---
 
@@ -87,22 +90,85 @@ Performance Optimization: ✅ COMPLETED (January 1, 2026)
 - [x] Unused dependency cleanup (~80 KB savings)
 - [x] Deferred advanced monitoring to TECHNICAL-DEBT.md (Web Vitals, Lighthouse CI, RUM)
 
+## Phase 1C: Backend Preparation ✅ COMPLETED
+
+**Sprint 6.5: Family API Service Layer** ✅ COMPLETED (January 7, 2026) - PR #32
+
+Family Service Layer:
+- [x] `family.service.ts` - Service abstraction with `USE_MOCK_API` toggle
+- [x] `family.mock.ts` - Mock handlers with localStorage persistence
+- [x] `use-family.ts` - TanStack Query hooks with optimistic updates
+- [x] Family types: `FamilyApiResponse`, request/response types
+
+TanStack Query Hooks:
+- [x] `useFamily` - Main query with localStorage seeding for instant startup
+- [x] Derived selectors: `useFamilyMembers`, `useFamilyName`, `useSetupComplete`, etc.
+- [x] Mutations: `useCreateFamily`, `useUpdateFamily`, `useDeleteFamily`
+- [x] Member mutations: `useAddMember`, `useUpdateMember`, `useRemoveMember`
+- [x] Optimistic updates with rollback on all mutations
+
+Store Simplification:
+- [x] `family-store.ts` reduced to hydration-only (96 lines, down from 208)
+- [x] All CRUD operations moved to TanStack Query mutations
+- [x] Cross-tab synchronization via storage events
+
+Consumer Migration:
+- [x] `App.tsx` - Uses `useSetupComplete()` from API layer
+- [x] `OnboardingFlow` - Uses `useCreateFamily()` mutation
+- [x] `FamilySettingsModal` - Uses all family/member mutations
+- [x] All calendar/shared components import from `@/api`
+
+Test Infrastructure:
+- [x] MSW handlers for family API endpoints
+- [x] Query hooks test coverage (372 lines)
+- [x] Test utilities updated for query cache seeding
+
 ## Phase 2: Backend Development ⏳ NEXT
+
+> **Note:** Phase 1C completed the family service layer abstraction. Both calendar and family
+> data now use TanStack Query with the same service pattern. Flip `VITE_USE_MOCK_API=false`
+> and implement the endpoints below.
 
 **Sprint 7: Backend Setup**
 - [ ] Create family-hub-api repository (Spring Boot)
 - [ ] PostgreSQL database schema
 - [ ] Docker containerization
+- [ ] Implement family endpoints (see API contracts below)
+- [ ] Implement calendar endpoints (see API contracts below)
 
-**Sprint 8: Calendar API**
-- [ ] REST API endpoints (events CRUD)
+**Sprint 8: Google Calendar Integration**
 - [ ] Google Calendar OAuth integration
 - [ ] Two-way sync (polling + webhooks)
+- [ ] Conflict resolution strategy
 
 **Sprint 9: Real-Time Sync**
 - [ ] WebSocket server (Spring WebSocket)
 - [ ] Frontend WebSocket integration
 - [ ] Multi-device sync testing
+
+### API Contracts (Frontend-Ready)
+
+**Family Endpoints:**
+```
+GET    /family                  → FamilyApiResponse { data: FamilyData | null }
+POST   /family                  → FamilyMutationResponse { data: FamilyData }
+PATCH  /family                  → FamilyMutationResponse { data: FamilyData }
+DELETE /family                  → void
+POST   /family/members          → MemberMutationResponse { data: FamilyMember }
+PATCH  /family/members/:id      → MemberMutationResponse { data: FamilyMember }
+DELETE /family/members/:id      → void
+```
+
+**Calendar Endpoints:**
+```
+GET    /calendar/events         → ApiResponse<CalendarEvent[]> (params: startDate, endDate, memberId)
+GET    /calendar/events/:id     → ApiResponse<CalendarEvent>
+POST   /calendar/events         → MutationResponse<CalendarEvent>
+PATCH  /calendar/events/:id     → MutationResponse<CalendarEvent>
+DELETE /calendar/events/:id     → void
+```
+
+Types: See `src/lib/types/family.ts` and `src/lib/types/calendar.ts`
 
 ## Phase 3: Additional Modules ⏳ FUTURE
 

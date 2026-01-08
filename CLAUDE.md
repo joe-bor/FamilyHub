@@ -44,11 +44,14 @@ src/
 │   │   ├── http-client.ts     # Fetch wrapper with interceptors
 │   │   └── api-error.ts       # ApiException, ApiErrorCode
 │   ├── hooks/                 # TanStack Query hooks
-│   │   └── use-calendar.ts    # useCalendarEvents, useCreateEvent, etc.
+│   │   ├── use-calendar.ts    # useCalendarEvents, useCreateEvent, etc.
+│   │   └── use-family.ts      # useFamily, useFamilyMembers, useCreateFamily, etc.
 │   ├── services/              # API service functions
-│   │   └── calendar.service.ts # CRUD operations for calendar
+│   │   ├── calendar.service.ts # CRUD operations for calendar
+│   │   └── family.service.ts  # CRUD operations for family/members
 │   ├── mocks/                 # Mock API handlers (dev mode)
 │   │   ├── calendar.mock.ts   # Mock event data and handlers
+│   │   ├── family.mock.ts     # Mock family data with localStorage persistence
 │   │   └── delay.ts           # Simulated network delay
 │   └── index.ts               # Barrel exports
 │
@@ -62,7 +65,7 @@ src/
 ├── stores/                    # Zustand UI state management
 │   ├── app-store.ts           # App-wide state (activeModule, sidebar)
 │   ├── calendar-store.ts      # Calendar UI state (date, view, filters)
-│   ├── family-store.ts        # Family data with localStorage persistence
+│   ├── family-store.ts        # Hydration state only (data lives in @/api)
 │   └── index.ts               # Barrel exports + selectors
 │
 ├── lib/
@@ -108,8 +111,9 @@ Uses a hybrid approach: **TanStack Query** for server state (API data) and **Zus
 
 **TanStack Query (Server State):**
 - Calendar events fetched via `useCalendarEvents` hook
+- Family data fetched via `useFamily` hook (localStorage-seeded for instant startup)
 - Automatic caching, background refetching, and stale-while-revalidate
-- Optimistic updates for mutations (`useCreateEvent`, `useUpdateEvent`, `useDeleteEvent`)
+- Optimistic updates for mutations with rollback on error
 
 **Zustand (UI State):**
 
@@ -117,12 +121,18 @@ Uses a hybrid approach: **TanStack Query** for server state (API data) and **Zus
 - `activeModule` - Current module (calendar, chores, meals, lists, photos)
 - `isSidebarOpen` / `openSidebar` / `closeSidebar` - Sidebar state
 
-**family-store.ts:** (localStorage-persisted)
-- `family` - Family data (name, members, setupComplete)
-- `useFamilyName()` - Get family name
+**family-store.ts:** (hydration gate only)
+- `_hasHydrated` - Whether localStorage read is complete
+- `useHasHydrated()` - Gate app rendering until hydrated
+- **Note:** Family data (name, members) now lives in `@/api` via TanStack Query
+
+**Family data hooks** (from `@/api`):
 - `useFamilyMembers()` - Get family members array
+- `useFamilyName()` - Get family name
 - `useSetupComplete()` - Check if onboarding is complete
-- `useFamilyActions()` - CRUD operations for family/members
+- `useFamilyMemberMap()` - O(1) member lookups
+- `useUnusedColors()` - Colors not assigned to any member
+- Mutations: `useCreateFamily`, `useUpdateFamily`, `useAddMember`, `useUpdateMember`, `useRemoveMember`, `useDeleteFamily`
 
 **calendar-store.ts:**
 - `currentDate`, `calendarView`, `filter` - Calendar UI preferences
@@ -140,40 +150,61 @@ Uses a hybrid approach: **TanStack Query** for server state (API data) and **Zus
 
 **Usage pattern:**
 ```typescript
-import { useCalendarStore, useIsViewingToday } from "@/stores"
-import { useCalendarEvents, useCreateEvent } from "@/api"
+import { useCalendarStore, useIsViewingToday, useHasHydrated } from "@/stores"
+import { useCalendarEvents, useCreateEvent, useFamilyMembers, useSetupComplete } from "@/api"
 
 // UI state from Zustand
 const currentDate = useCalendarStore((state) => state.currentDate)
 const goToNext = useCalendarStore((state) => state.goToNext)
 const isViewingToday = useIsViewingToday()
+const hasHydrated = useHasHydrated()  // Gate rendering
 
-// Server state from TanStack Query
+// Server state from TanStack Query (calendar)
 const { data, isLoading } = useCalendarEvents({ startDate, endDate })
 const createEvent = useCreateEvent({ onSuccess: () => console.log("Created!") })
+
+// Server state from TanStack Query (family)
+const members = useFamilyMembers()  // Derived selector from useFamily()
+const setupComplete = useSetupComplete()  // Check if onboarding done
 ```
 
 ### API Layer
 
 The API layer follows a service-based architecture with TanStack Query for data fetching.
 
-**Query Keys Factory** (`calendarKeys`):
+**Query Keys Factories:**
 ```typescript
+// Calendar
 calendarKeys.all          // ["calendar"]
 calendarKeys.events()     // ["calendar", "events"]
 calendarKeys.eventList(params) // ["calendar", "events", { startDate, endDate }]
 calendarKeys.event(id)    // ["calendar", "events", "event-123"]
+
+// Family
+familyKeys.all            // ["family"]
+familyKeys.family()       // ["family", "data"]
 ```
 
-**Available Hooks:**
+**Calendar Hooks:**
 - `useCalendarEvents(params?)` - Fetch events with optional date range/member filters
 - `useCalendarEvent(id)` - Fetch single event by ID
 - `useCreateEvent(callbacks?)` - Create event mutation with cache invalidation
 - `useUpdateEvent(callbacks?)` - Update event with optimistic updates
 - `useDeleteEvent(callbacks?)` - Delete event with optimistic removal
 
+**Family Hooks:**
+- `useFamily()` - Main query with localStorage seeding
+- `useFamilyData()`, `useFamilyMembers()`, `useFamilyName()` - Derived selectors
+- `useSetupComplete()`, `useFamilyLoading()` - Status selectors
+- `useFamilyMemberById(id)`, `useFamilyMemberMap()` - Member lookups
+- `useUnusedColors()` - Available colors for new members
+- `useCreateFamily(callbacks?)` - Create family (onboarding)
+- `useUpdateFamily(callbacks?)` - Update family name
+- `useAddMember(callbacks?)`, `useUpdateMember(callbacks?)`, `useRemoveMember(callbacks?)` - Member CRUD
+- `useDeleteFamily(callbacks?)` - Reset family
+
 **Mock API:**
-In development, the API uses mock handlers (`src/api/mocks/`) with simulated network delays. Toggle via `USE_MOCK_API` constant.
+In development, the API uses mock handlers (`src/api/mocks/`) with simulated network delays. Toggle via `USE_MOCK_API` constant. Family mock persists to localStorage; calendar mock generates sample events.
 
 ### Styling
 
@@ -201,9 +232,11 @@ Always use `cn()` for className merging. Import alias: `@/` maps to `src/`.
 **React Compiler** is enabled via `babel-plugin-react-compiler` for automatic memoization.
 
 **Optimizations applied:**
-- O(1) member lookups via `familyMemberMap` and `getFamilyMember()`
+- O(1) member lookups via `useFamilyMemberMap()` (memoized in `@/api`)
 - Pre-computed events by date using single-pass `useMemo` in calendar views
 - Compound Zustand selectors with shallow comparison to reduce re-renders
+- Family data seeded from localStorage for instant startup (no loading flash)
+- Derived selectors share single `useFamily()` query (no duplicate requests)
 
 See `docs/PERFORMANCE-BASELINE.md` for benchmark details.
 
@@ -347,48 +380,55 @@ await eventCard.click({ force: true })
 
 **Playwright browsers:** Full matrix (Chromium, Firefox, WebKit, Mobile Chrome) on all CI builds. Uses `reducedMotion: "reduce"` in CI for animation stability.
 
-**Zustand store testing:**
+**Store and Query testing:**
 ```typescript
-import { seedFamilyStore, resetFamilyStore, seedCalendarStore, seedAppStore } from "@/test/test-utils"
+import { seedCalendarStore, seedAppStore, resetAllStores } from "@/test/test-utils"
+import { familyKeys } from "@/api"
 
 describe("ComponentWithStore", () => {
+  let queryClient: QueryClient
+
   beforeEach(() => {
-    // Seed stores with test data BEFORE rendering
-    seedFamilyStore({
-      name: "Test Family",
-      members: testMembers,
-      setupComplete: true,
-    });
+    queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false } }
+    })
+
+    // Seed Zustand stores
     seedCalendarStore({
       currentDate: new Date("2025-01-15"),
       calendarView: "weekly",
     });
+
+    // Seed TanStack Query cache for family data
+    queryClient.setQueryData(familyKeys.family(), {
+      data: { name: "Test Family", members: testMembers, setupComplete: true },
+      meta: { timestamp: Date.now(), requestId: "test" }
+    })
   });
 
-  // afterEach cleanup is handled globally by setup.ts
-  // No need for individual afterEach unless you need specific cleanup
-
-  it("uses store data", () => {
-    render(<MyComponent />);
-    // Store is pre-seeded, component has access
+  it("uses store and query data", () => {
+    render(<MyComponent />, { wrapper: createWrapper(queryClient) });
+    // Component has access to both Zustand and Query state
   });
 });
 ```
 
 **Available store seeders:**
-- `seedFamilyStore({ name, members, setupComplete? })` - Seeds family with members
 - `seedCalendarStore({ currentDate?, calendarView?, hasUserSetView?, filter?, isAddEventModalOpen?, selectedEvent?, isDetailModalOpen?, editingEvent?, isEditModalOpen? })` - Seeds any calendar state field
 - `seedAppStore({ activeModule?, isSidebarOpen? })` - Seeds app state
-- `resetFamilyStore()`, `resetCalendarStore()`, `resetAppStore()`, `resetAllStores()` - Reset utilities (called globally in setup.ts afterEach)
+- `resetCalendarStore()`, `resetAppStore()`, `resetAllStores()` - Reset utilities (called globally in setup.ts afterEach)
 
-**Important:** All Zustand stores are **automatically reset** after each test by `src/test/setup.ts`. This prevents state leakage between tests. If your component shows a loading state when store isn't hydrated, use `resetFamilyStore()` in `beforeEach` to set `_hasHydrated: true`.
+**Family data in tests:**
+Family data is now in TanStack Query, not Zustand. Seed via `queryClient.setQueryData(familyKeys.family(), { data: familyData, meta: {...} })`.
 
-**Race condition pattern:** When testing components that compute defaults from store state (e.g., forms using `useFamilyMembers()`), wait for store-dependent elements before interacting:
+**Important:** All Zustand stores are **automatically reset** after each test by `src/test/setup.ts`. This prevents state leakage between tests. Query clients should be created fresh for each test.
+
+**Race condition pattern:** When testing components that compute defaults from query state (e.g., forms using `useFamilyMembers()`), wait for query-dependent elements before interacting:
 ```typescript
-it("submits form with store data", async () => {
+it("submits form with query data", async () => {
   const { user } = renderWithUser(<EventForm onSubmit={mockOnSubmit} />);
 
-  // Wait for store state to propagate to the component
+  // Wait for query state to propagate to the component
   await screen.findByRole("button", { name: testMembers[0].name });
 
   // Now safe to interact with the form
