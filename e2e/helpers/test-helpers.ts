@@ -1,4 +1,4 @@
-import type { Page } from "@playwright/test";
+import { expect, type Page } from "@playwright/test";
 import type { FamilyColor, FamilyMember } from "../../src/lib/types/family";
 
 /**
@@ -74,8 +74,8 @@ export async function waitForHydration(page: Page): Promise<void> {
 }
 
 /**
- * Wait for the calendar module to be fully loaded
- * The FAB (Add event button) is a reliable indicator
+ * Wait for the calendar module to be fully loaded.
+ * The FAB (Add event button) is a reliable indicator.
  *
  * On mobile (<640px), the app starts on home dashboard,
  * so we need to navigate to calendar first.
@@ -94,10 +94,13 @@ export async function waitForCalendar(page: Page): Promise<void> {
       .click();
   }
 
-  // Now wait for calendar to load
+  // Wait for calendar UI to load
   await page
     .getByRole("button", { name: "Add event" })
     .waitFor({ state: "visible", timeout: 10000 });
+
+  // Wait for network to settle to ensure TanStack Query has completed initial fetches
+  await page.waitForLoadState("networkidle");
 }
 
 /**
@@ -138,12 +141,13 @@ export function getTodayDateString(): string {
 
 /**
  * Wait for a Radix dialog to fully open.
- * Uses data-state attribute which is deterministic.
+ * Uses expect() with auto-retry for more reliability in CI.
  * In CI with reducedMotion, animations are instant.
  */
 export async function waitForDialogOpen(page: Page): Promise<void> {
   const dialog = page.getByRole("dialog");
-  await dialog.waitFor({ state: "visible" });
+  // Use expect with auto-retry instead of waitFor for better CI stability
+  await expect(dialog).toBeVisible({ timeout: 10000 });
   // Ensure Radix has finished mounting by checking data-state
   await page.waitForSelector('[data-state="open"]', { state: "attached" });
 }

@@ -61,6 +61,9 @@ test.describe("Calendar Event CRUD", () => {
       .getByRole("button", { name: /Team Meeting/ })
       .first();
     await eventCard.waitFor({ state: "visible" });
+    // Brief wait for React to fully attach event handlers after render
+    // This helps prevent race conditions in slower CI environments
+    await page.waitForLoadState("domcontentloaded");
     await eventCard.click({ force: true });
 
     // Wait for dialog to fully open
