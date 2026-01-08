@@ -1,20 +1,35 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { renderHook, waitFor } from "@testing-library/react";
 import type { ReactNode } from "react";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from "vitest";
 import { FAMILY_STORAGE_KEY } from "@/lib/constants";
 import type { FamilyApiResponse, FamilyData, FamilyMember } from "@/lib/types";
+import { resetMockFamily, seedMockFamily } from "@/test/mocks/handlers";
+import { server } from "@/test/mocks/server";
 import {
   familyKeys,
   readFamilyFromStorage,
+  useAddMember,
+  useCreateFamily,
   useFamily,
   useFamilyData,
   useFamilyMemberById,
   useFamilyMemberMap,
   useFamilyMembers,
   useFamilyName,
+  useRemoveMember,
   useSetupComplete,
   useUnusedColors,
+  useUpdateFamily,
 } from "./use-family";
 
 // ============================================================================
@@ -55,6 +70,10 @@ function createWrapper() {
   };
 }
 
+// MSW server setup
+beforeAll(() => server.listen({ onUnhandledRequest: "error" }));
+afterAll(() => server.close());
+
 beforeEach(() => {
   queryClient = new QueryClient({
     defaultOptions: {
@@ -63,10 +82,12 @@ beforeEach(() => {
     },
   });
   localStorage.clear();
+  resetMockFamily();
 });
 
 afterEach(() => {
   queryClient.clear();
+  server.resetHandlers();
 });
 
 // ============================================================================
@@ -367,5 +388,226 @@ describe("useUnusedColors", () => {
 
     // Same reference means memoization is working
     expect(firstArray).toBe(secondArray);
+  });
+});
+
+// ============================================================================
+// Mutation Hook Tests
+// ============================================================================
+
+describe("useCreateFamily", () => {
+  it("creates a family and updates query cache on success", async () => {
+    const onSuccess = vi.fn();
+    const { result } = renderHook(() => useCreateFamily({ onSuccess }), {
+      wrapper: createWrapper(),
+    });
+
+    result.current.mutate({
+      name: "New Family",
+      members: [{ name: "Alice", color: "coral" }],
+    });
+
+    await waitFor(() => {
+      expect(result.current.isSuccess).toBe(true);
+    });
+
+    // Check callback was called with response data
+    expect(onSuccess).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          name: "New Family",
+          setupComplete: true,
+        }),
+      }),
+    );
+  });
+
+  it("writes family to localStorage on success", async () => {
+    const { result } = renderHook(() => useCreateFamily(), {
+      wrapper: createWrapper(),
+    });
+
+    result.current.mutate({
+      name: "Persisted Family",
+      members: [{ name: "Bob", color: "teal" }],
+    });
+
+    await waitFor(() => {
+      expect(result.current.isSuccess).toBe(true);
+    });
+
+    // Check localStorage was updated
+    const stored = localStorage.getItem(FAMILY_STORAGE_KEY);
+    expect(stored).not.toBeNull();
+    const parsed = JSON.parse(stored!);
+    expect(parsed.state.family.name).toBe("Persisted Family");
+  });
+});
+
+describe("useUpdateFamily", () => {
+  beforeEach(() => {
+    // Seed MSW mock with existing family
+    seedMockFamily(testFamily);
+    queryClient.setQueryData<FamilyApiResponse>(familyKeys.family(), {
+      data: testFamily,
+      meta: { timestamp: Date.now(), requestId: "test" },
+    });
+  });
+
+  it("updates family name successfully", async () => {
+    const onSuccess = vi.fn();
+    const { result } = renderHook(() => useUpdateFamily({ onSuccess }), {
+      wrapper: createWrapper(),
+    });
+
+    result.current.mutate({ name: "Updated Family" });
+
+    await waitFor(() => {
+      expect(result.current.isSuccess).toBe(true);
+    });
+
+    expect(onSuccess).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          name: "Updated Family",
+        }),
+      }),
+    );
+  });
+
+  it("writes updated family to localStorage", async () => {
+    const { result } = renderHook(() => useUpdateFamily(), {
+      wrapper: createWrapper(),
+    });
+
+    result.current.mutate({ name: "LocalStorage Family" });
+
+    await waitFor(() => {
+      expect(result.current.isSuccess).toBe(true);
+    });
+
+    const stored = localStorage.getItem(FAMILY_STORAGE_KEY);
+    const parsed = JSON.parse(stored!);
+    expect(parsed.state.family.name).toBe("LocalStorage Family");
+  });
+});
+
+describe("useAddMember", () => {
+  beforeEach(() => {
+    // Seed MSW mock with existing family
+    seedMockFamily(testFamily);
+    queryClient.setQueryData<FamilyApiResponse>(familyKeys.family(), {
+      data: testFamily,
+      meta: { timestamp: Date.now(), requestId: "test" },
+    });
+  });
+
+  it("adds a member successfully", async () => {
+    const onSuccess = vi.fn();
+    const { result } = renderHook(() => useAddMember({ onSuccess }), {
+      wrapper: createWrapper(),
+    });
+
+    result.current.mutate({ name: "Charlie", color: "green" });
+
+    await waitFor(() => {
+      expect(result.current.isSuccess).toBe(true);
+    });
+
+    // Member should have a real ID (not temp)
+    expect(onSuccess).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          name: "Charlie",
+          color: "green",
+          id: expect.not.stringMatching(/^temp-/),
+        }),
+      }),
+    );
+  });
+
+  it("calls onSuccess callback with member data", async () => {
+    const onSuccess = vi.fn();
+    const { result } = renderHook(() => useAddMember({ onSuccess }), {
+      wrapper: createWrapper(),
+    });
+
+    result.current.mutate({ name: "Diana", color: "purple" });
+
+    await waitFor(() => {
+      expect(result.current.isSuccess).toBe(true);
+    });
+
+    expect(onSuccess).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          name: "Diana",
+          color: "purple",
+        }),
+      }),
+    );
+  });
+});
+
+describe("useRemoveMember", () => {
+  beforeEach(() => {
+    // Seed MSW mock with existing family
+    seedMockFamily(testFamily);
+    queryClient.setQueryData<FamilyApiResponse>(familyKeys.family(), {
+      data: testFamily,
+      meta: { timestamp: Date.now(), requestId: "test" },
+    });
+  });
+
+  it("removes a member successfully", async () => {
+    const onSuccess = vi.fn();
+    const { result } = renderHook(() => useRemoveMember({ onSuccess }), {
+      wrapper: createWrapper(),
+    });
+
+    // Remove member-1 (Alice)
+    result.current.mutate("member-1");
+
+    await waitFor(() => {
+      expect(result.current.isSuccess).toBe(true);
+    });
+
+    expect(onSuccess).toHaveBeenCalled();
+  });
+
+  it("calls onSuccess callback", async () => {
+    const onSuccess = vi.fn();
+    const { result } = renderHook(() => useRemoveMember({ onSuccess }), {
+      wrapper: createWrapper(),
+    });
+
+    result.current.mutate("member-2");
+
+    await waitFor(() => {
+      expect(result.current.isSuccess).toBe(true);
+    });
+
+    expect(onSuccess).toHaveBeenCalled();
+  });
+
+  it("updates localStorage after removal", async () => {
+    const { result } = renderHook(() => useRemoveMember(), {
+      wrapper: createWrapper(),
+    });
+
+    result.current.mutate("member-1");
+
+    await waitFor(() => {
+      expect(result.current.isSuccess).toBe(true);
+    });
+
+    const stored = localStorage.getItem(FAMILY_STORAGE_KEY);
+    const parsed = JSON.parse(stored!);
+    expect(parsed.state.family.members).toHaveLength(1);
+    expect(
+      parsed.state.family.members.some(
+        (m: FamilyMember) => m.id === "member-1",
+      ),
+    ).toBe(false);
   });
 });
