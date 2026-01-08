@@ -282,9 +282,6 @@ interface AddMemberCallbacks {
 
 /**
  * Add a new member to the family.
- *
- * TODO: Wire up to FamilySettingsModal "Add Member" button when UI is implemented.
- * Currently exported for API completeness.
  */
 export function useAddMember(callbacks?: AddMemberCallbacks) {
   const queryClient = useQueryClient();
@@ -433,9 +430,6 @@ interface RemoveMemberCallbacks {
 
 /**
  * Remove a member from the family.
- *
- * TODO: Wire up to FamilySettingsModal member deletion when UI is implemented.
- * Currently exported for API completeness.
  */
 export function useRemoveMember(callbacks?: RemoveMemberCallbacks) {
   const queryClient = useQueryClient();
