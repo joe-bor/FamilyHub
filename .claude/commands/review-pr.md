@@ -63,3 +63,61 @@ Provide:
 4. **Issues**: Specific problems to fix (with file:line references)
 5. **Suggestions**: Optional improvements (not blockers)
 6. **Technical Debt**: Any items to add to TECHNICAL-DEBT.md
+
+## Posting the Review to GitHub
+
+After completing the review analysis, post it directly to the PR:
+
+### 1. Post Main Review Comment
+
+Use `gh pr comment` to post the full review summary:
+
+```bash
+gh pr comment <PR_NUMBER> --repo <OWNER>/<REPO> --body "$(cat <<'EOF'
+## PR Review: <title>
+
+### Summary
+<summary>
+
+### Verdict: <verdict>
+
+### Strengths
+<strengths>
+
+### Issues (Must Fix)
+<issues with file:line references>
+
+### Suggestions (Non-blocking)
+<suggestions>
+
+### Technical Debt
+<tech debt notes>
+EOF
+)"
+```
+
+### 2. Post Inline Comments on Specific Lines
+
+For each issue or suggestion that references a specific file:line, add an inline comment:
+
+```bash
+gh api repos/<OWNER>/<REPO>/pulls/<PR_NUMBER>/comments \
+  --method POST \
+  -f body="<comment explaining the issue and recommendation>" \
+  -f commit_id="<latest_commit_sha_from_pr>" \
+  -f path="<relative/file/path.ts>" \
+  -f side="RIGHT" \
+  -F line=<line_number>
+```
+
+**To get the latest commit SHA:**
+```bash
+gh pr view <PR_NUMBER> --repo <OWNER>/<REPO> --json commits --jq '.commits[-1].oid'
+```
+
+### 3. Important Notes
+
+- **Own PRs**: `gh pr review --request-changes` doesn't work on your own PRs. Use `gh pr comment` instead.
+- **Inline comments require**: `commit_id`, `path`, `side` ("RIGHT" for new code), and `line` number
+- **Line numbers**: Use the line number in the NEW file (after changes), not the diff position
+- Post inline comments for actionable issues so they appear directly on the code

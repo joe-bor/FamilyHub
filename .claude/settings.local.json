@@ -46,7 +46,9 @@
       "Bash(gh run list:*)",
       "Bash(gh run view:*)",
       "Bash(gh run watch:*)",
-      "Bash(gh pr checks:*)"
+      "Bash(gh pr checks:*)",
+      "Skill(review-pr)",
+      "Bash(gh api:*)"
     ]
   },
   "hooks": {
