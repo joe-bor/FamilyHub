@@ -5,16 +5,22 @@ export {
   ApiException,
   httpClient,
 } from "./client";
+// Hooks - Auth
 // Hooks - Calendar
 // Hooks - Family
 export {
+  authKeys,
   calendarKeys,
+  clearStoredToken,
   familyKeys,
+  getStoredToken,
   readFamilyFromStorage,
+  setStoredToken,
   syncFamilyFromStorage,
   useAddMember,
   useCalendarEvent,
   useCalendarEvents,
+  useCheckUsername,
   useCreateEvent,
   useCreateFamily,
   useDeleteEvent,
@@ -26,6 +32,9 @@ export {
   useFamilyMemberMap,
   useFamilyMembers,
   useFamilyName,
+  useLogin,
+  useLogout,
+  useRegister,
   useRemoveMember,
   useSetupComplete,
   useUnusedColors,
@@ -36,4 +45,4 @@ export {
 // Mocks
 export { USE_MOCK_API } from "./mocks";
 // Services
-export { calendarService, familyService } from "./services";
+export { authService, calendarService, familyService } from "./services";
