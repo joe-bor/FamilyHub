@@ -8,10 +8,15 @@ import type {
   CreateFamilyRequest,
   FamilyData,
   FamilyMember,
+  LoginRequest,
+  LoginResponse,
   MutationResponse,
+  RegisterRequest,
+  RegisterResponse,
   UpdateEventRequest,
   UpdateFamilyRequest,
   UpdateMemberRequest,
+  UsernameCheckResponse,
 } from "@/lib/types";
 
 // In-memory storage for mock calendar events (reset between tests)
@@ -19,6 +24,14 @@ let mockEvents: CalendarEvent[] = [];
 
 // In-memory storage for mock family data (reset between tests)
 let mockFamily: FamilyData | null = null;
+
+// In-memory storage for mock users (reset between tests)
+interface MockUser {
+  username: string;
+  password: string;
+  familyId: string;
+}
+let mockUsers: MockUser[] = [];
 
 /**
  * Reset mock data between tests
@@ -46,6 +59,13 @@ export function getMockEvents(): CalendarEvent[] {
  */
 export function resetMockFamily(): void {
   mockFamily = null;
+}
+
+/**
+ * Reset mock users between tests
+ */
+export function resetMockUsers(): void {
+  mockUsers = [];
 }
 
 /**
@@ -387,5 +407,94 @@ export const handlers = [
     };
 
     return new HttpResponse(null, { status: 204 });
+  }),
+
+  // ============================================================================
+  // Auth API Handlers
+  // ============================================================================
+
+  // POST /auth/login - Login
+  http.post(`${API_BASE}/auth/login`, async ({ request }) => {
+    const body = (await request.json()) as LoginRequest;
+    const normalizedUsername = body.username.toLowerCase().trim();
+
+    const user = mockUsers.find((u) => u.username === normalizedUsername);
+    if (!user || user.password !== body.password) {
+      return HttpResponse.json(
+        { message: "Invalid username or password" },
+        { status: 401 },
+      );
+    }
+
+    if (!mockFamily || mockFamily.id !== user.familyId) {
+      return HttpResponse.json(
+        { message: "Family data not found" },
+        { status: 404 },
+      );
+    }
+
+    const response: LoginResponse = {
+      data: {
+        token: `mock-token-${normalizedUsername}`,
+        family: mockFamily,
+      },
+      message: "Login successful",
+    };
+
+    return HttpResponse.json(response);
+  }),
+
+  // POST /auth/register - Register
+  http.post(`${API_BASE}/auth/register`, async ({ request }) => {
+    const body = (await request.json()) as RegisterRequest;
+    const normalizedUsername = body.username.toLowerCase().trim();
+
+    // Check if username exists
+    if (mockUsers.some((u) => u.username === normalizedUsername)) {
+      return HttpResponse.json(
+        { message: "Username already taken", field: "username" },
+        { status: 409 },
+      );
+    }
+
+    // Create family
+    mockFamily = {
+      id: `family-${Date.now()}`,
+      name: body.familyName,
+      members: body.members.map((m) => ({
+        ...m,
+        id: `member-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+      })),
+      createdAt: new Date().toISOString(),
+      setupComplete: true,
+    };
+
+    // Create user
+    mockUsers.push({
+      username: normalizedUsername,
+      password: body.password,
+      familyId: mockFamily.id,
+    });
+
+    const response: RegisterResponse = {
+      data: {
+        token: `mock-token-${normalizedUsername}`,
+        family: mockFamily,
+      },
+      message: "Registration successful",
+    };
+
+    return HttpResponse.json(response);
+  }),
+
+  // GET /auth/check-username - Check username availability
+  http.get(`${API_BASE}/auth/check-username`, ({ request }) => {
+    const url = new URL(request.url);
+    const username = url.searchParams.get("username")?.toLowerCase().trim();
+
+    const available = !mockUsers.some((u) => u.username === username);
+    const response: UsernameCheckResponse = { available };
+
+    return HttpResponse.json(response);
   }),
 ];

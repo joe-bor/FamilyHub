@@ -7,7 +7,12 @@ import {
   expect,
   it,
 } from "vitest";
-import { getMockFamily, resetMockFamily, server } from "@/test/mocks/server";
+import {
+  getMockFamily,
+  resetMockFamily,
+  resetMockUsers,
+  server,
+} from "@/test/mocks/server";
 import {
   render,
   renderWithUser,
@@ -23,6 +28,7 @@ describe("OnboardingFlow", () => {
   afterEach(() => {
     server.resetHandlers();
     resetMockFamily();
+    resetMockUsers();
   });
   afterAll(() => server.close());
 
@@ -63,7 +69,7 @@ describe("OnboardingFlow", () => {
 
       await user.click(screen.getByRole("button", { name: /get started/i }));
 
-      expect(screen.getByText("Step 1 of 2")).toBeInTheDocument();
+      expect(screen.getByText("Step 1 of 3")).toBeInTheDocument();
     });
 
     it("has back button that returns to welcome", async () => {
@@ -142,7 +148,7 @@ describe("OnboardingFlow", () => {
       const { user } = renderWithUser(<OnboardingFlow />);
       await navigateToMembersStep(user);
 
-      expect(screen.getByText("Step 2 of 2")).toBeInTheDocument();
+      expect(screen.getByText("Step 2 of 3")).toBeInTheDocument();
     });
 
     it("shows Add Family Member button", async () => {
@@ -152,13 +158,11 @@ describe("OnboardingFlow", () => {
       expect(screen.getByText("Add Family Member")).toBeInTheDocument();
     });
 
-    it("disables Complete Setup button when no members", async () => {
+    it("disables Continue button when no members", async () => {
       const { user } = renderWithUser(<OnboardingFlow />);
       await navigateToMembersStep(user);
 
-      expect(
-        screen.getByRole("button", { name: /complete setup/i }),
-      ).toBeDisabled();
+      expect(screen.getByRole("button", { name: /continue/i })).toBeDisabled();
       expect(
         screen.getByText("Add at least one family member to continue"),
       ).toBeInTheDocument();
@@ -213,7 +217,7 @@ describe("OnboardingFlow", () => {
       expect(screen.getByText("John")).toBeInTheDocument();
     });
 
-    it("enables Complete Setup after adding a member", async () => {
+    it("enables Continue after adding a member", async () => {
       const { user } = renderWithUser(<OnboardingFlow />);
       await navigateToMembersStep(user);
 
@@ -234,9 +238,9 @@ describe("OnboardingFlow", () => {
         expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
       });
 
-      // Complete Setup should now be enabled
+      // Continue should now be enabled
       expect(
-        screen.getByRole("button", { name: /complete setup/i }),
+        screen.getByRole("button", { name: /continue/i }),
       ).not.toBeDisabled();
     });
 
@@ -277,6 +281,18 @@ describe("OnboardingFlow", () => {
       await waitFor(() => {
         expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
       });
+
+      // Continue to credentials step
+      await user.click(screen.getByRole("button", { name: /continue/i }));
+
+      // Step 4: Credentials
+      expect(screen.getByText("Create Your Login")).toBeInTheDocument();
+      await user.type(screen.getByLabelText(/username/i), "testfamily");
+      await user.type(screen.getByLabelText(/^password$/i), "password123");
+      await user.type(
+        screen.getByLabelText(/confirm password/i),
+        "password123",
+      );
 
       // Complete setup
       await user.click(screen.getByRole("button", { name: /complete setup/i }));
@@ -335,6 +351,18 @@ describe("OnboardingFlow", () => {
       // Both members should be visible
       expect(screen.getByText("Mom")).toBeInTheDocument();
       expect(screen.getByText("Dad")).toBeInTheDocument();
+
+      // Continue to credentials step
+      await user.click(screen.getByRole("button", { name: /continue/i }));
+
+      // Step 4: Credentials
+      expect(screen.getByText("Create Your Login")).toBeInTheDocument();
+      await user.type(screen.getByLabelText(/username/i), "bigfamily");
+      await user.type(screen.getByLabelText(/^password$/i), "password123");
+      await user.type(
+        screen.getByLabelText(/confirm password/i),
+        "password123",
+      );
 
       // Complete
       await user.click(screen.getByRole("button", { name: /complete setup/i }));

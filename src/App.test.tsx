@@ -1,27 +1,55 @@
 import { beforeEach } from "vitest";
 import FamilyHub from "./App";
-import { render, resetFamilyStore, screen } from "./test/test-utils";
+import {
+  render,
+  renderWithUser,
+  resetFamilyStore,
+  screen,
+} from "./test/test-utils";
 
 describe("App", () => {
   beforeEach(() => {
-    // Reset and mark as hydrated so App shows onboarding (not loading state)
+    // Reset and mark as hydrated so App shows auth flow (not loading state)
     resetFamilyStore();
+    // Clear auth token to ensure we're not authenticated
+    localStorage.removeItem("family-hub-auth-token");
   });
-  it("renders without crashing", async () => {
+
+  it("renders login screen when not authenticated", async () => {
     render(<FamilyHub />);
 
-    // In test environment, Zustand hydrates synchronously
-    // App renders onboarding when setupComplete is false
+    // App renders login screen when not authenticated
     // Use findByText to wait for lazy-loaded component
-    expect(await screen.findByText("Welcome to FamilyHub")).toBeInTheDocument();
+    expect(await screen.findByText("Welcome Back!")).toBeInTheDocument();
+    expect(
+      screen.getByText("Sign in to your family calendar"),
+    ).toBeInTheDocument();
   });
 
-  it("shows get started button in onboarding", async () => {
+  it("shows sign in button on login screen", async () => {
     render(<FamilyHub />);
 
-    // Wait for lazy-loaded onboarding component
+    // Wait for lazy-loaded login component
     expect(
-      await screen.findByRole("button", { name: /get started/i }),
+      await screen.findByRole("button", { name: /sign in/i }),
+    ).toBeInTheDocument();
+  });
+
+  it("navigates to onboarding when Create an account is clicked", async () => {
+    const { user } = renderWithUser(<FamilyHub />);
+
+    // Wait for login screen to load
+    await screen.findByText("Welcome Back!");
+
+    // Click Create an account link
+    await user.click(
+      screen.getByRole("button", { name: /create an account/i }),
+    );
+
+    // Should now show onboarding welcome screen
+    expect(await screen.findByText("Welcome to FamilyHub")).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /get started/i }),
     ).toBeInTheDocument();
   });
 });

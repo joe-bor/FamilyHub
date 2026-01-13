@@ -6,6 +6,7 @@ import {
   handlers,
   resetMockEvents,
   resetMockFamily,
+  resetMockUsers,
   seedMockEvents,
   seedMockFamily,
 } from "./handlers";
@@ -54,6 +55,7 @@ export function setupMswServer() {
     server.resetHandlers();
     resetMockEvents();
     resetMockFamily();
+    resetMockUsers();
   });
   afterAll(() => server.close());
 }
@@ -65,6 +67,7 @@ export {
   getMockFamily,
   resetMockEvents,
   resetMockFamily,
+  resetMockUsers,
   seedMockEvents,
   seedMockFamily,
 };
