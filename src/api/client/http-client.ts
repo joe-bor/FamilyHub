@@ -1,6 +1,22 @@
+import { AUTH_TOKEN_STORAGE_KEY } from "@/lib/constants";
 import { ApiErrorCode, ApiException, mapStatusToErrorCode } from "./api-error";
 
 type QueryParams = Record<string, string | number | boolean | undefined>;
+
+/**
+ * Get auth header from localStorage if token exists.
+ */
+function getAuthHeader(): Record<string, string> {
+  try {
+    const token = localStorage.getItem(AUTH_TOKEN_STORAGE_KEY);
+    if (token) {
+      return { Authorization: `Bearer ${token}` };
+    }
+  } catch {
+    // localStorage might not be available
+  }
+  return {};
+}
 
 interface RequestConfig extends Omit<RequestInit, "body"> {
   params?: QueryParams;
@@ -68,6 +84,7 @@ export function createHttpClient(config: HttpClientConfig) {
         headers: {
           "Content-Type": "application/json",
           ...defaultHeaders,
+          ...getAuthHeader(),
           ...fetchOptions.headers,
         },
         body: body ? JSON.stringify(body) : undefined,
@@ -150,4 +167,13 @@ export function createHttpClient(config: HttpClientConfig) {
 // Singleton instance for the app
 export const httpClient = createHttpClient({
   baseUrl: import.meta.env.VITE_API_BASE_URL || "/api",
+  onUnauthorized: () => {
+    // Clear token and reload to show login
+    try {
+      localStorage.removeItem(AUTH_TOKEN_STORAGE_KEY);
+    } catch {
+      // localStorage might not be available
+    }
+    window.location.reload();
+  },
 });
