@@ -120,7 +120,7 @@ function generateMockToken(username: string, familyId: string): string {
       exp: Date.now() + 365 * 24 * 60 * 60 * 1000,
     }),
   );
-  const signature = btoa("mock-signature-" + username);
+  const signature = btoa(`mock-signature-${username}`);
   return `${header}.${payload}.${signature}`;
 }
 
