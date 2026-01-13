@@ -1,6 +1,6 @@
-import { Users, X } from "lucide-react";
+import { LogOut, Users, X } from "lucide-react";
 import { useState } from "react";
-import { useFamilyMembers, useFamilyName } from "@/api";
+import { useFamilyMembers, useFamilyName, useLogout } from "@/api";
 import { FamilySettingsModal, MemberProfileModal } from "@/components/settings";
 import { Button } from "@/components/ui/button";
 import { colorMap } from "@/lib/types";
@@ -14,6 +14,9 @@ export function SidebarMenu() {
   // From family-store
   const familyName = useFamilyName();
   const familyMembers = useFamilyMembers();
+
+  // Auth
+  const logout = useLogout();
 
   // Modal state
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -31,6 +34,7 @@ export function SidebarMenu() {
 
   const menuItems = [
     { icon: Users, label: "Family Settings", action: handleOpenSettings },
+    { icon: LogOut, label: "Sign Out", action: logout },
   ];
 
   return (
