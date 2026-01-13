@@ -1,10 +1,16 @@
-import { lazy, Suspense, useEffect } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { useSetupComplete } from "@/api";
 import { CalendarModule } from "@/components/calendar";
 import { HomeDashboard } from "@/components/home";
 import { AppHeader, NavigationTabs, SidebarMenu } from "@/components/shared";
 import { useIsMobile } from "@/hooks";
-import { type ModuleType, useAppStore, useHasHydrated } from "@/stores";
+import {
+  type ModuleType,
+  useAppStore,
+  useAuthHasHydrated,
+  useHasHydrated,
+  useIsAuthenticated,
+} from "@/stores";
 
 // Lazy load non-primary modules for code splitting
 const ChoresView = lazy(() =>
@@ -23,6 +29,9 @@ const OnboardingFlow = lazy(() =>
   import("@/components/onboarding").then((m) => ({
     default: m.OnboardingFlow,
   })),
+);
+const LoginFlow = lazy(() =>
+  import("@/components/auth").then((m) => ({ default: m.LoginFlow })),
 );
 
 function ModuleLoader() {
@@ -70,12 +79,25 @@ function renderModule(activeModule: ModuleType | null) {
   }
 }
 
+function LoadingScreen() {
+  return (
+    <div className="h-screen flex items-center justify-center bg-background">
+      <div className="animate-pulse text-muted-foreground">Loading...</div>
+    </div>
+  );
+}
+
 export default function FamilyHub() {
   const activeModule = useAppStore((state) => state.activeModule);
   const setActiveModule = useAppStore((state) => state.setActiveModule);
   const hasHydrated = useHasHydrated();
+  const authHasHydrated = useAuthHasHydrated();
+  const isAuthenticated = useIsAuthenticated();
   const setupComplete = useSetupComplete();
   const isMobile = useIsMobile();
+
+  // State to toggle between login and onboarding for new users
+  const [showOnboarding, setShowOnboarding] = useState(false);
 
   // On desktop, redirect null (home) to calendar since home is mobile-only
   useEffect(() => {
@@ -84,27 +106,31 @@ export default function FamilyHub() {
     }
   }, [isMobile, activeModule, setActiveModule]);
 
-  // Wait for store to hydrate from localStorage
-  if (!hasHydrated) {
+  // Wait for both stores to hydrate from localStorage
+  if (!hasHydrated || !authHasHydrated) {
+    return <LoadingScreen />;
+  }
+
+  // Not authenticated: show login or onboarding
+  if (!isAuthenticated) {
+    if (showOnboarding) {
+      return (
+        <Suspense fallback={<LoadingScreen />}>
+          <OnboardingFlow />
+        </Suspense>
+      );
+    }
     return (
-      <div className="h-screen flex items-center justify-center bg-background">
-        <div className="animate-pulse text-muted-foreground">Loading...</div>
-      </div>
+      <Suspense fallback={<LoadingScreen />}>
+        <LoginFlow onStartOnboarding={() => setShowOnboarding(true)} />
+      </Suspense>
     );
   }
 
-  // Show onboarding if setup not complete
+  // Authenticated but setup not complete (edge case)
   if (!setupComplete) {
     return (
-      <Suspense
-        fallback={
-          <div className="h-screen flex items-center justify-center bg-background">
-            <div className="animate-pulse text-muted-foreground">
-              Loading...
-            </div>
-          </div>
-        }
-      >
+      <Suspense fallback={<LoadingScreen />}>
         <OnboardingFlow />
       </Suspense>
     );
