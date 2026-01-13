@@ -1,5 +1,11 @@
 // App Store
 export { type ModuleType, useAppStore } from "./app-store";
+// Auth Store - Hydration only (auth operations in @/api)
+export {
+  useAuthHasHydrated,
+  useAuthStore,
+  useIsAuthenticated,
+} from "./auth-store";
 // Calendar Store
 export {
   useCalendarActions,
