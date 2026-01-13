@@ -1,15 +1,17 @@
 import { useState } from "react";
 import type { z } from "zod";
-import { useCreateFamily } from "@/api";
+import { useRegister } from "@/api";
 import type { FamilyMember } from "@/lib/types";
 import type { memberFormSchema } from "@/lib/validations/family";
+import { useAuthStore } from "@/stores";
+import { OnboardingCredentials } from "./onboarding-credentials";
 import { OnboardingFamilyName } from "./onboarding-family-name";
 import { OnboardingMembers } from "./onboarding-members";
 import { OnboardingWelcome } from "./onboarding-welcome";
 
 type MemberFormData = z.infer<typeof memberFormSchema>;
 
-type Step = "welcome" | "family-name" | "members";
+type Step = "welcome" | "family-name" | "members" | "credentials";
 
 export function OnboardingFlow() {
   const [step, setStep] = useState<Step>("welcome");
@@ -19,8 +21,9 @@ export function OnboardingFlow() {
   const [draftName, setDraftName] = useState("");
   const [draftMembers, setDraftMembers] = useState<FamilyMember[]>([]);
 
-  // API mutation for creating family
-  const createFamily = useCreateFamily();
+  // API mutation for registering family with credentials
+  const registerFamily = useRegister();
+  const setAuthenticated = useAuthStore((state) => state.setAuthenticated);
 
   // Navigation handlers
   const handleWelcomeNext = () => {
@@ -62,12 +65,31 @@ export function OnboardingFlow() {
     setDraftMembers((prev) => prev.filter((m) => m.id !== id));
   };
 
-  // Final completion - persist via API (strip local IDs, server assigns real ones)
-  const handleComplete = () => {
-    createFamily.mutate({
-      name: draftName,
-      members: draftMembers.map(({ name, color }) => ({ name, color })),
-    });
+  // Navigate from members to credentials step
+  const handleMembersNext = () => {
+    setStep("credentials");
+  };
+
+  const handleCredentialsBack = () => {
+    setStep("members");
+  };
+
+  // Final completion - register with credentials (strip local IDs, server assigns real ones)
+  const handleCredentialsNext = (username: string, password: string) => {
+    registerFamily.mutate(
+      {
+        username,
+        password,
+        familyName: draftName,
+        members: draftMembers.map(({ name, color }) => ({ name, color })),
+      },
+      {
+        onSuccess: () => {
+          // Update auth store to trigger re-render
+          setAuthenticated(true);
+        },
+      },
+    );
   };
 
   switch (step) {
@@ -90,8 +112,17 @@ export function OnboardingFlow() {
           onAddMember={handleAddMember}
           onEditMember={handleEditMember}
           onRemoveMember={handleRemoveMember}
-          onComplete={handleComplete}
+          onNext={handleMembersNext}
           onBack={handleMembersBack}
+        />
+      );
+
+    case "credentials":
+      return (
+        <OnboardingCredentials
+          onNext={handleCredentialsNext}
+          onBack={handleCredentialsBack}
+          isSubmitting={registerFamily.isPending}
         />
       );
   }
