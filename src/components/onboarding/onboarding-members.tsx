@@ -14,7 +14,7 @@ interface OnboardingMembersProps {
   onAddMember: (data: MemberFormData) => void;
   onEditMember: (id: string, data: MemberFormData) => void;
   onRemoveMember: (id: string) => void;
-  onComplete: () => void;
+  onNext: () => void;
   onBack: () => void;
 }
 
@@ -23,7 +23,7 @@ export function OnboardingMembers({
   onAddMember,
   onEditMember,
   onRemoveMember,
-  onComplete,
+  onNext,
   onBack,
 }: OnboardingMembersProps) {
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -69,7 +69,7 @@ export function OnboardingMembers({
         >
           <ArrowLeft className="h-5 w-5" />
         </Button>
-        <span className="text-sm text-muted-foreground">Step 2 of 2</span>
+        <span className="text-sm text-muted-foreground">Step 2 of 3</span>
       </div>
 
       {/* Content */}
@@ -114,15 +114,15 @@ export function OnboardingMembers({
           )}
         </div>
 
-        {/* Complete button */}
+        {/* Continue button */}
         <div className="pt-6">
           <Button
             size="lg"
             className="w-full"
-            onClick={onComplete}
+            onClick={onNext}
             disabled={!canComplete}
           >
-            Complete Setup
+            Continue
           </Button>
           {!canComplete && (
             <p className="text-sm text-muted-foreground text-center mt-2">

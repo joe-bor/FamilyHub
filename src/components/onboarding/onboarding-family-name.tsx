@@ -45,7 +45,7 @@ export function OnboardingFamilyName({
         >
           <ArrowLeft className="h-5 w-5" />
         </Button>
-        <span className="text-sm text-muted-foreground">Step 1 of 2</span>
+        <span className="text-sm text-muted-foreground">Step 1 of 3</span>
       </div>
 
       {/* Content */}
