@@ -2,6 +2,7 @@ import { expect, test } from "@playwright/test";
 import {
   clearStorage,
   createTestMember,
+  seedAuth,
   seedFamily,
   waitForCalendar,
   waitForHydration,
@@ -12,6 +13,8 @@ test.describe("Calendar View Navigation", () => {
     // Clear storage and seed a family with 2 members for filtering
     await page.goto("/");
     await clearStorage(page);
+    // Seed auth token to bypass login screen
+    await seedAuth(page);
 
     // Seed family with two members
     await seedFamily(page, {

@@ -2,6 +2,7 @@ import { expect, test } from "@playwright/test";
 import {
   clearStorage,
   createTestMember,
+  seedAuth,
   seedFamily,
   waitForCalendar,
   waitForDialogClosed,
@@ -14,6 +15,8 @@ test.describe("Family Member Management", () => {
     // Clear storage and seed a family with one member
     await page.goto("/");
     await clearStorage(page);
+    // Seed auth token to bypass login screen
+    await seedAuth(page);
 
     // Seed family with one member
     await seedFamily(page, {

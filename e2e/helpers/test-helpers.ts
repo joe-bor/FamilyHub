@@ -29,6 +29,19 @@ export async function clearStorage(page: Page): Promise<void> {
 }
 
 /**
+ * Seed authentication token to bypass login screen.
+ * Must be called after page.goto() but before reload/navigation.
+ */
+export async function seedAuth(page: Page): Promise<void> {
+  await page.evaluate(() => {
+    // Mock JWT token - the app only checks for token existence, not validity
+    const mockToken =
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0LXVzZXIiLCJpYXQiOjE3MDAwMDAwMDB9.mock";
+    localStorage.setItem("family-hub-auth-token", mockToken);
+  });
+}
+
+/**
  * Seed family data into localStorage
  * This bypasses onboarding for tests that need an existing family
  */

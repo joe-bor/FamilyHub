@@ -1,6 +1,7 @@
 import { expect, test } from "@playwright/test";
 import {
   clearStorage,
+  seedAuth,
   waitForCalendar,
   waitForHydration,
 } from "./helpers/test-helpers";
@@ -10,6 +11,8 @@ test.describe("First-Time User Onboarding", () => {
     // Ensure clean state - no existing family data
     await page.goto("/");
     await clearStorage(page);
+    // Seed auth token to bypass login screen
+    await seedAuth(page);
     await page.reload();
     await waitForHydration(page);
   });
@@ -30,11 +33,11 @@ test.describe("First-Time User Onboarding", () => {
     // Click to proceed
     await page.getByRole("button", { name: "Get Started" }).click();
 
-    // Step 2: Family Name
+    // Step 2: Family Name (Step 1 of 3)
     await expect(
       page.getByRole("heading", { name: /family name/i }),
     ).toBeVisible();
-    await expect(page.getByText("Step 1 of 2")).toBeVisible();
+    await expect(page.getByText("Step 1 of 3")).toBeVisible();
 
     // Enter family name
     const familyNameInput = page.getByPlaceholder("The Smiths");
@@ -43,15 +46,15 @@ test.describe("First-Time User Onboarding", () => {
     // Click continue
     await page.getByRole("button", { name: "Continue" }).click();
 
-    // Step 3: Members
+    // Step 3: Members (Step 2 of 3)
     await expect(
       page.getByRole("heading", { name: /who's in your family/i }),
     ).toBeVisible();
-    await expect(page.getByText("Step 2 of 2")).toBeVisible();
+    await expect(page.getByText("Step 2 of 3")).toBeVisible();
 
-    // Complete Setup should be disabled (no members yet)
-    const completeButton = page.getByRole("button", { name: "Complete Setup" });
-    await expect(completeButton).toBeDisabled();
+    // Continue should be disabled (no members yet)
+    const continueButton = page.getByRole("button", { name: "Continue" });
+    await expect(continueButton).toBeDisabled();
 
     // Click Add Family Member
     await page.getByRole("button", { name: "Add Family Member" }).click();
@@ -77,11 +80,25 @@ test.describe("First-Time User Onboarding", () => {
     // Verify member card appears
     await expect(page.getByText("Alice")).toBeVisible();
 
-    // Complete Setup should now be enabled
-    await expect(completeButton).toBeEnabled();
+    // Continue should now be enabled
+    await expect(continueButton).toBeEnabled();
+
+    // Click Continue to go to credentials step
+    await continueButton.click();
+
+    // Step 4: Credentials (Step 3 of 3)
+    await expect(
+      page.getByRole("heading", { name: /create your login/i }),
+    ).toBeVisible();
+    await expect(page.getByText("Step 3 of 3")).toBeVisible();
+
+    // Fill in credentials
+    await page.getByLabel("Username").fill("testuser");
+    await page.getByLabel("Password", { exact: true }).fill("password123");
+    await page.getByLabel("Confirm Password").fill("password123");
 
     // Click Complete Setup
-    await completeButton.click();
+    await page.getByRole("button", { name: "Complete Setup" }).click();
 
     // Verify main app is showing
     // On mobile, this shows home dashboard first; on desktop, shows calendar
