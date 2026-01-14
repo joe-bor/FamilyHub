@@ -100,6 +100,12 @@ test.describe("First-Time User Onboarding", () => {
     // Click Complete Setup
     await page.getByRole("button", { name: "Complete Setup" }).click();
 
+    // Wait for registration API call to complete and app to transition
+    // The onboarding screen should disappear
+    await expect(
+      page.getByRole("heading", { name: /create your login/i }),
+    ).toBeHidden({ timeout: 10000 });
+
     // Verify main app is showing
     // On mobile, this shows home dashboard first; on desktop, shows calendar
     // waitForCalendar handles both cases by navigating from home if needed
