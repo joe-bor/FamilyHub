@@ -1,6 +1,6 @@
 # Technical Debt & Deferred Improvements
 
-**Last Updated:** January 7, 2026
+**Last Updated:** January 14, 2026
 
 This document tracks known technical debt, deferred improvements, and future enhancements identified during code reviews. Items are prioritized and linked to relevant sprints.
 
@@ -51,7 +51,35 @@ Add mutation tests covering:
 
 ## Medium Priority (Future Sprint)
 
-### 1. Orphaned Events Warning
+### 1. Mobile-Chrome E2E Test Flakiness
+**Source:** PR #34, PR #35
+**Files:** `e2e/*.spec.ts`, `playwright.config.ts`
+**Status:** Tracked - intermittent failures
+
+**Problem:**
+Mobile-chrome E2E tests are flaky in CI, particularly around:
+- Sticky header element interception during clicks
+- Timing issues with dialog transitions
+- App state transitions after registration
+
+**Symptoms:**
+- Tests pass on desktop browsers (chromium, firefox, webkit) but fail intermittently on mobile-chrome
+- Element is visible but click doesn't trigger expected behavior
+- Timeouts waiting for elements that should be present
+
+**Mitigations Applied:**
+- Added `force: true` for event card clicks (PR#34)
+- Added explicit waits for state transitions (PR#35)
+- Using `expect().toBeVisible()` with auto-retry instead of `waitFor()`
+
+**Potential Fixes (not yet implemented):**
+- Investigate sticky header z-index issues on mobile viewport
+- Consider skipping mobile-chrome for specific flaky tests
+- Add mobile-specific wait strategies
+
+---
+
+### 2. Orphaned Events Warning
 **Source:** PR #10 Review (Sprint 5)
 **Files:** `src/stores/family-store.ts`, `src/components/settings/family-settings-modal.tsx`
 **Status:** Deferred to Backend Integration
@@ -131,10 +159,12 @@ See `.env.example` for environment variable documentation.
 - [ ] Implement calendar endpoints
 - [ ] Implement family endpoints
 
-**Phase 3: Authentication**
-- [ ] Add auth system (JWT recommended for API)
-- [ ] `httpClient` has `onUnauthorized` hook ready (`src/api/client/http-client.ts:13`)
-- [ ] Add protected routes / redirect to login
+**Phase 3: Authentication** ✅ COMPLETED (PR #35)
+- [x] Add auth system (JWT-based with mock API)
+- [x] `httpClient` injects auth headers (`src/api/client/http-client.ts`)
+- [x] Login screen gates unauthenticated users
+- [x] Onboarding includes credentials step (username + password)
+- [x] Logout clears auth state and redirects to login
 
 ### API Contracts
 
@@ -188,6 +218,8 @@ Types: `src/lib/types/family.ts`
 
 | Item | Sprint | PR | Date |
 |------|--------|----|----|
+| Auth Store Test Isolation (unit + E2E test fixes) | Sprint 7 | #35 | Jan 14, 2026 |
+| E2E CI Stability Improvements (timing/hydration) | Sprint 7 | #34 | Jan 8, 2026 |
 | Family API Service Layer (TanStack Query migration) | Sprint 6.5 | #32 | Jan 7, 2026 |
 | Test Pattern Standardization | Sprint 6 | #25 | Jan 3, 2026 |
 | Data Validation on Rehydration (Zod schema) | Sprint 5 | - | Dec 27, 2025 |
