@@ -3,7 +3,7 @@ import { type RenderOptions, render } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { ReactElement, ReactNode } from "react";
 import { type FamilyApiResponse, familyKeys } from "@/api";
-import { FAMILY_STORAGE_KEY } from "@/lib/constants";
+import { AUTH_TOKEN_STORAGE_KEY, FAMILY_STORAGE_KEY } from "@/lib/constants";
 import type {
   CalendarEvent,
   CalendarViewType,
@@ -13,6 +13,7 @@ import type {
 } from "@/lib/types";
 import type { ModuleType } from "@/stores/app-store";
 import { useAppStore } from "@/stores/app-store";
+import { useAuthStore } from "@/stores/auth-store";
 import { useCalendarStore } from "@/stores/calendar-store";
 import { useFamilyStore } from "@/stores/family-store";
 import { resetMockFamily, seedMockFamily } from "./mocks/handlers";
@@ -300,6 +301,30 @@ export function seedAppStore(data: {
 }
 
 /**
+ * Reset the auth store to its initial state.
+ */
+export function resetAuthStore(): void {
+  useAuthStore.setState({
+    _hasHydrated: false,
+    isAuthenticated: false,
+  });
+  localStorage.removeItem(AUTH_TOKEN_STORAGE_KEY);
+}
+
+/**
+ * Seed the auth store with initial state for testing.
+ *
+ * @example
+ * seedAuthStore({ isAuthenticated: true });
+ */
+export function seedAuthStore(data?: { isAuthenticated?: boolean }): void {
+  useAuthStore.setState({
+    _hasHydrated: true,
+    isAuthenticated: data?.isAuthenticated ?? false,
+  });
+}
+
+/**
  * Reset all stores to their initial state.
  * Call this in afterEach to ensure test isolation.
  */
@@ -308,4 +333,5 @@ export function resetAllStores(): void {
   resetFamilyStore();
   resetCalendarStore();
   resetAppStore();
+  resetAuthStore();
 }

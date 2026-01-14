@@ -5,14 +5,15 @@ import {
   renderWithUser,
   resetFamilyStore,
   screen,
+  seedAuthStore,
 } from "./test/test-utils";
 
 describe("App", () => {
   beforeEach(() => {
     // Reset and mark as hydrated so App shows auth flow (not loading state)
     resetFamilyStore();
-    // Clear auth token to ensure we're not authenticated
-    localStorage.removeItem("family-hub-auth-token");
+    // Mark auth as hydrated (not authenticated) so login screen renders
+    seedAuthStore({ isAuthenticated: false });
   });
 
   it("renders login screen when not authenticated", async () => {
