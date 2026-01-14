@@ -64,6 +64,7 @@ src/
 │
 ├── stores/                    # Zustand UI state management
 │   ├── app-store.ts           # App-wide state (activeModule, sidebar)
+│   ├── auth-store.ts          # Authentication state (isAuthenticated, hydration)
 │   ├── calendar-store.ts      # Calendar UI state (date, view, filters)
 │   ├── family-store.ts        # Hydration state only (data lives in @/api)
 │   └── index.ts               # Barrel exports + selectors
@@ -120,6 +121,14 @@ Uses a hybrid approach: **TanStack Query** for server state (API data) and **Zus
 **app-store.ts:**
 - `activeModule` - Current module (calendar, chores, meals, lists, photos)
 - `isSidebarOpen` / `openSidebar` / `closeSidebar` - Sidebar state
+
+**auth-store.ts:**
+- `isAuthenticated` - Whether user has valid auth token
+- `_hasHydrated` - Whether localStorage token check is complete
+- `useIsAuthenticated()` - Check auth status
+- `useAuthHasHydrated()` - Gate rendering until auth check complete
+- `setAuthenticated(value)` - Update auth state (called after login/logout)
+- **Note:** Initializes on module load by checking localStorage for token
 
 **family-store.ts:** (hydration gate only)
 - `_hasHydrated` - Whether localStorage read is complete
@@ -338,6 +347,7 @@ it("handles API response", async () => {
 ```typescript
 import {
   clearStorage,
+  seedAuth,
   seedFamily,
   waitForCalendar,
   waitForHydration,
@@ -349,6 +359,7 @@ import {
 test.beforeEach(async ({ page }) => {
   await page.goto("/")
   await clearStorage(page)
+  await seedAuth(page)  // Bypass login screen
   await seedFamily(page, {
     name: "Test Family",
     members: [createTestMember("Alice", "coral")]
@@ -416,12 +427,13 @@ describe("ComponentWithStore", () => {
 **Available store seeders:**
 - `seedCalendarStore({ currentDate?, calendarView?, hasUserSetView?, filter?, isAddEventModalOpen?, selectedEvent?, isDetailModalOpen?, editingEvent?, isEditModalOpen? })` - Seeds any calendar state field
 - `seedAppStore({ activeModule?, isSidebarOpen? })` - Seeds app state
-- `resetCalendarStore()`, `resetAppStore()`, `resetAllStores()` - Reset utilities (called globally in setup.ts afterEach)
+- `seedAuthStore({ isAuthenticated? })` - Seeds auth state (sets `_hasHydrated: true`)
+- `resetCalendarStore()`, `resetAppStore()`, `resetAuthStore()`, `resetAllStores()` - Reset utilities (called globally in setup.ts afterEach)
 
 **Family data in tests:**
 Family data is now in TanStack Query, not Zustand. Seed via `queryClient.setQueryData(familyKeys.family(), { data: familyData, meta: {...} })`.
 
-**Important:** All Zustand stores are **automatically reset** after each test by `src/test/setup.ts`. This prevents state leakage between tests. Query clients should be created fresh for each test.
+**Important:** All Zustand stores (calendar, app, family, auth) are **automatically reset** after each test by `src/test/setup.ts`. This prevents state leakage between tests. Query clients should be created fresh for each test. When adding new stores with immediate initialization (like auth-store), remember to add them to `resetAllStores()`.
 
 **Race condition pattern:** When testing components that compute defaults from query state (e.g., forms using `useFamilyMembers()`), wait for query-dependent elements before interacting:
 ```typescript
@@ -440,9 +452,10 @@ it("submits form with query data", async () => {
 ```
 
 **Notes:**
-- All Zustand stores are reset globally after each test (see `setup.ts`)
+- All Zustand stores (calendar, app, family, auth) are reset globally after each test (see `setup.ts`)
 - Browser APIs are mocked globally: `matchMedia`, `ResizeObserver`, `IntersectionObserver`
 - localStorage/sessionStorage are cleared before each test
 - QueryClient is created fresh for each test with retry disabled
 - jest-dom matchers available globally (`toBeInTheDocument`, etc.)
 - `noFocusedTests` Biome rule prevents `.only`/`.skip` in commits
+- E2E tests must call `seedAuth(page)` after `clearStorage(page)` to bypass the login screen
