@@ -47,8 +47,9 @@ window.scrollTo = vi.fn();
 // =============================================================================
 
 // Import stores directly to reset them (avoid circular deps with test-utils)
-import { FAMILY_STORAGE_KEY } from "@/lib/constants";
+import { AUTH_TOKEN_STORAGE_KEY, FAMILY_STORAGE_KEY } from "@/lib/constants";
 import { useAppStore } from "@/stores/app-store";
+import { useAuthStore } from "@/stores/auth-store";
 import { useCalendarStore } from "@/stores/calendar-store";
 import { useFamilyStore } from "@/stores/family-store";
 import { resetTestQueryClient } from "@/test/test-utils";
@@ -84,6 +85,13 @@ function resetAllStores(): void {
     activeModule: "calendar",
     isSidebarOpen: false,
   });
+
+  // Reset auth store
+  useAuthStore.setState({
+    _hasHydrated: false,
+    isAuthenticated: false,
+  });
+  localStorage.removeItem(AUTH_TOKEN_STORAGE_KEY);
 }
 
 // =============================================================================
