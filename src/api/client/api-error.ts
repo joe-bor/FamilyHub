@@ -11,18 +11,23 @@ export const ApiErrorCode = {
 
 export type ApiErrorCode = (typeof ApiErrorCode)[keyof typeof ApiErrorCode];
 
+export interface ValidationError {
+  field: string;
+  message: string;
+}
+
 export interface ApiErrorDetails {
   code: ApiErrorCode;
   message: string;
   status: number;
-  details?: Record<string, unknown>;
+  errors?: ValidationError[];
   field?: string;
 }
 
 export class ApiException extends Error {
   readonly code: ApiErrorCode;
   readonly status: number;
-  readonly details?: Record<string, unknown>;
+  readonly errors?: ValidationError[];
   readonly field?: string;
   readonly originalError?: unknown;
 
@@ -31,7 +36,7 @@ export class ApiException extends Error {
     this.name = "ApiException";
     this.code = error.code;
     this.status = error.status;
-    this.details = error.details;
+    this.errors = error.errors;
     this.field = error.field;
     this.originalError = originalError;
   }
