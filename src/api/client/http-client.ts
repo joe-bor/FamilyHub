@@ -1,5 +1,10 @@
 import { AUTH_TOKEN_STORAGE_KEY } from "@/lib/constants";
-import { ApiErrorCode, ApiException, mapStatusToErrorCode } from "./api-error";
+import {
+  ApiErrorCode,
+  ApiException,
+  mapStatusToErrorCode,
+  type ValidationError,
+} from "./api-error";
 
 type QueryParams = Record<string, string | number | boolean | undefined>;
 
@@ -33,7 +38,7 @@ async function parseErrorResponse(response: Response): Promise<{
   code: ApiErrorCode;
   message: string;
   status: number;
-  details?: Record<string, unknown>;
+  errors?: ValidationError[];
   field?: string;
 }> {
   try {
@@ -42,8 +47,8 @@ async function parseErrorResponse(response: Response): Promise<{
       code: mapStatusToErrorCode(response.status),
       message: body.message || response.statusText,
       status: response.status,
-      details: body.details,
-      field: body.field,
+      errors: body.errors,
+      field: body.errors?.[0]?.field,
     };
   } catch {
     return {
