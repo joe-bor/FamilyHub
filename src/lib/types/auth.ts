@@ -1,3 +1,4 @@
+import type { ApiResponse } from "./api-response";
 import type { FamilyData, FamilyMember } from "./family";
 
 // ============================================================================
@@ -16,13 +17,10 @@ export interface LoginRequest {
  * Response from successful login.
  * Returns JWT token and associated family data.
  */
-export interface LoginResponse {
-  data: {
-    token: string;
-    family: FamilyData;
-  };
-  message: string;
-}
+export type LoginResponse = ApiResponse<{
+  token: string;
+  family: FamilyData;
+}>;
 
 /**
  * Request to register a new family with credentials.
@@ -39,17 +37,12 @@ export interface RegisterRequest {
  * Response from successful registration.
  * Returns JWT token and created family data.
  */
-export interface RegisterResponse {
-  data: {
-    token: string;
-    family: FamilyData;
-  };
-  message: string;
-}
+export type RegisterResponse = ApiResponse<{
+  token: string;
+  family: FamilyData;
+}>;
 
 /**
  * Response from username availability check.
  */
-export interface UsernameCheckResponse {
-  available: boolean;
-}
+export type UsernameCheckResponse = ApiResponse<{ available: boolean }>;
