@@ -244,7 +244,7 @@ export const authMockHandlers = {
     const normalizedUsername = username.toLowerCase().trim();
     const available = !users.some((u) => u.username === normalizedUsername);
 
-    return { available };
+    return { data: { available } };
   },
 
   // ============================================================================
