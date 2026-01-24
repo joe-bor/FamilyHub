@@ -6,7 +6,6 @@ import type {
   CalendarEvent,
   CreateEventRequest,
   GetEventsParams,
-  MutationResponse,
   UpdateEventRequest,
 } from "@/lib/types";
 import { simulateApiCall } from "./delay";
@@ -159,21 +158,8 @@ function ensureSampleEventsExist(): void {
 // In-memory storage for mock data (initialized from localStorage or generated)
 let mockEvents: CalendarEvent[] = initializeMockEvents();
 
-function createApiResponse<T>(data: T): ApiResponse<T> {
-  return {
-    data,
-    meta: {
-      timestamp: Date.now(),
-      requestId: crypto.randomUUID(),
-    },
-  };
-}
-
-function createMutationResponse<T>(
-  data: T,
-  message: string,
-): MutationResponse<T> {
-  return { data, message };
+function createApiResponse<T>(data: T, message?: string): ApiResponse<T> {
+  return message ? { data, message } : { data };
 }
 
 export const calendarMockHandlers = {
@@ -231,7 +217,7 @@ export const calendarMockHandlers = {
 
   async createEvent(
     request: CreateEventRequest,
-  ): Promise<MutationResponse<CalendarEvent>> {
+  ): Promise<ApiResponse<CalendarEvent>> {
     await simulateApiCall();
 
     const newEvent: CalendarEvent = {
@@ -248,12 +234,12 @@ export const calendarMockHandlers = {
     mockEvents = [...mockEvents, newEvent];
     saveEventsToStorage(mockEvents);
 
-    return createMutationResponse(newEvent, "Event created successfully");
+    return createApiResponse(newEvent, "Event created successfully");
   },
 
   async updateEvent(
     request: UpdateEventRequest,
-  ): Promise<MutationResponse<CalendarEvent>> {
+  ): Promise<ApiResponse<CalendarEvent>> {
     await simulateApiCall();
 
     const index = mockEvents.findIndex((e) => e.id === request.id);
@@ -284,7 +270,7 @@ export const calendarMockHandlers = {
     ];
     saveEventsToStorage(mockEvents);
 
-    return createMutationResponse(updatedEvent, "Event updated successfully");
+    return createApiResponse(updatedEvent, "Event updated successfully");
   },
 
   async deleteEvent(id: string): Promise<void> {

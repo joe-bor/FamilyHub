@@ -66,13 +66,7 @@ function loadFamilyFromStorage(): FamilyData | null {
 // ============================================================================
 
 function createFamilyResponse(family: FamilyData | null): FamilyApiResponse {
-  return {
-    data: family,
-    meta: {
-      timestamp: Date.now(),
-      requestId: crypto.randomUUID(),
-    },
-  };
+  return { data: family };
 }
 
 function createFamilyMutationResponse(
