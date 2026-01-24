@@ -150,10 +150,7 @@ export function seedFamilyStore(
   };
 
   // Seed TanStack Query cache
-  const response: FamilyApiResponse = {
-    data: familyData,
-    meta: { timestamp: Date.now(), requestId: "test-seed" },
-  };
+  const response: FamilyApiResponse = { data: familyData };
   testQueryClient.setQueryData(familyKeys.family(), response);
 
   // Seed MSW mock (for background refetches that hit the API)
@@ -176,10 +173,7 @@ export function seedFamilyStore(
  */
 export function resetFamilyStore(): void {
   // Clear query cache
-  testQueryClient.setQueryData(familyKeys.family(), {
-    data: null,
-    meta: { timestamp: Date.now(), requestId: "test-reset" },
-  });
+  testQueryClient.setQueryData(familyKeys.family(), { data: null });
 
   // Clear MSW mock
   resetMockFamily();

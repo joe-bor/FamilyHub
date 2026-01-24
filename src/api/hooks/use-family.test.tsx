@@ -182,7 +182,6 @@ describe("useFamilyData", () => {
     // Seed query cache
     queryClient.setQueryData<FamilyApiResponse>(familyKeys.family(), {
       data: testFamily,
-      meta: { timestamp: Date.now(), requestId: "test" },
     });
 
     const { result } = renderHook(() => useFamilyData(), {
@@ -205,7 +204,6 @@ describe("useFamilyMembers", () => {
   it("returns members array when present", () => {
     queryClient.setQueryData<FamilyApiResponse>(familyKeys.family(), {
       data: testFamily,
-      meta: { timestamp: Date.now(), requestId: "test" },
     });
 
     const { result } = renderHook(() => useFamilyMembers(), {
@@ -228,7 +226,6 @@ describe("useFamilyName", () => {
   it("returns family name when present", () => {
     queryClient.setQueryData<FamilyApiResponse>(familyKeys.family(), {
       data: testFamily,
-      meta: { timestamp: Date.now(), requestId: "test" },
     });
 
     const { result } = renderHook(() => useFamilyName(), {
@@ -251,7 +248,6 @@ describe("useSetupComplete", () => {
   it("returns true when setup is complete", async () => {
     queryClient.setQueryData<FamilyApiResponse>(familyKeys.family(), {
       data: testFamily,
-      meta: { timestamp: Date.now(), requestId: "test" },
     });
 
     const { result } = renderHook(() => useSetupComplete(), {
@@ -267,7 +263,6 @@ describe("useSetupComplete", () => {
     const incompleteFamily = { ...testFamily, setupComplete: false };
     queryClient.setQueryData<FamilyApiResponse>(familyKeys.family(), {
       data: incompleteFamily,
-      meta: { timestamp: Date.now(), requestId: "test" },
     });
 
     const { result } = renderHook(() => useSetupComplete(), {
@@ -284,7 +279,6 @@ describe("useFamilyMemberById", () => {
   beforeEach(() => {
     queryClient.setQueryData<FamilyApiResponse>(familyKeys.family(), {
       data: testFamily,
-      meta: { timestamp: Date.now(), requestId: "test" },
     });
   });
 
@@ -317,7 +311,6 @@ describe("useFamilyMemberMap", () => {
   it("returns map with O(1) lookups", () => {
     queryClient.setQueryData<FamilyApiResponse>(familyKeys.family(), {
       data: testFamily,
-      meta: { timestamp: Date.now(), requestId: "test" },
     });
 
     const { result } = renderHook(() => useFamilyMemberMap(), {
@@ -332,7 +325,6 @@ describe("useFamilyMemberMap", () => {
   it("returns same map instance for same members (memoized)", () => {
     queryClient.setQueryData<FamilyApiResponse>(familyKeys.family(), {
       data: testFamily,
-      meta: { timestamp: Date.now(), requestId: "test" },
     });
 
     const { result, rerender } = renderHook(() => useFamilyMemberMap(), {
@@ -360,7 +352,6 @@ describe("useUnusedColors", () => {
   it("filters out used colors", () => {
     queryClient.setQueryData<FamilyApiResponse>(familyKeys.family(), {
       data: testFamily,
-      meta: { timestamp: Date.now(), requestId: "test" },
     });
 
     const { result } = renderHook(() => useUnusedColors(), {
@@ -375,7 +366,6 @@ describe("useUnusedColors", () => {
   it("returns same array instance for same members (memoized)", () => {
     queryClient.setQueryData<FamilyApiResponse>(familyKeys.family(), {
       data: testFamily,
-      meta: { timestamp: Date.now(), requestId: "test" },
     });
 
     const { result, rerender } = renderHook(() => useUnusedColors(), {
@@ -450,7 +440,6 @@ describe("useUpdateFamily", () => {
     seedMockFamily(testFamily);
     queryClient.setQueryData<FamilyApiResponse>(familyKeys.family(), {
       data: testFamily,
-      meta: { timestamp: Date.now(), requestId: "test" },
     });
   });
 
@@ -498,7 +487,6 @@ describe("useAddMember", () => {
     seedMockFamily(testFamily);
     queryClient.setQueryData<FamilyApiResponse>(familyKeys.family(), {
       data: testFamily,
-      meta: { timestamp: Date.now(), requestId: "test" },
     });
   });
 
@@ -555,7 +543,6 @@ describe("useRemoveMember", () => {
     seedMockFamily(testFamily);
     queryClient.setQueryData<FamilyApiResponse>(familyKeys.family(), {
       data: testFamily,
-      meta: { timestamp: Date.now(), requestId: "test" },
     });
   });
 

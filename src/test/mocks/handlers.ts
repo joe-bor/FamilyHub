@@ -10,7 +10,6 @@ import type {
   FamilyMember,
   LoginRequest,
   LoginResponse,
-  MutationResponse,
   RegisterRequest,
   RegisterResponse,
   UpdateEventRequest,
@@ -82,21 +81,8 @@ export function getMockFamily(): FamilyData | null {
   return mockFamily;
 }
 
-function createApiResponse<T>(data: T): ApiResponse<T> {
-  return {
-    data,
-    meta: {
-      timestamp: Date.now(),
-      requestId: crypto.randomUUID(),
-    },
-  };
-}
-
-function createMutationResponse<T>(
-  data: T,
-  message: string,
-): MutationResponse<T> {
-  return { data, message };
+function createApiResponse<T>(data: T, message?: string): ApiResponse<T> {
+  return message ? { data, message } : { data };
 }
 
 // Base URL for API endpoints
@@ -190,7 +176,7 @@ export const handlers = [
     mockEvents = [...mockEvents, newEvent];
 
     return HttpResponse.json(
-      createMutationResponse(newEvent, "Event created successfully"),
+      createApiResponse(newEvent, "Event created successfully"),
     );
   }),
 
@@ -226,7 +212,7 @@ export const handlers = [
     ];
 
     return HttpResponse.json(
-      createMutationResponse(updatedEvent, "Event updated successfully"),
+      createApiResponse(updatedEvent, "Event updated successfully"),
     );
   }),
 
@@ -278,7 +264,7 @@ export const handlers = [
     };
 
     return HttpResponse.json(
-      createMutationResponse(mockFamily, "Family created successfully"),
+      createApiResponse(mockFamily, "Family created successfully"),
     );
   }),
 
@@ -298,7 +284,7 @@ export const handlers = [
     };
 
     return HttpResponse.json(
-      createMutationResponse(mockFamily, "Family updated successfully"),
+      createApiResponse(mockFamily, "Family updated successfully"),
     );
   }),
 
@@ -332,7 +318,7 @@ export const handlers = [
     };
 
     return HttpResponse.json(
-      createMutationResponse(newMember, "Member added successfully"),
+      createApiResponse(newMember, "Member added successfully"),
     );
   }),
 
@@ -378,7 +364,7 @@ export const handlers = [
     };
 
     return HttpResponse.json(
-      createMutationResponse(updatedMember, "Member updated successfully"),
+      createApiResponse(updatedMember, "Member updated successfully"),
     );
   }),
 
@@ -493,7 +479,7 @@ export const handlers = [
     const username = url.searchParams.get("username")?.toLowerCase().trim();
 
     const available = !mockUsers.some((u) => u.username === username);
-    const response: UsernameCheckResponse = { available };
+    const response: UsernameCheckResponse = { data: { available } };
 
     return HttpResponse.json(response);
   }),
