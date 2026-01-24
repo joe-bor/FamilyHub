@@ -97,10 +97,7 @@ export function useFamily(
     initialData: () => {
       const cached = readFamilyFromStorage();
       if (cached) {
-        return {
-          data: cached,
-          meta: { timestamp: Date.now(), requestId: "local-cache" },
-        };
+        return { data: cached };
       }
       return undefined;
     },
@@ -208,7 +205,6 @@ export function useCreateFamily(callbacks?: CreateFamilyCallbacks) {
       // Update query cache
       queryClient.setQueryData<FamilyApiResponse>(familyKeys.family(), {
         data: response.data,
-        meta: { timestamp: Date.now(), requestId: crypto.randomUUID() },
       });
       // Write-through to localStorage
       writeFamilyToStorage(response.data);
@@ -266,7 +262,6 @@ export function useUpdateFamily(callbacks?: UpdateFamilyCallbacks) {
       // Update with server response
       queryClient.setQueryData<FamilyApiResponse>(familyKeys.family(), {
         data: response.data,
-        meta: { timestamp: Date.now(), requestId: crypto.randomUUID() },
       });
       // Write-through to localStorage
       writeFamilyToStorage(response.data);
@@ -494,7 +489,6 @@ export function useDeleteFamily(callbacks?: DeleteFamilyCallbacks) {
       // Clear query cache
       queryClient.setQueryData<FamilyApiResponse>(familyKeys.family(), {
         data: null,
-        meta: { timestamp: Date.now(), requestId: crypto.randomUUID() },
       });
       // Clear localStorage
       writeFamilyToStorage(null);
@@ -520,6 +514,5 @@ export function syncFamilyFromStorage(
   const family = readFamilyFromStorage();
   queryClient.setQueryData<FamilyApiResponse>(familyKeys.family(), {
     data: family,
-    meta: { timestamp: Date.now(), requestId: "cross-tab-sync" },
   });
 }
