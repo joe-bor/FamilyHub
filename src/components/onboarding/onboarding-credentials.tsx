@@ -43,10 +43,10 @@ export function OnboardingCredentials({
 
   // Update error state based on username availability
   useEffect(() => {
-    if (usernameCheck && !usernameCheck.available) {
+    if (usernameCheck && !usernameCheck.data.available) {
       setError("username", { message: "Username is already taken" });
     } else if (
-      usernameCheck?.available &&
+      usernameCheck?.data.available &&
       errors.username?.message === "Username is already taken"
     ) {
       clearErrors("username");
@@ -54,7 +54,7 @@ export function OnboardingCredentials({
   }, [usernameCheck, setError, clearErrors, errors.username?.message]);
 
   const onSubmit = (data: CredentialsFormData) => {
-    if (usernameCheck && !usernameCheck.available) {
+    if (usernameCheck && !usernameCheck.data.available) {
       setError("username", { message: "Username is already taken" });
       return;
     }
@@ -106,7 +106,7 @@ export function OnboardingCredentials({
                   <div className="absolute right-3 top-1/2 -translate-y-1/2">
                     {isCheckingUsername ? (
                       <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-                    ) : usernameCheck?.available ? (
+                    ) : usernameCheck?.data.available ? (
                       <Check className="h-4 w-4 text-green-500" />
                     ) : (
                       <X className="h-4 w-4 text-destructive" />
