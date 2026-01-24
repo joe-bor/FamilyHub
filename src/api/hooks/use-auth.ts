@@ -108,7 +108,6 @@ export function useLogin(callbacks?: LoginCallbacks) {
       // Update family query cache
       queryClient.setQueryData<FamilyApiResponse>(familyKeys.family(), {
         data: response.data.family,
-        meta: { timestamp: Date.now(), requestId: crypto.randomUUID() },
       });
 
       // Write family to localStorage for hydration
@@ -146,7 +145,6 @@ export function useRegister(callbacks?: RegisterCallbacks) {
       // Update family query cache
       queryClient.setQueryData<FamilyApiResponse>(familyKeys.family(), {
         data: response.data.family,
-        meta: { timestamp: Date.now(), requestId: crypto.randomUUID() },
       });
 
       // Write family to localStorage for hydration

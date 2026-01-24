@@ -5,7 +5,6 @@ import type {
   CalendarEvent,
   CreateEventRequest,
   GetEventsParams,
-  MutationResponse,
   UpdateEventRequest,
 } from "@/lib/types";
 
@@ -30,11 +29,11 @@ export const calendarService = {
 
   async createEvent(
     request: CreateEventRequest,
-  ): Promise<MutationResponse<CalendarEvent>> {
+  ): Promise<ApiResponse<CalendarEvent>> {
     if (USE_MOCK_API) {
       return calendarMockHandlers.createEvent(request);
     }
-    return httpClient.post<MutationResponse<CalendarEvent>>(
+    return httpClient.post<ApiResponse<CalendarEvent>>(
       "/calendar/events",
       request,
     );
@@ -42,11 +41,11 @@ export const calendarService = {
 
   async updateEvent(
     request: UpdateEventRequest,
-  ): Promise<MutationResponse<CalendarEvent>> {
+  ): Promise<ApiResponse<CalendarEvent>> {
     if (USE_MOCK_API) {
       return calendarMockHandlers.updateEvent(request);
     }
-    return httpClient.patch<MutationResponse<CalendarEvent>>(
+    return httpClient.patch<ApiResponse<CalendarEvent>>(
       `/calendar/events/${request.id}`,
       request,
     );
