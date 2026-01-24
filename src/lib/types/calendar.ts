@@ -44,15 +44,5 @@ export interface GetEventsParams {
   memberId?: string;
 }
 
-export interface ApiResponse<T> {
-  data: T;
-  meta?: {
-    timestamp: number;
-    requestId: string;
-  };
-}
-
-export interface MutationResponse<T> {
-  data: T;
-  message?: string;
-}
+// Re-export unified response type for backwards compatibility
+export type { ApiResponse } from "./api-response";

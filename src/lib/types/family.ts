@@ -143,30 +143,24 @@ export interface UpdateMemberRequest {
   email?: string;
 }
 
+// Re-export unified response type
+export type { ApiResponse } from "./api-response";
+
+// Type aliases using unified ApiResponse
+import type { ApiResponse } from "./api-response";
+
 /**
  * API response wrapper for family data.
  * Returns null when no family exists (triggers onboarding).
  */
-export interface FamilyApiResponse {
-  data: FamilyData | null;
-  meta?: {
-    timestamp: number;
-    requestId: string;
-  };
-}
+export type FamilyApiResponse = ApiResponse<FamilyData | null>;
 
 /**
  * Mutation response for family operations.
  */
-export interface FamilyMutationResponse {
-  data: FamilyData;
-  message?: string;
-}
+export type FamilyMutationResponse = ApiResponse<FamilyData>;
 
 /**
  * Mutation response for member operations.
  */
-export interface MemberMutationResponse {
-  data: FamilyMember;
-  message?: string;
-}
+export type MemberMutationResponse = ApiResponse<FamilyMember>;
