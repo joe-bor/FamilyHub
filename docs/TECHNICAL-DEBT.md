@@ -8,7 +8,33 @@ This document tracks known technical debt, deferred improvements, and future enh
 
 ## High Priority (Address Soon)
 
-### 1. Outdated TODO Comments in use-family.ts
+### 1. Missing Error Handling in Onboarding Registration
+**Source:** Manual Testing (Jan 2026)
+**Files:** `src/components/onboarding/onboarding-flow.tsx`
+**Status:** Bug - causes silent failures
+
+**Problem:**
+The `handleCredentialsNext` function calls `registerFamily.mutate()` with only an `onSuccess` callback - no `onError` handler:
+```typescript
+registerFamily.mutate(
+  { username, password, familyName, members },
+  {
+    onSuccess: () => setAuthenticated(true),
+    // Missing: onError handler!
+  },
+);
+```
+
+When registration fails (e.g., family already exists in localStorage, username taken), the user sees nothing - no error message, no feedback. The button just stops working.
+
+**Fix:**
+- Add `onError` callback to display error message to user
+- Consider adding error state to `OnboardingCredentials` component
+- Show toast or inline error when registration fails
+
+---
+
+### 2. Outdated TODO Comments in use-family.ts
 **Source:** PR #32 Code Review
 **Files:** `src/api/hooks/use-family.ts`
 **Status:** Quick fix
