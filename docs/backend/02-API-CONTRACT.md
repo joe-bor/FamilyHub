@@ -48,20 +48,12 @@ Authorization: Bearer <jwt_token>
 ```typescript
 interface ApiResponse<T> {
   data: T;
-  meta?: {
-    timestamp: number;    // Unix timestamp (milliseconds)
-    requestId: string;    // UUID for tracing
-  };
+  message?: string;       // Human-readable success/info message
 }
 ```
 
-### Mutation Response
-```typescript
-interface MutationResponse<T> {
-  data: T;
-  message?: string;       // Human-readable success message
-}
-```
+> **Note:** All endpoints (queries and mutations) use the same `ApiResponse<T>` envelope.
+> The `message` field is optional and used for success confirmations on mutations.
 
 ### Error Response
 ```typescript

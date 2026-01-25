@@ -221,12 +221,12 @@ public class FamilyController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public MutationResponse<FamilyResponse> createFamily(
+    public ApiResponse<FamilyResponse> createFamily(
             @Valid @RequestBody CreateFamilyRequest request,
             @CurrentUser UserPrincipal user) {
         // Validation handled by @Valid + Bean Validation
         FamilyResponse family = familyService.createFamily(user.getId(), request);
-        return MutationResponse.of(family, "Family created successfully");
+        return ApiResponse.of(family, "Family created successfully");
     }
 }
 ```

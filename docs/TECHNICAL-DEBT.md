@@ -196,7 +196,7 @@ Types: `src/lib/types/calendar.ts`
 
 **Family** (ready to use):
 ```
-GET    /family                   → FamilyApiResponse { data: FamilyData | null }
+GET    /family                   → ApiResponse<FamilyData | null>
 POST   /family                   body: CreateFamilyRequest
 PATCH  /family                   body: UpdateFamilyRequest
 DELETE /family
