@@ -2,7 +2,7 @@ import { expect, test } from "@playwright/test";
 import {
   clearStorage,
   seedAuth,
-  waitForCalendar,
+  waitForCalendarReady,
   waitForHydration,
 } from "./helpers/test-helpers";
 
@@ -108,8 +108,8 @@ test.describe("First-Time User Onboarding", () => {
 
     // Verify main app is showing
     // On mobile, this shows home dashboard first; on desktop, shows calendar
-    // waitForCalendar handles both cases by navigating from home if needed
-    await waitForCalendar(page);
+    // waitForCalendarReady handles both cases by navigating from home if needed
+    await waitForCalendarReady(page);
 
     // Verify family name appears in header
     await expect(page.getByText("The Johnsons")).toBeVisible();
@@ -119,8 +119,8 @@ test.describe("First-Time User Onboarding", () => {
     await waitForHydration(page);
 
     // Should still be on main app (not onboarding)
-    // On mobile, this will be home dashboard; waitForCalendar handles it
-    await waitForCalendar(page);
+    // On mobile, this will be home dashboard; waitForCalendarReady handles it
+    await waitForCalendarReady(page);
 
     // Family name should still be visible
     await expect(page.getByText("The Johnsons")).toBeVisible();

@@ -1,4 +1,4 @@
-import { expect, type Page } from "@playwright/test";
+import { expect, type Locator, type Page } from "@playwright/test";
 import type { FamilyColor, FamilyMember } from "../../src/lib/types/family";
 
 /**
@@ -189,4 +189,74 @@ export async function waitForDialogAnimation(page: Page): Promise<void> {
     .catch(() => {
       // Dialog might already be open or closing - that's fine
     });
+}
+
+/**
+ * Robust click that handles common flakiness issues.
+ * - Waits for element to be visible with auto-retry
+ * - Scrolls element to center to avoid sticky header interception
+ * - Uses force:true for reliability in CI environments
+ */
+export async function safeClick(
+  locator: Locator,
+  options?: { timeout?: number },
+): Promise<void> {
+  const timeout = options?.timeout ?? 10000;
+
+  // Wait for element to be visible with auto-retry
+  await expect(locator).toBeVisible({ timeout });
+
+  // Scroll element into view at center to avoid sticky headers
+  await locator.scrollIntoViewIfNeeded();
+
+  // Use force:true to bypass interception checks (reliable in CI)
+  await locator.click({ force: true });
+}
+
+/**
+ * Enhanced dialog wait that returns the dialog locator for chaining.
+ * - Checks visibility with expect() auto-retry
+ * - Confirms data-state="open" attribute
+ * - Returns the dialog locator for scoped queries
+ */
+export async function waitForDialogReady(page: Page): Promise<Locator> {
+  const dialog = page.getByRole("dialog");
+
+  // Use expect with auto-retry for better CI stability
+  await expect(dialog).toBeVisible({ timeout: 10000 });
+
+  // Ensure Radix has finished mounting by checking data-state
+  await page.waitForSelector('[data-state="open"]', { state: "attached" });
+
+  return dialog;
+}
+
+/**
+ * Enhanced calendar ready check that replaces networkidle with more reliable indicators.
+ * Handles mobile home dashboard navigation and waits for multiple UI indicators.
+ */
+export async function waitForCalendarReady(page: Page): Promise<void> {
+  // Check if we're on the mobile home dashboard
+  const homeHeading = page.getByRole("heading", { name: "Home", level: 1 });
+  const isOnHomeDashboard = await homeHeading.isVisible().catch(() => false);
+
+  if (isOnHomeDashboard) {
+    // Navigate to calendar from mobile home dashboard
+    await page
+      .locator("main")
+      .getByRole("button", { name: "Calendar" })
+      .click();
+  }
+
+  // Wait for primary calendar indicator (Add event FAB)
+  const addButton = page.getByRole("button", { name: "Add event" });
+  await expect(addButton).toBeVisible({ timeout: 10000 });
+
+  // Wait for secondary indicator (view switcher)
+  const viewSwitcher = page.getByTestId("view-switcher");
+  await expect(viewSwitcher).toBeVisible({ timeout: 5000 });
+
+  // Brief stability wait instead of unreliable networkidle
+  // This allows React to finish any pending state updates
+  await page.waitForTimeout(100);
 }

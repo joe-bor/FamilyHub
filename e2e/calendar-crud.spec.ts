@@ -2,10 +2,11 @@ import { expect, test } from "@playwright/test";
 import {
   clearStorage,
   createTestMember,
+  safeClick,
   seedAuth,
   seedFamily,
-  waitForCalendar,
-  waitForDialogOpen,
+  waitForCalendarReady,
+  waitForDialogReady,
   waitForHydration,
 } from "./helpers/test-helpers";
 
@@ -26,7 +27,7 @@ test.describe("Calendar Event CRUD", () => {
     // Navigate and wait for app
     await page.reload();
     await waitForHydration(page);
-    await waitForCalendar(page);
+    await waitForCalendarReady(page);
   });
 
   test("creates, views, edits, and deletes an event", async ({ page }) => {
@@ -63,14 +64,10 @@ test.describe("Calendar Event CRUD", () => {
     const eventCard = page
       .getByRole("button", { name: /Team Meeting/ })
       .first();
-    await eventCard.waitFor({ state: "visible" });
-    // Brief wait for React to fully attach event handlers after render
-    // This helps prevent race conditions in slower CI environments
-    await page.waitForLoadState("domcontentloaded");
-    await eventCard.click({ force: true });
+    await safeClick(eventCard);
 
-    // Wait for dialog to fully open
-    await waitForDialogOpen(page);
+    // Wait for dialog to fully open and get dialog locator
+    const dialog = await waitForDialogReady(page);
 
     // Verify event title in modal
     await expect(
@@ -78,7 +75,6 @@ test.describe("Calendar Event CRUD", () => {
     ).toBeVisible();
 
     // Verify member is shown (scope to dialog to avoid matching filter pills)
-    const dialog = page.getByRole("dialog");
     await expect(dialog.getByText("Alice")).toBeVisible();
 
     // ============================================
@@ -119,11 +115,10 @@ test.describe("Calendar Event CRUD", () => {
     const updatedCard = page
       .getByRole("button", { name: /Updated Meeting/ })
       .first();
-    await updatedCard.waitFor({ state: "visible" });
-    await updatedCard.click({ force: true });
+    await safeClick(updatedCard);
 
     // Wait for dialog to fully open
-    await waitForDialogOpen(page);
+    await waitForDialogReady(page);
     await expect(
       page.getByRole("heading", { name: "Updated Meeting" }),
     ).toBeVisible();

@@ -2,9 +2,10 @@ import { expect, test } from "@playwright/test";
 import {
   clearStorage,
   createTestMember,
+  safeClick,
   seedAuth,
   seedFamily,
-  waitForCalendar,
+  waitForCalendarReady,
   waitForHydration,
 } from "./helpers/test-helpers";
 
@@ -27,7 +28,7 @@ test.describe("Calendar View Navigation", () => {
 
     await page.reload();
     await waitForHydration(page);
-    await waitForCalendar(page);
+    await waitForCalendarReady(page);
   });
 
   test("switches views, navigates dates, and filters members", async ({
@@ -38,10 +39,8 @@ test.describe("Calendar View Navigation", () => {
     // ============================================
 
     // Create an event so we can test filtering
-    // Use force:true because on mobile the sticky header can intercept pointer events
-    await page
-      .getByRole("button", { name: "Add event" })
-      .click({ force: true });
+    // Use safeClick because on mobile the sticky header can intercept pointer events
+    await safeClick(page.getByRole("button", { name: "Add event" }));
     await expect(page.getByRole("dialog")).toBeVisible();
     await page.getByLabel("Event Name").fill("Alice's Task");
     await page.getByRole("button", { name: "Add Event" }).click();

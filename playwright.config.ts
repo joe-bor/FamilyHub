@@ -5,7 +5,14 @@ const projects = [
   { name: "chromium", use: { ...devices["Desktop Chrome"] } },
   { name: "firefox", use: { ...devices["Desktop Firefox"] } },
   { name: "webkit", use: { ...devices["Desktop Safari"] } },
-  { name: "mobile-chrome", use: { ...devices["iPhone 14"] } },
+  {
+    name: "mobile-chrome",
+    use: {
+      ...devices["iPhone 14"],
+      // Extended action timeout for mobile - touch interactions can be slower
+      actionTimeout: 20000,
+    },
+  },
 ];
 
 export default defineConfig({
@@ -21,7 +28,10 @@ export default defineConfig({
   },
   use: {
     baseURL: "http://localhost:5173",
-    reducedMotion: process.env.CI ? "reduce" : "no-preference",
+    // Always use reduced motion for consistent behavior locally and in CI
+    reducedMotion: "reduce",
+    // Global action timeout for individual actions (click, fill, etc.)
+    actionTimeout: process.env.CI ? 15000 : 10000,
     trace: "on-first-retry",
     screenshot: "only-on-failure",
     video: "retain-on-failure",
