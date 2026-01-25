@@ -4,9 +4,9 @@ import {
   createTestMember,
   seedAuth,
   seedFamily,
-  waitForCalendar,
+  waitForCalendarReady,
   waitForDialogClosed,
-  waitForDialogOpen,
+  waitForDialogReady,
   waitForHydration,
 } from "./helpers/test-helpers";
 
@@ -26,7 +26,7 @@ test.describe("Family Member Management", () => {
 
     await page.reload();
     await waitForHydration(page);
-    await waitForCalendar(page);
+    await waitForCalendarReady(page);
   });
 
   test("opens settings and manages family members", async ({ page }) => {
@@ -70,7 +70,7 @@ test.describe("Family Member Management", () => {
     await page.getByRole("button", { name: "Add" }).click();
 
     // Wait for nested dialog to fully open
-    await waitForDialogOpen(page);
+    await waitForDialogReady(page);
 
     // Verify member form modal heading
     const memberFormHeading = page.getByRole("heading", {
@@ -104,7 +104,7 @@ test.describe("Family Member Management", () => {
     await page.getByRole("button", { name: "Edit Bob" }).click();
 
     // Wait for nested dialog to fully open
-    await waitForDialogOpen(page);
+    await waitForDialogReady(page);
 
     // Verify edit modal heading
     const editFormHeading = page.getByRole("heading", {
