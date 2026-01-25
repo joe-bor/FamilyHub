@@ -87,36 +87,6 @@ export async function waitForHydration(page: Page): Promise<void> {
 }
 
 /**
- * Wait for the calendar module to be fully loaded.
- * The FAB (Add event button) is a reliable indicator.
- *
- * On mobile (<640px), the app starts on home dashboard,
- * so we need to navigate to calendar first.
- */
-export async function waitForCalendar(page: Page): Promise<void> {
-  // Check if we're on the mobile home dashboard by looking for the "Home" heading
-  const homeHeading = page.getByRole("heading", { name: "Home", level: 1 });
-  const isOnHomeDashboard = await homeHeading.isVisible().catch(() => false);
-
-  if (isOnHomeDashboard) {
-    // We're on mobile home dashboard - click Calendar card to navigate
-    // Use the button within main content area (not nav tabs)
-    await page
-      .locator("main")
-      .getByRole("button", { name: "Calendar" })
-      .click();
-  }
-
-  // Wait for calendar UI to load
-  await page
-    .getByRole("button", { name: "Add event" })
-    .waitFor({ state: "visible", timeout: 10000 });
-
-  // Wait for network to settle to ensure TanStack Query has completed initial fetches
-  await page.waitForLoadState("networkidle");
-}
-
-/**
  * Create default test members for seeding
  */
 export function createTestMembers(): FamilyMember[] {
@@ -153,42 +123,11 @@ export function getTodayDateString(): string {
 }
 
 /**
- * Wait for a Radix dialog to fully open.
- * Uses expect() with auto-retry for more reliability in CI.
- * In CI with reducedMotion, animations are instant.
- */
-export async function waitForDialogOpen(page: Page): Promise<void> {
-  const dialog = page.getByRole("dialog");
-  // Use expect with auto-retry instead of waitFor for better CI stability
-  await expect(dialog).toBeVisible({ timeout: 10000 });
-  // Ensure Radix has finished mounting by checking data-state
-  await page.waitForSelector('[data-state="open"]', { state: "attached" });
-}
-
-/**
  * Wait for all dialogs to close.
  * Uses role selector which is more reliable than data-state for closed state.
  */
 export async function waitForDialogClosed(page: Page): Promise<void> {
   await page.getByRole("dialog").waitFor({ state: "hidden" });
-}
-
-/**
- * Legacy helper - kept for backwards compatibility during transition.
- * With reducedMotion in CI, this is effectively instant.
- * Locally, we wait for the data-state to confirm the dialog is ready.
- * @deprecated Use waitForDialogOpen or waitForDialogClosed instead
- */
-export async function waitForDialogAnimation(page: Page): Promise<void> {
-  // Wait for data-state="open" which indicates Radix has mounted
-  await page
-    .waitForSelector('[data-state="open"]', {
-      state: "attached",
-      timeout: 5000,
-    })
-    .catch(() => {
-      // Dialog might already be open or closing - that's fine
-    });
 }
 
 /**

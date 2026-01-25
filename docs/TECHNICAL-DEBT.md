@@ -1,6 +1,6 @@
 # Technical Debt & Deferred Improvements
 
-**Last Updated:** January 14, 2026
+**Last Updated:** January 25, 2026
 
 This document tracks known technical debt, deferred improvements, and future enhancements identified during code reviews. Items are prioritized and linked to relevant sprints.
 
@@ -77,35 +77,7 @@ Add mutation tests covering:
 
 ## Medium Priority (Future Sprint)
 
-### 1. Mobile-Chrome E2E Test Flakiness
-**Source:** PR #34, PR #35
-**Files:** `e2e/*.spec.ts`, `playwright.config.ts`
-**Status:** Tracked - intermittent failures
-
-**Problem:**
-Mobile-chrome E2E tests are flaky in CI, particularly around:
-- Sticky header element interception during clicks
-- Timing issues with dialog transitions
-- App state transitions after registration
-
-**Symptoms:**
-- Tests pass on desktop browsers (chromium, firefox, webkit) but fail intermittently on mobile-chrome
-- Element is visible but click doesn't trigger expected behavior
-- Timeouts waiting for elements that should be present
-
-**Mitigations Applied:**
-- Added `force: true` for event card clicks (PR#34)
-- Added explicit waits for state transitions (PR#35)
-- Using `expect().toBeVisible()` with auto-retry instead of `waitFor()`
-
-**Potential Fixes (not yet implemented):**
-- Investigate sticky header z-index issues on mobile viewport
-- Consider skipping mobile-chrome for specific flaky tests
-- Add mobile-specific wait strategies
-
----
-
-### 2. Orphaned Events Warning
+### 1. Orphaned Events Warning
 **Source:** PR #10 Review (Sprint 5)
 **Files:** `src/stores/family-store.ts`, `src/components/settings/family-settings-modal.tsx`
 **Status:** Deferred to Backend Integration
@@ -165,6 +137,24 @@ Real User Monitoring to understand actual user experience.
 - Integrate Sentry Performance or similar RUM solution
 - Track page load times, API latency, errors by user segment
 - Set up alerting for performance regressions
+
+---
+
+### 4. E2E waitForTimeout Usage
+**Source:** PR #38 Code Review
+**Files:** `e2e/helpers/test-helpers.ts`
+**Status:** Minor smell - acceptable tradeoff
+
+**Problem:**
+`waitForCalendarReady()` uses `page.waitForTimeout(100)` which is generally discouraged in Playwright (fixed waits can cause flakiness or slowness).
+
+**Context:**
+The 100ms wait allows React to settle after UI indicators are visible. This is a pragmatic tradeoff - the alternative would be finding a specific element state to wait for, which may not exist for "React finished updating" scenarios.
+
+**If this causes issues:**
+- Try removing the wait and see if tests remain stable
+- Look for a specific DOM mutation or network request to wait for instead
+- Consider using `page.waitForFunction()` to check React's internal state
 
 ---
 
@@ -244,6 +234,7 @@ Types: `src/lib/types/family.ts`
 
 | Item | Sprint | PR | Date |
 |------|--------|----|----|
+| Mobile-Chrome E2E Flakiness Fix (safeClick, waitForDialogReady, z-index) | Sprint 7 | #38 | Jan 25, 2026 |
 | Auth Store Test Isolation (unit + E2E test fixes) | Sprint 7 | #35 | Jan 14, 2026 |
 | E2E CI Stability Improvements (timing/hydration) | Sprint 7 | #34 | Jan 8, 2026 |
 | Family API Service Layer (TanStack Query migration) | Sprint 6.5 | #32 | Jan 7, 2026 |
