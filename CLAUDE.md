@@ -349,10 +349,11 @@ import {
   clearStorage,
   seedAuth,
   seedFamily,
-  waitForCalendar,
-  waitForHydration,
-  waitForDialogOpen,
+  safeClick,
+  waitForCalendarReady,
+  waitForDialogReady,
   waitForDialogClosed,
+  waitForHydration,
   createTestMember
 } from "./helpers/test-helpers"
 
@@ -366,30 +367,44 @@ test.beforeEach(async ({ page }) => {
   })
   await page.reload()
   await waitForHydration(page)
-  await waitForCalendar(page)
+  await waitForCalendarReady(page)  // Handles mobile home dashboard navigation
 })
 
 // Use semantic selectors (no data-testid)
 await page.getByRole("button", { name: "Add event" }).click()
-await waitForDialogOpen(page)  // Wait for Radix dialog animation
+const dialog = await waitForDialogReady(page)  // Returns dialog locator for chaining
 await page.getByLabel("Event Name").fill("Meeting")
 
-// Scope selectors to avoid strict mode violations
-const dialog = page.getByRole("dialog")
+// Scope selectors to dialog to avoid strict mode violations
 await expect(dialog.getByText("Alice")).toBeVisible()
 
 // Close dialog and wait for animation
 await page.keyboard.press("Escape")
 await waitForDialogClosed(page)
 
-// Event cards: use getByRole("button") + force:true for reliable clicks
-// (avoids false-positive interception from CSS overflow-hidden wrappers)
+// Event cards: use safeClick() for reliable clicks
+// (handles scroll-to-center, visibility wait, and force:true)
 const eventCard = page.getByRole("button", { name: /Team Meeting/ }).first()
-await eventCard.waitFor({ state: "visible" })
-await eventCard.click({ force: true })
+await safeClick(eventCard)
 ```
 
-**Playwright browsers:** Full matrix (Chromium, Firefox, WebKit, Mobile Chrome) on all CI builds. Uses `reducedMotion: "reduce"` in CI for animation stability.
+**E2E helper functions** (`e2e/helpers/test-helpers.ts`):
+- `safeClick(locator)` - Robust click: waits for visibility, scrolls to center, uses `force:true`
+- `waitForDialogReady(page)` - Waits for dialog visibility + `data-state="open"`, returns dialog locator
+- `waitForCalendarReady(page)` - Waits for calendar UI indicators (replaces unreliable `networkidle`)
+- `waitForDialogClosed(page)` - Waits for dialog to be hidden
+- `waitForHydration(page)` - Waits for Zustand hydration to complete
+
+**Playwright config** (`playwright.config.ts`):
+- `reducedMotion: "reduce"` always enabled for consistent animation behavior
+- `actionTimeout: 15s` globally, `20s` for mobile-chrome
+- Full browser matrix: Chromium, Firefox, WebKit, Mobile Chrome
+
+**z-index hierarchy** (for overlay stacking):
+- `z-10`: Sticky date headers in calendar
+- `z-20`: Time indicators
+- `z-40`: FAB (Add event button), sidebar backdrop
+- `z-50`: Dialogs/modals
 
 **Store and Query testing:**
 ```typescript
