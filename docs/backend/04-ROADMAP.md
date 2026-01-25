@@ -321,12 +321,12 @@ public class FamilyController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public MutationResponse<FamilyResponse> createFamily(
+    public ApiResponse<FamilyResponse> createFamily(
         @Valid @RequestBody CreateFamilyRequest request,
         @CurrentUser UserPrincipal user);
 
     @PatchMapping
-    public MutationResponse<FamilyResponse> updateFamily(
+    public ApiResponse<FamilyResponse> updateFamily(
         @Valid @RequestBody UpdateFamilyRequest request,
         @CurrentUser UserPrincipal user);
 
@@ -341,10 +341,10 @@ public class FamilyMemberController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public MutationResponse<MemberResponse> addMember(...);
+    public ApiResponse<MemberResponse> addMember(...);
 
     @PatchMapping("/{id}")
-    public MutationResponse<MemberResponse> updateMember(...);
+    public ApiResponse<MemberResponse> updateMember(...);
 
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
@@ -489,12 +489,12 @@ public class CalendarController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public MutationResponse<EventResponse> createEvent(
+    public ApiResponse<EventResponse> createEvent(
         @Valid @RequestBody CreateEventRequest request,
         @CurrentUser UserPrincipal user);
 
     @PatchMapping("/{id}")
-    public MutationResponse<EventResponse> updateEvent(
+    public ApiResponse<EventResponse> updateEvent(
         @PathVariable UUID id,
         @Valid @RequestBody UpdateEventRequest request,
         @CurrentUser UserPrincipal user);

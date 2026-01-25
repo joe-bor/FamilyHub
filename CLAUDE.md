@@ -427,8 +427,7 @@ describe("ComponentWithStore", () => {
 
     // Seed TanStack Query cache for family data
     queryClient.setQueryData(familyKeys.family(), {
-      data: { name: "Test Family", members: testMembers, setupComplete: true },
-      meta: { timestamp: Date.now(), requestId: "test" }
+      data: { name: "Test Family", members: testMembers, setupComplete: true }
     })
   });
 
@@ -446,7 +445,7 @@ describe("ComponentWithStore", () => {
 - `resetCalendarStore()`, `resetAppStore()`, `resetAuthStore()`, `resetAllStores()` - Reset utilities (called globally in setup.ts afterEach)
 
 **Family data in tests:**
-Family data is now in TanStack Query, not Zustand. Seed via `queryClient.setQueryData(familyKeys.family(), { data: familyData, meta: {...} })`.
+Family data is now in TanStack Query, not Zustand. Seed via `queryClient.setQueryData(familyKeys.family(), { data: familyData })`.
 
 **Important:** All Zustand stores (calendar, app, family, auth) are **automatically reset** after each test by `src/test/setup.ts`. This prevents state leakage between tests. Query clients should be created fresh for each test. When adding new stores with immediate initialization (like auth-store), remember to add them to `resetAllStores()`.
 

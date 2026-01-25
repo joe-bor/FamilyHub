@@ -150,12 +150,12 @@ Test Infrastructure:
 
 **Family Endpoints:**
 ```
-GET    /family                  → FamilyApiResponse { data: FamilyData | null }
-POST   /family                  → FamilyMutationResponse { data: FamilyData }
-PATCH  /family                  → FamilyMutationResponse { data: FamilyData }
+GET    /family                  → ApiResponse<FamilyData | null>
+POST   /family                  → ApiResponse<FamilyData>
+PATCH  /family                  → ApiResponse<FamilyData>
 DELETE /family                  → void
-POST   /family/members          → MemberMutationResponse { data: FamilyMember }
-PATCH  /family/members/:id      → MemberMutationResponse { data: FamilyMember }
+POST   /family/members          → ApiResponse<FamilyMember>
+PATCH  /family/members/:id      → ApiResponse<FamilyMember>
 DELETE /family/members/:id      → void
 ```
 
@@ -163,8 +163,8 @@ DELETE /family/members/:id      → void
 ```
 GET    /calendar/events         → ApiResponse<CalendarEvent[]> (params: startDate, endDate, memberId)
 GET    /calendar/events/:id     → ApiResponse<CalendarEvent>
-POST   /calendar/events         → MutationResponse<CalendarEvent>
-PATCH  /calendar/events/:id     → MutationResponse<CalendarEvent>
+POST   /calendar/events         → ApiResponse<CalendarEvent>
+PATCH  /calendar/events/:id     → ApiResponse<CalendarEvent>
 DELETE /calendar/events/:id     → void
 ```
 
