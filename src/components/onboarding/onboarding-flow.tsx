@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import type { z } from "zod";
-import { useRegister } from "@/api";
+import { ApiException, useRegister } from "@/api";
 import type { FamilyMember } from "@/lib/types";
 import type { memberFormSchema } from "@/lib/validations/family";
 import { useAuthStore } from "@/stores";
@@ -20,6 +20,9 @@ export function OnboardingFlow() {
   // Members have local IDs for UI purposes (React keys, edit/remove)
   const [draftName, setDraftName] = useState("");
   const [draftMembers, setDraftMembers] = useState<FamilyMember[]>([]);
+  const [registrationError, setRegistrationError] = useState<string | null>(
+    null,
+  );
 
   // API mutation for registering family with credentials
   const registerFamily = useRegister();
@@ -74,8 +77,30 @@ export function OnboardingFlow() {
     setStep("members");
   };
 
+  // Map API error codes to user-friendly messages
+  const getRegistrationErrorMessage = useCallback((error: unknown): string => {
+    if (ApiException.isApiException(error)) {
+      switch (error.code) {
+        case "CONFLICT":
+          return "This username was just taken. Please choose another.";
+        case "NETWORK_ERROR":
+          return "Unable to connect. Please check your internet and try again.";
+        case "TIMEOUT":
+          return "Request timed out. Please try again.";
+        case "VALIDATION_ERROR":
+          return "Invalid data. Please check your entries and try again.";
+        case "SERVER_ERROR":
+          return "Something went wrong on our end. Please try again.";
+      }
+    }
+    return "Registration failed. Please try again.";
+  }, []);
+
   // Final completion - register with credentials (strip local IDs, server assigns real ones)
   const handleCredentialsNext = (username: string, password: string) => {
+    // Clear any previous error before attempting registration
+    setRegistrationError(null);
+
     registerFamily.mutate(
       {
         username,
@@ -87,6 +112,9 @@ export function OnboardingFlow() {
         onSuccess: () => {
           // Update auth store to trigger re-render
           setAuthenticated(true);
+        },
+        onError: (error) => {
+          setRegistrationError(getRegistrationErrorMessage(error));
         },
       },
     );
@@ -123,6 +151,7 @@ export function OnboardingFlow() {
           onNext={handleCredentialsNext}
           onBack={handleCredentialsBack}
           isSubmitting={registerFamily.isPending}
+          error={registrationError}
         />
       );
   }
