@@ -201,6 +201,18 @@ describe("CalendarModule", () => {
         expect(screen.getByRole("dialog")).toBeInTheDocument();
       });
 
+      // Wait for first member button to appear AND be selected (has text-white when selected)
+      // This ensures both DOM is ready AND form state has been updated via useEffect
+      const firstMemberButton = await screen.findByRole("button", {
+        name: testMembers[0].name,
+      });
+      await waitFor(
+        () => {
+          expect(firstMemberButton).toHaveClass("text-white");
+        },
+        { timeout: 3000 },
+      );
+
       // Fill in the form
       const titleInput = screen.getByLabelText(/event name/i);
       await user.clear(titleInput);
@@ -214,9 +226,12 @@ describe("CalendarModule", () => {
       await user.click(submitButton);
 
       // Modal should close after successful submission
-      await waitFor(() => {
-        expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-      });
+      await waitFor(
+        () => {
+          expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+        },
+        { timeout: 3000 },
+      );
 
       // Verify event was created in mock storage
       const mockEvents = getMockEvents();
