@@ -17,12 +17,14 @@ interface OnboardingCredentialsProps {
   onNext: (username: string, password: string) => void;
   onBack: () => void;
   isSubmitting: boolean;
+  error?: string | null;
 }
 
 export function OnboardingCredentials({
   onNext,
   onBack,
   isSubmitting,
+  error,
 }: OnboardingCredentialsProps) {
   const {
     register,
@@ -71,6 +73,7 @@ export function OnboardingCredentials({
           variant="ghost"
           size="icon"
           onClick={onBack}
+          disabled={isSubmitting}
           aria-label="Go back"
         >
           <ArrowLeft className="h-5 w-5" />
@@ -89,6 +92,12 @@ export function OnboardingCredentials({
               Your family will use these credentials to sign in on any device.
             </p>
           </div>
+
+          {error && (
+            <div className="p-3 bg-destructive/10 border border-destructive/20 rounded-lg">
+              <p className="text-sm text-destructive text-center">{error}</p>
+            </div>
+          )}
 
           <div className="space-y-4">
             <div className="space-y-2">
