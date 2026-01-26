@@ -1,3 +1,4 @@
+import { HttpResponse, http } from "msw";
 import {
   afterAll,
   afterEach,
@@ -8,6 +9,7 @@ import {
   it,
 } from "vitest";
 import {
+  API_BASE,
   getMockFamily,
   resetMockFamily,
   resetMockUsers,
@@ -372,6 +374,235 @@ describe("OnboardingFlow", () => {
         const mockFamily = getMockFamily();
         expect(mockFamily).not.toBeNull();
         expect(mockFamily?.members).toHaveLength(2);
+      });
+    });
+  });
+
+  describe("Credentials Step Error Handling", () => {
+    async function navigateToCredentialsStep(
+      user: ReturnType<typeof renderWithUser>["user"],
+    ) {
+      // Step 1: Welcome
+      await user.click(screen.getByRole("button", { name: /get started/i }));
+
+      // Step 2: Family Name
+      await user.type(screen.getByRole("textbox"), "Test Family");
+      await user.click(screen.getByRole("button", { name: /continue/i }));
+
+      // Step 3: Add a member
+      await user.click(
+        screen.getByRole("button", { name: /add family member/i }),
+      );
+      await waitFor(() =>
+        expect(screen.getByRole("dialog")).toBeInTheDocument(),
+      );
+      await user.type(screen.getByLabelText(/name/i), "Test Member");
+      await user.click(
+        screen.getByRole("button", { name: /select coral color/i }),
+      );
+      await user.click(screen.getByRole("button", { name: /^add$/i }));
+      await waitFor(() =>
+        expect(screen.queryByRole("dialog")).not.toBeInTheDocument(),
+      );
+
+      // Continue to credentials step
+      await user.click(screen.getByRole("button", { name: /continue/i }));
+      expect(screen.getByText("Create Your Login")).toBeInTheDocument();
+    }
+
+    it("displays network error message when registration fails due to network", async () => {
+      // Override registration endpoint to simulate network error
+      server.use(
+        http.post(`${API_BASE}/auth/register`, () => {
+          return HttpResponse.error();
+        }),
+      );
+
+      const { user } = renderWithUser(<OnboardingFlow />);
+      await navigateToCredentialsStep(user);
+
+      // Fill credentials
+      await user.type(screen.getByLabelText(/username/i), "testuser");
+      await user.type(screen.getByLabelText(/^password$/i), "password123");
+      await user.type(
+        screen.getByLabelText(/confirm password/i),
+        "password123",
+      );
+
+      // Submit
+      await user.click(screen.getByRole("button", { name: /complete setup/i }));
+
+      // Wait for error message
+      await waitFor(() => {
+        expect(screen.getByText(/unable to connect/i)).toBeInTheDocument();
+      });
+    });
+
+    it("displays conflict error message when username is taken during registration", async () => {
+      // Override registration endpoint to simulate conflict
+      server.use(
+        http.post(`${API_BASE}/auth/register`, () => {
+          return HttpResponse.json(
+            { message: "Username already taken", field: "username" },
+            { status: 409 },
+          );
+        }),
+      );
+
+      const { user } = renderWithUser(<OnboardingFlow />);
+      await navigateToCredentialsStep(user);
+
+      // Fill credentials
+      await user.type(screen.getByLabelText(/username/i), "existinguser");
+      await user.type(screen.getByLabelText(/^password$/i), "password123");
+      await user.type(
+        screen.getByLabelText(/confirm password/i),
+        "password123",
+      );
+
+      // Submit
+      await user.click(screen.getByRole("button", { name: /complete setup/i }));
+
+      // Wait for specific conflict error message
+      await waitFor(() => {
+        expect(
+          screen.getByText(/username was just taken/i),
+        ).toBeInTheDocument();
+      });
+    });
+
+    it("displays server error message when server returns 500", async () => {
+      // Override registration endpoint to simulate server error
+      server.use(
+        http.post(`${API_BASE}/auth/register`, () => {
+          return HttpResponse.json(
+            { message: "Internal server error" },
+            { status: 500 },
+          );
+        }),
+      );
+
+      const { user } = renderWithUser(<OnboardingFlow />);
+      await navigateToCredentialsStep(user);
+
+      // Fill credentials
+      await user.type(screen.getByLabelText(/username/i), "testuser");
+      await user.type(screen.getByLabelText(/^password$/i), "password123");
+      await user.type(
+        screen.getByLabelText(/confirm password/i),
+        "password123",
+      );
+
+      // Submit
+      await user.click(screen.getByRole("button", { name: /complete setup/i }));
+
+      // Wait for server error message
+      await waitFor(() => {
+        expect(
+          screen.getByText(/something went wrong on our end/i),
+        ).toBeInTheDocument();
+      });
+    });
+
+    it("clears error when user retries registration", async () => {
+      // First attempt will fail
+      let requestCount = 0;
+      server.use(
+        http.post(`${API_BASE}/auth/register`, () => {
+          requestCount++;
+          if (requestCount === 1) {
+            return HttpResponse.json(
+              { message: "Internal server error" },
+              { status: 500 },
+            );
+          }
+          // Second attempt succeeds (fall through to default handler)
+          return HttpResponse.json({
+            data: {
+              token: "mock-token",
+              family: {
+                id: "family-1",
+                name: "Test Family",
+                members: [],
+                createdAt: new Date().toISOString(),
+                setupComplete: true,
+              },
+            },
+            message: "Registration successful",
+          });
+        }),
+      );
+
+      const { user } = renderWithUser(<OnboardingFlow />);
+      await navigateToCredentialsStep(user);
+
+      // Fill credentials
+      await user.type(screen.getByLabelText(/username/i), "testuser");
+      await user.type(screen.getByLabelText(/^password$/i), "password123");
+      await user.type(
+        screen.getByLabelText(/confirm password/i),
+        "password123",
+      );
+
+      // First submit - should fail
+      await user.click(screen.getByRole("button", { name: /complete setup/i }));
+
+      // Wait for error message
+      await waitFor(() => {
+        expect(
+          screen.getByText(/something went wrong on our end/i),
+        ).toBeInTheDocument();
+      });
+
+      // Retry - error should clear and succeed
+      await user.click(screen.getByRole("button", { name: /complete setup/i }));
+
+      // Error should be gone during submission
+      await waitFor(() => {
+        expect(
+          screen.queryByText(/something went wrong on our end/i),
+        ).not.toBeInTheDocument();
+      });
+    });
+
+    it("disables back button while registration is in progress", async () => {
+      // Make registration take a while
+      server.use(
+        http.post(`${API_BASE}/auth/register`, async () => {
+          await new Promise((resolve) => setTimeout(resolve, 100));
+          return HttpResponse.json({
+            data: {
+              token: "mock-token",
+              family: {
+                id: "family-1",
+                name: "Test Family",
+                members: [],
+                createdAt: new Date().toISOString(),
+                setupComplete: true,
+              },
+            },
+            message: "Registration successful",
+          });
+        }),
+      );
+
+      const { user } = renderWithUser(<OnboardingFlow />);
+      await navigateToCredentialsStep(user);
+
+      // Fill credentials
+      await user.type(screen.getByLabelText(/username/i), "testuser");
+      await user.type(screen.getByLabelText(/^password$/i), "password123");
+      await user.type(
+        screen.getByLabelText(/confirm password/i),
+        "password123",
+      );
+
+      // Submit
+      await user.click(screen.getByRole("button", { name: /complete setup/i }));
+
+      // Back button should be disabled while submitting
+      await waitFor(() => {
+        expect(screen.getByRole("button", { name: /go back/i })).toBeDisabled();
       });
     });
   });
