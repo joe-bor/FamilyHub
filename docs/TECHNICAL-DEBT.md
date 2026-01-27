@@ -1,6 +1,6 @@
 # Technical Debt & Deferred Improvements
 
-**Last Updated:** January 26, 2026
+**Last Updated:** January 27, 2026
 
 This document tracks known technical debt, deferred improvements, and future enhancements identified during code reviews. Items are prioritized and linked to relevant sprints.
 
@@ -117,44 +117,22 @@ Real User Monitoring to understand actual user experience.
 ### 4. Unit Test Form Submission Pattern
 **Source:** PR #40 Investigation
 **Files:** `src/components/calendar/components/event-form.test.tsx`, `src/components/calendar/calendar-module.test.tsx`
-**Status:** Fixed - documenting pattern for future reference
+**Status:** Fixed - patterns documented in CLAUDE.md
 
 **Problem:**
-Unit tests for forms that depend on async TanStack Query data (e.g., `useFamilyMembers()`) can be flaky in CI:
-1. Form initializes with empty `memberId: ""`
-2. TanStack Query resolves with family members
-3. `useEffect` resets form with first member's ID
-4. Test interacts with form before reset completes
-5. Form validation fails on `memberId.min(1)`, onSubmit never called
+Unit tests for forms that depend on async TanStack Query data (e.g., `useFamilyMembers()`) can be flaky in CI due to race conditions between form initialization and async data resolution.
 
-**Root Cause:**
-CI runs with coverage (`--coverage`) which adds overhead and exposes timing issues not visible locally.
+**Solution:**
+See **"Async Form Testing (CI Flakiness Prevention)"** section in `CLAUDE.md` for:
+- Detailed explanation of the race condition
+- Required fix patterns with code examples
+- Helper functions: `typeAndWait()`, `waitForMemberSelected()`, `TEST_TIMEOUTS`
 
-**Fix Pattern:**
-```typescript
-// 1. Pass explicit defaultValues to avoid async initialization
-const { user } = renderWithUser(
-  <EventForm defaultValues={{ memberId: testMembers[0].id }} ... />
-);
-
-// 2. Wait for form state to propagate (member button shows selected state)
-const memberButton = await screen.findByRole("button", { name: testMembers[0].name });
-await waitFor(() => { expect(memberButton).toHaveClass("text-white"); }, { timeout: 3000 });
-
-// 3. Wait for input values before submitting
-const titleInput = screen.getByLabelText(/event name/i);
-await user.type(titleInput, "Test");
-await waitFor(() => { expect(titleInput).toHaveValue("Test"); });
-
-// 4. Use extended timeout for submit assertions
-await user.click(screen.getByRole("button", { name: /add event/i }));
-await waitFor(() => { expect(mockOnSubmit).toHaveBeenCalled(); }, { timeout: 3000 });
-```
-
-**Key Learnings:**
-- E2E test flakiness (PR #38) is different from unit test flakiness - different causes, different fixes
-- Coverage overhead in CI can expose race conditions not visible locally
-- Always wait for form state, not just DOM elements
+**Key Distinction:**
+| Test Type | Cause | Fix Location |
+|-----------|-------|--------------|
+| E2E (Playwright) | Browser timing, animations, network | `e2e/helpers/test-helpers.ts` |
+| Unit (Vitest) | React state timing, async hooks | `src/test/test-utils.tsx` |
 
 ---
 
@@ -252,6 +230,7 @@ Types: `src/lib/types/family.ts`
 
 | Item | Sprint | PR | Date |
 |------|--------|----|----|
+| CI Flakiness Remediation (test helpers + documentation) | Sprint 7 | #41 | Jan 27, 2026 |
 | Onboarding Registration Error Handling | Sprint 7 | #40 | Jan 26, 2026 |
 | Unit Test Form Flakiness Fix (async form initialization) | Sprint 7 | #40 | Jan 26, 2026 |
 | Mobile-Chrome E2E Flakiness Fix (safeClick, waitForDialogReady, z-index) | Sprint 7 | #38 | Jan 25, 2026 |

@@ -449,21 +449,72 @@ Family data is now in TanStack Query, not Zustand. Seed via `queryClient.setQuer
 
 **Important:** All Zustand stores (calendar, app, family, auth) are **automatically reset** after each test by `src/test/setup.ts`. This prevents state leakage between tests. Query clients should be created fresh for each test. When adding new stores with immediate initialization (like auth-store), remember to add them to `resetAllStores()`.
 
-**Race condition pattern:** When testing components that compute defaults from query state (e.g., forms using `useFamilyMembers()`), wait for query-dependent elements before interacting:
+**Async Form Testing (CI Flakiness Prevention):**
+
+Forms that depend on async TanStack Query data (e.g., `useFamilyMembers()`) can be flaky in CI due to race conditions. CI coverage instrumentation adds overhead that exposes timing issues not visible locally.
+
+**The Problem:**
+```
+Timeline:
+1. Component mounts → Form initializes with memberId: ""
+2. TanStack Query fetches family data
+3. useFamilyMembers() updates with resolved data
+4. useEffect triggers reset() with first member's ID
+5. Test interacts with form
+
+Race condition: If step 5 happens before step 4 completes, form validation fails.
+```
+
+**Solution Patterns:**
+
+1. **Pass explicit defaultValues** to bypass async initialization:
 ```typescript
-it("submits form with query data", async () => {
-  const { user } = renderWithUser(<EventForm onSubmit={mockOnSubmit} />);
+// ❌ BAD: Relies on async initialization
+render(<EventForm mode="add" onSubmit={mockOnSubmit} />);
 
-  // Wait for query state to propagate to the component
-  await screen.findByRole("button", { name: testMembers[0].name });
+// ✅ GOOD: Bypass async by providing explicit defaults
+render(<EventForm mode="add" defaultValues={{ memberId: testMembers[0].id }} onSubmit={mockOnSubmit} />);
+```
 
-  // Now safe to interact with the form
-  await user.type(screen.getByLabelText(/event name/i), "Test");
-  await user.click(screen.getByRole("button", { name: /submit/i }));
+2. **Wait for visual state, not just DOM** - use helper functions:
+```typescript
+import { waitForMemberSelected, typeAndWait, TEST_TIMEOUTS } from "@/test/test-utils";
 
-  expect(mockOnSubmit).toHaveBeenCalled();
+it("submits form correctly", async () => {
+  const { user } = renderWithUser(
+    <EventForm mode="add" defaultValues={{ memberId: testMembers[0].id }} onSubmit={mockOnSubmit} />
+  );
+
+  // Wait for member button to show SELECTED state (text-white class)
+  await waitForMemberSelected(testMembers[0].name);
+
+  // Type and wait for value to propagate before submitting
+  const titleInput = screen.getByLabelText(/event name/i);
+  await typeAndWait(user, titleInput, "Team Meeting");
+
+  // Submit with extended timeout for CI
+  await user.click(screen.getByRole("button", { name: /add event/i }));
+  await waitFor(() => {
+    expect(mockOnSubmit).toHaveBeenCalled();
+  }, { timeout: TEST_TIMEOUTS.FORM_SUBMIT });
 });
 ```
+
+**Available Test Helpers** (`@/test/test-utils`):
+- `TEST_TIMEOUTS.FORM_STATE` (3s) - Wait for form state propagation
+- `TEST_TIMEOUTS.FORM_SUBMIT` (3s) - Wait for form submission
+- `TEST_TIMEOUTS.ELEMENT_VISIBLE` (5s) - Wait for element visibility
+- `typeAndWait(user, input, value)` - Type and verify value propagation
+- `waitForMemberSelected(name)` - Wait for member button to show selected state
+
+**When to use explicit defaultValues:**
+- Tests that submit forms with async-derived fields (memberId, etc.)
+- Tests that verify form submission behavior
+
+**When NOT needed:**
+- Tests that only check rendering (no submission)
+- Tests that provide all required values via defaultValues anyway
+- Edit mode tests where defaultValues are already required
 
 **Notes:**
 - All Zustand stores (calendar, app, family, auth) are reset globally after each test (see `setup.ts`)
