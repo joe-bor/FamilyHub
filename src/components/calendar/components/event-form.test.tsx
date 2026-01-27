@@ -6,7 +6,10 @@ import {
   renderWithUser,
   screen,
   seedFamilyStore,
+  TEST_TIMEOUTS,
+  typeAndWait,
   waitFor,
+  waitForMemberSelected,
 } from "@/test/test-utils";
 import { EventForm } from "./event-form";
 
@@ -89,24 +92,11 @@ describe("EventForm", () => {
       );
 
       // Wait for member button to be visible AND selected
-      const memberButton = await screen.findByRole("button", {
-        name: testMembers[0].name,
-      });
-      await waitFor(
-        () => {
-          expect(memberButton).toHaveClass("text-white");
-        },
-        { timeout: 3000 },
-      );
+      await waitForMemberSelected(testMembers[0].name);
 
       // Fill title and submit to verify first member is selected
       const titleInput = screen.getByLabelText(/event name/i);
-      await user.type(titleInput, "Test Event");
-
-      // Wait for title to be in the input before submitting
-      await waitFor(() => {
-        expect(titleInput).toHaveValue("Test Event");
-      });
+      await typeAndWait(user, titleInput, "Test Event");
 
       await user.click(screen.getByRole("button", { name: /add event/i }));
 
@@ -118,7 +108,7 @@ describe("EventForm", () => {
             }),
           );
         },
-        { timeout: 3000 },
+        { timeout: TEST_TIMEOUTS.FORM_SUBMIT },
       );
     });
   });
@@ -279,24 +269,11 @@ describe("EventForm", () => {
       );
 
       // Wait for member button to be visible AND selected
-      const memberButton = await screen.findByRole("button", {
-        name: testMembers[0].name,
-      });
-      await waitFor(
-        () => {
-          expect(memberButton).toHaveClass("text-white");
-        },
-        { timeout: 3000 },
-      );
+      await waitForMemberSelected(testMembers[0].name);
 
-      // Fill in the title
+      // Fill in the title and wait for value to propagate
       const titleInput = screen.getByLabelText(/event name/i);
-      await user.type(titleInput, "New Team Meeting");
-
-      // Wait for title to be in the input before submitting
-      await waitFor(() => {
-        expect(titleInput).toHaveValue("New Team Meeting");
-      });
+      await typeAndWait(user, titleInput, "New Team Meeting");
 
       // Submit the form
       await user.click(screen.getByRole("button", { name: /add event/i }));
@@ -311,7 +288,7 @@ describe("EventForm", () => {
             }),
           );
         },
-        { timeout: 3000 },
+        { timeout: TEST_TIMEOUTS.FORM_SUBMIT },
       );
     });
 
@@ -412,15 +389,7 @@ describe("EventForm", () => {
       );
 
       // Wait for first member button to be visible AND selected
-      const firstMember = await screen.findByRole("button", {
-        name: testMembers[0].name,
-      });
-      await waitFor(
-        () => {
-          expect(firstMember).toHaveClass("text-white");
-        },
-        { timeout: 3000 },
-      );
+      await waitForMemberSelected(testMembers[0].name);
 
       // Click on second member to change selection
       const secondMember = screen.getByRole("button", {
@@ -429,21 +398,11 @@ describe("EventForm", () => {
       await user.click(secondMember);
 
       // Wait for second member to become selected
-      await waitFor(
-        () => {
-          expect(secondMember).toHaveClass("text-white");
-        },
-        { timeout: 3000 },
-      );
+      await waitForMemberSelected(testMembers[1].name);
 
-      // Fill title
+      // Fill title and wait for value to propagate
       const titleInput = screen.getByLabelText(/event name/i);
-      await user.type(titleInput, "Test Event");
-
-      // Wait for title to be in the input before submitting
-      await waitFor(() => {
-        expect(titleInput).toHaveValue("Test Event");
-      });
+      await typeAndWait(user, titleInput, "Test Event");
 
       // Submit form
       await user.click(screen.getByRole("button", { name: /add event/i }));
@@ -456,7 +415,7 @@ describe("EventForm", () => {
             }),
           );
         },
-        { timeout: 3000 },
+        { timeout: TEST_TIMEOUTS.FORM_SUBMIT },
       );
     });
 

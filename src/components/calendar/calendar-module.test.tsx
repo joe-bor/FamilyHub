@@ -27,6 +27,9 @@ import {
   screen,
   seedCalendarStore,
   seedFamilyStore,
+  TEST_TIMEOUTS,
+  typeAndWait,
+  waitForMemberSelected,
 } from "@/test/test-utils";
 import { CalendarModule } from "./calendar-module";
 
@@ -203,25 +206,12 @@ describe("CalendarModule", () => {
 
       // Wait for first member button to appear AND be selected (has text-white when selected)
       // This ensures both DOM is ready AND form state has been updated via useEffect
-      const firstMemberButton = await screen.findByRole("button", {
-        name: testMembers[0].name,
-      });
-      await waitFor(
-        () => {
-          expect(firstMemberButton).toHaveClass("text-white");
-        },
-        { timeout: 3000 },
-      );
+      await waitForMemberSelected(testMembers[0].name);
 
-      // Fill in the form
+      // Fill in the form and wait for value to propagate
       const titleInput = screen.getByLabelText(/event name/i);
       await user.clear(titleInput);
-      await user.type(titleInput, "New Test Event");
-
-      // Wait for title to be in the input before submitting
-      await waitFor(() => {
-        expect(titleInput).toHaveValue("New Test Event");
-      });
+      await typeAndWait(user, titleInput, "New Test Event");
 
       // Submit the form (find button within dialog)
       const dialog = screen.getByRole("dialog");
@@ -235,7 +225,7 @@ describe("CalendarModule", () => {
         () => {
           expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
         },
-        { timeout: 3000 },
+        { timeout: TEST_TIMEOUTS.FORM_SUBMIT },
       );
 
       // Verify event was created in mock storage
@@ -248,7 +238,7 @@ describe("CalendarModule", () => {
         () => {
           expect(screen.getByText("New Test Event")).toBeInTheDocument();
         },
-        { timeout: 3000 },
+        { timeout: TEST_TIMEOUTS.QUERY_REFETCH },
       );
     });
 
