@@ -1,5 +1,10 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { type RenderOptions, render } from "@testing-library/react";
+import {
+  type RenderOptions,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { ReactElement, ReactNode } from "react";
 import { type FamilyApiResponse, familyKeys } from "@/api";
@@ -17,6 +22,35 @@ import { useAuthStore } from "@/stores/auth-store";
 import { useCalendarStore } from "@/stores/calendar-store";
 import { useFamilyStore } from "@/stores/family-store";
 import { resetMockFamily, seedMockFamily } from "./mocks/handlers";
+
+// =============================================================================
+// Test Timeout Constants
+// =============================================================================
+
+/**
+ * Standardized timeout values for test assertions.
+ *
+ * Use these constants to ensure consistent timing across all tests.
+ * CI runs with coverage add overhead that can expose race conditions,
+ * so these values are calibrated for reliable CI behavior.
+ *
+ * @example
+ * await waitFor(() => {
+ *   expect(mockFn).toHaveBeenCalled();
+ * }, { timeout: TEST_TIMEOUTS.FORM_SUBMIT });
+ */
+export const TEST_TIMEOUTS = {
+  /** Wait for an element to become visible (default: 5s) */
+  ELEMENT_VISIBLE: 5000,
+  /** Wait for form state to propagate after input (default: 3s) */
+  FORM_STATE: 3000,
+  /** Wait for form submission to complete (default: 3s) */
+  FORM_SUBMIT: 3000,
+  /** Wait for dialog to open/close (default: 10s) - matches E2E */
+  DIALOG_READY: 10000,
+  /** Wait for TanStack Query to refetch (default: 5s) */
+  QUERY_REFETCH: 5000,
+} as const;
 
 /**
  * Creates a fresh QueryClient for each test with testing-optimized defaults
@@ -328,4 +362,68 @@ export function resetAllStores(): void {
   resetCalendarStore();
   resetAppStore();
   resetAuthStore();
+}
+
+// =============================================================================
+// Form Test Helpers
+// =============================================================================
+
+/**
+ * Type into an input and wait for the value to propagate.
+ *
+ * This prevents race conditions where form submission happens before
+ * React state updates complete. Always use this instead of raw user.type()
+ * when the form will be submitted afterward.
+ *
+ * @param user - The userEvent instance from renderWithUser()
+ * @param input - The input element to type into
+ * @param value - The value to type
+ *
+ * @example
+ * const { user } = renderWithUser(<EventForm />);
+ * const titleInput = screen.getByLabelText(/event name/i);
+ * await typeAndWait(user, titleInput, "Team Meeting");
+ * await user.click(submitButton);
+ */
+export async function typeAndWait(
+  user: ReturnType<typeof userEvent.setup>,
+  input: HTMLElement,
+  value: string,
+): Promise<void> {
+  await user.type(input, value);
+  await waitFor(
+    () => {
+      expect(input).toHaveValue(value);
+    },
+    { timeout: TEST_TIMEOUTS.FORM_STATE },
+  );
+}
+
+/**
+ * Wait for a member selector button to show the selected state.
+ *
+ * The MemberSelector component shows selected members with "text-white" class.
+ * Use this to wait for async form initialization to complete before submitting.
+ *
+ * @param memberName - The name of the member to wait for
+ * @returns The member button element (for further assertions)
+ *
+ * @example
+ * // Wait for first member to be auto-selected after TanStack Query resolves
+ * const memberButton = await waitForMemberSelected("Alice");
+ *
+ * // Now safe to submit the form
+ * await user.click(submitButton);
+ */
+export async function waitForMemberSelected(
+  memberName: string,
+): Promise<HTMLElement> {
+  const memberButton = await screen.findByRole("button", { name: memberName });
+  await waitFor(
+    () => {
+      expect(memberButton).toHaveClass("text-white");
+    },
+    { timeout: TEST_TIMEOUTS.FORM_STATE },
+  );
+  return memberButton;
 }
