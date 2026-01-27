@@ -1,6 +1,6 @@
 # Technical Debt & Deferred Improvements
 
-**Last Updated:** January 25, 2026
+**Last Updated:** January 26, 2026
 
 This document tracks known technical debt, deferred improvements, and future enhancements identified during code reviews. Items are prioritized and linked to relevant sprints.
 
@@ -8,33 +8,7 @@ This document tracks known technical debt, deferred improvements, and future enh
 
 ## High Priority (Address Soon)
 
-### 1. Missing Error Handling in Onboarding Registration
-**Source:** Manual Testing (Jan 2026)
-**Files:** `src/components/onboarding/onboarding-flow.tsx`
-**Status:** Bug - causes silent failures
-
-**Problem:**
-The `handleCredentialsNext` function calls `registerFamily.mutate()` with only an `onSuccess` callback - no `onError` handler:
-```typescript
-registerFamily.mutate(
-  { username, password, familyName, members },
-  {
-    onSuccess: () => setAuthenticated(true),
-    // Missing: onError handler!
-  },
-);
-```
-
-When registration fails (e.g., family already exists in localStorage, username taken), the user sees nothing - no error message, no feedback. The button just stops working.
-
-**Fix:**
-- Add `onError` callback to display error message to user
-- Consider adding error state to `OnboardingCredentials` component
-- Show toast or inline error when registration fails
-
----
-
-### 2. Outdated TODO Comments in use-family.ts
+### 1. Outdated TODO Comments in use-family.ts
 **Source:** PR #32 Code Review
 **Files:** `src/api/hooks/use-family.ts`
 **Status:** Quick fix
@@ -140,7 +114,51 @@ Real User Monitoring to understand actual user experience.
 
 ---
 
-### 4. E2E waitForTimeout Usage
+### 4. Unit Test Form Submission Pattern
+**Source:** PR #40 Investigation
+**Files:** `src/components/calendar/components/event-form.test.tsx`, `src/components/calendar/calendar-module.test.tsx`
+**Status:** Fixed - documenting pattern for future reference
+
+**Problem:**
+Unit tests for forms that depend on async TanStack Query data (e.g., `useFamilyMembers()`) can be flaky in CI:
+1. Form initializes with empty `memberId: ""`
+2. TanStack Query resolves with family members
+3. `useEffect` resets form with first member's ID
+4. Test interacts with form before reset completes
+5. Form validation fails on `memberId.min(1)`, onSubmit never called
+
+**Root Cause:**
+CI runs with coverage (`--coverage`) which adds overhead and exposes timing issues not visible locally.
+
+**Fix Pattern:**
+```typescript
+// 1. Pass explicit defaultValues to avoid async initialization
+const { user } = renderWithUser(
+  <EventForm defaultValues={{ memberId: testMembers[0].id }} ... />
+);
+
+// 2. Wait for form state to propagate (member button shows selected state)
+const memberButton = await screen.findByRole("button", { name: testMembers[0].name });
+await waitFor(() => { expect(memberButton).toHaveClass("text-white"); }, { timeout: 3000 });
+
+// 3. Wait for input values before submitting
+const titleInput = screen.getByLabelText(/event name/i);
+await user.type(titleInput, "Test");
+await waitFor(() => { expect(titleInput).toHaveValue("Test"); });
+
+// 4. Use extended timeout for submit assertions
+await user.click(screen.getByRole("button", { name: /add event/i }));
+await waitFor(() => { expect(mockOnSubmit).toHaveBeenCalled(); }, { timeout: 3000 });
+```
+
+**Key Learnings:**
+- E2E test flakiness (PR #38) is different from unit test flakiness - different causes, different fixes
+- Coverage overhead in CI can expose race conditions not visible locally
+- Always wait for form state, not just DOM elements
+
+---
+
+### 5. E2E waitForTimeout Usage
 **Source:** PR #38 Code Review
 **Files:** `e2e/helpers/test-helpers.ts`
 **Status:** Minor smell - acceptable tradeoff
@@ -234,6 +252,8 @@ Types: `src/lib/types/family.ts`
 
 | Item | Sprint | PR | Date |
 |------|--------|----|----|
+| Onboarding Registration Error Handling | Sprint 7 | #40 | Jan 26, 2026 |
+| Unit Test Form Flakiness Fix (async form initialization) | Sprint 7 | #40 | Jan 26, 2026 |
 | Mobile-Chrome E2E Flakiness Fix (safeClick, waitForDialogReady, z-index) | Sprint 7 | #38 | Jan 25, 2026 |
 | Auth Store Test Isolation (unit + E2E test fixes) | Sprint 7 | #35 | Jan 14, 2026 |
 | E2E CI Stability Improvements (timing/hydration) | Sprint 7 | #34 | Jan 8, 2026 |
