@@ -88,20 +88,38 @@ describe("EventForm", () => {
         />,
       );
 
-      // Wait for member button to be visible
-      await screen.findByRole("button", { name: testMembers[0].name });
+      // Wait for member button to be visible AND selected
+      const memberButton = await screen.findByRole("button", {
+        name: testMembers[0].name,
+      });
+      await waitFor(
+        () => {
+          expect(memberButton).toHaveClass("text-white");
+        },
+        { timeout: 3000 },
+      );
 
       // Fill title and submit to verify first member is selected
-      await user.type(screen.getByLabelText(/event name/i), "Test Event");
+      const titleInput = screen.getByLabelText(/event name/i);
+      await user.type(titleInput, "Test Event");
+
+      // Wait for title to be in the input before submitting
+      await waitFor(() => {
+        expect(titleInput).toHaveValue("Test Event");
+      });
+
       await user.click(screen.getByRole("button", { name: /add event/i }));
 
-      await waitFor(() => {
-        expect(mockOnSubmit).toHaveBeenCalledWith(
-          expect.objectContaining({
-            memberId: testMembers[0].id,
-          }),
-        );
-      });
+      await waitFor(
+        () => {
+          expect(mockOnSubmit).toHaveBeenCalledWith(
+            expect.objectContaining({
+              memberId: testMembers[0].id,
+            }),
+          );
+        },
+        { timeout: 3000 },
+      );
     });
   });
 
@@ -260,25 +278,41 @@ describe("EventForm", () => {
         />,
       );
 
-      // Wait for member button to be visible
-      await screen.findByRole("button", { name: testMembers[0].name });
+      // Wait for member button to be visible AND selected
+      const memberButton = await screen.findByRole("button", {
+        name: testMembers[0].name,
+      });
+      await waitFor(
+        () => {
+          expect(memberButton).toHaveClass("text-white");
+        },
+        { timeout: 3000 },
+      );
 
       // Fill in the title
       const titleInput = screen.getByLabelText(/event name/i);
       await user.type(titleInput, "New Team Meeting");
 
+      // Wait for title to be in the input before submitting
+      await waitFor(() => {
+        expect(titleInput).toHaveValue("New Team Meeting");
+      });
+
       // Submit the form
       await user.click(screen.getByRole("button", { name: /add event/i }));
 
-      await waitFor(() => {
-        expect(mockOnSubmit).toHaveBeenCalledTimes(1);
-        expect(mockOnSubmit).toHaveBeenCalledWith(
-          expect.objectContaining({
-            title: "New Team Meeting",
-            memberId: testMembers[0].id,
-          }),
-        );
-      });
+      await waitFor(
+        () => {
+          expect(mockOnSubmit).toHaveBeenCalledTimes(1);
+          expect(mockOnSubmit).toHaveBeenCalledWith(
+            expect.objectContaining({
+              title: "New Team Meeting",
+              memberId: testMembers[0].id,
+            }),
+          );
+        },
+        { timeout: 3000 },
+      );
     });
 
     it("calls onCancel when cancel button is clicked", async () => {
@@ -377,8 +411,16 @@ describe("EventForm", () => {
         />,
       );
 
-      // Wait for member buttons to be visible
-      await screen.findByRole("button", { name: testMembers[0].name });
+      // Wait for first member button to be visible AND selected
+      const firstMember = await screen.findByRole("button", {
+        name: testMembers[0].name,
+      });
+      await waitFor(
+        () => {
+          expect(firstMember).toHaveClass("text-white");
+        },
+        { timeout: 3000 },
+      );
 
       // Click on second member to change selection
       const secondMember = screen.getByRole("button", {
@@ -386,17 +428,36 @@ describe("EventForm", () => {
       });
       await user.click(secondMember);
 
-      // Fill title and submit
-      await user.type(screen.getByLabelText(/event name/i), "Test Event");
+      // Wait for second member to become selected
+      await waitFor(
+        () => {
+          expect(secondMember).toHaveClass("text-white");
+        },
+        { timeout: 3000 },
+      );
+
+      // Fill title
+      const titleInput = screen.getByLabelText(/event name/i);
+      await user.type(titleInput, "Test Event");
+
+      // Wait for title to be in the input before submitting
+      await waitFor(() => {
+        expect(titleInput).toHaveValue("Test Event");
+      });
+
+      // Submit form
       await user.click(screen.getByRole("button", { name: /add event/i }));
 
-      await waitFor(() => {
-        expect(mockOnSubmit).toHaveBeenCalledWith(
-          expect.objectContaining({
-            memberId: testMembers[1].id,
-          }),
-        );
-      });
+      await waitFor(
+        () => {
+          expect(mockOnSubmit).toHaveBeenCalledWith(
+            expect.objectContaining({
+              memberId: testMembers[1].id,
+            }),
+          );
+        },
+        { timeout: 3000 },
+      );
     });
 
     it("displays all family members", () => {
