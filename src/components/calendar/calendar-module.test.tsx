@@ -218,6 +218,11 @@ describe("CalendarModule", () => {
       await user.clear(titleInput);
       await user.type(titleInput, "New Test Event");
 
+      // Wait for title to be in the input before submitting
+      await waitFor(() => {
+        expect(titleInput).toHaveValue("New Test Event");
+      });
+
       // Submit the form (find button within dialog)
       const dialog = screen.getByRole("dialog");
       const submitButton = within(dialog).getByRole("button", {
