@@ -285,6 +285,8 @@ format12hTo24h("4:00 PM") // → "16:00"
 - `format12hTo24h(time)` - Convert "4:00 PM" → "16:00" (for forms)
 - `formatLocalDate(date)` - Date → "yyyy-MM-dd" (local timezone)
 - `parseLocalDate(dateStr)` - "yyyy-MM-dd" → Date at local midnight
+- `getSmartDefaultTimes(now?)` - Smart default start/end times clamped to visible calendar range (6 AM–10 PM), falls back to 9 AM outside that range
+- `CALENDAR_START_HOUR` (6), `CALENDAR_END_HOUR` (22), `DEFAULT_EVENT_HOUR` (9) - Shared visible calendar grid boundaries used by daily/weekly views and smart defaults
 
 ### CI/CD
 
