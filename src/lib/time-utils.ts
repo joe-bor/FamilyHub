@@ -132,6 +132,11 @@ export function getSmartDefaultTimes(now: Date = new Date()): {
     if (roundedMinutes === 60) {
       workingDate.setMinutes(0);
     }
+
+    // After rounding, if we've crossed the boundary, fall back
+    if (workingDate.getHours() >= CALENDAR_END_HOUR) {
+      workingDate.setHours(DEFAULT_EVENT_HOUR, 0, 0, 0);
+    }
   }
 
   // End time = start time + 1 hour
