@@ -424,12 +424,27 @@ describe("time-utils", () => {
       expect(result.endTime).toBe("16:00");
     });
 
-    it("uses current time at 9:59 PM (within visible range)", () => {
+    it("falls back to 9 AM when rounding pushes past visible boundary (9:59 PM)", () => {
       const nineNinePM = new Date(2025, 0, 27, 21, 59, 0); // 9:59 PM
       const result = getSmartDefaultTimes(nineNinePM);
 
-      expect(result.startTime).toBe("22:00"); // Rounded up
-      expect(result.endTime).toBe("23:00");
+      // Rounding 21:59 → 22:00 crosses CALENDAR_END_HOUR, so falls back to 9 AM
+      expect(result.startTime).toBe("09:00");
+      expect(result.endTime).toBe("10:00");
+    });
+
+    it("falls back to 9 AM when rounding 21:46 pushes to 22:00", () => {
+      const result = getSmartDefaultTimes(new Date(2025, 0, 27, 21, 46, 0));
+
+      expect(result.startTime).toBe("09:00");
+      expect(result.endTime).toBe("10:00");
+    });
+
+    it("keeps 21:45 when rounding stays within visible range", () => {
+      const result = getSmartDefaultTimes(new Date(2025, 0, 27, 21, 45, 0));
+
+      expect(result.startTime).toBe("21:45");
+      expect(result.endTime).toBe("22:45");
     });
 
     it("defaults to 9 AM at exactly 10 PM (boundary)", () => {
