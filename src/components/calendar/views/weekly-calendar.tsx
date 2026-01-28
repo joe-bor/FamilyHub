@@ -1,6 +1,10 @@
 import { useMemo, useRef } from "react";
 import { useFamilyMembers } from "@/api";
-import { compareEventsByTime, parseTime } from "@/lib/time-utils";
+import {
+  CALENDAR_START_HOUR,
+  compareEventsByTime,
+  parseTime,
+} from "@/lib/time-utils";
 import { type CalendarEvent, colorMap } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { CalendarEventCard } from "../components/calendar-event";
@@ -23,7 +27,7 @@ interface WeeklyCalendarProps {
 }
 
 const ROW_HEIGHT = 80; // px per hour
-const START_HOUR = 6;
+const START_HOUR = CALENDAR_START_HOUR;
 
 function getEventPosition(startTime: string, endTime: string) {
   const start = parseTime(startTime);
