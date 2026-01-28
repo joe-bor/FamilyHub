@@ -94,3 +94,51 @@ export function formatLocalDate(date: Date): string {
 export function parseLocalDate(dateStr: string): Date {
   return startOfDay(parseISO(dateStr));
 }
+
+/**
+ * Calendar grid visible hours constants.
+ * These match the weekly/daily view rendering boundaries.
+ */
+export const CALENDAR_START_HOUR = 6; // 6 AM
+export const CALENDAR_END_HOUR = 22; // 10 PM (leaves room for 1hr event before 11 PM)
+export const DEFAULT_EVENT_HOUR = 9; // Fallback when outside visible range
+
+/**
+ * Get a smart default time for new events.
+ * - If current time is within visible calendar hours (6 AM - 10 PM), rounds up to next 15-min slot
+ * - If current time is outside visible hours, defaults to 9 AM
+ * - Returns start and end times (1 hour duration)
+ *
+ * @param now - The current time (default: new Date())
+ * @returns Object with startTime and endTime in "HH:mm" format
+ */
+export function getSmartDefaultTimes(now: Date = new Date()): {
+  startTime: string;
+  endTime: string;
+} {
+  const workingDate = new Date(now);
+  const currentHour = workingDate.getHours();
+
+  if (currentHour < CALENDAR_START_HOUR || currentHour >= CALENDAR_END_HOUR) {
+    // Outside visible hours - default to 9 AM
+    workingDate.setHours(DEFAULT_EVENT_HOUR, 0, 0, 0);
+  } else {
+    // Within visible hours - round up to next 15-min interval
+    const minutes = workingDate.getMinutes();
+    const roundedMinutes = Math.ceil(minutes / 15) * 15;
+    workingDate.setMinutes(roundedMinutes, 0, 0);
+
+    // If we rounded to 60, the hour increments automatically
+    if (roundedMinutes === 60) {
+      workingDate.setMinutes(0);
+    }
+  }
+
+  // End time = start time + 1 hour
+  const endDate = new Date(workingDate.getTime() + 60 * 60 * 1000);
+
+  return {
+    startTime: format(workingDate, "HH:mm"),
+    endTime: format(endDate, "HH:mm"),
+  };
+}
