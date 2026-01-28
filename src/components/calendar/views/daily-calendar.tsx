@@ -1,6 +1,7 @@
 import { useMemo, useRef } from "react";
 import { useFamilyMembers } from "@/api";
 import {
+  CALENDAR_START_HOUR,
   compareEventsByTime,
   getTimeInMinutes,
   parseTime,
@@ -26,7 +27,7 @@ interface DailyCalendarProps {
   isViewingToday: boolean;
 }
 
-const START_HOUR = 6;
+const START_HOUR = CALENDAR_START_HOUR;
 const ROW_HEIGHT = 80; // px per hour
 
 function getEventGridPosition(startTime: string, endTime: string) {
