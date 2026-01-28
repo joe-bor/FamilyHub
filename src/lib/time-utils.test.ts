@@ -1,9 +1,13 @@
 import { describe, expect, it } from "vitest";
 import {
+  CALENDAR_END_HOUR,
+  CALENDAR_START_HOUR,
   compareEventsByTime,
+  DEFAULT_EVENT_HOUR,
   format12hTo24h,
   format24hTo12h,
   formatLocalDate,
+  getSmartDefaultTimes,
   getTimeInMinutes,
   parseLocalDate,
   parseTime,
@@ -360,6 +364,124 @@ describe("time-utils", () => {
       expect(leapDay.getFullYear()).toBe(2024);
       expect(leapDay.getMonth()).toBe(1); // February
       expect(leapDay.getDate()).toBe(29);
+    });
+  });
+
+  describe("getSmartDefaultTimes", () => {
+    it("defaults to 9 AM when current time is before 6 AM", () => {
+      const earlyMorning = new Date(2025, 0, 27, 4, 30, 0); // 4:30 AM
+      const result = getSmartDefaultTimes(earlyMorning);
+
+      expect(result.startTime).toBe("09:00");
+      expect(result.endTime).toBe("10:00");
+    });
+
+    it("defaults to 9 AM at exactly 5:59 AM", () => {
+      const justBeforeSix = new Date(2025, 0, 27, 5, 59, 0); // 5:59 AM
+      const result = getSmartDefaultTimes(justBeforeSix);
+
+      expect(result.startTime).toBe("09:00");
+      expect(result.endTime).toBe("10:00");
+    });
+
+    it("uses current time at exactly 6 AM (boundary)", () => {
+      const sixAM = new Date(2025, 0, 27, 6, 0, 0); // 6:00 AM
+      const result = getSmartDefaultTimes(sixAM);
+
+      expect(result.startTime).toBe("06:00");
+      expect(result.endTime).toBe("07:00");
+    });
+
+    it("uses current time at 6:10 AM rounded up to 6:15", () => {
+      const sixTen = new Date(2025, 0, 27, 6, 10, 0); // 6:10 AM
+      const result = getSmartDefaultTimes(sixTen);
+
+      expect(result.startTime).toBe("06:15");
+      expect(result.endTime).toBe("07:15");
+    });
+
+    it("rounds up to next 15-min slot during visible hours", () => {
+      const afternoon = new Date(2025, 0, 27, 14, 23, 0); // 2:23 PM
+      const result = getSmartDefaultTimes(afternoon);
+
+      expect(result.startTime).toBe("14:30"); // Rounded up from :23
+      expect(result.endTime).toBe("15:30");
+    });
+
+    it("keeps time unchanged when already on 15-min boundary", () => {
+      const onBoundary = new Date(2025, 0, 27, 10, 45, 0); // 10:45 AM
+      const result = getSmartDefaultTimes(onBoundary);
+
+      expect(result.startTime).toBe("10:45");
+      expect(result.endTime).toBe("11:45");
+    });
+
+    it("handles rounding to next hour correctly", () => {
+      const nearHour = new Date(2025, 0, 27, 14, 46, 0); // 2:46 PM
+      const result = getSmartDefaultTimes(nearHour);
+
+      expect(result.startTime).toBe("15:00"); // Rounds to 3:00 PM
+      expect(result.endTime).toBe("16:00");
+    });
+
+    it("uses current time at 9:59 PM (within visible range)", () => {
+      const nineNinePM = new Date(2025, 0, 27, 21, 59, 0); // 9:59 PM
+      const result = getSmartDefaultTimes(nineNinePM);
+
+      expect(result.startTime).toBe("22:00"); // Rounded up
+      expect(result.endTime).toBe("23:00");
+    });
+
+    it("defaults to 9 AM at exactly 10 PM (boundary)", () => {
+      const tenPM = new Date(2025, 0, 27, 22, 0, 0); // 10:00 PM
+      const result = getSmartDefaultTimes(tenPM);
+
+      expect(result.startTime).toBe("09:00");
+      expect(result.endTime).toBe("10:00");
+    });
+
+    it("defaults to 9 AM late at night (11 PM)", () => {
+      const lateNight = new Date(2025, 0, 27, 23, 15, 0); // 11:15 PM
+      const result = getSmartDefaultTimes(lateNight);
+
+      expect(result.startTime).toBe("09:00");
+      expect(result.endTime).toBe("10:00");
+    });
+
+    it("defaults to 9 AM at midnight", () => {
+      const midnight = new Date(2025, 0, 27, 0, 0, 0); // 12:00 AM
+      const result = getSmartDefaultTimes(midnight);
+
+      expect(result.startTime).toBe("09:00");
+      expect(result.endTime).toBe("10:00");
+    });
+
+    it("end time is always 1 hour after start time", () => {
+      const times = [
+        new Date(2025, 0, 27, 4, 0, 0), // Outside visible (defaults to 9 AM)
+        new Date(2025, 0, 27, 8, 30, 0), // Within visible
+        new Date(2025, 0, 27, 15, 0, 0), // Within visible
+        new Date(2025, 0, 27, 23, 0, 0), // Outside visible (defaults to 9 AM)
+      ];
+
+      for (const time of times) {
+        const result = getSmartDefaultTimes(time);
+        const startHour = Number.parseInt(result.startTime.split(":")[0], 10);
+        const startMin = Number.parseInt(result.startTime.split(":")[1], 10);
+        const endHour = Number.parseInt(result.endTime.split(":")[0], 10);
+        const endMin = Number.parseInt(result.endTime.split(":")[1], 10);
+
+        const startTotalMins = startHour * 60 + startMin;
+        const endTotalMins = endHour * 60 + endMin;
+
+        expect(endTotalMins - startTotalMins).toBe(60);
+      }
+    });
+
+    it("exports correct constants", () => {
+      expect(CALENDAR_START_HOUR).toBe(6);
+      expect(CALENDAR_END_HOUR).toBe(22);
+      expect(DEFAULT_EVENT_HOUR).toBe(9);
     });
   });
 
