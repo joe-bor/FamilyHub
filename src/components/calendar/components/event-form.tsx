@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { MemberSelector } from "@/components/ui/member-selector";
 import { TimePicker } from "@/components/ui/time-picker";
-import { parseLocalDate } from "@/lib/time-utils";
+import { getSmartDefaultTimes, parseLocalDate } from "@/lib/time-utils";
 import { cn } from "@/lib/utils";
 import { type EventFormData, eventFormSchema } from "@/lib/validations";
 
@@ -34,31 +34,18 @@ function EventForm({
   /**
    * Get smart defaults for add mode
    * - Date: today
-   * - Start time: next 15-min slot
+   * - Start time: next 15-min slot (clamped to visible calendar hours)
    * - End time: 1 hour after start
    * - Member: first family member
    */
   const getAddModeDefaults = useMemo((): Partial<EventFormData> => {
-    const now = new Date();
-
-    // Round up to next 15-min interval (e.g., 9:23 -> 9:30)
-    const minutes = now.getMinutes();
-    const roundedMinutes = Math.ceil(minutes / 15) * 15;
-    now.setMinutes(roundedMinutes, 0, 0);
-
-    // If we rounded to 60, the hour increments automatically
-    if (roundedMinutes === 60) {
-      now.setMinutes(0);
-    }
-
-    // End time = start time + 1 hour
-    const endTime = new Date(now.getTime() + 60 * 60 * 1000);
+    const { startTime, endTime } = getSmartDefaultTimes();
 
     return {
       title: "",
       date: format(new Date(), "yyyy-MM-dd"),
-      startTime: format(now, "HH:mm"),
-      endTime: format(endTime, "HH:mm"),
+      startTime,
+      endTime,
       memberId: familyMembers[0]?.id ?? "",
     };
   }, [familyMembers]);
