@@ -3,6 +3,8 @@
 [![CI](https://github.com/joe-bor/FamilyHub/actions/workflows/ci.yml/badge.svg)](https://github.com/joe-bor/FamilyHub/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
+**[Live Demo](https://familyhub.joe-bor.me/)** · Try it out
+
 <p align="center">
   <img src="docs/screenshots/calendar-weekly.png" alt="Weekly calendar view with color-coded family events" width="800">
 </p>
