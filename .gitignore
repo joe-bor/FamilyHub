@@ -26,3 +26,6 @@ dist-ssr
 # Playwright
 playwright-report/
 test-results/
+
+# Personal learning notes
+docs/VERSIONING-WALKTHROUGH.md
