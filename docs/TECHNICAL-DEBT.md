@@ -8,25 +8,7 @@ This document tracks known technical debt, deferred improvements, and future enh
 
 ## High Priority (Address Soon)
 
-### 1. Outdated TODO Comments in use-family.ts
-**Source:** PR #32 Code Review
-**Files:** `src/api/hooks/use-family.ts`
-**Status:** Quick fix
-
-**Problem:**
-Lines 286-287 and 437-438 contain outdated TODO comments:
-```typescript
-* TODO: Wire up to FamilySettingsModal "Add Member" button when UI is implemented.
-* TODO: Wire up to FamilySettingsModal member deletion when UI is implemented.
-```
-
-These features ARE already wired up in `family-settings-modal.tsx`. The comments should be removed.
-
-**Fix:** Remove the outdated TODO comments.
-
----
-
-### 2. Missing Family Mutation Tests
+### 1. Missing Family Mutation Tests
 **Source:** PR #32 Code Review
 **Files:** `src/api/hooks/use-family.test.tsx`
 **Status:** Should add for completeness
@@ -230,6 +212,7 @@ Types: `src/lib/types/family.ts`
 
 | Item | Sprint | PR | Date |
 |------|--------|----|----|
+| Outdated TODO Comments in use-family.ts | - | - | Jan 29, 2026 |
 | CI Flakiness Remediation (test helpers + documentation) | Sprint 7 | #41 | Jan 27, 2026 |
 | Onboarding Registration Error Handling | Sprint 7 | #40 | Jan 26, 2026 |
 | Unit Test Form Flakiness Fix (async form initialization) | Sprint 7 | #40 | Jan 26, 2026 |
