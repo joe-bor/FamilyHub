@@ -292,6 +292,29 @@ format12hTo24h("4:00 PM") // → "16:00"
 
 GitHub Actions runs lint, tests, E2E tests, and build on all PRs (`.github/workflows/ci.yml`).
 
+### Versioning & Releases
+
+**Automated via [release-please](https://github.com/googleapis/release-please)** — triggered on push to `main`.
+
+**How it works:**
+1. Push/merge to `main` → release-please analyzes commits since last release
+2. Creates/updates a Release PR with version bump + CHANGELOG
+3. Merge the Release PR → GitHub Release created with tag `vX.Y.Z`
+
+**Version bumps** (pre-1.0.0):
+| Commit Type | Bump | Example |
+|-------------|------|---------|
+| `feat:` | minor | 0.2.0 → 0.3.0 |
+| `fix:`, `perf:`, `docs:` | patch | 0.2.0 → 0.2.1 |
+| `chore:`, `build:`, `ci:` | none | no release triggered |
+
+**Important:** Use **regular merge commits** (not squash) so release-please sees individual `feat:`/`fix:` commits. If squashing, ensure the squash commit message uses conventional format.
+
+**Config files:**
+- `.github/workflows/release.yml` — The GitHub Action
+- `release-please-config.json` — CHANGELOG sections, versioning rules
+- `.release-please-manifest.json` — Tracks current version
+
 ### Testing
 
 **Stack:** Vitest + Testing Library for unit/integration tests, Playwright for E2E tests.
