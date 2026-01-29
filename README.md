@@ -1,44 +1,63 @@
 # FamilyHub
 
 [![CI](https://github.com/joe-bor/FamilyHub/actions/workflows/ci.yml/badge.svg)](https://github.com/joe-bor/FamilyHub/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-A modern family dashboard for managing calendars, meals, chores, and more. Designed for touchscreen displays with mobile PWA support.
+<!-- ![Weekly calendar view](docs/screenshots/calendar-weekly.png) -->
+
+A family dashboard I'm building to organize our household — calendars, chores, meals, and more. Built with React 19 and designed for our kitchen tablet, but works great on phones too.
+
+## What It Does
+
+<!-- ![Mobile home dashboard](docs/screenshots/mobile-home.png) -->
+
+- **Calendar** — Four views (daily, weekly, monthly, schedule list), color-coded by family member, full CRUD operations
+- **Family Management** — Onboarding flow with member profiles and color assignment
+- **PWA** — Installable on any device, offline support coming soon
+- **More modules** — Chores, Meals, Lists, Photos (UI ready, backend coming)
 
 ## Quick Start
 
 ```bash
-npm install      # Install dependencies
-npm run dev      # Start dev server at localhost:5173
-npm run build    # Type-check and build for production
+npm install
+npm run dev      # localhost:5173
 ```
+
+For all available commands, see the Commands section in [CLAUDE.md](CLAUDE.md).
 
 ## Tech Stack
 
-- **React 19** + TypeScript + Vite
-- **TanStack Query** (server state) + **Zustand** (UI state)
-- **Tailwind CSS v4** + shadcn/ui components
-- **date-fns** for date handling
+Why I chose what I chose:
+
+- **React 19** + TypeScript + Vite — Fast dev experience, modern features
+- **TanStack Query** + **Zustand** — Server state and UI state, cleanly separated
+- **Tailwind CSS v4** + shadcn/ui — Beautiful, consistent styling
+- **Vitest** + **Playwright** — Comprehensive testing (390+ tests)
 
 ## Current Status
 
-**Phase 1B: Calendar Frontend Polish** - Sprint 5 complete (Family onboarding, responsive design, PWA)
+**v0.2.0** — Calendar is feature-complete with mock API. Ready for backend integration.
 
-See [ROADMAP.md](docs/ROADMAP.md) for sprint checklists and future plans.
+| Module   | Status           |
+| -------- | ---------------- |
+| Calendar | ✅ Complete      |
+| Chores   | 🎨 UI ready      |
+| Meals    | 🎨 UI ready      |
+| Lists    | 🎨 UI ready      |
+| Photos   | 🎨 UI ready      |
+
+See [ROADMAP.md](docs/ROADMAP.md) for the full journey and what's next.
+
+## Why I Built This
+
+This is a personal project — something useful for my family and a playground for learning modern frontend patterns. The goal is a working app on our kitchen tablet.
+
+Building is fun. Shipping is better.
 
 ## Architecture
 
-See [CLAUDE.md](CLAUDE.md) for detailed architecture, patterns, and code conventions.
-
-## Modules
-
-| Module | Status |
-|--------|--------|
-| Calendar | ✅ Feature complete (mock API) |
-| Chores | 🎨 UI prototype |
-| Meals | 🎨 UI prototype |
-| Lists | 🎨 UI prototype |
-| Photos | 🎨 UI prototype |
+See [CLAUDE.md](CLAUDE.md) for the deep dive on patterns, state management, testing strategies, and code conventions.
 
 ## License
 
-Private project - All rights reserved
+[MIT](LICENSE) — do whatever you want with it.
