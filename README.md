@@ -22,6 +22,11 @@ A family dashboard I'm building to organize our household — calendars, chores,
 - **PWA** — Installable on any device, offline support coming soon
 - **More modules** — Chores, Meals, Lists, Photos (UI ready, backend coming)
 
+## Prerequisites
+
+- Node.js 20.19+ or 22.12+
+- npm
+
 ## Quick Start
 
 ```bash
@@ -29,7 +34,12 @@ npm install
 npm run dev      # localhost:5173
 ```
 
-For all available commands, see the Commands section in [CLAUDE.md](CLAUDE.md).
+## Testing
+
+```bash
+npm test              # Unit tests (watch mode)
+npm run test:e2e      # Playwright E2E tests
+```
 
 ## Tech Stack
 
