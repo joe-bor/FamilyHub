@@ -3,13 +3,17 @@
 [![CI](https://github.com/joe-bor/FamilyHub/actions/workflows/ci.yml/badge.svg)](https://github.com/joe-bor/FamilyHub/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-<!-- ![Weekly calendar view](docs/screenshots/calendar-weekly.png) -->
+<p align="center">
+  <img src="docs/screenshots/calendar-weekly.png" alt="Weekly calendar view with color-coded family events" width="800">
+</p>
 
 A family dashboard I'm building to organize our household — calendars, chores, meals, and more. Built with React 19 and designed for our kitchen tablet, but works great on phones too.
 
 ## What It Does
 
-<!-- ![Mobile home dashboard](docs/screenshots/mobile-home.png) -->
+<p align="center">
+  <img src="docs/screenshots/mobile-home.png" alt="Mobile home dashboard" width="300">
+</p>
 
 - **Calendar** — Four views (daily, weekly, monthly, schedule list), color-coded by family member, full CRUD operations
 - **Family Management** — Onboarding flow with member profiles and color assignment
