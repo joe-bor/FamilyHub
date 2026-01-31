@@ -64,7 +64,7 @@ This repository uses Husky with pre-commit hooks that run lint-staged for code q
 
 ### Secret Scanning
 
-This repository uses GitHub Push Protection (free for public repos), which blocks pushes containing detected secrets before they reach the repo. Enable in Settings → Code security → Secret scanning.
+This repository has GitHub Secret Scanning and Push Protection enabled, which automatically blocks pushes containing detected secrets (API keys, tokens, credentials) before they reach the repo.
 
 ### Code Review Checklist
 
