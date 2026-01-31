@@ -41,6 +41,8 @@ Sensitive configuration is managed through environment variables:
 - API URLs and feature flags configured via `VITE_*` variables
 - See `.env.example` for required variables
 
+> **Warning:** Any variable prefixed with `VITE_` is embedded into the client bundle and exposed to users. Never place secrets (API keys, private tokens, database credentials) in `VITE_*` variables.
+
 ### Dependencies
 
 - Regular dependency audits via `npm audit`
@@ -62,7 +64,7 @@ This repository uses Husky with pre-commit hooks that run lint-staged for code q
 
 ### Secret Scanning
 
-GitHub Push Protection is enabled on this repository, which automatically blocks pushes containing detected secrets (API keys, tokens, passwords, etc.) before they reach the repo.
+This repository uses GitHub Push Protection (free for public repos), which blocks pushes containing detected secrets before they reach the repo. Enable in Settings → Code security → Secret scanning.
 
 ### Code Review Checklist
 
