@@ -58,21 +58,11 @@ Sensitive configuration is managed through environment variables:
 
 ### Pre-commit Hooks
 
-This repository uses Husky with pre-commit hooks that:
+This repository uses Husky with pre-commit hooks that run lint-staged for code quality.
 
-- Run lint-staged for code quality
-- (Optional) Scan for secrets if `git-secrets` is installed
+### Secret Scanning
 
-To enable secret scanning locally:
-
-```bash
-# Install git-secrets (macOS)
-brew install git-secrets
-
-# Configure patterns
-git secrets --install
-git secrets --register-aws
-```
+GitHub Push Protection is enabled on this repository, which automatically blocks pushes containing detected secrets (API keys, tokens, passwords, etc.) before they reach the repo.
 
 ### Code Review Checklist
 

@@ -1,8 +1,1 @@
-# Run lint-staged for code quality
 npx lint-staged
-
-# Optional: Scan for secrets if git-secrets is installed
-# Install with: brew install git-secrets && git secrets --install && git secrets --register-aws
-if command -v git-secrets &> /dev/null; then
-  git secrets --pre_commit_hook -- "$@"
-fi
