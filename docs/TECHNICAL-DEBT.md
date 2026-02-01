@@ -1,6 +1,6 @@
 # Technical Debt & Deferred Improvements
 
-**Last Updated:** January 27, 2026
+**Last Updated:** February 1, 2026
 
 This document tracks known technical debt, deferred improvements, and future enhancements identified during code reviews. Items are prioritized and linked to relevant sprints.
 
@@ -8,26 +8,7 @@ This document tracks known technical debt, deferred improvements, and future enh
 
 ## High Priority (Address Soon)
 
-### 1. Missing Family Mutation Tests
-**Source:** PR #32 Code Review
-**Files:** `src/api/hooks/use-family.test.tsx`
-**Status:** Should add for completeness
-
-**Problem:**
-The test file (372 lines) only tests read operations:
-- ✅ Selectors tested (`useFamilyData`, `useFamilyMembers`, etc.)
-- ✅ Memoization tested (`useFamilyMemberMap`, `useUnusedColors`)
-- ❌ `useCreateFamily` not tested
-- ❌ `useAddMember` not tested
-- ❌ Optimistic updates not tested
-- ❌ Rollback on error not tested
-
-**Suggested Fix:**
-Add mutation tests covering:
-- Successful mutations update query cache
-- Optimistic updates show immediately
-- Rollback restores previous state on error
-- localStorage write-through works
+_No high priority items at this time._
 
 ---
 
@@ -212,6 +193,7 @@ Types: `src/lib/types/family.ts`
 
 | Item | Sprint | PR | Date |
 |------|--------|----|----|
+| Family Mutation Tests (optimistic updates, rollback, useUpdateMember, useDeleteFamily) | - | - | Feb 1, 2026 |
 | Outdated TODO Comments in use-family.ts | - | - | Jan 29, 2026 |
 | CI Flakiness Remediation (test helpers + documentation) | Sprint 7 | #41 | Jan 27, 2026 |
 | Onboarding Registration Error Handling | Sprint 7 | #40 | Jan 26, 2026 |
