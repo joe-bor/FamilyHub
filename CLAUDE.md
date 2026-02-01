@@ -549,3 +549,66 @@ it("submits form correctly", async () => {
 - jest-dom matchers available globally (`toBeInTheDocument`, etc.)
 - `noFocusedTests` Biome rule prevents `.only`/`.skip` in commits
 - E2E tests must call `seedAuth(page)` after `clearStorage(page)` to bypass the login screen
+
+**Mutation Hook Testing (Optimistic Updates & Rollback):**
+
+When testing TanStack Query mutations that use optimistic updates or rollback behavior, you must use a dedicated QueryClient with `gcTime: Infinity`. The default test QueryClient uses `gcTime: 0` which causes cache data to be garbage collected immediately after queries become inactive, breaking assertions on cache state.
+
+```typescript
+describe("optimistic updates", () => {
+  // ❌ BAD: Using shared queryClient with gcTime: 0
+  // Cache data is garbage collected before assertions run
+
+  // ✅ GOOD: Dedicated QueryClient with gcTime: Infinity
+  let testQueryClient: QueryClient;
+
+  function createTestWrapper() {
+    return function Wrapper({ children }: { children: ReactNode }) {
+      return (
+        <QueryClientProvider client={testQueryClient}>
+          {children}
+        </QueryClientProvider>
+      );
+    };
+  }
+
+  beforeEach(() => {
+    testQueryClient = new QueryClient({
+      defaultOptions: {
+        queries: { retry: false, gcTime: Infinity, staleTime: Infinity },
+        mutations: { retry: false },
+      },
+    });
+    // Seed query cache with initial data
+    testQueryClient.setQueryData(queryKeys.data(), { data: testData });
+  });
+
+  afterEach(() => {
+    testQueryClient.clear();
+  });
+
+  it("updates cache optimistically", async () => {
+    const { result } = renderHook(() => useMyMutation(), {
+      wrapper: createTestWrapper(),
+    });
+
+    result.current.mutate({ name: "New Name" });
+
+    await waitFor(() => {
+      expect(result.current.isSuccess).toBe(true);
+    });
+
+    // Cache assertions now work because gcTime: Infinity prevents GC
+    const cached = testQueryClient.getQueryData(queryKeys.data());
+    expect(cached?.data?.name).toBe("New Name");
+  });
+});
+```
+
+**When to use dedicated QueryClient with gcTime: Infinity:**
+- Testing optimistic update behavior (cache state during/after mutation)
+- Testing rollback on error (cache restoration after server error)
+- Testing cache invalidation patterns
+- Any test that asserts on query cache state after mutations
+
+See `src/api/hooks/use-family.test.tsx` for complete examples.
