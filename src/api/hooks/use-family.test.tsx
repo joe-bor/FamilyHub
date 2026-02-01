@@ -1,5 +1,6 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { renderHook, waitFor } from "@testing-library/react";
+import { HttpResponse, http } from "msw";
 import type { ReactNode } from "react";
 import {
   afterAll,
@@ -20,6 +21,7 @@ import {
   readFamilyFromStorage,
   useAddMember,
   useCreateFamily,
+  useDeleteFamily,
   useFamily,
   useFamilyData,
   useFamilyMemberById,
@@ -30,6 +32,7 @@ import {
   useSetupComplete,
   useUnusedColors,
   useUpdateFamily,
+  useUpdateMember,
 } from "./use-family";
 
 // ============================================================================
@@ -596,5 +599,376 @@ describe("useRemoveMember", () => {
         (m: FamilyMember) => m.id === "member-1",
       ),
     ).toBe(false);
+  });
+});
+
+describe("useUpdateMember", () => {
+  beforeEach(() => {
+    seedMockFamily(testFamily);
+    queryClient.setQueryData<FamilyApiResponse>(familyKeys.family(), {
+      data: testFamily,
+    });
+  });
+
+  it("updates a member successfully", async () => {
+    const onSuccess = vi.fn();
+    const { result } = renderHook(() => useUpdateMember({ onSuccess }), {
+      wrapper: createWrapper(),
+    });
+
+    result.current.mutate({ id: "member-1", name: "Alice Updated" });
+
+    await waitFor(() => {
+      expect(result.current.isSuccess).toBe(true);
+    });
+
+    expect(onSuccess).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          id: "member-1",
+          name: "Alice Updated",
+        }),
+      }),
+    );
+  });
+
+  it("updates localStorage after member update", async () => {
+    const { result } = renderHook(() => useUpdateMember(), {
+      wrapper: createWrapper(),
+    });
+
+    result.current.mutate({ id: "member-1", color: "purple" });
+
+    await waitFor(() => {
+      expect(result.current.isSuccess).toBe(true);
+    });
+
+    const stored = localStorage.getItem(FAMILY_STORAGE_KEY);
+    const parsed = JSON.parse(stored!);
+    const updatedMember = parsed.state.family.members.find(
+      (m: FamilyMember) => m.id === "member-1",
+    );
+    expect(updatedMember.color).toBe("purple");
+  });
+});
+
+describe("useDeleteFamily", () => {
+  // Use separate queryClient with longer gcTime
+  let deleteQueryClient: QueryClient;
+
+  function createDeleteWrapper() {
+    return function Wrapper({ children }: { children: ReactNode }) {
+      return (
+        <QueryClientProvider client={deleteQueryClient}>
+          {children}
+        </QueryClientProvider>
+      );
+    };
+  }
+
+  beforeEach(() => {
+    deleteQueryClient = new QueryClient({
+      defaultOptions: {
+        queries: { retry: false, gcTime: Infinity, staleTime: Infinity },
+        mutations: { retry: false },
+      },
+    });
+    seedMockFamily(testFamily);
+    deleteQueryClient.setQueryData<FamilyApiResponse>(familyKeys.family(), {
+      data: testFamily,
+    });
+    // Also seed localStorage
+    const stored = {
+      state: { family: testFamily, _hasHydrated: true },
+      version: 0,
+    };
+    localStorage.setItem(FAMILY_STORAGE_KEY, JSON.stringify(stored));
+  });
+
+  afterEach(() => {
+    deleteQueryClient.clear();
+  });
+
+  it("clears family from query cache on success", async () => {
+    const onSuccess = vi.fn();
+    const { result } = renderHook(() => useDeleteFamily({ onSuccess }), {
+      wrapper: createDeleteWrapper(),
+    });
+
+    result.current.mutate();
+
+    await waitFor(() => {
+      expect(result.current.isSuccess).toBe(true);
+    });
+
+    expect(onSuccess).toHaveBeenCalled();
+
+    const data = deleteQueryClient.getQueryData<FamilyApiResponse>(
+      familyKeys.family(),
+    );
+    expect(data?.data).toBeNull();
+  });
+
+  it("clears localStorage on success", async () => {
+    const { result } = renderHook(() => useDeleteFamily(), {
+      wrapper: createDeleteWrapper(),
+    });
+
+    result.current.mutate();
+
+    await waitFor(() => {
+      expect(result.current.isSuccess).toBe(true);
+    });
+
+    const stored = localStorage.getItem(FAMILY_STORAGE_KEY);
+    expect(stored).toBeNull();
+  });
+});
+
+// ============================================================================
+// Optimistic Update Tests
+// ============================================================================
+
+describe("optimistic updates", () => {
+  // Use separate queryClient with longer gcTime for optimistic update tests
+  let optimisticQueryClient: QueryClient;
+
+  function createOptimisticWrapper() {
+    return function Wrapper({ children }: { children: ReactNode }) {
+      return (
+        <QueryClientProvider client={optimisticQueryClient}>
+          {children}
+        </QueryClientProvider>
+      );
+    };
+  }
+
+  beforeEach(() => {
+    optimisticQueryClient = new QueryClient({
+      defaultOptions: {
+        queries: { retry: false, gcTime: Infinity, staleTime: Infinity },
+        mutations: { retry: false },
+      },
+    });
+    seedMockFamily(testFamily);
+    optimisticQueryClient.setQueryData<FamilyApiResponse>(familyKeys.family(), {
+      data: testFamily,
+    });
+  });
+
+  afterEach(() => {
+    optimisticQueryClient.clear();
+  });
+
+  it("useUpdateFamily updates cache optimistically and completes successfully", async () => {
+    const { result } = renderHook(() => useUpdateFamily(), {
+      wrapper: createOptimisticWrapper(),
+    });
+
+    result.current.mutate({ name: "Optimistic Name" });
+
+    // Wait for mutation to complete - cache should have optimistic value
+    await waitFor(() => {
+      expect(result.current.isSuccess).toBe(true);
+    });
+
+    const cached = optimisticQueryClient.getQueryData<FamilyApiResponse>(
+      familyKeys.family(),
+    );
+    expect(cached?.data?.name).toBe("Optimistic Name");
+  });
+
+  it("useAddMember adds member and replaces temp ID on success", async () => {
+    const { result } = renderHook(() => useAddMember(), {
+      wrapper: createOptimisticWrapper(),
+    });
+
+    result.current.mutate({ name: "Temp Member", color: "green" });
+
+    // After success, temp ID should be replaced with real ID
+    await waitFor(() => {
+      expect(result.current.isSuccess).toBe(true);
+    });
+
+    const cached = optimisticQueryClient.getQueryData<FamilyApiResponse>(
+      familyKeys.family(),
+    );
+    // Should have 3 members now (original 2 + 1 new)
+    expect(cached?.data?.members).toHaveLength(3);
+    // No temp IDs should remain
+    expect(cached?.data?.members.some((m) => m.id.startsWith("temp-"))).toBe(
+      false,
+    );
+    // New member should exist
+    expect(cached?.data?.members.some((m) => m.name === "Temp Member")).toBe(
+      true,
+    );
+  });
+
+  it("useRemoveMember removes member from cache", async () => {
+    const { result } = renderHook(() => useRemoveMember(), {
+      wrapper: createOptimisticWrapper(),
+    });
+
+    result.current.mutate("member-1");
+
+    await waitFor(() => {
+      expect(result.current.isSuccess).toBe(true);
+    });
+
+    const cached = optimisticQueryClient.getQueryData<FamilyApiResponse>(
+      familyKeys.family(),
+    );
+    expect(
+      cached?.data?.members.find((m) => m.id === "member-1"),
+    ).toBeUndefined();
+    expect(cached?.data?.members).toHaveLength(1);
+  });
+});
+
+// ============================================================================
+// Rollback on Error Tests
+// ============================================================================
+
+describe("rollback on error", () => {
+  // Use separate queryClient with longer gcTime for rollback tests
+  let rollbackQueryClient: QueryClient;
+
+  function createRollbackWrapper() {
+    return function Wrapper({ children }: { children: ReactNode }) {
+      return (
+        <QueryClientProvider client={rollbackQueryClient}>
+          {children}
+        </QueryClientProvider>
+      );
+    };
+  }
+
+  beforeEach(() => {
+    rollbackQueryClient = new QueryClient({
+      defaultOptions: {
+        queries: { retry: false, gcTime: Infinity, staleTime: Infinity },
+        mutations: { retry: false },
+      },
+    });
+    seedMockFamily(testFamily);
+    rollbackQueryClient.setQueryData<FamilyApiResponse>(familyKeys.family(), {
+      data: testFamily,
+    });
+  });
+
+  afterEach(() => {
+    rollbackQueryClient.clear();
+  });
+
+  it("useUpdateFamily restores previous state on server error", async () => {
+    // Override handler to return error
+    server.use(
+      http.patch("http://localhost:3000/family", () => {
+        return HttpResponse.json({ message: "Server error" }, { status: 500 });
+      }),
+    );
+
+    const onError = vi.fn();
+    const { result } = renderHook(() => useUpdateFamily({ onError }), {
+      wrapper: createRollbackWrapper(),
+    });
+
+    result.current.mutate({ name: "Should Rollback" });
+
+    await waitFor(() => {
+      expect(result.current.isError).toBe(true);
+    });
+
+    // Verify rollback to original value
+    const cached = rollbackQueryClient.getQueryData<FamilyApiResponse>(
+      familyKeys.family(),
+    );
+    expect(cached?.data?.name).toBe("Test Family");
+    expect(onError).toHaveBeenCalled();
+  });
+
+  it("useAddMember removes optimistic member on server error", async () => {
+    server.use(
+      http.post("http://localhost:3000/family/members", () => {
+        return HttpResponse.json({ message: "Server error" }, { status: 500 });
+      }),
+    );
+
+    const onError = vi.fn();
+    const { result } = renderHook(() => useAddMember({ onError }), {
+      wrapper: createRollbackWrapper(),
+    });
+
+    result.current.mutate({ name: "Failed Member", color: "green" });
+
+    await waitFor(() => {
+      expect(result.current.isError).toBe(true);
+    });
+
+    // Verify optimistic member was removed
+    const cached = rollbackQueryClient.getQueryData<FamilyApiResponse>(
+      familyKeys.family(),
+    );
+    expect(cached?.data?.members).toHaveLength(2); // Original count
+    expect(
+      cached?.data?.members.find((m) => m.name === "Failed Member"),
+    ).toBeUndefined();
+    expect(onError).toHaveBeenCalled();
+  });
+
+  it("useRemoveMember restores member on server error", async () => {
+    server.use(
+      http.delete("http://localhost:3000/family/members/:id", () => {
+        return HttpResponse.json({ message: "Server error" }, { status: 500 });
+      }),
+    );
+
+    const onError = vi.fn();
+    const { result } = renderHook(() => useRemoveMember({ onError }), {
+      wrapper: createRollbackWrapper(),
+    });
+
+    result.current.mutate("member-1");
+
+    await waitFor(() => {
+      expect(result.current.isError).toBe(true);
+    });
+
+    // Verify member was restored
+    const cached = rollbackQueryClient.getQueryData<FamilyApiResponse>(
+      familyKeys.family(),
+    );
+    expect(
+      cached?.data?.members.find((m) => m.id === "member-1"),
+    ).toBeDefined();
+    expect(onError).toHaveBeenCalled();
+  });
+
+  it("useUpdateMember restores original member data on server error", async () => {
+    server.use(
+      http.patch("http://localhost:3000/family/members/:id", () => {
+        return HttpResponse.json({ message: "Server error" }, { status: 500 });
+      }),
+    );
+
+    const onError = vi.fn();
+    const { result } = renderHook(() => useUpdateMember({ onError }), {
+      wrapper: createRollbackWrapper(),
+    });
+
+    result.current.mutate({ id: "member-1", name: "Should Rollback" });
+
+    await waitFor(() => {
+      expect(result.current.isError).toBe(true);
+    });
+
+    // Verify original member data restored
+    const cached = rollbackQueryClient.getQueryData<FamilyApiResponse>(
+      familyKeys.family(),
+    );
+    const member = cached?.data?.members.find((m) => m.id === "member-1");
+    expect(member?.name).toBe("Alice"); // Original name
+    expect(onError).toHaveBeenCalled();
   });
 });
