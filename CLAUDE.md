@@ -580,7 +580,7 @@ describe("optimistic updates", () => {
       },
     });
     // Seed query cache with initial data
-    testQueryClient.setQueryData(queryKeys.data(), { data: testData });
+    testQueryClient.setQueryData(familyKeys.family(), { data: testData });
   });
 
   afterEach(() => {
@@ -599,7 +599,7 @@ describe("optimistic updates", () => {
     });
 
     // Cache assertions now work because gcTime: Infinity prevents GC
-    const cached = testQueryClient.getQueryData(queryKeys.data());
+    const cached = testQueryClient.getQueryData(familyKeys.family());
     expect(cached?.data?.name).toBe("New Name");
   });
 });
