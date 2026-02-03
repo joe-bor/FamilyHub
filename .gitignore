@@ -31,5 +31,8 @@ dist-ssr
 playwright-report/
 test-results/
 
+# Lighthouse CI
+.lighthouseci/
+
 # Personal learning notes
 docs/VERSIONING-WALKTHROUGH.md
