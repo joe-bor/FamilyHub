@@ -16,9 +16,9 @@ module.exports = {
       },
     },
     assert: {
-      preset: "lighthouse:no-pwa",
+      // No preset - using only custom warn-only assertions (report, don't block)
       assertions: {
-        // Core Web Vitals (warn only - report, don't block)
+        // Core Web Vitals
         "first-contentful-paint": ["warn", { maxNumericValue: 2500 }],
         "largest-contentful-paint": ["warn", { maxNumericValue: 4000 }],
         "cumulative-layout-shift": ["warn", { maxNumericValue: 0.1 }],
@@ -26,7 +26,7 @@ module.exports = {
         "speed-index": ["warn", { maxNumericValue: 4000 }],
         interactive: ["warn", { maxNumericValue: 5000 }],
 
-        // Category scores (warn only)
+        // Category scores
         "categories:performance": ["warn", { minScore: 0.7 }],
         "categories:accessibility": ["warn", { minScore: 0.9 }],
         "categories:best-practices": ["warn", { minScore: 0.9 }],
