@@ -48,22 +48,7 @@ Add client-side Core Web Vitals tracking (LCP, FID, CLS) for production monitori
 
 ---
 
-### 2. Lighthouse CI Integration
-**Source:** Sprint 6 Performance Optimization
-**Status:** Deferred - Quick Wins Only
-
-**Description:**
-Automated performance budgets and regression detection in CI.
-
-**Suggested Implementation:**
-- Add `@lhci/cli` to GitHub Actions workflow
-- Configure performance budgets (e.g., LCP < 2.5s, bundle size limits)
-- Fail PRs that exceed budgets
-- Track historical performance data
-
----
-
-### 3. Production Monitoring (RUM)
+### 2. Production Monitoring (RUM)
 **Source:** Sprint 6 Performance Optimization
 **Status:** Deferred - Quick Wins Only
 
@@ -77,7 +62,7 @@ Real User Monitoring to understand actual user experience.
 
 ---
 
-### 4. Unit Test Form Submission Pattern
+### 3. Unit Test Form Submission Pattern
 **Source:** PR #40 Investigation
 **Files:** `src/components/calendar/components/event-form.test.tsx`, `src/components/calendar/calendar-module.test.tsx`
 **Status:** Fixed - patterns documented in CLAUDE.md
@@ -99,7 +84,7 @@ See **"Async Form Testing (CI Flakiness Prevention)"** section in `CLAUDE.md` fo
 
 ---
 
-### 5. E2E waitForTimeout Usage
+### 4. E2E waitForTimeout Usage
 **Source:** PR #38 Code Review
 **Files:** `e2e/helpers/test-helpers.ts`
 **Status:** Minor smell - acceptable tradeoff
@@ -193,6 +178,7 @@ Types: `src/lib/types/family.ts`
 
 | Item | Sprint | PR | Date |
 |------|--------|----|----|
+| Lighthouse CI Integration (performance/a11y tracking in CI) | - | - | Feb 3, 2026 |
 | Family Mutation Tests (optimistic updates, rollback, useUpdateMember, useDeleteFamily) | - | - | Feb 1, 2026 |
 | Outdated TODO Comments in use-family.ts | - | - | Jan 29, 2026 |
 | CI Flakiness Remediation (test helpers + documentation) | Sprint 7 | #41 | Jan 27, 2026 |
