@@ -5,7 +5,7 @@ module.exports = {
       numberOfRuns: 3,
       url: ["http://localhost/"],
       settings: {
-        preset: "mobile",
+        // Mobile emulation is the default in Lighthouse
         onlyCategories: [
           "performance",
           "accessibility",
