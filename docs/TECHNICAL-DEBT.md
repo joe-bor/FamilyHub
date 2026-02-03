@@ -1,6 +1,6 @@
 # Technical Debt & Deferred Improvements
 
-**Last Updated:** February 1, 2026
+**Last Updated:** February 3, 2026
 
 This document tracks known technical debt, deferred improvements, and future enhancements identified during code reviews. Items are prioritized and linked to relevant sprints.
 
@@ -99,6 +99,57 @@ The 100ms wait allows React to settle after UI indicators are visible. This is a
 - Try removing the wait and see if tests remain stable
 - Look for a specific DOM mutation or network request to wait for instead
 - Consider using `page.waitForFunction()` to check React's internal state
+
+---
+
+### 5. Google Fonts Render-Blocking
+**Source:** Lighthouse CI (PR #60)
+**Status:** Optimization opportunity
+
+**Problem:**
+Google Fonts CSS is render-blocking, adding to the critical request chain (3 levels, ~131ms).
+
+**Suggested Fixes:**
+- Add `font-display: swap` to font declarations
+- Preload critical fonts: `<link rel="preload" as="font" ...>`
+- Self-host fonts to eliminate external dependency
+- Use `font-display: optional` for non-critical fonts
+
+---
+
+### 6. Unused JavaScript
+**Source:** Lighthouse CI (PR #60)
+**Status:** Optimization opportunity
+
+**Problem:**
+Lighthouse detected unused JavaScript in the bundle.
+
+**Suggested Fixes:**
+- Analyze with `npm run analyze` to identify large unused modules
+- Implement route-based code splitting with `React.lazy()`
+- Review imports for tree-shaking opportunities
+- Consider dynamic imports for heavy components (e.g., date pickers, modals)
+
+---
+
+### 7. PWA Optimizations
+**Source:** Lighthouse CI (PR #60)
+**Files:** `vite.config.ts` (vite-plugin-pwa)
+**Status:** Deferred - PWA basics in place
+
+**Current State:**
+PWA is configured via `vite-plugin-pwa` but not fully optimized.
+
+**Optimization Opportunities:**
+- **Offline support**: Cache critical assets and API responses (see Backend Compatibility Notes #3)
+- **Installability**: Ensure manifest meets all criteria
+- **Service worker**: Implement background sync for offline mutations
+- **App shell**: Cache the app shell for instant loading
+
+**Lighthouse PWA Checklist:**
+- [ ] Installable (valid manifest, service worker)
+- [ ] Optimized (fast page loads, responsive)
+- [ ] Network resilience (works offline/flaky network)
 
 ---
 
