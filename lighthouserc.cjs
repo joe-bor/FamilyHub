@@ -11,6 +11,7 @@ module.exports = {
           "accessibility",
           "best-practices",
           "seo",
+          "pwa",
         ],
         skipAudits: ["uses-http2"],
       },
@@ -31,6 +32,7 @@ module.exports = {
         "categories:accessibility": ["warn", { minScore: 0.9 }],
         "categories:best-practices": ["warn", { minScore: 0.9 }],
         "categories:seo": ["warn", { minScore: 0.9 }],
+        "categories:pwa": ["warn", { minScore: 0.5 }],
       },
     },
     upload: {
