@@ -17,6 +17,7 @@ npm run test:ui      # Open Vitest UI
 npm run test:coverage # Run tests with coverage report
 npm run test:e2e     # Run Playwright E2E tests
 npm run test:e2e:ui  # Open Playwright UI
+npm run lighthouse   # Run Lighthouse CI (builds first)
 ```
 
 ## Architecture
@@ -290,7 +291,12 @@ format12hTo24h("4:00 PM") // → "16:00"
 
 ### CI/CD
 
-GitHub Actions runs lint, tests, E2E tests, and build on all PRs (`.github/workflows/ci.yml`).
+GitHub Actions runs lint, tests, E2E tests, build, and **Lighthouse CI** on all PRs (`.github/workflows/ci.yml`).
+
+**Lighthouse CI** tracks performance and accessibility metrics:
+- Reports to temporary-public-storage (viewable via PR status check)
+- HTML reports archived as GitHub artifacts (90 days)
+- Run locally: `npm run lighthouse`
 
 ### Versioning & Releases
 
