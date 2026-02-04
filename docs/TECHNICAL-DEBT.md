@@ -62,29 +62,7 @@ Real User Monitoring to understand actual user experience.
 
 ---
 
-### 3. Unit Test Form Submission Pattern
-**Source:** PR #40 Investigation
-**Files:** `src/components/calendar/components/event-form.test.tsx`, `src/components/calendar/calendar-module.test.tsx`
-**Status:** Fixed - patterns documented in CLAUDE.md
-
-**Problem:**
-Unit tests for forms that depend on async TanStack Query data (e.g., `useFamilyMembers()`) can be flaky in CI due to race conditions between form initialization and async data resolution.
-
-**Solution:**
-See **"Async Form Testing (CI Flakiness Prevention)"** section in `CLAUDE.md` for:
-- Detailed explanation of the race condition
-- Required fix patterns with code examples
-- Helper functions: `typeAndWait()`, `waitForMemberSelected()`, `TEST_TIMEOUTS`
-
-**Key Distinction:**
-| Test Type | Cause | Fix Location |
-|-----------|-------|--------------|
-| E2E (Playwright) | Browser timing, animations, network | `e2e/helpers/test-helpers.ts` |
-| Unit (Vitest) | React state timing, async hooks | `src/test/test-utils.tsx` |
-
----
-
-### 4. E2E waitForTimeout Usage
+### 3. E2E waitForTimeout Usage
 **Source:** PR #38 Code Review
 **Files:** `e2e/helpers/test-helpers.ts`
 **Status:** Minor smell - acceptable tradeoff
@@ -102,7 +80,7 @@ The 100ms wait allows React to settle after UI indicators are visible. This is a
 
 ---
 
-### 5. Google Fonts Render-Blocking
+### 4. Google Fonts Render-Blocking
 **Source:** Lighthouse CI (PR #60)
 **Status:** Optimization opportunity
 
@@ -117,7 +95,7 @@ Google Fonts CSS is render-blocking, adding to the critical request chain (3 lev
 
 ---
 
-### 6. Unused JavaScript
+### 5. Unused JavaScript
 **Source:** Lighthouse CI (PR #60)
 **Status:** Optimization opportunity
 
@@ -132,7 +110,7 @@ Lighthouse detected unused JavaScript in the bundle.
 
 ---
 
-### 7. PWA Optimizations
+### 6. PWA Optimizations
 **Source:** Lighthouse CI (PR #60)
 **Files:** `vite.config.ts` (vite-plugin-pwa)
 **Status:** Deferred - PWA basics in place
