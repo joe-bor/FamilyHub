@@ -207,9 +207,9 @@ Types: `src/lib/types/family.ts`
 
 | Item | Sprint | PR | Date |
 |------|--------|----|----|
-| Lighthouse CI Integration (performance/a11y tracking in CI) | - | - | Feb 3, 2026 |
-| Family Mutation Tests (optimistic updates, rollback, useUpdateMember, useDeleteFamily) | - | - | Feb 1, 2026 |
-| Outdated TODO Comments in use-family.ts | - | - | Jan 29, 2026 |
+| Lighthouse CI Integration (performance/a11y tracking in CI) | - | #60 | Feb 3, 2026 |
+| Family Mutation Tests (optimistic updates, rollback, useUpdateMember, useDeleteFamily) | - | #56 | Feb 1, 2026 |
+| Outdated TODO Comments in use-family.ts | - | #46 | Jan 29, 2026 |
 | CI Flakiness Remediation (test helpers + documentation) | Sprint 7 | #41 | Jan 27, 2026 |
 | Onboarding Registration Error Handling | Sprint 7 | #40 | Jan 26, 2026 |
 | Unit Test Form Flakiness Fix (async form initialization) | Sprint 7 | #40 | Jan 26, 2026 |
