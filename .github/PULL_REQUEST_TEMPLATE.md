@@ -10,6 +10,7 @@
 
 - [ ] Tests pass (`npm test`)
 - [ ] Linting passes (`npm run lint`)
+- [ ] No breaking changes (or discussed with team if unavoidable)
 
 ### Documentation
 - [ ] If this PR fixes a technical debt item, I've updated `docs/TECHNICAL-DEBT.md` (use `/tech-debt close` for guidance)
