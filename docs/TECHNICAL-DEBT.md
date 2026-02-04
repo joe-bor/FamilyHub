@@ -234,7 +234,21 @@ Types: `src/lib/types/family.ts`
 
 ## How to Use This Document
 
-1. **When fixing an item:** Move it to "Completed Items" with date and PR number
-2. **When adding new debt:** Include source, file(s), and suggested fix
-3. **During sprint planning:** Review this list for quick wins
-4. **Before major releases:** Address high priority items
+### Completing Items
+
+1. **MOVE items to Completed** — don't copy. Delete from the original section entirely.
+2. **ALWAYS include the PR number** when completing items (e.g., `#60`).
+3. **Use `/tech-debt close <item-name>`** to ensure the correct process is followed.
+
+### Adding New Items
+
+1. **Include source** — PR number, sprint, or investigation that identified the debt.
+2. **List affected files** — helps future developers find the relevant code.
+3. **Suggest a fix** — provide enough context for someone else to implement.
+4. **Use `/tech-debt add`** to ensure proper formatting.
+
+### Workflow Tips
+
+- **During sprint planning:** Review this list for quick wins
+- **Before major releases:** Address high priority items
+- **Run `/tech-debt audit`** periodically to catch issues (duplicates, missing PRs)
