@@ -36,6 +36,6 @@ jobs:
       - uses: actions/upload-artifact@v6
         if: always()
         with:
-          name: lighthouse-report
+          name: lighthouse-report-${{ github.event.pull_request.number && format('pr-{0}', github.event.pull_request.number) || github.sha }}
           path: .lighthouseci/
           retention-days: 90
