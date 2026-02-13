@@ -43,7 +43,7 @@ export const familyService = {
     if (USE_MOCK_API) {
       return familyMockHandlers.updateFamily(request);
     }
-    return httpClient.patch<FamilyMutationResponse>("/family", request);
+    return httpClient.put<FamilyMutationResponse>("/family", request);
   },
 
   /**
@@ -65,7 +65,7 @@ export const familyService = {
     if (USE_MOCK_API) {
       return familyMockHandlers.updateMember(request);
     }
-    return httpClient.patch<MemberMutationResponse>(
+    return httpClient.put<MemberMutationResponse>(
       `/family/members/${request.id}`,
       request,
     );
