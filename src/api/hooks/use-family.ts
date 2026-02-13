@@ -241,7 +241,7 @@ export function useUpdateFamily(callbacks?: UpdateFamilyCallbacks) {
       if (previousData?.data) {
         const optimisticFamily: FamilyData = {
           ...previousData.data,
-          name: request.name ?? previousData.data.name,
+          name: request.name,
         };
         queryClient.setQueryData<FamilyApiResponse>(familyKeys.family(), {
           ...previousData,
@@ -368,8 +368,8 @@ export function useUpdateMember(callbacks?: UpdateMemberCallbacks) {
             m.id === request.id
               ? {
                   ...m,
-                  name: request.name ?? m.name,
-                  color: request.color ?? m.color,
+                  name: request.name,
+                  color: request.color,
                   avatarUrl:
                     request.avatarUrl !== undefined
                       ? request.avatarUrl
