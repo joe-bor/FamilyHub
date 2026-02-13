@@ -152,7 +152,7 @@ export const familyMockHandlers = {
 
     const updatedFamily: FamilyData = {
       ...family,
-      name: request.name ?? family.name,
+      name: request.name,
     };
 
     saveFamilyToStorage(updatedFamily);
@@ -240,7 +240,6 @@ export const familyMockHandlers = {
 
     // Check for color conflict with other members
     if (
-      request.color &&
       family.members.some(
         (m) => m.id !== request.id && m.color === request.color,
       )
@@ -255,8 +254,8 @@ export const familyMockHandlers = {
     const existingMember = family.members[memberIndex];
     const updatedMember: FamilyMember = {
       ...existingMember,
-      name: request.name ?? existingMember.name,
-      color: request.color ?? existingMember.color,
+      name: request.name,
+      color: request.color,
       avatarUrl:
         request.avatarUrl !== undefined
           ? request.avatarUrl
