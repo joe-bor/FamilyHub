@@ -119,7 +119,7 @@ export interface CreateFamilyRequest {
  * Request to update family properties.
  */
 export interface UpdateFamilyRequest {
-  name?: string;
+  name: string;
 }
 
 /**
@@ -137,8 +137,8 @@ export interface AddMemberRequest {
  */
 export interface UpdateMemberRequest {
   id: string;
-  name?: string;
-  color?: FamilyColor;
+  name: string;
+  color: FamilyColor;
   avatarUrl?: string;
   email?: string;
 }
