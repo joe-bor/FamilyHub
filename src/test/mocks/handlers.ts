@@ -268,8 +268,8 @@ export const handlers = [
     );
   }),
 
-  // PATCH /family - Update family
-  http.patch(`${API_BASE}/family`, async ({ request }) => {
+  // PUT /family - Update family
+  http.put(`${API_BASE}/family`, async ({ request }) => {
     if (!mockFamily) {
       return HttpResponse.json(
         { message: "No family exists" },
@@ -280,7 +280,7 @@ export const handlers = [
     const body = (await request.json()) as UpdateFamilyRequest;
     mockFamily = {
       ...mockFamily,
-      name: body.name ?? mockFamily.name,
+      name: body.name,
     };
 
     return HttpResponse.json(
@@ -322,8 +322,8 @@ export const handlers = [
     );
   }),
 
-  // PATCH /family/members/:id - Update member
-  http.patch(`${API_BASE}/family/members/:id`, async ({ params, request }) => {
+  // PUT /family/members/:id - Update member
+  http.put(`${API_BASE}/family/members/:id`, async ({ params, request }) => {
     if (!mockFamily) {
       return HttpResponse.json(
         { message: "No family exists" },
@@ -345,8 +345,8 @@ export const handlers = [
     const existingMember = mockFamily.members[index];
     const updatedMember: FamilyMember = {
       ...existingMember,
-      name: body.name ?? existingMember.name,
-      color: body.color ?? existingMember.color,
+      name: body.name,
+      color: body.color,
       avatarUrl:
         body.avatarUrl !== undefined
           ? body.avatarUrl
