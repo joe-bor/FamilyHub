@@ -101,13 +101,23 @@ export function MemberProfileModal({
     const reader = new FileReader();
     reader.onload = (e) => {
       const base64 = e.target?.result as string;
-      updateMemberMutation.mutate({ id: memberId, avatarUrl: base64 });
+      updateMemberMutation.mutate({
+        id: memberId,
+        name: member.name,
+        color: member.color,
+        avatarUrl: base64,
+      });
     };
     reader.readAsDataURL(file);
   };
 
   const handleRemoveAvatar = () => {
-    updateMemberMutation.mutate({ id: memberId, avatarUrl: undefined });
+    updateMemberMutation.mutate({
+      id: memberId,
+      name: member.name,
+      color: member.color,
+      avatarUrl: undefined,
+    });
   };
 
   const colors = colorMap[member.color];
