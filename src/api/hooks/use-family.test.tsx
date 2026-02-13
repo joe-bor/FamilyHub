@@ -616,7 +616,11 @@ describe("useUpdateMember", () => {
       wrapper: createWrapper(),
     });
 
-    result.current.mutate({ id: "member-1", name: "Alice Updated" });
+    result.current.mutate({
+      id: "member-1",
+      name: "Alice Updated",
+      color: "coral",
+    });
 
     await waitFor(() => {
       expect(result.current.isSuccess).toBe(true);
@@ -637,7 +641,7 @@ describe("useUpdateMember", () => {
       wrapper: createWrapper(),
     });
 
-    result.current.mutate({ id: "member-1", color: "purple" });
+    result.current.mutate({ id: "member-1", name: "Alice", color: "purple" });
 
     await waitFor(() => {
       expect(result.current.isSuccess).toBe(true);
@@ -864,7 +868,7 @@ describe("rollback on error", () => {
   it("useUpdateFamily restores previous state on server error", async () => {
     // Override handler to return error
     server.use(
-      http.patch("http://localhost:3000/family", () => {
+      http.put("http://localhost:3000/family", () => {
         return HttpResponse.json({ message: "Server error" }, { status: 500 });
       }),
     );
@@ -947,7 +951,7 @@ describe("rollback on error", () => {
 
   it("useUpdateMember restores original member data on server error", async () => {
     server.use(
-      http.patch("http://localhost:3000/family/members/:id", () => {
+      http.put("http://localhost:3000/family/members/:id", () => {
         return HttpResponse.json({ message: "Server error" }, { status: 500 });
       }),
     );
@@ -957,7 +961,11 @@ describe("rollback on error", () => {
       wrapper: createRollbackWrapper(),
     });
 
-    result.current.mutate({ id: "member-1", name: "Should Rollback" });
+    result.current.mutate({
+      id: "member-1",
+      name: "Should Rollback",
+      color: "coral",
+    });
 
     await waitFor(() => {
       expect(result.current.isError).toBe(true);
