@@ -2,7 +2,6 @@ import { httpClient } from "@/api/client";
 import { familyMockHandlers, USE_MOCK_API } from "@/api/mocks";
 import type {
   AddMemberRequest,
-  CreateFamilyRequest,
   FamilyApiResponse,
   FamilyMutationResponse,
   MemberMutationResponse,
@@ -20,18 +19,6 @@ export const familyService = {
       return familyMockHandlers.getFamily();
     }
     return httpClient.get<FamilyApiResponse>("/family");
-  },
-
-  /**
-   * Create a new family (during onboarding).
-   */
-  async createFamily(
-    request: CreateFamilyRequest,
-  ): Promise<FamilyMutationResponse> {
-    if (USE_MOCK_API) {
-      return familyMockHandlers.createFamily(request);
-    }
-    return httpClient.post<FamilyMutationResponse>("/family", request);
   },
 
   /**
