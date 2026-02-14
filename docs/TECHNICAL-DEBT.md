@@ -110,7 +110,36 @@ Lighthouse detected unused JavaScript in the bundle.
 
 ---
 
-### 6. PWA Optimizations
+### 6. MemberProfileModal Component Tests
+**Source:** PR #67 Review
+**Files:** `src/components/settings/member-profile-modal.tsx`
+**Status:** Testing gap
+
+**Problem:**
+No component-level tests verify that each mutation call site (form submit, avatar upload, avatar remove) sends the correct fields. Hook-level tests cover optimistic updates, but a modal refactor could regress the payload completeness fix from PR #67.
+
+**Suggested Fix:**
+- Add tests asserting each mutation call includes all required fields (`name`, `color`, `email`, `avatarUrl`)
+- Verify avatar removal sends `avatarUrl: null` (not `undefined`)
+- Verify form submit preserves `avatarUrl` from current member data
+
+---
+
+### 7. Silent Avatar Upload Validation Failures
+**Source:** PR #67 Review (pre-existing)
+**Files:** `src/components/settings/member-profile-modal.tsx` (lines 92-99)
+**Status:** UX gap
+
+**Problem:**
+`handleAvatarUpload` silently returns on invalid file type or file size (>500KB) with no user feedback. Users get no indication why their upload didn't work.
+
+**Suggested Fix:**
+- Show a toast or inline error for invalid file type ("Please select an image file")
+- Show a toast or inline error for oversized files ("Image must be under 500KB")
+
+---
+
+### 8. PWA Optimizations
 **Source:** Lighthouse CI (PR #60)
 **Files:** `vite.config.ts` (vite-plugin-pwa)
 **Status:** Deferred - PWA basics in place
