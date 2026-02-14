@@ -5,7 +5,6 @@ import type {
   ApiResponse,
   CalendarEvent,
   CreateEventRequest,
-  CreateFamilyRequest,
   FamilyData,
   FamilyMember,
   LoginRequest,
@@ -240,32 +239,6 @@ export const handlers = [
   // GET /family - Get family data
   http.get(`${API_BASE}/family`, () => {
     return HttpResponse.json(createApiResponse(mockFamily));
-  }),
-
-  // POST /family - Create new family
-  http.post(`${API_BASE}/family`, async ({ request }) => {
-    if (mockFamily) {
-      return HttpResponse.json(
-        { message: "Family already exists" },
-        { status: 409 },
-      );
-    }
-
-    const body = (await request.json()) as CreateFamilyRequest;
-    mockFamily = {
-      id: `family-${Date.now()}`,
-      name: body.name,
-      members: body.members.map((m) => ({
-        ...m,
-        id: `member-${Date.now()}-${Math.random().toString(36).slice(2)}`,
-      })),
-      createdAt: new Date().toISOString(),
-      setupComplete: true,
-    };
-
-    return HttpResponse.json(
-      createApiResponse(mockFamily, "Family created successfully"),
-    );
   }),
 
   // PUT /family - Update family
