@@ -22,7 +22,6 @@ export {
   useCalendarEvents,
   useCheckUsername,
   useCreateEvent,
-  useCreateFamily,
   useDeleteEvent,
   useDeleteFamily,
   useFamily,
