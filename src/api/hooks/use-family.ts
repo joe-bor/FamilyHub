@@ -372,7 +372,7 @@ export function useUpdateMember(callbacks?: UpdateMemberCallbacks) {
                   color: request.color,
                   avatarUrl:
                     request.avatarUrl !== undefined
-                      ? request.avatarUrl
+                      ? (request.avatarUrl ?? undefined)
                       : m.avatarUrl,
                   email: request.email !== undefined ? request.email : m.email,
                 }

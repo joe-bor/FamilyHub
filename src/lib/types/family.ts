@@ -139,7 +139,7 @@ export interface UpdateMemberRequest {
   id: string;
   name: string;
   color: FamilyColor;
-  avatarUrl?: string;
+  avatarUrl?: string | null;
   email?: string;
 }
 
