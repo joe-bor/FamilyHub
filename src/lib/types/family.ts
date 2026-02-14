@@ -108,14 +108,6 @@ export const familyColors: FamilyColor[] = [
 // ============================================================================
 
 /**
- * Request to create a new family (during onboarding).
- */
-export interface CreateFamilyRequest {
-  name: string;
-  members: Array<Omit<FamilyMember, "id">>;
-}
-
-/**
  * Request to update family properties.
  */
 export interface UpdateFamilyRequest {
