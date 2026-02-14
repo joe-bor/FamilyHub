@@ -258,7 +258,7 @@ export const familyMockHandlers = {
       color: request.color,
       avatarUrl:
         request.avatarUrl !== undefined
-          ? request.avatarUrl
+          ? (request.avatarUrl ?? undefined)
           : existingMember.avatarUrl,
       email: request.email !== undefined ? request.email : existingMember.email,
     };
