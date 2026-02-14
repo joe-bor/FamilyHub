@@ -2,7 +2,6 @@ import { ApiErrorCode, ApiException } from "@/api/client";
 import { FAMILY_STORAGE_KEY } from "@/lib/constants";
 import type {
   AddMemberRequest,
-  CreateFamilyRequest,
   FamilyApiResponse,
   FamilyData,
   FamilyMember,
@@ -96,41 +95,6 @@ export const familyMockHandlers = {
     await simulateApiCall({ delayMin: 100, delayMax: 300 });
     const family = loadFamilyFromStorage();
     return createFamilyResponse(family);
-  },
-
-  /**
-   * Create a new family (during onboarding).
-   * Generates IDs for family and all members.
-   */
-  async createFamily(
-    request: CreateFamilyRequest,
-  ): Promise<FamilyMutationResponse> {
-    await simulateApiCall();
-
-    // Check if family already exists
-    const existing = loadFamilyFromStorage();
-    if (existing) {
-      throw new ApiException({
-        code: ApiErrorCode.CONFLICT,
-        message: "Family already exists. Use updateFamily to modify.",
-        status: 409,
-      });
-    }
-
-    // Create family with generated IDs
-    const family: FamilyData = {
-      id: crypto.randomUUID(),
-      name: request.name,
-      members: request.members.map((m) => ({
-        ...m,
-        id: crypto.randomUUID(),
-      })),
-      createdAt: new Date().toISOString(),
-      setupComplete: true, // Mark setup as complete when family is created via API
-    };
-
-    saveFamilyToStorage(family);
-    return createFamilyMutationResponse(family, "Family created successfully");
   },
 
   /**
