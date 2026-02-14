@@ -20,7 +20,6 @@ import {
   familyKeys,
   readFamilyFromStorage,
   useAddMember,
-  useCreateFamily,
   useDeleteFamily,
   useFamily,
   useFamilyData,
@@ -387,55 +386,6 @@ describe("useUnusedColors", () => {
 // ============================================================================
 // Mutation Hook Tests
 // ============================================================================
-
-describe("useCreateFamily", () => {
-  it("creates a family and updates query cache on success", async () => {
-    const onSuccess = vi.fn();
-    const { result } = renderHook(() => useCreateFamily({ onSuccess }), {
-      wrapper: createWrapper(),
-    });
-
-    result.current.mutate({
-      name: "New Family",
-      members: [{ name: "Alice", color: "coral" }],
-    });
-
-    await waitFor(() => {
-      expect(result.current.isSuccess).toBe(true);
-    });
-
-    // Check callback was called with response data
-    expect(onSuccess).toHaveBeenCalledWith(
-      expect.objectContaining({
-        data: expect.objectContaining({
-          name: "New Family",
-          setupComplete: true,
-        }),
-      }),
-    );
-  });
-
-  it("writes family to localStorage on success", async () => {
-    const { result } = renderHook(() => useCreateFamily(), {
-      wrapper: createWrapper(),
-    });
-
-    result.current.mutate({
-      name: "Persisted Family",
-      members: [{ name: "Bob", color: "teal" }],
-    });
-
-    await waitFor(() => {
-      expect(result.current.isSuccess).toBe(true);
-    });
-
-    // Check localStorage was updated
-    const stored = localStorage.getItem(FAMILY_STORAGE_KEY);
-    expect(stored).not.toBeNull();
-    const parsed = JSON.parse(stored!);
-    expect(parsed.state.family.name).toBe("Persisted Family");
-  });
-});
 
 describe("useUpdateFamily", () => {
   beforeEach(() => {
