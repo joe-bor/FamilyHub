@@ -6,7 +6,6 @@ import { familyService } from "@/api/services";
 import { FAMILY_STORAGE_KEY } from "@/lib/constants";
 import type {
   AddMemberRequest,
-  CreateFamilyRequest,
   FamilyApiResponse,
   FamilyColor,
   FamilyData,
@@ -186,35 +185,6 @@ export function useUnusedColors(): FamilyColor[] {
 // ============================================================================
 // Mutations
 // ============================================================================
-
-interface CreateFamilyCallbacks {
-  onSuccess?: (data: FamilyMutationResponse) => void;
-  onError?: (error: ApiException) => void;
-}
-
-/**
- * Create a new family (during onboarding).
- */
-export function useCreateFamily(callbacks?: CreateFamilyCallbacks) {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: (request: CreateFamilyRequest) =>
-      familyService.createFamily(request),
-    onSuccess: (response) => {
-      // Update query cache
-      queryClient.setQueryData<FamilyApiResponse>(familyKeys.family(), {
-        data: response.data,
-      });
-      // Write-through to localStorage
-      writeFamilyToStorage(response.data);
-      callbacks?.onSuccess?.(response);
-    },
-    onError: (error: ApiException) => {
-      callbacks?.onError?.(error);
-    },
-  });
-}
 
 interface UpdateFamilyCallbacks {
   onSuccess?: (data: FamilyMutationResponse) => void;
