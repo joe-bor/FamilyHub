@@ -80,6 +80,7 @@ export function MemberProfileModal({
       name: data.name,
       color: data.color,
       email: data.email || undefined,
+      avatarUrl: member.avatarUrl ?? undefined,
     });
     onOpenChange(false);
   };
@@ -105,6 +106,7 @@ export function MemberProfileModal({
         id: memberId,
         name: member.name,
         color: member.color,
+        email: member.email ?? undefined,
         avatarUrl: base64,
       });
     };
@@ -116,7 +118,8 @@ export function MemberProfileModal({
       id: memberId,
       name: member.name,
       color: member.color,
-      avatarUrl: undefined,
+      email: member.email ?? undefined,
+      avatarUrl: null,
     });
   };
 
