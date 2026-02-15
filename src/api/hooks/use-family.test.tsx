@@ -55,7 +55,6 @@ const testFamily: FamilyData = {
   name: "Test Family",
   members: [testMember1, testMember2],
   createdAt: "2025-01-01T00:00:00.000Z",
-  setupComplete: true,
 };
 
 // ============================================================================
@@ -261,8 +260,8 @@ describe("useSetupComplete", () => {
     });
   });
 
-  it("returns false when family exists but setup is not complete", async () => {
-    const incompleteFamily = { ...testFamily, setupComplete: false };
+  it("returns false when family exists but has no members", async () => {
+    const incompleteFamily = { ...testFamily, members: [] };
     queryClient.setQueryData<FamilyApiResponse>(familyKeys.family(), {
       data: incompleteFamily,
     });

@@ -168,7 +168,6 @@ export { customRender as render, renderWithUser, createTestQueryClient };
  * seedFamilyStore({
  *   name: "Test Family",
  *   members: [{ id: "1", name: "John", color: "coral" }],
- *   setupComplete: true,
  * });
  */
 export function seedFamilyStore(
@@ -180,7 +179,6 @@ export function seedFamilyStore(
     name: data.name ?? "Test Family",
     members: data.members,
     createdAt: data.createdAt ?? new Date().toISOString(),
-    setupComplete: data.setupComplete !== false, // Default to true
   };
 
   // Seed TanStack Query cache

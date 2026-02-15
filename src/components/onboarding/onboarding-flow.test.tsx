@@ -306,7 +306,7 @@ describe("OnboardingFlow", () => {
         expect(mockFamily?.name).toBe("The Test Family");
         expect(mockFamily?.members).toHaveLength(1);
         expect(mockFamily?.members[0].name).toBe("Parent One");
-        expect(mockFamily?.setupComplete).toBe(true);
+        expect(mockFamily?.members).toHaveLength(1);
       });
     });
 
@@ -525,7 +525,6 @@ describe("OnboardingFlow", () => {
                 name: "Test Family",
                 members: [],
                 createdAt: new Date().toISOString(),
-                setupComplete: true,
               },
             },
             message: "Registration successful",
@@ -578,7 +577,6 @@ describe("OnboardingFlow", () => {
                 name: "Test Family",
                 members: [],
                 createdAt: new Date().toISOString(),
-                setupComplete: true,
               },
             },
             message: "Registration successful",

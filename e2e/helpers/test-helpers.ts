@@ -11,7 +11,6 @@ interface FamilyStorageData {
       name: string;
       members: FamilyMember[];
       createdAt: string;
-      setupComplete: boolean;
     } | null;
     _hasHydrated: boolean;
   };
@@ -59,7 +58,6 @@ export async function seedFamily(
         name: options.name,
         members: options.members,
         createdAt: new Date().toISOString(),
-        setupComplete: true,
       },
       _hasHydrated: true,
     },
