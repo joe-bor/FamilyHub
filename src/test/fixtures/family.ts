@@ -22,7 +22,6 @@ export const testFamily: FamilyData = {
   name: "Test Family",
   members: testMembers,
   createdAt: "2025-01-01T00:00:00.000Z",
-  setupComplete: true,
 };
 
 /**
@@ -33,7 +32,6 @@ export const incompleteFamily: FamilyData = {
   name: "Incomplete Family",
   members: [],
   createdAt: "2025-01-01T00:00:00.000Z",
-  setupComplete: false,
 };
 
 /**
@@ -61,7 +59,6 @@ export function createTestFamily(
     id: `family-${Date.now()}`,
     name: "Test Family",
     createdAt: new Date().toISOString(),
-    setupComplete: true,
     ...overrides,
     members,
   };

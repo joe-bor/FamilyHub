@@ -209,7 +209,6 @@ export const authMockHandlers = {
         id: crypto.randomUUID(),
       })),
       createdAt: new Date().toISOString(),
-      setupComplete: true,
     };
 
     // Create user credentials
