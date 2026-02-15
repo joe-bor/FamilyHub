@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.3.0](https://github.com/joe-bor/FamilyHub/compare/v0.2.0...v0.3.0) (2026-02-15)
+
+
+### Features
+
+* add /tech-debt skill for workflow enforcement ([5769d9e](https://github.com/joe-bor/FamilyHub/commit/5769d9e3bbdee2786a069fcd29db0bcf0bf6c090))
+* **ci:** add Lighthouse CI for performance tracking ([9afd934](https://github.com/joe-bor/FamilyHub/commit/9afd93413bc1b91075bbde741b461896f7f5c968))
+* **ci:** add PWA tracking and document optimization opportunities ([08a86de](https://github.com/joe-bor/FamilyHub/commit/08a86dead38a3fe67b26f1557fc670e33fdbcb73))
+
+
+### Bug Fixes
+
+* **api:** allow null avatarUrl in UpdateMemberRequest for explicit deletion ([d9f9d11](https://github.com/joe-bor/FamilyHub/commit/d9f9d11ec6cb518908fae3d7a5163f41f9726e9d))
+* **ci:** add PR number to Lighthouse artifact name for traceability ([610c96b](https://github.com/joe-bor/FamilyHub/commit/610c96b90b0d65972751a679e4184455bdb856ee))
+* **ci:** remove invalid preset option from Lighthouse config ([9218fcc](https://github.com/joe-bor/FamilyHub/commit/9218fcc0e79e51406f04fbeda784464d0ce7615f))
+* **ci:** remove lighthouse:no-pwa preset to use warn-only assertions ([662ca0f](https://github.com/joe-bor/FamilyHub/commit/662ca0f6872a74d31479d2a90a4dcc41267b4237))
+* **ci:** rename lighthouserc.js to .cjs for ES module compatibility ([f8a66b5](https://github.com/joe-bor/FamilyHub/commit/f8a66b5c8f9f9ee09821d6333a64a64f737a0cec))
+* **settings:** send complete member payload on PUT updates ([b5bf781](https://github.com/joe-bor/FamilyHub/commit/b5bf7812a2eba7bc4874f0d7fb094c7638c40017))
+
 ## [0.2.0](https://github.com/joe-bor/FamilyHub/compare/v0.1.0...v0.2.0) (2026-01-29)
 
 
