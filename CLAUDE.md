@@ -46,7 +46,7 @@ src/
 │   │   └── api-error.ts       # ApiException, ApiErrorCode
 │   ├── hooks/                 # TanStack Query hooks
 │   │   ├── use-calendar.ts    # useCalendarEvents, useCreateEvent, etc.
-│   │   └── use-family.ts      # useFamily, useFamilyMembers, useCreateFamily, etc.
+│   │   └── use-family.ts      # useFamily, useFamilyMembers, useUpdateFamily, etc.
 │   ├── services/              # API service functions
 │   │   ├── calendar.service.ts # CRUD operations for calendar
 │   │   └── family.service.ts  # CRUD operations for family/members
@@ -142,7 +142,7 @@ Uses a hybrid approach: **TanStack Query** for server state (API data) and **Zus
 - `useSetupComplete()` - Check if onboarding is complete
 - `useFamilyMemberMap()` - O(1) member lookups
 - `useUnusedColors()` - Colors not assigned to any member
-- Mutations: `useCreateFamily`, `useUpdateFamily`, `useAddMember`, `useUpdateMember`, `useRemoveMember`, `useDeleteFamily`
+- Mutations: `useUpdateFamily`, `useAddMember`, `useUpdateMember`, `useRemoveMember`, `useDeleteFamily`
 
 **calendar-store.ts:**
 - `currentDate`, `calendarView`, `filter` - Calendar UI preferences
@@ -208,7 +208,6 @@ familyKeys.family()       // ["family", "data"]
 - `useSetupComplete()`, `useFamilyLoading()` - Status selectors
 - `useFamilyMemberById(id)`, `useFamilyMemberMap()` - Member lookups
 - `useUnusedColors()` - Available colors for new members
-- `useCreateFamily(callbacks?)` - Create family (onboarding)
 - `useUpdateFamily(callbacks?)` - Update family name
 - `useAddMember(callbacks?)`, `useUpdateMember(callbacks?)`, `useRemoveMember(callbacks?)` - Member CRUD
 - `useDeleteFamily(callbacks?)` - Reset family
