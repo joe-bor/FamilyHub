@@ -146,7 +146,6 @@ export const familyDataSchema = z.object({
   name: z.string().min(1).max(50),
   members: z.array(familyMemberSchema),
   createdAt: z.string().datetime({ offset: true }).or(z.string().min(1)),
-  setupComplete: z.boolean(),
 });
 
 export type ValidatedFamilyData = z.infer<typeof familyDataSchema>;

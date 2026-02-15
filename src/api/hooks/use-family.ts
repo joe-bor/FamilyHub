@@ -136,12 +136,13 @@ export function useFamilyName(): string {
 
 /**
  * Check if setup is complete.
+ * Derived: true when family data exists and has at least one member.
  */
 export function useSetupComplete(): boolean {
   const { data, isFetched } = useFamily();
-  // Only return true if we've fetched and have a family with setupComplete
   if (!isFetched) return false;
-  return data?.data?.setupComplete ?? false;
+  const family = data?.data;
+  return family != null && family.members.length > 0;
 }
 
 /**
