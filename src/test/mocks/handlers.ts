@@ -425,7 +425,6 @@ export const handlers = [
         id: `member-${Date.now()}-${Math.random().toString(36).slice(2)}`,
       })),
       createdAt: new Date().toISOString(),
-      setupComplete: true,
     };
 
     // Create user
