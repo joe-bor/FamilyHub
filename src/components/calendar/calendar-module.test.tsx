@@ -60,7 +60,6 @@ describe("CalendarModule", () => {
     seedFamilyStore({
       name: "Test Family",
       members: testMembers,
-      setupComplete: true,
     });
     // Initialize filter with all members selected
     seedCalendarStore({

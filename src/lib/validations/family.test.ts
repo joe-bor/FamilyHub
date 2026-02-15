@@ -427,7 +427,6 @@ describe("family validations", () => {
         { id: "member-2", name: "Jane", color: "teal" as const },
       ],
       createdAt: "2025-12-23T10:30:00Z",
-      setupComplete: true,
     };
 
     describe("id field", () => {
@@ -541,32 +540,6 @@ describe("family validations", () => {
       });
     });
 
-    describe("setupComplete field", () => {
-      it("accepts true", () => {
-        const result = familyDataSchema.safeParse({
-          ...validFamilyData,
-          setupComplete: true,
-        });
-        expect(result.success).toBe(true);
-      });
-
-      it("accepts false", () => {
-        const result = familyDataSchema.safeParse({
-          ...validFamilyData,
-          setupComplete: false,
-        });
-        expect(result.success).toBe(true);
-      });
-
-      it("rejects non-boolean", () => {
-        const result = familyDataSchema.safeParse({
-          ...validFamilyData,
-          setupComplete: "true",
-        });
-        expect(result.success).toBe(false);
-      });
-    });
-
     describe("complete validation", () => {
       it("validates complete valid family data", () => {
         const result = familyDataSchema.safeParse(validFamilyData);
@@ -575,7 +548,6 @@ describe("family validations", () => {
           expect(result.data.id).toBe("family-1");
           expect(result.data.name).toBe("Smith Family");
           expect(result.data.members).toHaveLength(2);
-          expect(result.data.setupComplete).toBe(true);
         }
       });
 
@@ -595,7 +567,6 @@ describe("family validations", () => {
       name: "Smith Family",
       members: [{ id: "member-1", name: "John", color: "coral" }],
       createdAt: "2025-12-23T10:30:00Z",
-      setupComplete: true,
     };
 
     let consoleWarnSpy: ReturnType<typeof vi.spyOn>;

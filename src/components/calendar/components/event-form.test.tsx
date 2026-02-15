@@ -22,7 +22,6 @@ describe("EventForm", () => {
     seedFamilyStore({
       name: "Test Family",
       members: testMembers,
-      setupComplete: true,
     });
   });
 
