@@ -175,7 +175,7 @@ const createEvent = useCreateEvent({ onSuccess: () => console.log("Created!") })
 
 // Server state from TanStack Query (family)
 const members = useFamilyMembers()  // Derived selector from useFamily()
-const setupComplete = useSetupComplete()  // Check if onboarding done
+const setupComplete = useSetupComplete()  // Derived: true when family has members
 ```
 
 ### API Layer
@@ -457,7 +457,7 @@ describe("ComponentWithStore", () => {
 
     // Seed TanStack Query cache for family data
     queryClient.setQueryData(familyKeys.family(), {
-      data: { name: "Test Family", members: testMembers, setupComplete: true }
+      data: { name: "Test Family", members: testMembers }
     })
   });
 
