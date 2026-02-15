@@ -29,7 +29,6 @@ export interface FamilyData {
   name: string;
   members: FamilyMember[];
   createdAt: string;
-  setupComplete: boolean;
 }
 
 /**
