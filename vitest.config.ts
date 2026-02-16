@@ -22,6 +22,7 @@ export default defineConfig({
     "import.meta.env.VITE_API_BASE_URL": JSON.stringify(
       "http://localhost:3000/api",
     ),
+    __APP_VERSION__: JSON.stringify("0.0.0-test"),
   },
   test: {
     globals: true,
