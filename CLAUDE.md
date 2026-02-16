@@ -94,7 +94,7 @@ src/
 │   ├── shared/                # App-wide components
 │   │   ├── app-header.tsx     # Top bar (family name, date, weather, settings)
 │   │   ├── navigation-tabs.tsx # Left sidebar module tabs
-│   │   └── sidebar-menu.tsx   # Settings slide-out menu
+│   │   └── sidebar-menu.tsx   # Settings slide-out menu (includes version footer)
 │   │
 │   ├── calendar/
 │   │   ├── calendar-module.tsx # Module orchestrator (wires API hooks to views)
@@ -297,6 +297,15 @@ GitHub Actions runs lint, tests, E2E tests, build, and **Lighthouse CI** on all 
 - HTML reports archived as GitHub artifacts (90 days)
 - Run locally: `npm run lighthouse`
 
+**Deployment** via `deploy.sh` with pre-deploy safety guards (ordered fastest-to-slowest):
+1. Clean working tree check
+2. Must be on `main` branch
+3. Must be synced with `origin/main`
+4. Tagged release check (warning + interactive prompt if untagged)
+5. Lint (`npm run lint`)
+6. Tests (`npm test -- --run`)
+7. Build → rsync to server → HTTP health check
+
 ### Versioning & Releases
 
 **Automated via [release-please](https://github.com/googleapis/release-please)** — triggered on push to `main`.
@@ -315,9 +324,11 @@ GitHub Actions runs lint, tests, E2E tests, build, and **Lighthouse CI** on all 
 
 **Important:** Use **regular merge commits** (not squash) so release-please sees individual `feat:`/`fix:` commits. If squashing, ensure the squash commit message uses conventional format.
 
+**Version display:** The app version from `package.json` is injected at build time via Vite's `define` as `__APP_VERSION__` (declared in `src/vite-env.d.ts`). Displayed in the sidebar footer. Vitest config defines it separately as `"0.0.0-test"`.
+
 **Config files:**
 - `.github/workflows/release.yml` — The GitHub Action
-- `release-please-config.json` — CHANGELOG sections, versioning rules
+- `release-please-config.json` — CHANGELOG sections, versioning rules, extra-files (auto-updates `README.md` version)
 - `.release-please-manifest.json` — Tracks current version
 
 ### Testing
