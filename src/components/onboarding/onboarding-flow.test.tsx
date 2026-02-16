@@ -306,7 +306,6 @@ describe("OnboardingFlow", () => {
         expect(mockFamily?.name).toBe("The Test Family");
         expect(mockFamily?.members).toHaveLength(1);
         expect(mockFamily?.members[0].name).toBe("Parent One");
-        expect(mockFamily?.members).toHaveLength(1);
       });
     });
 
