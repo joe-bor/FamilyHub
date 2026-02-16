@@ -123,6 +123,11 @@ export function SidebarMenu() {
             })}
           </div>
         </nav>
+
+        {/* Version */}
+        <div className="border-t border-border px-6 py-4">
+          <p className="text-xs text-muted-foreground">v{__APP_VERSION__}</p>
+        </div>
       </aside>
 
       {/* Family Settings Modal */}

@@ -1,8 +1,11 @@
+import { readFileSync } from "node:fs";
 import path from "node:path";
 import react from "@vitejs/plugin-react";
 import { visualizer } from "rollup-plugin-visualizer";
 import { defineConfig } from "vite";
 import { VitePWA } from "vite-plugin-pwa";
+
+const { version } = JSON.parse(readFileSync("package.json", "utf-8"));
 
 // https://vite.dev/config/
 export default defineConfig({
@@ -82,6 +85,9 @@ export default defineConfig({
       brotliSize: true,
     }),
   ],
+  define: {
+    __APP_VERSION__: JSON.stringify(version),
+  },
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
