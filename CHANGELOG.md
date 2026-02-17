@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.4.0](https://github.com/joe-bor/FamilyHub/compare/v0.3.0...v0.4.0) (2026-02-17)
+
+
+### Features
+
+* **deploy:** add pre-deploy safety guards ([b10add0](https://github.com/joe-bor/FamilyHub/commit/b10add047e081de6487ef7b592d6b1ecd274403a))
+* **ui:** display app version in sidebar ([2c6d913](https://github.com/joe-bor/FamilyHub/commit/2c6d913949815ca8a3c9567d974589746167e58e))
+
+
+### Bug Fixes
+
+* **docs:** update README version from v0.2.0 to v0.3.0 ([24d4609](https://github.com/joe-bor/FamilyHub/commit/24d4609087df88fbdb39534fe296097c15ee66f5))
+* **docs:** update README version from v0.2.0 to v0.3.0 ([a317e58](https://github.com/joe-bor/FamilyHub/commit/a317e58c593a3d33dd1d260dfca3d970808269bc))
+* **test:** remove duplicate assertion in onboarding test ([09f0062](https://github.com/joe-bor/FamilyHub/commit/09f006270a6ff7675e1967912c4be4580f1a5d99))
+
 ## [0.3.0](https://github.com/joe-bor/FamilyHub/compare/v0.2.0...v0.3.0) (2026-02-15)
 
 
