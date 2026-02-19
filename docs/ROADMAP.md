@@ -164,7 +164,7 @@ DELETE /family/members/:id      → void
 GET    /calendar/events         → ApiResponse<CalendarEvent[]> (params: startDate, endDate, memberId)
 GET    /calendar/events/:id     → ApiResponse<CalendarEvent>
 POST   /calendar/events         → ApiResponse<CalendarEvent>
-PATCH  /calendar/events/:id     → ApiResponse<CalendarEvent>
+PUT    /calendar/events/:id     → ApiResponse<CalendarEvent>
 DELETE /calendar/events/:id     → void
 ```
 

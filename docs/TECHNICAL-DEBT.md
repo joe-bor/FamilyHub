@@ -191,7 +191,7 @@ See `.env.example` for environment variable documentation.
 GET    /calendar/events          params: startDate, endDate, memberId
 GET    /calendar/events/:id
 POST   /calendar/events          body: CreateEventRequest
-PATCH  /calendar/events/:id      body: UpdateEventRequest
+PUT    /calendar/events/:id      body: UpdateEventRequest
 DELETE /calendar/events/:id
 ```
 Types: `src/lib/types/calendar.ts`
