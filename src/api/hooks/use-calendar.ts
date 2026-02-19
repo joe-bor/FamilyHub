@@ -99,9 +99,7 @@ export function useUpdateEvent(callbacks?: UpdateEventCallbacks) {
                 ? {
                     ...event,
                     ...updatedEvent,
-                    date: updatedEvent.date
-                      ? parseLocalDate(updatedEvent.date) // Parse as local date, not UTC
-                      : event.date,
+                    date: parseLocalDate(updatedEvent.date),
                   }
                 : event,
             ),

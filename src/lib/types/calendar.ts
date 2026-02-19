@@ -29,11 +29,11 @@ export interface CreateEventRequest {
 
 export interface UpdateEventRequest {
   id: string;
-  title?: string;
-  startTime?: string;
-  endTime?: string;
-  date?: string;
-  memberId?: string;
+  title: string;
+  startTime: string;
+  endTime: string;
+  date: string;
+  memberId: string;
   isAllDay?: boolean;
   location?: string;
 }

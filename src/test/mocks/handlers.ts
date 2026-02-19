@@ -179,8 +179,8 @@ export const handlers = [
     );
   }),
 
-  // PATCH /calendar/events/:id - Update event
-  http.patch(`${API_BASE}/calendar/events/:id`, async ({ params, request }) => {
+  // PUT /calendar/events/:id - Update event (full replacement)
+  http.put(`${API_BASE}/calendar/events/:id`, async ({ params, request }) => {
     const { id } = params;
     const body = (await request.json()) as Omit<UpdateEventRequest, "id">;
 
@@ -192,16 +192,15 @@ export const handlers = [
       );
     }
 
-    const existingEvent = mockEvents[index];
     const updatedEvent: CalendarEvent = {
-      ...existingEvent,
-      title: body.title ?? existingEvent.title,
-      startTime: body.startTime ?? existingEvent.startTime,
-      endTime: body.endTime ?? existingEvent.endTime,
-      date: body.date ? parseLocalDate(body.date) : existingEvent.date,
-      memberId: body.memberId ?? existingEvent.memberId,
-      isAllDay: body.isAllDay ?? existingEvent.isAllDay,
-      location: body.location ?? existingEvent.location,
+      id: id as string,
+      title: body.title,
+      startTime: body.startTime,
+      endTime: body.endTime,
+      date: parseLocalDate(body.date),
+      memberId: body.memberId,
+      isAllDay: body.isAllDay ?? mockEvents[index].isAllDay,
+      location: body.location ?? mockEvents[index].location,
     };
 
     mockEvents = [

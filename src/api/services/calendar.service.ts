@@ -45,7 +45,7 @@ export const calendarService = {
     if (USE_MOCK_API) {
       return calendarMockHandlers.updateEvent(request);
     }
-    return httpClient.patch<ApiResponse<CalendarEvent>>(
+    return httpClient.put<ApiResponse<CalendarEvent>>(
       `/calendar/events/${request.id}`,
       request,
     );

@@ -251,16 +251,15 @@ export const calendarMockHandlers = {
       });
     }
 
-    const existingEvent = mockEvents[index];
     const updatedEvent: CalendarEvent = {
-      ...existingEvent,
-      title: request.title ?? existingEvent.title,
-      startTime: request.startTime ?? existingEvent.startTime,
-      endTime: request.endTime ?? existingEvent.endTime,
-      date: request.date ? parseLocalDate(request.date) : existingEvent.date, // Parse as local date, not UTC
-      memberId: request.memberId ?? existingEvent.memberId,
-      isAllDay: request.isAllDay ?? existingEvent.isAllDay,
-      location: request.location ?? existingEvent.location,
+      id: request.id,
+      title: request.title,
+      startTime: request.startTime,
+      endTime: request.endTime,
+      date: parseLocalDate(request.date),
+      memberId: request.memberId,
+      isAllDay: request.isAllDay ?? mockEvents[index].isAllDay,
+      location: request.location ?? mockEvents[index].location,
     };
 
     mockEvents = [
