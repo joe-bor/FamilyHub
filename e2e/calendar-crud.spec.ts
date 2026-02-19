@@ -60,6 +60,13 @@ test.describe("Calendar Event CRUD", () => {
     // VIEW EVENT DETAILS
     // ============================================
 
+    // Switch to Day view to avoid overlapping event cards in Weekly view
+    // (mock events like "Tutoring" at 3:30 PM can overlap the newly created event)
+    await page
+      .getByTestId("view-switcher")
+      .getByRole("button", { name: "Day" })
+      .click();
+
     // Click on the event card to open detail modal
     const eventCard = page
       .getByRole("button", { name: /Team Meeting/ })
@@ -69,9 +76,9 @@ test.describe("Calendar Event CRUD", () => {
     // Wait for dialog to fully open and get dialog locator
     const dialog = await waitForDialogReady(page);
 
-    // Verify event title in modal
+    // Verify event title in modal (scoped to dialog)
     await expect(
-      page.getByRole("heading", { name: "Team Meeting" }),
+      dialog.getByRole("heading", { name: "Team Meeting" }),
     ).toBeVisible();
 
     // Verify member is shown (scope to dialog to avoid matching filter pills)
@@ -118,9 +125,9 @@ test.describe("Calendar Event CRUD", () => {
     await safeClick(updatedCard);
 
     // Wait for dialog to fully open
-    await waitForDialogReady(page);
+    const detailDialog = await waitForDialogReady(page);
     await expect(
-      page.getByRole("heading", { name: "Updated Meeting" }),
+      detailDialog.getByRole("heading", { name: "Updated Meeting" }),
     ).toBeVisible();
 
     // Click Delete button

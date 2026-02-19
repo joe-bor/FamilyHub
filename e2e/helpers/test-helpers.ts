@@ -162,8 +162,8 @@ export async function waitForDialogReady(page: Page): Promise<Locator> {
   // Use expect with auto-retry for better CI stability
   await expect(dialog).toBeVisible({ timeout: 10000 });
 
-  // Ensure Radix has finished mounting by checking data-state
-  await page.waitForSelector('[data-state="open"]', { state: "attached" });
+  // Ensure Radix has finished mounting — scoped to the dialog, not page-wide
+  await expect(dialog).toHaveAttribute("data-state", "open", { timeout: 5000 });
 
   return dialog;
 }
