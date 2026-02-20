@@ -70,6 +70,31 @@ export async function seedFamily(
 }
 
 /**
+ * Seed calendar events storage to prevent random mock event generation.
+ * Uses a single far-past event as a sentinel — satisfies the mock's
+ * "has stored events" check without appearing in the current week.
+ * Must be called after page.goto() but before reload/navigation.
+ */
+export async function seedEmptyCalendar(page: Page): Promise<void> {
+  await page.evaluate(() => {
+    const sentinel = [
+      {
+        id: "seed-sentinel",
+        title: "_",
+        date: "2000-01-01T00:00:00.000Z",
+        startTime: "12:00 AM",
+        endTime: "1:00 AM",
+        memberId: "_",
+      },
+    ];
+    localStorage.setItem(
+      "family-hub-calendar-events",
+      JSON.stringify(sentinel),
+    );
+  });
+}
+
+/**
  * Wait for app hydration (Zustand rehydrates from localStorage)
  * The app shows "Loading..." while hydrating
  */
