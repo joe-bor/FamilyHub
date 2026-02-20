@@ -4,6 +4,7 @@ import {
   createTestMember,
   safeClick,
   seedAuth,
+  seedEmptyCalendar,
   seedFamily,
   waitForCalendarReady,
   waitForDialogReady,
@@ -23,6 +24,9 @@ test.describe("Calendar Event CRUD", () => {
       name: "Test Family",
       members: [createTestMember("Alice", "coral")],
     });
+
+    // Prevent random mock events from overlapping with test-created events
+    await seedEmptyCalendar(page);
 
     // Navigate and wait for app
     await page.reload();
@@ -59,13 +63,6 @@ test.describe("Calendar Event CRUD", () => {
     // ============================================
     // VIEW EVENT DETAILS
     // ============================================
-
-    // Switch to Day view to avoid overlapping event cards in Weekly view
-    // (mock events like "Tutoring" at 3:30 PM can overlap the newly created event)
-    await page
-      .getByTestId("view-switcher")
-      .getByRole("button", { name: "Day" })
-      .click();
 
     // Click on the event card to open detail modal
     const eventCard = page
