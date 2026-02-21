@@ -16,6 +16,7 @@ import type {
   UpdateMemberRequest,
 } from "@/lib/types";
 import { familyColors } from "@/lib/types";
+import { useIsAuthenticated } from "@/stores";
 
 // ============================================================================
 // Query Keys Factory
@@ -139,7 +140,8 @@ export function useFamilyName(): string {
  * Derived: true when family data exists and has at least one member.
  */
 export function useSetupComplete(): boolean {
-  const { data, isFetched } = useFamily();
+  const isAuthenticated = useIsAuthenticated();
+  const { data, isFetched } = useFamily({ enabled: isAuthenticated });
   if (!isFetched) return false;
   const family = data?.data;
   return family != null && family.members.length > 0;
