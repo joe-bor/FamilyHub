@@ -48,6 +48,8 @@ export class ApiException extends Error {
 
 export function mapStatusToErrorCode(status: number): ApiErrorCode {
   switch (status) {
+    case 400:
+      return ApiErrorCode.VALIDATION_ERROR;
     case 401:
       return ApiErrorCode.UNAUTHORIZED;
     case 403:
