@@ -10,6 +10,7 @@ import {
   it,
   vi,
 } from "vitest";
+import type { UpdateEventRequest } from "@/lib/types";
 import { useCalendarStore } from "@/stores";
 import { createTestEvent, testEvents, testMembers } from "@/test/fixtures";
 import {
@@ -409,6 +410,84 @@ describe("CalendarModule", () => {
         expect(screen.getByText("Updated Title")).toBeInTheDocument();
         expect(screen.queryByText("Original Title")).not.toBeInTheDocument();
       });
+    });
+
+    it("sends all fields including optional ones in PUT request", async () => {
+      const event = createTestEvent({
+        title: "Office Sync",
+        location: "Room 42",
+        isAllDay: false,
+      });
+      seedMockEvents([event]);
+
+      // Intercept the PUT request to capture the body
+      let capturedBody: Omit<UpdateEventRequest, "id"> | null = null;
+      server.use(
+        http.put(
+          `${API_BASE}/calendar/events/:id`,
+          async ({ request, params }) => {
+            const body = (await request.json()) as Omit<
+              UpdateEventRequest,
+              "id"
+            >;
+            capturedBody = body;
+
+            return HttpResponse.json({
+              data: {
+                id: params.id as string,
+                title: body.title,
+                startTime: body.startTime,
+                endTime: body.endTime,
+                date: new Date(body.date),
+                memberId: body.memberId,
+                isAllDay: body.isAllDay,
+                location: body.location,
+              },
+              message: "Event updated",
+            });
+          },
+        ),
+      );
+
+      const { user } = renderWithUser(<CalendarModule />);
+
+      await waitFor(() => {
+        expect(screen.getByText("Office Sync")).toBeInTheDocument();
+      });
+
+      // Open detail modal → edit modal
+      await user.click(screen.getByText("Office Sync"));
+      await waitFor(() => {
+        expect(screen.getByRole("dialog")).toBeInTheDocument();
+      });
+      await user.click(screen.getByRole("button", { name: /edit/i }));
+
+      await waitFor(() => {
+        expect(screen.getByLabelText(/event name/i)).toHaveValue("Office Sync");
+      });
+
+      // Change only the title
+      const titleInput = screen.getByLabelText(/event name/i);
+      await user.clear(titleInput);
+      await user.type(titleInput, "Office Standup");
+
+      await user.click(screen.getByRole("button", { name: /save changes/i }));
+
+      // Wait for the PUT request to complete
+      await waitFor(
+        () => {
+          expect(capturedBody).not.toBeNull();
+        },
+        { timeout: TEST_TIMEOUTS.FORM_SUBMIT },
+      );
+
+      // Verify optional fields were included in the PUT body
+      expect(capturedBody!.title).toBe("Office Standup");
+      expect(capturedBody!.location).toBe("Room 42");
+      expect(capturedBody!.isAllDay).toBe(false);
+      expect(capturedBody!.startTime).toBe(event.startTime);
+      expect(capturedBody!.endTime).toBe(event.endTime);
+      expect(capturedBody!.memberId).toBe(event.memberId);
     });
   });
 
