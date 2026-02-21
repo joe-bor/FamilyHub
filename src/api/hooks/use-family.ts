@@ -138,6 +138,12 @@ export function useFamilyName(): string {
 /**
  * Check if setup is complete.
  * Derived: true when family data exists and has at least one member.
+ *
+ * Auth guard: Unlike other derived selectors (useFamilyName, useFamilyMembers, etc.)
+ * which are only rendered inside authenticated routes, this hook is called at the
+ * top-level routing layer (App.tsx) before the auth guard. Without the `enabled`
+ * check, useFamily() would fire GET /family on every page load — returning 401
+ * for unauthenticated users and triggering an infinite reload loop.
  */
 export function useSetupComplete(): boolean {
   const isAuthenticated = useIsAuthenticated();
