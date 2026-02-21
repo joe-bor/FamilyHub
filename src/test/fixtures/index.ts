@@ -4,6 +4,7 @@
 export {
   createEventRequest,
   createTestEvent,
+  createUpdateRequest,
   createWeekOfEvents,
   getRelativeDate,
   testEvent,
