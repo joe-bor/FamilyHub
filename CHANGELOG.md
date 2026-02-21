@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.3.2](https://github.com/joe-bor/FamilyHub/compare/family-hub-v0.3.1...family-hub-v0.3.2) (2026-02-21)
+
+
+### Bug Fixes
+
+* **api:** change calendar event update from PATCH to PUT ([b97770d](https://github.com/joe-bor/FamilyHub/commit/b97770decaa2233a822b92efc306b9bf4098c5d8))
+* **api:** fix URL path resolution for real backend ([bcba8f4](https://github.com/joe-bor/FamilyHub/commit/bcba8f4c8af5d27e68d92b8824d7c652d97958cc))
+* **api:** map HTTP 400 to VALIDATION_ERROR ([cceab86](https://github.com/joe-bor/FamilyHub/commit/cceab862c837b7b4bdac9ecfb5884932ced5147b))
+* **api:** prevent useFamily query from firing before auth ([93c8c5b](https://github.com/joe-bor/FamilyHub/commit/93c8c5b337c96df19e2fe864f7df15dd9ddf5d47))
+* **calendar:** coerce null location to undefined for Zod compatibility ([ba9049f](https://github.com/joe-bor/FamilyHub/commit/ba9049f752be4556135fb28a16f7c3a2a7adfab1))
+* **calendar:** read editingEvent from store at call time to avoid stale closure ([6b22798](https://github.com/joe-bor/FamilyHub/commit/6b22798f5698756dbc333024e261e8a377a30fe7))
+* **e2e:** scope dialog checks and switch to Day view for reliable clicks ([253bb77](https://github.com/joe-bor/FamilyHub/commit/253bb770cbc324d6d1f0b1adc758d614790220d5))
+* **e2e:** seed empty calendar to prevent mock event overlap in CRUD test ([bcfc927](https://github.com/joe-bor/FamilyHub/commit/bcfc9273fc021b047dbed3512a1073bd535bf960))
+
+
+### Documentation
+
+* **api:** clarify why useSetupComplete needs auth guard ([4c2d158](https://github.com/joe-bor/FamilyHub/commit/4c2d1585b64dab0e2d48742f55a6c17b8c0d48f5))
+* update API contract references for calendar PUT endpoint ([66c1628](https://github.com/joe-bor/FamilyHub/commit/66c1628fbbe8dd86cb8e2ca934a18e3cdbab482e))
+
 ## [0.3.1](https://github.com/joe-bor/FamilyHub/compare/family-hub-v0.3.0...family-hub-v0.3.1) (2026-02-17)
 
 
