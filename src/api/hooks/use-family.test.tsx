@@ -16,6 +16,7 @@ import { FAMILY_STORAGE_KEY } from "@/lib/constants";
 import type { FamilyApiResponse, FamilyData, FamilyMember } from "@/lib/types";
 import { resetMockFamily, seedMockFamily } from "@/test/mocks/handlers";
 import { server } from "@/test/mocks/server";
+import { seedAuthStore } from "@/test/test-utils";
 import {
   familyKeys,
   readFamilyFromStorage,
@@ -258,6 +259,18 @@ describe("useSetupComplete", () => {
     await waitFor(() => {
       expect(result.current).toBe(true);
     });
+  });
+
+  it("returns false and does not fire query when unauthenticated", () => {
+    seedAuthStore({ isAuthenticated: false });
+    seedMockFamily(testFamily);
+
+    const { result } = renderHook(() => useSetupComplete(), {
+      wrapper: createWrapper(),
+    });
+
+    // Query should be disabled — no network request, returns false
+    expect(result.current).toBe(false);
   });
 
   it("returns false when family exists but has no members", async () => {
@@ -817,7 +830,7 @@ describe("rollback on error", () => {
   it("useUpdateFamily restores previous state on server error", async () => {
     // Override handler to return error
     server.use(
-      http.put("http://localhost:3000/family", () => {
+      http.put("http://localhost:3000/api/family", () => {
         return HttpResponse.json({ message: "Server error" }, { status: 500 });
       }),
     );
@@ -843,7 +856,7 @@ describe("rollback on error", () => {
 
   it("useAddMember removes optimistic member on server error", async () => {
     server.use(
-      http.post("http://localhost:3000/family/members", () => {
+      http.post("http://localhost:3000/api/family/members", () => {
         return HttpResponse.json({ message: "Server error" }, { status: 500 });
       }),
     );
@@ -872,7 +885,7 @@ describe("rollback on error", () => {
 
   it("useRemoveMember restores member on server error", async () => {
     server.use(
-      http.delete("http://localhost:3000/family/members/:id", () => {
+      http.delete("http://localhost:3000/api/family/members/:id", () => {
         return HttpResponse.json({ message: "Server error" }, { status: 500 });
       }),
     );
@@ -900,7 +913,7 @@ describe("rollback on error", () => {
 
   it("useUpdateMember restores original member data on server error", async () => {
     server.use(
-      http.put("http://localhost:3000/family/members/:id", () => {
+      http.put("http://localhost:3000/api/family/members/:id", () => {
         return HttpResponse.json({ message: "Server error" }, { status: 500 });
       }),
     );

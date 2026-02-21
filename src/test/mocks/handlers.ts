@@ -84,10 +84,8 @@ function createApiResponse<T>(data: T, message?: string): ApiResponse<T> {
   return message ? { data, message } : { data };
 }
 
-// Base URL for API endpoints
-// Note: Service endpoints start with "/" which makes them absolute paths from the origin
-// So /calendar/events with baseUrl http://localhost:3000/api becomes http://localhost:3000/calendar/events
-export const API_BASE = "http://localhost:3000";
+// Base URL for API endpoints — must match vitest.config.ts VITE_API_BASE_URL
+export const API_BASE = "http://localhost:3000/api";
 
 /**
  * MSW request handlers for calendar API endpoints.
@@ -108,7 +106,7 @@ export const API_BASE = "http://localhost:3000";
  * Override handlers for error scenarios:
  * ```typescript
  * server.use(
- *   http.get("http://localhost:3000/calendar/events", () => {
+ *   http.get("http://localhost:3000/api/calendar/events", () => {
  *     return HttpResponse.json({ message: "Server error" }, { status: 500 });
  *   })
  * );

@@ -62,6 +62,10 @@ async function parseErrorResponse(response: Response): Promise<{
 export function createHttpClient(config: HttpClientConfig) {
   const { baseUrl, defaultHeaders = {}, onUnauthorized } = config;
 
+  // Ensure base URL has trailing slash so relative endpoints resolve correctly.
+  // Without this, new URL("/events", "http://host/api") drops the /api prefix.
+  const normalizedBaseUrl = baseUrl.endsWith("/") ? baseUrl : `${baseUrl}/`;
+
   async function request<T>(
     endpoint: string,
     options: RequestConfig & { body?: unknown } = {},
@@ -69,7 +73,10 @@ export function createHttpClient(config: HttpClientConfig) {
     const { params, timeout = 30000, body, ...fetchOptions } = options;
 
     // Build URL with query params
-    const url = new URL(endpoint, baseUrl);
+    const cleanEndpoint = endpoint.startsWith("/")
+      ? endpoint.slice(1)
+      : endpoint;
+    const url = new URL(cleanEndpoint, normalizedBaseUrl);
     if (params) {
       Object.entries(params).forEach(([key, value]) => {
         if (value !== undefined) {
@@ -173,12 +180,16 @@ export function createHttpClient(config: HttpClientConfig) {
 export const httpClient = createHttpClient({
   baseUrl: import.meta.env.VITE_API_BASE_URL || "/api",
   onUnauthorized: () => {
-    // Clear token and reload to show login
     try {
+      const hadToken = !!localStorage.getItem(AUTH_TOKEN_STORAGE_KEY);
       localStorage.removeItem(AUTH_TOKEN_STORAGE_KEY);
+      // Only reload if a token existed (session expiry).
+      // Prevents infinite reload loop on first-visit 401s.
+      if (hadToken) {
+        window.location.reload();
+      }
     } catch {
       // localStorage might not be available
     }
-    window.location.reload();
   },
 });
