@@ -1,4 +1,8 @@
-import type { CalendarEvent, CreateEventRequest } from "@/lib/types";
+import type {
+  CalendarEvent,
+  CreateEventRequest,
+  UpdateEventRequest,
+} from "@/lib/types";
 import { testMembers } from "./family";
 
 /**
@@ -115,6 +119,31 @@ export function createEventRequest(
     endTime: "3:00 PM",
     date,
     memberId: testMembers[0].id,
+    ...overrides,
+  };
+}
+
+/**
+ * Create a valid UpdateEventRequest for API testing.
+ * Builds from an existing CalendarEvent, converting the date to a string.
+ */
+export function createUpdateRequest(
+  event: CalendarEvent,
+  overrides: Partial<UpdateEventRequest> = {},
+): UpdateEventRequest {
+  const year = event.date.getFullYear();
+  const month = String(event.date.getMonth() + 1).padStart(2, "0");
+  const day = String(event.date.getDate()).padStart(2, "0");
+
+  return {
+    id: event.id,
+    title: event.title,
+    startTime: event.startTime,
+    endTime: event.endTime,
+    date: `${year}-${month}-${day}`,
+    memberId: event.memberId,
+    isAllDay: event.isAllDay,
+    location: event.location,
     ...overrides,
   };
 }
