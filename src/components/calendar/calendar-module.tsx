@@ -141,6 +141,9 @@ export function CalendarModule() {
     onSuccess: () => {
       closeEditModal();
     },
+    onError: (error) => {
+      console.error("Failed to update event:", error.message);
+    },
   });
 
   // Client-side filtering based on filter state
@@ -170,10 +173,11 @@ export function CalendarModule() {
   };
 
   const handleUpdateEvent = (formData: EventFormData) => {
-    if (!editingEvent) return;
+    const currentEditingEvent = useCalendarStore.getState().editingEvent;
+    if (!currentEditingEvent) return;
 
     const request: UpdateEventRequest = {
-      id: editingEvent.id,
+      id: currentEditingEvent.id,
       title: formData.title,
       startTime: format24hTo12h(formData.startTime),
       endTime: format24hTo12h(formData.endTime),
