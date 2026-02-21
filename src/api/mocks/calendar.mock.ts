@@ -258,8 +258,8 @@ export const calendarMockHandlers = {
       endTime: request.endTime,
       date: parseLocalDate(request.date),
       memberId: request.memberId,
-      isAllDay: request.isAllDay ?? mockEvents[index].isAllDay,
-      location: request.location ?? mockEvents[index].location,
+      isAllDay: request.isAllDay,
+      location: request.location,
     };
 
     mockEvents = [
