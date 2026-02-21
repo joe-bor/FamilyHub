@@ -197,8 +197,8 @@ export const handlers = [
       endTime: body.endTime,
       date: parseLocalDate(body.date),
       memberId: body.memberId,
-      isAllDay: body.isAllDay ?? mockEvents[index].isAllDay,
-      location: body.location ?? mockEvents[index].location,
+      isAllDay: body.isAllDay,
+      location: body.location,
     };
 
     mockEvents = [
