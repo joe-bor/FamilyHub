@@ -82,7 +82,10 @@ export function MemberFormModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-full max-w-md mx-4 sm:mx-auto">
+      <DialogContent
+        className="w-full max-w-md mx-4 sm:mx-auto"
+        aria-describedby={undefined}
+      >
         <DialogHeader>
           <DialogTitle>
             {mode === "add" ? "Add Family Member" : "Edit Family Member"}
