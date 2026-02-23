@@ -3,7 +3,7 @@ import { parseLocalDate } from "@/lib/time-utils";
 import type {
   AddMemberRequest,
   ApiResponse,
-  CalendarEvent,
+  CalendarEventResponse,
   CreateEventRequest,
   FamilyData,
   FamilyMember,
@@ -18,7 +18,8 @@ import type {
 } from "@/lib/types";
 
 // In-memory storage for mock calendar events (reset between tests)
-let mockEvents: CalendarEvent[] = [];
+// Uses CalendarEventResponse (string dates) to match real API wire format
+let mockEvents: CalendarEventResponse[] = [];
 
 // In-memory storage for mock family data (reset between tests)
 let mockFamily: FamilyData | null = null;
@@ -39,16 +40,17 @@ export function resetMockEvents(): void {
 }
 
 /**
- * Seed mock events for testing
+ * Seed mock events for testing.
+ * Accepts CalendarEventResponse (string dates) to match real API wire format.
  */
-export function seedMockEvents(events: CalendarEvent[]): void {
+export function seedMockEvents(events: CalendarEventResponse[]): void {
   mockEvents = [...events];
 }
 
 /**
  * Get current mock events (for assertions)
  */
-export function getMockEvents(): CalendarEvent[] {
+export function getMockEvents(): CalendarEventResponse[] {
   return [...mockEvents];
 }
 
@@ -125,11 +127,11 @@ export const handlers = [
     // Apply date range filter (use parseLocalDate for consistent timezone handling)
     if (startDate) {
       const start = parseLocalDate(startDate);
-      events = events.filter((e) => new Date(e.date) >= start);
+      events = events.filter((e) => parseLocalDate(e.date) >= start);
     }
     if (endDate) {
       const end = parseLocalDate(endDate);
-      events = events.filter((e) => new Date(e.date) <= end);
+      events = events.filter((e) => parseLocalDate(e.date) <= end);
     }
 
     // Apply member filter
@@ -159,12 +161,12 @@ export const handlers = [
   http.post(`${API_BASE}/calendar/events`, async ({ request }) => {
     const body = (await request.json()) as CreateEventRequest;
 
-    const newEvent: CalendarEvent = {
+    const newEvent: CalendarEventResponse = {
       id: `event-${Date.now()}`,
       title: body.title,
       startTime: body.startTime,
       endTime: body.endTime,
-      date: parseLocalDate(body.date), // Use parseLocalDate to avoid timezone issues
+      date: body.date,
       memberId: body.memberId,
       isAllDay: body.isAllDay,
       location: body.location,
@@ -190,12 +192,12 @@ export const handlers = [
       );
     }
 
-    const updatedEvent: CalendarEvent = {
+    const updatedEvent: CalendarEventResponse = {
       id: id as string,
       title: body.title,
       startTime: body.startTime,
       endTime: body.endTime,
-      date: parseLocalDate(body.date),
+      date: body.date,
       memberId: body.memberId,
       isAllDay: body.isAllDay,
       location: body.location,

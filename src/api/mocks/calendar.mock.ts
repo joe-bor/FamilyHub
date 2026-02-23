@@ -1,9 +1,9 @@
-import { isWithinInterval, parseISO, startOfDay } from "date-fns";
+import { isWithinInterval, startOfDay } from "date-fns";
 import { ApiErrorCode, ApiException } from "@/api/client";
-import { parseLocalDate } from "@/lib/time-utils";
+import { formatLocalDate, parseLocalDate } from "@/lib/time-utils";
 import type {
   ApiResponse,
-  CalendarEvent,
+  CalendarEventResponse,
   CreateEventRequest,
   GetEventsParams,
   UpdateEventRequest,
@@ -57,7 +57,7 @@ function getFamilyMemberIds(): string[] {
   }
 }
 
-function generateSampleEvents(): CalendarEvent[] {
+function generateSampleEvents(): CalendarEventResponse[] {
   const memberIds = getFamilyMemberIds();
 
   // Don't generate sample events if no family members exist yet
@@ -66,7 +66,7 @@ function generateSampleEvents(): CalendarEvent[] {
   }
 
   const today = new Date();
-  const events: CalendarEvent[] = [];
+  const events: CalendarEventResponse[] = [];
 
   // Helper to pick a random member
   const getRandomMemberId = () =>
@@ -88,7 +88,7 @@ function generateSampleEvents(): CalendarEvent[] {
         title: template.title,
         startTime: template.startTime,
         endTime: template.endTime,
-        date: new Date(date),
+        date: formatLocalDate(date),
         memberId: getRandomMemberId(),
       });
     }
@@ -98,39 +98,27 @@ function generateSampleEvents(): CalendarEvent[] {
 }
 
 // Persistence helpers
-function saveEventsToStorage(events: CalendarEvent[]): void {
+function saveEventsToStorage(events: CalendarEventResponse[]): void {
   try {
-    // Serialize events, converting Date objects to ISO strings
-    const serialized = events.map((event) => ({
-      ...event,
-      date: event.date instanceof Date ? event.date.toISOString() : event.date,
-    }));
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(serialized));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(events));
   } catch (error) {
     console.error("Failed to save calendar events to localStorage:", error);
   }
 }
 
-function loadEventsFromStorage(): CalendarEvent[] | null {
+function loadEventsFromStorage(): CalendarEventResponse[] | null {
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (!stored) return null;
 
-    const parsed = JSON.parse(stored) as Array<
-      CalendarEvent & { date: string }
-    >;
-    // Deserialize: convert ISO date strings back to Date objects
-    return parsed.map((event) => ({
-      ...event,
-      date: new Date(event.date),
-    }));
+    return JSON.parse(stored) as CalendarEventResponse[];
   } catch (error) {
     console.error("Failed to load calendar events from localStorage:", error);
     return null;
   }
 }
 
-function initializeMockEvents(): CalendarEvent[] {
+function initializeMockEvents(): CalendarEventResponse[] {
   // Try to load from localStorage first
   const stored = loadEventsFromStorage();
   if (stored && stored.length > 0) {
@@ -156,7 +144,7 @@ function ensureSampleEventsExist(): void {
 }
 
 // In-memory storage for mock data (initialized from localStorage or generated)
-let mockEvents: CalendarEvent[] = initializeMockEvents();
+let mockEvents: CalendarEventResponse[] = initializeMockEvents();
 
 function createApiResponse<T>(data: T, message?: string): ApiResponse<T> {
   return message ? { data, message } : { data };
@@ -165,7 +153,7 @@ function createApiResponse<T>(data: T, message?: string): ApiResponse<T> {
 export const calendarMockHandlers = {
   async getEvents(
     params?: GetEventsParams,
-  ): Promise<ApiResponse<CalendarEvent[]>> {
+  ): Promise<ApiResponse<CalendarEventResponse[]>> {
     await simulateApiCall();
 
     // Lazy init: generate sample events if family was created after module load
@@ -174,22 +162,22 @@ export const calendarMockHandlers = {
     let events = [...mockEvents];
 
     // Apply date range filter
-    // Use date-fns to normalize dates and avoid timezone issues
     if (params?.startDate && params?.endDate) {
-      // Parse ISO date strings and normalize to start of day in local timezone
-      const start = startOfDay(parseISO(params.startDate));
-      const end = startOfDay(parseISO(params.endDate));
+      const start = startOfDay(parseLocalDate(params.startDate));
+      const end = startOfDay(parseLocalDate(params.endDate));
 
       events = events.filter((e) => {
-        const eventDate = startOfDay(new Date(e.date));
+        const eventDate = startOfDay(parseLocalDate(e.date));
         return isWithinInterval(eventDate, { start, end });
       });
     } else if (params?.startDate) {
-      const start = startOfDay(parseISO(params.startDate));
-      events = events.filter((e) => startOfDay(new Date(e.date)) >= start);
+      const start = startOfDay(parseLocalDate(params.startDate));
+      events = events.filter(
+        (e) => startOfDay(parseLocalDate(e.date)) >= start,
+      );
     } else if (params?.endDate) {
-      const end = startOfDay(parseISO(params.endDate));
-      events = events.filter((e) => startOfDay(new Date(e.date)) <= end);
+      const end = startOfDay(parseLocalDate(params.endDate));
+      events = events.filter((e) => startOfDay(parseLocalDate(e.date)) <= end);
     }
 
     // Apply member filter
@@ -200,7 +188,7 @@ export const calendarMockHandlers = {
     return createApiResponse(events);
   },
 
-  async getEventById(id: string): Promise<ApiResponse<CalendarEvent>> {
+  async getEventById(id: string): Promise<ApiResponse<CalendarEventResponse>> {
     await simulateApiCall({ delayMin: 100, delayMax: 300 });
 
     const event = mockEvents.find((e) => e.id === id);
@@ -217,15 +205,15 @@ export const calendarMockHandlers = {
 
   async createEvent(
     request: CreateEventRequest,
-  ): Promise<ApiResponse<CalendarEvent>> {
+  ): Promise<ApiResponse<CalendarEventResponse>> {
     await simulateApiCall();
 
-    const newEvent: CalendarEvent = {
+    const newEvent: CalendarEventResponse = {
       id: `event-${Date.now()}`,
       title: request.title,
       startTime: request.startTime,
       endTime: request.endTime,
-      date: parseLocalDate(request.date), // Parse as local date, not UTC
+      date: request.date,
       memberId: request.memberId,
       isAllDay: request.isAllDay,
       location: request.location,
@@ -239,7 +227,7 @@ export const calendarMockHandlers = {
 
   async updateEvent(
     request: UpdateEventRequest,
-  ): Promise<ApiResponse<CalendarEvent>> {
+  ): Promise<ApiResponse<CalendarEventResponse>> {
     await simulateApiCall();
 
     const index = mockEvents.findIndex((e) => e.id === request.id);
@@ -251,12 +239,12 @@ export const calendarMockHandlers = {
       });
     }
 
-    const updatedEvent: CalendarEvent = {
+    const updatedEvent: CalendarEventResponse = {
       id: request.id,
       title: request.title,
       startTime: request.startTime,
       endTime: request.endTime,
-      date: parseLocalDate(request.date),
+      date: request.date,
       memberId: request.memberId,
       isAllDay: request.isAllDay,
       location: request.location,
