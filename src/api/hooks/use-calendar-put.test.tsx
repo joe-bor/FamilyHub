@@ -14,12 +14,14 @@ import {
 import type {
   ApiResponse,
   CalendarEvent,
+  CalendarEventResponse,
   UpdateEventRequest,
 } from "@/lib/types";
 import {
   createTestEvent,
   createUpdateRequest,
   testMembers,
+  toEventResponse,
 } from "@/test/fixtures";
 import {
   API_BASE,
@@ -76,7 +78,7 @@ describe("PUT full-replacement semantics", () => {
       location: "Office",
       isAllDay: false,
     });
-    seedMockEvents([original]);
+    seedMockEvents([toEventResponse(original)]);
 
     // Seed the query cache so optimistic update has data to work with
     testQueryClient.setQueryData(calendarKeys.eventList(), {
@@ -95,12 +97,12 @@ describe("PUT full-replacement semantics", () => {
             ...body,
           } as UpdateEventRequest;
 
-          const updatedEvent: CalendarEvent = {
+          const updatedEvent: CalendarEventResponse = {
             id: params.id as string,
             title: body.title,
             startTime: body.startTime,
             endTime: body.endTime,
-            date: new Date(body.date),
+            date: body.date,
             memberId: body.memberId,
             isAllDay: body.isAllDay,
             location: body.location,
@@ -152,7 +154,7 @@ describe("PUT full-replacement semantics", () => {
       isAllDay: false,
       memberId: testMembers[0].id,
     });
-    seedMockEvents([original]);
+    seedMockEvents([toEventResponse(original)]);
 
     testQueryClient.setQueryData(calendarKeys.eventList(), {
       data: [original],
@@ -166,12 +168,12 @@ describe("PUT full-replacement semantics", () => {
           capturedBody = (await request.json()) as Record<string, unknown>;
 
           // Respond with true PUT semantics: use request values directly
-          const updatedEvent: CalendarEvent = {
+          const updatedEvent: CalendarEventResponse = {
             id: params.id as string,
             title: capturedBody.title as string,
             startTime: capturedBody.startTime as string,
             endTime: capturedBody.endTime as string,
-            date: new Date(capturedBody.date as string),
+            date: capturedBody.date as string,
             memberId: capturedBody.memberId as string,
             isAllDay: capturedBody.isAllDay as boolean | undefined,
             location: capturedBody.location as string | undefined,
@@ -213,7 +215,7 @@ describe("PUT full-replacement semantics", () => {
       isAllDay: true,
       memberId: testMembers[1].id,
     });
-    seedMockEvents([original]);
+    seedMockEvents([toEventResponse(original)]);
 
     testQueryClient.setQueryData(calendarKeys.eventList(), {
       data: [original],
@@ -246,7 +248,7 @@ describe("PUT full-replacement semantics", () => {
       endTime: "3:30 PM",
       memberId: testMembers[0].id,
     });
-    seedMockEvents([original]);
+    seedMockEvents([toEventResponse(original)]);
 
     testQueryClient.setQueryData(calendarKeys.eventList(), {
       data: [original],

@@ -10,9 +10,13 @@ import {
   it,
   vi,
 } from "vitest";
-import type { UpdateEventRequest } from "@/lib/types";
+import type { CalendarEventResponse, UpdateEventRequest } from "@/lib/types";
 import { useCalendarStore } from "@/stores";
-import { createTestEvent, testEvents, testMembers } from "@/test/fixtures";
+import {
+  createTestEventResponse,
+  testEventResponses,
+  testMembers,
+} from "@/test/fixtures";
 import {
   API_BASE,
   getMockEvents,
@@ -104,7 +108,7 @@ describe("CalendarModule", () => {
     });
 
     it("shows events after successful fetch", async () => {
-      const event = createTestEvent({ title: "Team Meeting" });
+      const event = createTestEventResponse({ title: "Team Meeting" });
       seedMockEvents([event]);
 
       render(<CalendarModule />);
@@ -117,7 +121,7 @@ describe("CalendarModule", () => {
 
   describe("Event Display & Filtering", () => {
     it("displays events for current date range", async () => {
-      seedMockEvents(testEvents);
+      seedMockEvents(testEventResponses);
 
       render(<CalendarModule />);
 
@@ -135,7 +139,7 @@ describe("CalendarModule", () => {
           showAllDayEvents: true,
         },
       });
-      seedMockEvents(testEvents);
+      seedMockEvents(testEventResponses);
 
       render(<CalendarModule />);
 
@@ -155,7 +159,7 @@ describe("CalendarModule", () => {
           showAllDayEvents: false,
         },
       });
-      seedMockEvents(testEvents);
+      seedMockEvents(testEventResponses);
 
       render(<CalendarModule />);
 
@@ -285,7 +289,7 @@ describe("CalendarModule", () => {
 
   describe("View Event Details", () => {
     it("renders events with clickable structure", async () => {
-      const event = createTestEvent({ title: "Clickable Event" });
+      const event = createTestEventResponse({ title: "Clickable Event" });
       seedMockEvents([event]);
 
       render(<CalendarModule />);
@@ -302,7 +306,7 @@ describe("CalendarModule", () => {
 
   describe("Event Detail Modal", () => {
     it("opens detail modal when event is clicked", async () => {
-      const event = createTestEvent({
+      const event = createTestEventResponse({
         title: "Team Standup",
         startTime: "9:00 AM",
         endTime: "9:30 AM",
@@ -335,7 +339,7 @@ describe("CalendarModule", () => {
     });
 
     it("closes detail modal when close button clicked", async () => {
-      const event = createTestEvent({ title: "Closeable Event" });
+      const event = createTestEventResponse({ title: "Closeable Event" });
       seedMockEvents([event]);
 
       const { user } = renderWithUser(<CalendarModule />);
@@ -365,7 +369,7 @@ describe("CalendarModule", () => {
 
   describe("Edit Event Flow", () => {
     it("opens edit modal from detail modal and updates event", async () => {
-      const event = createTestEvent({ title: "Original Title" });
+      const event = createTestEventResponse({ title: "Original Title" });
       seedMockEvents([event]);
 
       const { user } = renderWithUser(<CalendarModule />);
@@ -413,7 +417,7 @@ describe("CalendarModule", () => {
     });
 
     it("sends all fields including optional ones in PUT request", async () => {
-      const event = createTestEvent({
+      const event = createTestEventResponse({
         title: "Office Sync",
         location: "Room 42",
         isAllDay: false,
@@ -432,17 +436,19 @@ describe("CalendarModule", () => {
             >;
             capturedBody = body;
 
+            const updatedEvent: CalendarEventResponse = {
+              id: params.id as string,
+              title: body.title,
+              startTime: body.startTime,
+              endTime: body.endTime,
+              date: body.date,
+              memberId: body.memberId,
+              isAllDay: body.isAllDay,
+              location: body.location,
+            };
+
             return HttpResponse.json({
-              data: {
-                id: params.id as string,
-                title: body.title,
-                startTime: body.startTime,
-                endTime: body.endTime,
-                date: new Date(body.date),
-                memberId: body.memberId,
-                isAllDay: body.isAllDay,
-                location: body.location,
-              },
+              data: updatedEvent,
               message: "Event updated",
             });
           },
@@ -493,7 +499,7 @@ describe("CalendarModule", () => {
 
   describe("Delete Event Flow", () => {
     it("deletes event after confirmation", async () => {
-      const event = createTestEvent({ title: "Event to Delete" });
+      const event = createTestEventResponse({ title: "Event to Delete" });
       seedMockEvents([event]);
 
       const { user } = renderWithUser(<CalendarModule />);
@@ -530,7 +536,7 @@ describe("CalendarModule", () => {
     });
 
     it("cancels delete when cancel button clicked", async () => {
-      const event = createTestEvent({ title: "Keep This Event" });
+      const event = createTestEventResponse({ title: "Keep This Event" });
       seedMockEvents([event]);
 
       const { user } = renderWithUser(<CalendarModule />);
@@ -650,7 +656,7 @@ describe("CalendarModule", () => {
 
   describe("View Switching", () => {
     it("renders weekly view with events", async () => {
-      seedMockEvents(testEvents);
+      seedMockEvents(testEventResponses);
       seedCalendarStore({ calendarView: "weekly" });
 
       render(<CalendarModule />);
@@ -661,7 +667,7 @@ describe("CalendarModule", () => {
     });
 
     it("renders schedule view with events", async () => {
-      seedMockEvents(testEvents);
+      seedMockEvents(testEventResponses);
       seedCalendarStore({ calendarView: "schedule" });
 
       render(<CalendarModule />);
@@ -693,7 +699,7 @@ describe("CalendarModule", () => {
           showAllDayEvents: true,
         },
       });
-      seedMockEvents(testEvents);
+      seedMockEvents(testEventResponses);
 
       render(<CalendarModule />);
 

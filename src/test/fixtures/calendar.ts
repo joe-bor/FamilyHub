@@ -1,6 +1,7 @@
 import { formatLocalDate } from "@/lib/time-utils";
 import type {
   CalendarEvent,
+  CalendarEventResponse,
   CreateEventRequest,
   UpdateEventRequest,
 } from "@/lib/types";
@@ -162,3 +163,38 @@ export function createWeekOfEvents(): CalendarEvent[] {
   }
   return events;
 }
+
+// ============================================================================
+// Wire-format fixtures (CalendarEventResponse — date as string)
+// Use these for seeding MSW handlers which simulate the real API JSON format.
+// ============================================================================
+
+/**
+ * Convert a CalendarEvent to a CalendarEventResponse (string date).
+ */
+export function toEventResponse(event: CalendarEvent): CalendarEventResponse {
+  return { ...event, date: formatLocalDate(event.date) };
+}
+
+/**
+ * Create a CalendarEventResponse with string date for MSW handler seeding.
+ */
+export function createTestEventResponse(
+  overrides: Partial<CalendarEventResponse> = {},
+): CalendarEventResponse {
+  return {
+    id: `event-${Date.now()}`,
+    title: "Test Event",
+    startTime: "9:00 AM",
+    endTime: "10:00 AM",
+    date: formatLocalDate(today),
+    memberId: testMembers[0].id,
+    ...overrides,
+  };
+}
+
+/**
+ * Wire-format versions of testEvents for seeding MSW handlers.
+ */
+export const testEventResponses: CalendarEventResponse[] =
+  testEvents.map(toEventResponse);
