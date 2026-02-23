@@ -65,7 +65,7 @@ function EventDetailModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent>
+      <DialogContent aria-describedby={undefined}>
         <DialogHeader onClose={onClose}>
           <DialogTitle className="pr-8 truncate">{event.title}</DialogTitle>
         </DialogHeader>
