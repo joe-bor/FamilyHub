@@ -24,15 +24,9 @@ interface EventFormModalProps {
  * Handles date formatting and time conversion (12h -> 24h)
  */
 function eventToFormData(event: CalendarEvent): Partial<EventFormData> {
-  // Format date as yyyy-MM-dd string using local timezone (not UTC)
-  const dateStr =
-    event.date instanceof Date
-      ? formatLocalDate(event.date)
-      : String(event.date).split("T")[0];
-
   return {
     title: event.title,
-    date: dateStr,
+    date: formatLocalDate(event.date),
     startTime: format12hTo24h(event.startTime),
     endTime: format12hTo24h(event.endTime),
     memberId: event.memberId,
