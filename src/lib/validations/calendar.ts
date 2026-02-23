@@ -41,7 +41,10 @@ export const eventFormSchema = z
       .min(1, "End time is required")
       .regex(TIME_24H_FORMAT_REGEX, "Invalid time format"),
     memberId: z.string().min(1, "Please select a family member"),
-    location: z.string().optional(),
+    location: z
+      .string()
+      .max(255, "Location must be 255 characters or less")
+      .optional(),
     isAllDay: z.boolean().optional(),
   })
   .refine(

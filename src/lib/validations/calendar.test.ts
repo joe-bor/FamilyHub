@@ -365,6 +365,23 @@ describe("calendar validations", () => {
         }
       });
 
+      it("accepts location at exactly 255 characters", () => {
+        const data = createValidEventData({ location: "a".repeat(255) });
+        const result = eventFormSchema.safeParse(data);
+        expect(result.success).toBe(true);
+      });
+
+      it("rejects location at 256 characters", () => {
+        const data = createValidEventData({ location: "a".repeat(256) });
+        const result = eventFormSchema.safeParse(data);
+        expect(result.success).toBe(false);
+        if (!result.success) {
+          expect(result.error.issues[0].message).toBe(
+            "Location must be 255 characters or less",
+          );
+        }
+      });
+
       it("accepts empty string for location", () => {
         const data = createValidEventData({ location: "" });
         const result = eventFormSchema.safeParse(data);
