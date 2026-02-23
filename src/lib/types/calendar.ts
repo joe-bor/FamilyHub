@@ -14,16 +14,9 @@ export interface CalendarEvent {
  * `date` is a "yyyy-MM-dd" string — the service layer maps this
  * to a `CalendarEvent` with a proper Date via `toCalendarEvent()`.
  */
-export interface CalendarEventResponse {
-  id: string;
-  title: string;
-  startTime: string;
-  endTime: string;
+export type CalendarEventResponse = Omit<CalendarEvent, "date"> & {
   date: string;
-  memberId: string;
-  isAllDay?: boolean;
-  location?: string;
-}
+};
 
 export type CalendarViewType = "daily" | "weekly" | "monthly" | "schedule";
 
