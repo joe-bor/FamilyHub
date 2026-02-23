@@ -83,29 +83,8 @@ describe("PUT full-replacement semantics", () => {
       data: [original],
     } satisfies ApiResponse<CalendarEvent[]>);
 
-    // Capture the PUT request body
+    // Intercept the PUT request to capture the body and respond
     let capturedBody: UpdateEventRequest | null = null;
-    server.use(
-      http.put(
-        `${API_BASE}/calendar/events/:id`,
-        async ({ request, params }) => {
-          const body = await request.json();
-          capturedBody = {
-            id: params.id as string,
-            ...body,
-          } as UpdateEventRequest;
-
-          // Let the default handler process it
-          return undefined as unknown as Response;
-        },
-      ),
-    );
-
-    // Remove the passthrough handler and use a concrete one
-    server.resetHandlers();
-    seedMockEvents([original]);
-
-    // Intercept and respond
     server.use(
       http.put(
         `${API_BASE}/calendar/events/:id`,

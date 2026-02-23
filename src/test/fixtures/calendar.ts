@@ -1,3 +1,4 @@
+import { formatLocalDate } from "@/lib/time-utils";
 import type {
   CalendarEvent,
   CreateEventRequest,
@@ -112,7 +113,7 @@ export function createTestEvent(
 export function createEventRequest(
   overrides: Partial<CreateEventRequest> = {},
 ): CreateEventRequest {
-  const date = overrides.date ?? today.toISOString().split("T")[0];
+  const date = overrides.date ?? formatLocalDate(today);
   return {
     title: "New Event",
     startTime: "2:00 PM",
@@ -131,16 +132,12 @@ export function createUpdateRequest(
   event: CalendarEvent,
   overrides: Partial<UpdateEventRequest> = {},
 ): UpdateEventRequest {
-  const year = event.date.getFullYear();
-  const month = String(event.date.getMonth() + 1).padStart(2, "0");
-  const day = String(event.date.getDate()).padStart(2, "0");
-
   return {
     id: event.id,
     title: event.title,
     startTime: event.startTime,
     endTime: event.endTime,
-    date: `${year}-${month}-${day}`,
+    date: formatLocalDate(event.date),
     memberId: event.memberId,
     isAllDay: event.isAllDay,
     location: event.location,
