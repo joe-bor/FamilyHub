@@ -2,7 +2,7 @@ import { z } from "zod";
 
 /**
  * Schema for username validation.
- * - 3-30 characters
+ * - 3-20 characters
  * - Lowercase alphanumeric and underscores only
  * - Automatically trimmed and lowercased
  */
@@ -13,7 +13,7 @@ export const usernameSchema = z
     z
       .string()
       .min(3, "Username must be at least 3 characters")
-      .max(30, "Username must be 30 characters or less")
+      .max(20, "Username must be 20 characters or less")
       .regex(
         /^[a-z0-9_]+$/,
         "Username can only contain letters, numbers, and underscores",
