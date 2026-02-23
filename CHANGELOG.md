@@ -1,5 +1,47 @@
 # Changelog
 
+## [0.3.2](https://github.com/joe-bor/FamilyHub/compare/family-hub-v0.3.1...family-hub-v0.3.2) (2026-02-23)
+
+
+### Features
+
+* **api:** add CalendarEventResponse type and service-layer date mapper ([8750619](https://github.com/joe-bor/FamilyHub/commit/8750619519011e709272e0d2498fec415643e56c))
+
+
+### Bug Fixes
+
+* **api:** change calendar event update from PATCH to PUT ([b97770d](https://github.com/joe-bor/FamilyHub/commit/b97770decaa2233a822b92efc306b9bf4098c5d8))
+* **api:** enforce true PUT semantics in mock handlers ([2715aa9](https://github.com/joe-bor/FamilyHub/commit/2715aa9d1365909b4a2dd38ae11864cbe3ed6e9f))
+* **api:** fix URL path resolution for real backend ([bcba8f4](https://github.com/joe-bor/FamilyHub/commit/bcba8f4c8af5d27e68d92b8824d7c652d97958cc))
+* **api:** map HTTP 400 to VALIDATION_ERROR ([cceab86](https://github.com/joe-bor/FamilyHub/commit/cceab862c837b7b4bdac9ecfb5884932ced5147b))
+* **api:** prevent useFamily query from firing before auth ([93c8c5b](https://github.com/joe-bor/FamilyHub/commit/93c8c5b337c96df19e2fe864f7df15dd9ddf5d47))
+* **api:** return string dates from mock and MSW handlers ([9cbf60a](https://github.com/joe-bor/FamilyHub/commit/9cbf60ad37bde1b4103535e2d2c5a29660bcf108))
+* **calendar:** coerce null location to undefined for Zod compatibility ([ba9049f](https://github.com/joe-bor/FamilyHub/commit/ba9049f752be4556135fb28a16f7c3a2a7adfab1))
+* **calendar:** read editingEvent from store at call time to avoid stale closure ([6b22798](https://github.com/joe-bor/FamilyHub/commit/6b22798f5698756dbc333024e261e8a377a30fe7))
+* **e2e:** scope dialog checks and switch to Day view for reliable clicks ([253bb77](https://github.com/joe-bor/FamilyHub/commit/253bb770cbc324d6d1f0b1adc758d614790220d5))
+* **e2e:** seed empty calendar to prevent mock event overlap in CRUD test ([bcfc927](https://github.com/joe-bor/FamilyHub/commit/bcfc9273fc021b047dbed3512a1073bd535bf960))
+* **test:** use formatLocalDate and remove dead interceptor code ([e304d05](https://github.com/joe-bor/FamilyHub/commit/e304d05da742fcd24a2df176096899c840254dc2))
+
+
+### Code Refactoring
+
+* **calendar:** remove dead instanceof Date fallback ([f1e0f1e](https://github.com/joe-bor/FamilyHub/commit/f1e0f1ef81dabb67b72561b57d429a7a7e2fbbe3))
+* **types:** derive CalendarEventResponse via Omit to reduce duplication ([49aacf1](https://github.com/joe-bor/FamilyHub/commit/49aacf14b1c6d4b254b3f6b0ead98b5341cbfcf1))
+
+
+### Documentation
+
+* **api:** clarify why useSetupComplete needs auth guard ([4c2d158](https://github.com/joe-bor/FamilyHub/commit/4c2d1585b64dab0e2d48742f55a6c17b8c0d48f5))
+* update API contract references for calendar PUT endpoint ([66c1628](https://github.com/joe-bor/FamilyHub/commit/66c1628fbbe8dd86cb8e2ca934a18e3cdbab482e))
+
+
+### Tests
+
+* **api:** add PUT full-replacement verification tests ([7138a69](https://github.com/joe-bor/FamilyHub/commit/7138a694477cf19db278d82fbd23de17a81bb6b7))
+* **calendar:** add integration test for PUT optional field preservation ([de29ada](https://github.com/joe-bor/FamilyHub/commit/de29adacf33a4a987dac19d09f1308244b3f4d02))
+* **fixtures:** add createUpdateRequest helper for PUT tests ([4b9c19c](https://github.com/joe-bor/FamilyHub/commit/4b9c19cdf302d2853ec440e5316b439b6a713aac))
+* **fixtures:** add wire-format fixtures and update tests for string dates ([08c99b5](https://github.com/joe-bor/FamilyHub/commit/08c99b52d7b827149a7b39cd386ccbc603c65fa2))
+
 ## [0.3.1](https://github.com/joe-bor/FamilyHub/compare/family-hub-v0.3.0...family-hub-v0.3.1) (2026-02-17)
 
 
