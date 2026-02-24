@@ -425,7 +425,7 @@ describe("CalendarModule", () => {
       seedMockEvents([event]);
 
       // Intercept the PUT request to capture the body
-      let capturedBody: Omit<UpdateEventRequest, "id"> | null = null;
+      let capturedBody: UpdateEventRequest | null = null;
       server.use(
         http.put(
           `${API_BASE}/calendar/events/:id`,

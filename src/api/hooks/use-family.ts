@@ -330,10 +330,10 @@ export function useUpdateMember(callbacks?: UpdateMemberCallbacks) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (request: UpdateMemberRequest) =>
-      familyService.updateMember(request),
+    mutationFn: ({ id, ...body }: { id: string } & UpdateMemberRequest) =>
+      familyService.updateMember(id, body),
     // Optimistic update
-    onMutate: async (request) => {
+    onMutate: async (variables) => {
       await queryClient.cancelQueries({ queryKey: familyKeys.family() });
 
       const previousData = queryClient.getQueryData<FamilyApiResponse>(
@@ -344,16 +344,17 @@ export function useUpdateMember(callbacks?: UpdateMemberCallbacks) {
         const optimisticFamily: FamilyData = {
           ...previousData.data,
           members: previousData.data.members.map((m) =>
-            m.id === request.id
+            m.id === variables.id
               ? {
                   ...m,
-                  name: request.name,
-                  color: request.color,
+                  name: variables.name,
+                  color: variables.color,
                   avatarUrl:
-                    request.avatarUrl !== undefined
-                      ? (request.avatarUrl ?? undefined)
+                    variables.avatarUrl !== undefined
+                      ? (variables.avatarUrl ?? undefined)
                       : m.avatarUrl,
-                  email: request.email !== undefined ? request.email : m.email,
+                  email:
+                    variables.email !== undefined ? variables.email : m.email,
                 }
               : m,
           ),
@@ -366,14 +367,14 @@ export function useUpdateMember(callbacks?: UpdateMemberCallbacks) {
 
       return { previousData };
     },
-    onError: (error: ApiException, _request, context) => {
+    onError: (error: ApiException, _variables, context) => {
       // Rollback on error
       if (context?.previousData) {
         queryClient.setQueryData(familyKeys.family(), context.previousData);
       }
       callbacks?.onError?.(error);
     },
-    onSuccess: (response, request) => {
+    onSuccess: (response, variables) => {
       // Update the specific member with server response
       const currentData = queryClient.getQueryData<FamilyApiResponse>(
         familyKeys.family(),
@@ -382,7 +383,7 @@ export function useUpdateMember(callbacks?: UpdateMemberCallbacks) {
         const updatedFamily: FamilyData = {
           ...currentData.data,
           members: currentData.data.members.map((m) =>
-            m.id === request.id ? response.data : m,
+            m.id === variables.id ? response.data : m,
           ),
         };
         queryClient.setQueryData<FamilyApiResponse>(familyKeys.family(), {

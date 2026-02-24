@@ -3,7 +3,12 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { ApiException } from "@/api/client";
 import { calendarService } from "@/api/services";
 import { parseLocalDate } from "@/lib/time-utils";
-import type { ApiResponse, CalendarEvent, GetEventsParams } from "@/lib/types";
+import type {
+  ApiResponse,
+  CalendarEvent,
+  GetEventsParams,
+  UpdateEventRequest,
+} from "@/lib/types";
 
 // Query keys factory for type-safe cache management
 export const calendarKeys = {
@@ -77,7 +82,8 @@ export function useUpdateEvent(callbacks?: UpdateEventCallbacks) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: calendarService.updateEvent,
+    mutationFn: ({ id, ...body }: { id: string } & UpdateEventRequest) =>
+      calendarService.updateEvent(id, body),
     // Optimistic update
     onMutate: async (updatedEvent) => {
       await queryClient.cancelQueries({ queryKey: calendarKeys.events() });

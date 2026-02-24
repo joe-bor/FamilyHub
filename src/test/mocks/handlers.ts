@@ -182,7 +182,7 @@ export const handlers = [
   // PUT /calendar/events/:id - Update event (full replacement)
   http.put(`${API_BASE}/calendar/events/:id`, async ({ params, request }) => {
     const { id } = params;
-    const body = (await request.json()) as Omit<UpdateEventRequest, "id">;
+    const body = (await request.json()) as UpdateEventRequest;
 
     const index = mockEvents.findIndex((e) => e.id === id);
     if (index === -1) {
@@ -304,7 +304,7 @@ export const handlers = [
     }
 
     const { id } = params;
-    const body = (await request.json()) as Omit<UpdateMemberRequest, "id">;
+    const body = (await request.json()) as UpdateMemberRequest;
 
     const index = mockFamily.members.findIndex((m) => m.id === id);
     if (index === -1) {

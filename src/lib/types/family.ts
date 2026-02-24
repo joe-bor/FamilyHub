@@ -127,7 +127,6 @@ export interface AddMemberRequest {
  * Request to update an existing member.
  */
 export interface UpdateMemberRequest {
-  id: string;
   name: string;
   color: FamilyColor;
   avatarUrl?: string | null;

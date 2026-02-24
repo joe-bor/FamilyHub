@@ -71,14 +71,17 @@ export const calendarService = {
   },
 
   async updateEvent(
+    id: string,
     request: UpdateEventRequest,
   ): Promise<ApiResponse<CalendarEvent>> {
     if (USE_MOCK_API) {
-      return mapEventResponse(await calendarMockHandlers.updateEvent(request));
+      return mapEventResponse(
+        await calendarMockHandlers.updateEvent(id, request),
+      );
     }
     return mapEventResponse(
       await httpClient.put<ApiResponse<CalendarEventResponse>>(
-        `/calendar/events/${request.id}`,
+        `/calendar/events/${id}`,
         request,
       ),
     );
