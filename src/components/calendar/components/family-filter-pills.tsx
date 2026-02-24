@@ -17,12 +17,22 @@ export function FamilyFilterPills() {
     initializeSelectedMembers,
   } = useFilterPillsState();
 
-  // Initialize selected members when family members load
+  // Initialize selected members on first load or when persisted filter is stale
   useEffect(() => {
-    if (familyMembers.length > 0) {
-      initializeSelectedMembers(familyMembers.map((m) => m.id));
+    if (familyMembers.length === 0) return;
+
+    const currentMemberIds = familyMembers.map((m) => m.id);
+
+    // Check if any selected member still exists in the actual family
+    const hasValidSelection = filter.selectedMembers.some((id) =>
+      currentMemberIds.includes(id),
+    );
+
+    if (filter.selectedMembers.length === 0 || !hasValidSelection) {
+      // First load or all selected members are stale → select all
+      initializeSelectedMembers(currentMemberIds);
     }
-  }, [familyMembers, initializeSelectedMembers]);
+  }, [familyMembers, filter.selectedMembers, initializeSelectedMembers]);
 
   const allSelected = filter.selectedMembers.length === familyMembers.length;
   const noneSelected = filter.selectedMembers.length === 0;

@@ -606,7 +606,7 @@ describe("CalendarStore", () => {
       ]);
     });
 
-    it("does not override if already set", () => {
+    it("overwrites existing selection when called", () => {
       useCalendarStore.setState({
         filter: { selectedMembers: ["m1"], showAllDayEvents: true },
       });
@@ -614,7 +614,8 @@ describe("CalendarStore", () => {
       useCalendarStore.getState().initializeSelectedMembers(["m2", "m3"]);
 
       expect(useCalendarStore.getState().filter.selectedMembers).toEqual([
-        "m1",
+        "m2",
+        "m3",
       ]);
     });
 
