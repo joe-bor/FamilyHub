@@ -191,7 +191,7 @@ See `.env.example` for environment variable documentation.
 GET    /calendar/events          params: startDate, endDate, memberId
 GET    /calendar/events/:id
 POST   /calendar/events          body: CreateEventRequest
-PUT    /calendar/events/:id      body: UpdateEventRequest
+PUT    /calendar/events/:id      body: UpdateEventRequest (no id in body)
 DELETE /calendar/events/:id
 ```
 Types: `src/lib/types/calendar.ts`
@@ -203,7 +203,7 @@ POST   /family                   body: CreateFamilyRequest
 PATCH  /family                   body: UpdateFamilyRequest
 DELETE /family
 POST   /family/members           body: AddMemberRequest
-PATCH  /family/members/:id       body: UpdateMemberRequest
+PATCH  /family/members/:id       body: UpdateMemberRequest (no id in body)
 DELETE /family/members/:id
 ```
 Types: `src/lib/types/family.ts`

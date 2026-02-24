@@ -86,16 +86,16 @@ describe("PUT full-replacement semantics", () => {
     } satisfies ApiResponse<CalendarEvent[]>);
 
     // Intercept the PUT request to capture the body and respond
-    let capturedBody: UpdateEventRequest | null = null;
+    let capturedBody: ({ id: string } & UpdateEventRequest) | null = null;
     server.use(
       http.put(
         `${API_BASE}/calendar/events/:id`,
         async ({ request, params }) => {
-          const body = (await request.json()) as Omit<UpdateEventRequest, "id">;
+          const body = (await request.json()) as UpdateEventRequest;
           capturedBody = {
             id: params.id as string,
             ...body,
-          } as UpdateEventRequest;
+          };
 
           const updatedEvent: CalendarEventResponse = {
             id: params.id as string,

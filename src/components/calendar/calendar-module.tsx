@@ -27,11 +27,7 @@ import {
 import { useIsMobile } from "@/hooks";
 import { logProfilerData } from "@/lib/perf-utils";
 import { format24hTo12h } from "@/lib/time-utils";
-import type {
-  CalendarEvent,
-  CreateEventRequest,
-  UpdateEventRequest,
-} from "@/lib/types";
+import type { CalendarEvent, CreateEventRequest } from "@/lib/types";
 import type { EventFormData } from "@/lib/validations";
 import {
   useCalendarActions,
@@ -176,7 +172,7 @@ export function CalendarModule() {
     const currentEditingEvent = useCalendarStore.getState().editingEvent;
     if (!currentEditingEvent) return;
 
-    const request: UpdateEventRequest = {
+    updateEvent.mutate({
       id: currentEditingEvent.id,
       title: formData.title,
       startTime: format24hTo12h(formData.startTime),
@@ -185,8 +181,7 @@ export function CalendarModule() {
       memberId: formData.memberId,
       isAllDay: formData.isAllDay,
       location: formData.location,
-    };
-    updateEvent.mutate(request);
+    });
   };
 
   const handleAddEvent = (formData: EventFormData) => {

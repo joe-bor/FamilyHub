@@ -126,13 +126,14 @@ export function createEventRequest(
 }
 
 /**
- * Create a valid UpdateEventRequest for API testing.
+ * Create a valid update mutation variables object for API testing.
  * Builds from an existing CalendarEvent, converting the date to a string.
+ * Returns `{ id } & UpdateEventRequest` matching the mutation variables shape.
  */
 export function createUpdateRequest(
   event: CalendarEvent,
   overrides: Partial<UpdateEventRequest> = {},
-): UpdateEventRequest {
+): { id: string } & UpdateEventRequest {
   return {
     id: event.id,
     title: event.title,

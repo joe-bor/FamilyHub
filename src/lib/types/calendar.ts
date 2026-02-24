@@ -37,7 +37,6 @@ export interface CreateEventRequest {
 }
 
 export interface UpdateEventRequest {
-  id: string;
   title: string;
   startTime: string;
   endTime: string;

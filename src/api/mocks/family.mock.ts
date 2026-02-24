@@ -180,6 +180,7 @@ export const familyMockHandlers = {
    * Update an existing member.
    */
   async updateMember(
+    id: string,
     request: UpdateMemberRequest,
   ): Promise<MemberMutationResponse> {
     await simulateApiCall();
@@ -193,21 +194,17 @@ export const familyMockHandlers = {
       });
     }
 
-    const memberIndex = family.members.findIndex((m) => m.id === request.id);
+    const memberIndex = family.members.findIndex((m) => m.id === id);
     if (memberIndex === -1) {
       throw new ApiException({
         code: ApiErrorCode.NOT_FOUND,
-        message: `Member with id "${request.id}" not found`,
+        message: `Member with id "${id}" not found`,
         status: 404,
       });
     }
 
     // Check for color conflict with other members
-    if (
-      family.members.some(
-        (m) => m.id !== request.id && m.color === request.color,
-      )
-    ) {
+    if (family.members.some((m) => m.id !== id && m.color === request.color)) {
       throw new ApiException({
         code: ApiErrorCode.CONFLICT,
         message: `Color "${request.color}" is already assigned to another member`,

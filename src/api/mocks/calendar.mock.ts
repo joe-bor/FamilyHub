@@ -226,21 +226,22 @@ export const calendarMockHandlers = {
   },
 
   async updateEvent(
+    id: string,
     request: UpdateEventRequest,
   ): Promise<ApiResponse<CalendarEventResponse>> {
     await simulateApiCall();
 
-    const index = mockEvents.findIndex((e) => e.id === request.id);
+    const index = mockEvents.findIndex((e) => e.id === id);
     if (index === -1) {
       throw new ApiException({
         code: ApiErrorCode.NOT_FOUND,
-        message: `Event with id "${request.id}" not found`,
+        message: `Event with id "${id}" not found`,
         status: 404,
       });
     }
 
     const updatedEvent: CalendarEventResponse = {
-      id: request.id,
+      id,
       title: request.title,
       startTime: request.startTime,
       endTime: request.endTime,

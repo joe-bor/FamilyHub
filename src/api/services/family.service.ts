@@ -47,13 +47,14 @@ export const familyService = {
    * Update an existing member.
    */
   async updateMember(
+    id: string,
     request: UpdateMemberRequest,
   ): Promise<MemberMutationResponse> {
     if (USE_MOCK_API) {
-      return familyMockHandlers.updateMember(request);
+      return familyMockHandlers.updateMember(id, request);
     }
     return httpClient.put<MemberMutationResponse>(
-      `/family/members/${request.id}`,
+      `/family/members/${id}`,
       request,
     );
   },
