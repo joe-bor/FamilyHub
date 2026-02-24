@@ -191,12 +191,9 @@ export const useCalendarStore = create<CalendarState>()(
 
       initializeSelectedMembers: (memberIds) => {
         const { filter } = get();
-        // Only initialize if empty (first load or after reset)
-        if (filter.selectedMembers.length === 0) {
-          set({
-            filter: { ...filter, selectedMembers: memberIds },
-          });
-        }
+        set({
+          filter: { ...filter, selectedMembers: memberIds },
+        });
       },
 
       toggleAllDayEvents: () => {
