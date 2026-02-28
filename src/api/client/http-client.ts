@@ -66,6 +66,12 @@ export function createHttpClient(config: HttpClientConfig) {
   // Without this, new URL("/events", "http://host/api") drops the /api prefix.
   const normalizedBaseUrl = baseUrl.endsWith("/") ? baseUrl : `${baseUrl}/`;
 
+  // Resolve relative base URLs (e.g. "/api") against the current origin
+  // so that new URL(endpoint, base) doesn't throw TypeError: Invalid base URL.
+  const resolvedBaseUrl = normalizedBaseUrl.startsWith("http")
+    ? normalizedBaseUrl
+    : new URL(normalizedBaseUrl, window.location.origin).toString();
+
   async function request<T>(
     endpoint: string,
     options: RequestConfig & { body?: unknown } = {},
@@ -76,7 +82,7 @@ export function createHttpClient(config: HttpClientConfig) {
     const cleanEndpoint = endpoint.startsWith("/")
       ? endpoint.slice(1)
       : endpoint;
-    const url = new URL(cleanEndpoint, normalizedBaseUrl);
+    const url = new URL(cleanEndpoint, resolvedBaseUrl);
     if (params) {
       Object.entries(params).forEach(([key, value]) => {
         if (value !== undefined) {

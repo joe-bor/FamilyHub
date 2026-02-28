@@ -55,3 +55,34 @@ describe("createHttpClient URL resolution", () => {
     expect(result.data).toBe("ok");
   });
 });
+
+describe("createHttpClient relative base URL resolution", () => {
+  // jsdom origin is http://localhost:3000 (from vitest.config.ts),
+  // so "/api" resolves to "http://localhost:3000/api/"
+
+  it("resolves relative base URL against window.location.origin", async () => {
+    server.use(
+      http.get("http://localhost:3000/api/family", () => {
+        return HttpResponse.json({ data: "ok" });
+      }),
+    );
+
+    const client = createHttpClient({ baseUrl: "/api" });
+
+    const result = await client.get<{ data: string }>("/family");
+    expect(result.data).toBe("ok");
+  });
+
+  it("resolves relative base URL with trailing slash", async () => {
+    server.use(
+      http.get("http://localhost:3000/api/family", () => {
+        return HttpResponse.json({ data: "ok" });
+      }),
+    );
+
+    const client = createHttpClient({ baseUrl: "/api/" });
+
+    const result = await client.get<{ data: string }>("/family");
+    expect(result.data).toBe("ok");
+  });
+});
