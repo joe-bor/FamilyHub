@@ -1,5 +1,31 @@
 # Changelog
 
+## [0.3.3](https://github.com/joe-bor/FamilyHub/compare/family-hub-v0.3.2...family-hub-v0.3.3) (2026-02-28)
+
+
+### Bug Fixes
+
+* **a11y:** suppress Radix dialog description warnings ([deb16d5](https://github.com/joe-bor/FamilyHub/commit/deb16d53b1b6969ad41ff6b090f4fd503d184630))
+* **api:** resolve relative base URL in HTTP client ([3d3a5a5](https://github.com/joe-bor/FamilyHub/commit/3d3a5a500fe68d696e56bf7997302de41162c346))
+* **calendar:** detect stale member IDs in persisted filter ([a8350ed](https://github.com/joe-bor/FamilyHub/commit/a8350ed0c01ea198aabdbc6dd28b74ffa30fe69d))
+* **validations:** add location max length to event form schema ([51a9ec5](https://github.com/joe-bor/FamilyHub/commit/51a9ec5e3b1258d0c3010ad9c335bdcea89b4425))
+* **validations:** align username max length with backend (30 → 20) ([6f86f7a](https://github.com/joe-bor/FamilyHub/commit/6f86f7ac1f544d2ad27d2e3cd4a08b4028f7c40c))
+
+
+### Code Refactoring
+
+* **api:** remove id from update request body types ([2c479c2](https://github.com/joe-bor/FamilyHub/commit/2c479c249659f63e73903d53aa84c62d279e4b18))
+
+
+### Documentation
+
+* **env:** update VITE_USE_MOCK_API comment to reflect current architecture ([cc9e5ca](https://github.com/joe-bor/FamilyHub/commit/cc9e5ca578eebb4edd89ea9518c148bbe20173c7))
+
+
+### Tests
+
+* **validations:** add username max length boundary tests ([78efab2](https://github.com/joe-bor/FamilyHub/commit/78efab2d031aedbb964bcbfc478d070e99f40d70))
+
 ## [0.3.2](https://github.com/joe-bor/FamilyHub/compare/family-hub-v0.3.1...family-hub-v0.3.2) (2026-02-23)
 
 
