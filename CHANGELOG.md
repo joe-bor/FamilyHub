@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.3.4](https://github.com/joe-bor/FamilyHub/compare/family-hub-v0.3.3...family-hub-v0.3.4) (2026-03-01)
+
+
+### Bug Fixes
+
+* **validations:** add avatarUrl max length to member schema ([726aa0c](https://github.com/joe-bor/FamilyHub/commit/726aa0cbe93b43a8ee7686b1a187b7cb39206b18))
+* **validations:** add email max length to member schemas ([2cf96c8](https://github.com/joe-bor/FamilyHub/commit/2cf96c8760827560cf538765821309bdcd7d2a3b))
+
+
+### Documentation
+
+* **validations:** add BE DTO alignment references ([cf374ad](https://github.com/joe-bor/FamilyHub/commit/cf374ad1cef1374c1e546ba981fe54519c4460e8))
+
 ## [0.3.3](https://github.com/joe-bor/FamilyHub/compare/family-hub-v0.3.2...family-hub-v0.3.3) (2026-02-28)
 
 
