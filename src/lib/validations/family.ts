@@ -134,7 +134,7 @@ export const familyMemberSchema = z.object({
   id: z.string().min(1),
   name: z.string().min(1).max(30),
   color: familyColorSchema,
-  avatarUrl: z.string().optional(),
+  avatarUrl: z.string().max(254).optional(),
   email: z.string().max(254).email().optional().or(z.literal("")),
 });
 
