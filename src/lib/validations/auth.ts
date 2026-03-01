@@ -1,5 +1,9 @@
 import { z } from "zod";
 
+// BE DTO alignment:
+//   RegisterRequest.java — username: @Size(min=3, max=20), password: @Size(min=8, max=100)
+//   LoginRequest.java    — username: @NotBlank, password: @NotBlank
+
 /**
  * Schema for username validation.
  * - 3-20 characters
