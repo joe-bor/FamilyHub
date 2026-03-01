@@ -114,6 +114,7 @@ export const createMemberProfileSchema = (
     color: familyColorSchema,
     email: z
       .string()
+      .max(254, "Email must be 254 characters or less")
       .transform((val) => val.trim())
       .refine(
         (val) => val === "" || z.string().email().safeParse(val).success,
@@ -134,7 +135,7 @@ export const familyMemberSchema = z.object({
   name: z.string().min(1).max(30),
   color: familyColorSchema,
   avatarUrl: z.string().optional(),
-  email: z.string().email().optional().or(z.literal("")),
+  email: z.string().max(254).email().optional().or(z.literal("")),
 });
 
 /**
