@@ -1,5 +1,10 @@
 import { z } from "zod";
 
+// BE DTO alignment:
+//   FamilyRequest.java      — name: @Size(max=50)
+//   FamilyMemberRequest.java — name: @Size(max=30), email: @Size(max=254) @Email,
+//                              color: @NotBlank, avatarUrl: @Size(max=254)
+
 /**
  * Schema for family name validation.
  * Used in onboarding step 2 and family settings.

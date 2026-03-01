@@ -1,5 +1,9 @@
 import { z } from "zod";
 
+// BE DTO alignment:
+//   CalendarEventRequest.java — title: @Size(max=100), date: @NotBlank,
+//     startTime/endTime: @NotBlank, memberId: @NotBlank, location: @Size(max=255)
+
 // Time format validation patterns
 const DATE_FORMAT_REGEX = /^\d{4}-\d{2}-\d{2}$/; // yyyy-MM-dd
 const TIME_24H_FORMAT_REGEX = /^([01]?[0-9]|2[0-3]):[0-5][0-9]$/; // HH:mm (24h)
