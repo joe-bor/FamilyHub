@@ -21,6 +21,8 @@ jobs:
       - run: npx playwright install --with-deps
       - run: npm run lint
       - run: npm run test:coverage
+      - name: Run E2E tests (mock)
+        run: npm run test:e2e
       - name: Start backend container
         run: docker compose -f docker-compose.e2e.yml up -d --wait
       - name: Run E2E tests (real backend)
