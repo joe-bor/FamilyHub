@@ -70,3 +70,30 @@ export async function seedBrowserAuth(
     );
   }, registration);
 }
+
+/**
+ * Create a calendar event via the real backend API.
+ */
+export async function createEventViaApi(
+  request: APIRequestContext,
+  token: string,
+  eventData: {
+    title: string;
+    date: string;
+    startTime: string;
+    endTime: string;
+    memberId: string;
+  },
+): Promise<void> {
+  const response = await request.post(`${API_BASE}/calendar/events`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    data: eventData,
+  });
+
+  if (!response.ok()) {
+    const body = await response.text();
+    throw new Error(`Create event failed (${response.status()}): ${body}`);
+  }
+}
