@@ -16,6 +16,7 @@
     "test:ui": "vitest --ui",
     "test:coverage": "vitest run --coverage",
     "test:e2e": "playwright test",
+    "test:e2e:real": "VITE_USE_MOCK_API=false E2E_REAL_API=true playwright test",
     "test:e2e:ui": "playwright test --ui",
     "analyze": "npm run build && echo 'Bundle analysis available at dist/stats.html'",
     "lighthouse": "npm run build && lhci autorun"
