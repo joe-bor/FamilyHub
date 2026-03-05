@@ -26,7 +26,9 @@ export async function registerFamily(
   request: APIRequestContext,
   options: RegisterOptions,
 ): Promise<RegistrationResult> {
-  const username = `test-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  // BE validates: lowercase letters, numbers, underscores only, 3-20 chars
+  const unique = Math.random().toString(36).slice(2, 10);
+  const username = `t_${unique}`;
 
   const response = await request.post(`${API_BASE}/auth/register`, {
     data: {

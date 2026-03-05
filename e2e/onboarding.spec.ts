@@ -102,7 +102,7 @@ test.describe("First-Time User Onboarding", () => {
 
     // Fill in credentials (unique username for real API to avoid conflicts)
     const username = USE_REAL_API
-      ? `test-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
+      ? `t_${Math.random().toString(36).slice(2, 10)}`
       : "testuser";
     await page.getByLabel("Username").fill(username);
     await page.getByLabel("Password", { exact: true }).fill("password123");
