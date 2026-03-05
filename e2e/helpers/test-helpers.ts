@@ -1,6 +1,8 @@
 import { expect, type Locator, type Page } from "@playwright/test";
 import type { FamilyColor, FamilyMember } from "../../src/lib/types/family";
 
+export const USE_REAL_API = process.env.E2E_REAL_API === "true";
+
 /**
  * Family data structure matching Zustand persist format
  */
