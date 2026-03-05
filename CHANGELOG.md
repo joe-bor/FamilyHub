@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.3.4](https://github.com/joe-bor/FamilyHub/compare/family-hub-v0.3.3...family-hub-v0.3.4) (2026-03-05)
+
+
+### Bug Fixes
+
+* **e2e:** run mock E2E before real-backend E2E in CI ([7e19a26](https://github.com/joe-bor/FamilyHub/commit/7e19a26338da73db4ef061b1d1e83fa8a6cf0d74))
+* **e2e:** use BE-compliant usernames in registration helpers ([83065b6](https://github.com/joe-bor/FamilyHub/commit/83065b6bcc3c452fd39e081bf4d050a652b056fe))
+* **validations:** add avatarUrl max length to member schema ([726aa0c](https://github.com/joe-bor/FamilyHub/commit/726aa0cbe93b43a8ee7686b1a187b7cb39206b18))
+* **validations:** add email max length to member schemas ([2cf96c8](https://github.com/joe-bor/FamilyHub/commit/2cf96c8760827560cf538765821309bdcd7d2a3b))
+
+
+### Documentation
+
+* **validations:** add BE DTO alignment references ([cf374ad](https://github.com/joe-bor/FamilyHub/commit/cf374ad1cef1374c1e546ba981fe54519c4460e8))
+
+
+### Tests
+
+* **e2e:** add API-based test helpers for real backend ([13edf55](https://github.com/joe-bor/FamilyHub/commit/13edf5572d3a7680d868f503e254a100f77199aa))
+* **e2e:** update specs for dual-mode (mock + real backend) ([c935544](https://github.com/joe-bor/FamilyHub/commit/c93554439978ec2b6847f6af40937fd870cf630a))
+
 ## [0.3.3](https://github.com/joe-bor/FamilyHub/compare/family-hub-v0.3.2...family-hub-v0.3.3) (2026-02-28)
 
 
