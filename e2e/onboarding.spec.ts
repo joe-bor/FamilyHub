@@ -2,19 +2,27 @@ import { expect, test } from "@playwright/test";
 import {
   clearStorage,
   seedAuth,
+  USE_REAL_API,
   waitForCalendarReady,
   waitForHydration,
 } from "./helpers/test-helpers";
 
 test.describe("First-Time User Onboarding", () => {
   test.beforeEach(async ({ page }) => {
-    // Ensure clean state - no existing family data
     await page.goto("/");
     await clearStorage(page);
-    // Seed auth token to bypass login screen
-    await seedAuth(page);
-    await page.reload();
-    await waitForHydration(page);
+
+    if (USE_REAL_API) {
+      // No seeding — app shows login screen
+      await page.reload();
+      await waitForHydration(page);
+      // Navigate from login to onboarding
+      await page.getByRole("button", { name: "Create an account" }).click();
+    } else {
+      await seedAuth(page);
+      await page.reload();
+      await waitForHydration(page);
+    }
   });
 
   test("completes full onboarding flow and persists data", async ({ page }) => {
@@ -92,8 +100,11 @@ test.describe("First-Time User Onboarding", () => {
     ).toBeVisible();
     await expect(page.getByText("Step 3 of 3")).toBeVisible();
 
-    // Fill in credentials
-    await page.getByLabel("Username").fill("testuser");
+    // Fill in credentials (unique username for real API to avoid conflicts)
+    const username = USE_REAL_API
+      ? `test-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
+      : "testuser";
+    await page.getByLabel("Username").fill(username);
     await page.getByLabel("Password", { exact: true }).fill("password123");
     await page.getByLabel("Confirm Password").fill("password123");
 

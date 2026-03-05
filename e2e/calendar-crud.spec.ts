@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { registerFamily, seedBrowserAuth } from "./helpers/api-helpers";
 import {
   clearStorage,
   createTestMember,
@@ -6,29 +7,32 @@ import {
   seedAuth,
   seedEmptyCalendar,
   seedFamily,
+  USE_REAL_API,
   waitForCalendarReady,
   waitForDialogReady,
   waitForHydration,
 } from "./helpers/test-helpers";
 
 test.describe("Calendar Event CRUD", () => {
-  test.beforeEach(async ({ page }) => {
-    // Clear storage and seed a family
+  test.beforeEach(async ({ page, request }) => {
     await page.goto("/");
     await clearStorage(page);
-    // Seed auth token to bypass login screen
-    await seedAuth(page);
 
-    // Seed family with one member
-    await seedFamily(page, {
-      name: "Test Family",
-      members: [createTestMember("Alice", "coral")],
-    });
+    if (USE_REAL_API) {
+      const reg = await registerFamily(request, {
+        familyName: "Test Family",
+        members: [{ name: "Alice", color: "coral" }],
+      });
+      await seedBrowserAuth(page, reg);
+    } else {
+      await seedAuth(page);
+      await seedFamily(page, {
+        name: "Test Family",
+        members: [createTestMember("Alice", "coral")],
+      });
+      await seedEmptyCalendar(page);
+    }
 
-    // Prevent random mock events from overlapping with test-created events
-    await seedEmptyCalendar(page);
-
-    // Navigate and wait for app
     await page.reload();
     await waitForHydration(page);
     await waitForCalendarReady(page);
