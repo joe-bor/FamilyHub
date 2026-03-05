@@ -1,30 +1,40 @@
 import { expect, test } from "@playwright/test";
+import { registerFamily, seedBrowserAuth } from "./helpers/api-helpers";
 import {
   clearStorage,
   createTestMember,
   safeClick,
   seedAuth,
   seedFamily,
+  USE_REAL_API,
   waitForCalendarReady,
   waitForHydration,
 } from "./helpers/test-helpers";
 
 test.describe("Calendar View Navigation", () => {
-  test.beforeEach(async ({ page }) => {
-    // Clear storage and seed a family with 2 members for filtering
+  test.beforeEach(async ({ page, request }) => {
     await page.goto("/");
     await clearStorage(page);
-    // Seed auth token to bypass login screen
-    await seedAuth(page);
 
-    // Seed family with two members
-    await seedFamily(page, {
-      name: "Test Family",
-      members: [
-        createTestMember("Alice", "coral"),
-        createTestMember("Bob", "teal"),
-      ],
-    });
+    if (USE_REAL_API) {
+      const reg = await registerFamily(request, {
+        familyName: "Test Family",
+        members: [
+          { name: "Alice", color: "coral" },
+          { name: "Bob", color: "teal" },
+        ],
+      });
+      await seedBrowserAuth(page, reg);
+    } else {
+      await seedAuth(page);
+      await seedFamily(page, {
+        name: "Test Family",
+        members: [
+          createTestMember("Alice", "coral"),
+          createTestMember("Bob", "teal"),
+        ],
+      });
+    }
 
     await page.reload();
     await waitForHydration(page);
