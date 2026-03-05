@@ -21,7 +21,16 @@ jobs:
       - run: npx playwright install --with-deps
       - run: npm run lint
       - run: npm run test:coverage
-      - run: npm run test:e2e
+      - name: Start backend container
+        run: docker compose -f docker-compose.e2e.yml up -d --wait
+      - name: Run E2E tests (real backend)
+        run: npm run test:e2e
+        env:
+          VITE_USE_MOCK_API: "false"
+          E2E_REAL_API: "true"
+      - name: Stop backend container
+        if: always()
+        run: docker compose -f docker-compose.e2e.yml down
       - run: npm run build
       - name: Run Lighthouse CI
         run: npx lhci autorun
