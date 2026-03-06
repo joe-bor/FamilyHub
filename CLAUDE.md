@@ -27,7 +27,7 @@ FamilyHub is a family organization app built with React 19, Vite, and Tailwind C
 ### Core Structure
 
 - **App.tsx** - Layout orchestrator composing AppHeader, NavigationTabs, SidebarMenu, and module views
-- **src/api/** - API layer with TanStack Query hooks, services, and mock handlers
+- **src/api/** - API layer with TanStack Query hooks and services
 - **src/stores/** - Zustand stores for UI state management (app, calendar view preferences)
 - **src/providers/** - React context providers (QueryProvider for TanStack Query)
 - **src/lib/types/** - Centralized TypeScript types (`calendar.ts`, `family.ts`, `chores.ts`, `meals.ts`)
@@ -379,26 +379,26 @@ it("handles API response", async () => {
 
 **E2E test patterns:**
 ```typescript
+import { registerFamily, seedBrowserAuth } from "./helpers/api-helpers"
 import {
   clearStorage,
-  seedAuth,
-  seedFamily,
   safeClick,
   waitForCalendarReady,
   waitForDialogReady,
   waitForDialogClosed,
   waitForHydration,
-  createTestMember
 } from "./helpers/test-helpers"
 
-test.beforeEach(async ({ page }) => {
+test.beforeEach(async ({ page, request }) => {
   await page.goto("/")
   await clearStorage(page)
-  await seedAuth(page)  // Bypass login screen
-  await seedFamily(page, {
-    name: "Test Family",
-    members: [createTestMember("Alice", "coral")]
+
+  const reg = await registerFamily(request, {
+    familyName: "Test Family",
+    members: [{ name: "Alice", color: "coral" }],
   })
+  await seedBrowserAuth(page, reg)
+
   await page.reload()
   await waitForHydration(page)
   await waitForCalendarReady(page)  // Handles mobile home dashboard navigation
@@ -557,7 +557,7 @@ it("submits form correctly", async () => {
 - QueryClient is created fresh for each test with retry disabled
 - jest-dom matchers available globally (`toBeInTheDocument`, etc.)
 - `noFocusedTests` Biome rule prevents `.only`/`.skip` in commits
-- E2E tests must call `seedAuth(page)` after `clearStorage(page)` to bypass the login screen
+- E2E tests register via the real API (`registerFamily`) then seed the browser auth token (`seedBrowserAuth`)
 
 **Mutation Hook Testing (Optimistic Updates & Rollback):**
 
