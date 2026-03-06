@@ -29,8 +29,12 @@ jobs:
         if: always()
         run: docker compose -f docker-compose.e2e.yml down
       - run: npm run build
-      - name: Run Lighthouse CI
-        run: npx lhci autorun
+      - name: Collect Lighthouse reports
+        run: npx lhci collect
+      - name: Assert Lighthouse thresholds
+        run: npx lhci assert
+      - name: Upload Lighthouse to temporary storage
+        run: npx lhci upload
         env:
           LHCI_GITHUB_APP_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - uses: actions/upload-artifact@v7
