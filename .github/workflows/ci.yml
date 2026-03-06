@@ -33,6 +33,8 @@ jobs:
         run: npx lhci collect
       - name: Assert Lighthouse thresholds
         run: npx lhci assert
+      - name: Debug Lighthouse output
+        run: ls -la .lighthouseci/ || echo "Directory not found"
       - name: Upload Lighthouse to temporary storage
         run: npx lhci upload
         env:
