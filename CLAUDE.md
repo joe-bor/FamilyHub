@@ -80,7 +80,7 @@ src/
 │   ├── validations/           # Zod form schemas
 │   │   └── calendar.ts        # eventFormSchema
 │   ├── time-utils.ts          # Time/date utilities (see Date/Time Handling section)
-│   └── perf-utils.ts          # measurePerformance (dev only)
+│   └── perf-utils.ts          # Ad-hoc performance measurement (dev only)
 │
 ├── components/
 │   ├── ui/                    # Base UI primitives
