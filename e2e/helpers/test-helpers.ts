@@ -1,24 +1,6 @@
 import { expect, type Locator, type Page } from "@playwright/test";
 import type { FamilyColor, FamilyMember } from "../../src/lib/types/family";
 
-export const USE_REAL_API = process.env.E2E_REAL_API === "true";
-
-/**
- * Family data structure matching Zustand persist format
- */
-interface FamilyStorageData {
-  state: {
-    family: {
-      id: string;
-      name: string;
-      members: FamilyMember[];
-      createdAt: string;
-    } | null;
-    _hasHydrated: boolean;
-  };
-  version: number;
-}
-
 /**
  * Clear all localStorage to ensure clean test state
  */
@@ -26,73 +8,6 @@ export async function clearStorage(page: Page): Promise<void> {
   await page.evaluate(() => {
     localStorage.clear();
     sessionStorage.clear();
-  });
-}
-
-/**
- * Seed authentication token to bypass login screen.
- * Must be called after page.goto() but before reload/navigation.
- */
-export async function seedAuth(page: Page): Promise<void> {
-  await page.evaluate(() => {
-    // Mock JWT token - the app only checks for token existence, not validity
-    const mockToken =
-      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0LXVzZXIiLCJpYXQiOjE3MDAwMDAwMDB9.mock";
-    localStorage.setItem("family-hub-auth-token", mockToken);
-  });
-}
-
-/**
- * Seed family data into localStorage
- * This bypasses onboarding for tests that need an existing family
- */
-export async function seedFamily(
-  page: Page,
-  options: {
-    name: string;
-    members: FamilyMember[];
-  },
-): Promise<void> {
-  const familyData: FamilyStorageData = {
-    state: {
-      family: {
-        id: `test-family-${Date.now()}`,
-        name: options.name,
-        members: options.members,
-        createdAt: new Date().toISOString(),
-      },
-      _hasHydrated: true,
-    },
-    version: 0,
-  };
-
-  await page.evaluate((data) => {
-    localStorage.setItem("family-hub-family", JSON.stringify(data));
-  }, familyData);
-}
-
-/**
- * Seed calendar events storage to prevent random mock event generation.
- * Uses a single far-past event as a sentinel — satisfies the mock's
- * "has stored events" check without appearing in the current week.
- * Must be called after page.goto() but before reload/navigation.
- */
-export async function seedEmptyCalendar(page: Page): Promise<void> {
-  await page.evaluate(() => {
-    const sentinel = [
-      {
-        id: "seed-sentinel",
-        title: "_",
-        date: "2000-01-01T00:00:00.000Z",
-        startTime: "12:00 AM",
-        endTime: "1:00 AM",
-        memberId: "_",
-      },
-    ];
-    localStorage.setItem(
-      "family-hub-calendar-events",
-      JSON.stringify(sentinel),
-    );
   });
 }
 
