@@ -9,7 +9,7 @@
 > **Note:** See [TECHNICAL-DEBT.md](./TECHNICAL-DEBT.md) for known issues and deferred improvements.
 >
 > Both calendar and family data now use TanStack Query with service abstractions.
-> The frontend is ready for backend integration - just flip `VITE_USE_MOCK_API=false`.
+> The frontend talks directly to the real backend.
 
 ---
 
@@ -95,7 +95,7 @@ Performance Optimization: ✅ COMPLETED (January 1, 2026)
 **Sprint 6.5: Family API Service Layer** ✅ COMPLETED (January 7, 2026) - PR #32
 
 Family Service Layer:
-- [x] `family.service.ts` - Service abstraction with `USE_MOCK_API` toggle
+- [x] `family.service.ts` - Service abstraction over httpClient
 - [x] `family.mock.ts` - Mock handlers with localStorage persistence
 - [x] `use-family.ts` - TanStack Query hooks with optimistic updates
 - [x] Family types: `FamilyApiResponse`, request/response types
@@ -126,8 +126,8 @@ Test Infrastructure:
 ## Phase 2: Backend Development ⏳ NEXT
 
 > **Note:** Phase 1C completed the family service layer abstraction. Both calendar and family
-> data now use TanStack Query with the same service pattern. Flip `VITE_USE_MOCK_API=false`
-> and implement the endpoints below.
+> data now use TanStack Query with the same service pattern. The runtime mock layer has been
+> removed — all API calls go through the real backend.
 
 **Sprint 7: Backend Setup**
 - [ ] Create family-hub-api repository (Spring Boot)

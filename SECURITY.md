@@ -78,14 +78,6 @@ When reviewing PRs, verify:
 
 ## Architecture Security Notes
 
-### Mock Authentication (Development Only)
-
-The mock API (`src/api/mocks/auth.mock.ts`) stores passwords in plaintext for development convenience. This is:
-
-- Clearly documented in the code
-- Only active when `VITE_USE_MOCK_API=true`
-- Never used in production builds
-
 ### Content Security Policy
 
 CSP headers should be configured at the server/hosting level, not in the frontend. When deploying:

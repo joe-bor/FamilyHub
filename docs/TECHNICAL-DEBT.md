@@ -172,7 +172,6 @@ See `.env.example` for environment variable documentation.
 - [x] Both calendar and family ready for backend
 
 **Phase 2: Backend Implementation**
-- [ ] Set `VITE_USE_MOCK_API=false` in production
 - [ ] Set `VITE_API_BASE_URL` to backend URL
 - [ ] Implement calendar endpoints
 - [ ] Implement family endpoints
