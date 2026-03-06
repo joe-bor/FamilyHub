@@ -41,7 +41,5 @@ export {
   useUpdateFamily,
   useUpdateMember,
 } from "./hooks";
-// Mocks
-export { USE_MOCK_API } from "./mocks";
 // Services
 export { authService, calendarService, familyService } from "./services";
