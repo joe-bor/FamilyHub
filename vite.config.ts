@@ -2,16 +2,13 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import react from "@vitejs/plugin-react";
 import { visualizer } from "rollup-plugin-visualizer";
-import { defineConfig, loadEnv } from "vite";
+import { defineConfig } from "vite";
 import { VitePWA } from "vite-plugin-pwa";
 
 const { version } = JSON.parse(readFileSync("package.json", "utf-8"));
 
 // https://vite.dev/config/
-export default defineConfig(({ mode }) => {
-  const env = loadEnv(mode, process.cwd(), "VITE_");
-  const useRealApi = env.VITE_USE_MOCK_API === "false";
-
+export default defineConfig(() => {
   return {
     plugins: [
       react({
@@ -93,14 +90,12 @@ export default defineConfig(({ mode }) => {
       __APP_VERSION__: JSON.stringify(version),
     },
     server: {
-      proxy: useRealApi
-        ? {
-            "/api": {
-              target: "http://localhost:8080",
-              changeOrigin: true,
-            },
-          }
-        : undefined,
+      proxy: {
+        "/api": {
+          target: "http://localhost:8080",
+          changeOrigin: true,
+        },
+      },
     },
     resolve: {
       alias: {

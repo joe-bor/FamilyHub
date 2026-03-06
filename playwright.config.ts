@@ -43,8 +43,6 @@ export default defineConfig({
     reuseExistingServer: !process.env.CI,
     env: {
       VITE_E2E: "true",
-      // Default to mock mode; real backend sets VITE_USE_MOCK_API=false
-      VITE_USE_MOCK_API: process.env.VITE_USE_MOCK_API ?? "true",
     },
   },
 });
