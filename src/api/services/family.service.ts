@@ -1,5 +1,4 @@
 import { httpClient } from "@/api/client";
-import { familyMockHandlers, USE_MOCK_API } from "@/api/mocks";
 import type {
   AddMemberRequest,
   FamilyApiResponse,
@@ -15,9 +14,6 @@ export const familyService = {
    * Returns null in data field if no family exists (triggers onboarding).
    */
   async getFamily(): Promise<FamilyApiResponse> {
-    if (USE_MOCK_API) {
-      return familyMockHandlers.getFamily();
-    }
     return httpClient.get<FamilyApiResponse>("/family");
   },
 
@@ -27,9 +23,6 @@ export const familyService = {
   async updateFamily(
     request: UpdateFamilyRequest,
   ): Promise<FamilyMutationResponse> {
-    if (USE_MOCK_API) {
-      return familyMockHandlers.updateFamily(request);
-    }
     return httpClient.put<FamilyMutationResponse>("/family", request);
   },
 
@@ -37,9 +30,6 @@ export const familyService = {
    * Add a new member to the family.
    */
   async addMember(request: AddMemberRequest): Promise<MemberMutationResponse> {
-    if (USE_MOCK_API) {
-      return familyMockHandlers.addMember(request);
-    }
     return httpClient.post<MemberMutationResponse>("/family/members", request);
   },
 
@@ -50,9 +40,6 @@ export const familyService = {
     id: string,
     request: UpdateMemberRequest,
   ): Promise<MemberMutationResponse> {
-    if (USE_MOCK_API) {
-      return familyMockHandlers.updateMember(id, request);
-    }
     return httpClient.put<MemberMutationResponse>(
       `/family/members/${id}`,
       request,
@@ -63,9 +50,6 @@ export const familyService = {
    * Remove a member from the family.
    */
   async removeMember(id: string): Promise<void> {
-    if (USE_MOCK_API) {
-      return familyMockHandlers.removeMember(id);
-    }
     return httpClient.delete(`/family/members/${id}`);
   },
 
@@ -73,9 +57,6 @@ export const familyService = {
    * Delete the entire family (reset).
    */
   async deleteFamily(): Promise<void> {
-    if (USE_MOCK_API) {
-      return familyMockHandlers.deleteFamily();
-    }
     return httpClient.delete("/family");
   },
 };

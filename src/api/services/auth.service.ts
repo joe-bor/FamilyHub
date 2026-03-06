@@ -1,5 +1,4 @@
 import { httpClient } from "@/api/client";
-import { authMockHandlers, USE_MOCK_API } from "@/api/mocks";
 import type {
   LoginRequest,
   LoginResponse,
@@ -14,9 +13,6 @@ export const authService = {
    * Returns JWT token and associated family data.
    */
   async login(request: LoginRequest): Promise<LoginResponse> {
-    if (USE_MOCK_API) {
-      return authMockHandlers.login(request);
-    }
     return httpClient.post<LoginResponse>("/auth/login", request);
   },
 
@@ -25,9 +21,6 @@ export const authService = {
    * Creates both user credentials and family data.
    */
   async register(request: RegisterRequest): Promise<RegisterResponse> {
-    if (USE_MOCK_API) {
-      return authMockHandlers.register(request);
-    }
     return httpClient.post<RegisterResponse>("/auth/register", request);
   },
 
@@ -35,9 +28,6 @@ export const authService = {
    * Check if a username is available.
    */
   async checkUsername(username: string): Promise<UsernameCheckResponse> {
-    if (USE_MOCK_API) {
-      return authMockHandlers.checkUsername(username);
-    }
     return httpClient.get<UsernameCheckResponse>("/auth/check-username", {
       params: { username },
     });
