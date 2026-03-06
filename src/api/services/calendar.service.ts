@@ -1,5 +1,4 @@
 import { httpClient } from "@/api/client";
-import { calendarMockHandlers, USE_MOCK_API } from "@/api/mocks";
 import { parseLocalDate } from "@/lib/time-utils";
 import type {
   ApiResponse,
@@ -34,9 +33,6 @@ export const calendarService = {
   async getEvents(
     params?: GetEventsParams,
   ): Promise<ApiResponse<CalendarEvent[]>> {
-    if (USE_MOCK_API) {
-      return mapEventsResponse(await calendarMockHandlers.getEvents(params));
-    }
     return mapEventsResponse(
       await httpClient.get<ApiResponse<CalendarEventResponse[]>>(
         "/calendar/events",
@@ -46,9 +42,6 @@ export const calendarService = {
   },
 
   async getEventById(id: string): Promise<ApiResponse<CalendarEvent>> {
-    if (USE_MOCK_API) {
-      return mapEventResponse(await calendarMockHandlers.getEventById(id));
-    }
     return mapEventResponse(
       await httpClient.get<ApiResponse<CalendarEventResponse>>(
         `/calendar/events/${id}`,
@@ -59,9 +52,6 @@ export const calendarService = {
   async createEvent(
     request: CreateEventRequest,
   ): Promise<ApiResponse<CalendarEvent>> {
-    if (USE_MOCK_API) {
-      return mapEventResponse(await calendarMockHandlers.createEvent(request));
-    }
     return mapEventResponse(
       await httpClient.post<ApiResponse<CalendarEventResponse>>(
         "/calendar/events",
@@ -74,11 +64,6 @@ export const calendarService = {
     id: string,
     request: UpdateEventRequest,
   ): Promise<ApiResponse<CalendarEvent>> {
-    if (USE_MOCK_API) {
-      return mapEventResponse(
-        await calendarMockHandlers.updateEvent(id, request),
-      );
-    }
     return mapEventResponse(
       await httpClient.put<ApiResponse<CalendarEventResponse>>(
         `/calendar/events/${id}`,
@@ -88,9 +73,6 @@ export const calendarService = {
   },
 
   async deleteEvent(id: string): Promise<void> {
-    if (USE_MOCK_API) {
-      return calendarMockHandlers.deleteEvent(id);
-    }
     return httpClient.delete(`/calendar/events/${id}`);
   },
 };
