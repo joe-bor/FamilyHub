@@ -6,7 +6,7 @@ import {
   startOfMonth,
   startOfWeek,
 } from "date-fns";
-import { Profiler, useEffect, useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import {
   useCalendarEvents,
   useCreateEvent,
@@ -25,7 +25,6 @@ import {
   WeeklyCalendar,
 } from "@/components/calendar";
 import { useIsMobile } from "@/hooks";
-import { logProfilerData } from "@/lib/perf-utils";
 import { format24hTo12h } from "@/lib/time-utils";
 import type { CalendarEvent, CreateEventRequest } from "@/lib/types";
 import type { EventFormData } from "@/lib/validations";
@@ -253,8 +252,7 @@ export function CalendarModule() {
   };
 
   return (
-    <Profiler id="CalendarModule" onRender={logProfilerData}>
-      <div className="flex-1 flex flex-col overflow-hidden">
+    <div className="flex-1 flex flex-col overflow-hidden">
         {/* Toolbar */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 px-4 py-3 bg-card border-b border-border">
           <CalendarViewSwitcher />
@@ -297,6 +295,5 @@ export function CalendarModule() {
           deleteError={deleteEvent.error?.message}
         />
       </div>
-    </Profiler>
   );
 }
