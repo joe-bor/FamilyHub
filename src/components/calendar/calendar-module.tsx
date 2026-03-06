@@ -253,47 +253,47 @@ export function CalendarModule() {
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Toolbar */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 px-4 py-3 bg-card border-b border-border">
-          <CalendarViewSwitcher />
-          <FamilyFilterPills />
-        </div>
-
-        {/* Calendar View */}
-        {renderCalendarView()}
-
-        {/* FAB */}
-        <AddEventButton onClick={openAddEventModal} />
-
-        {/* Add Event Modal */}
-        <EventFormModal
-          mode="add"
-          isOpen={isAddEventModalOpen}
-          onClose={closeAddEventModal}
-          onSubmit={handleAddEvent}
-          isPending={createEvent.isPending}
-        />
-
-        {/* Edit Event Modal */}
-        <EventFormModal
-          mode="edit"
-          isOpen={isEditModalOpen}
-          onClose={closeEditModal}
-          onSubmit={handleUpdateEvent}
-          isPending={updateEvent.isPending}
-          event={editingEvent ?? undefined}
-        />
-
-        {/* Event Detail Modal */}
-        <EventDetailModal
-          event={selectedEvent}
-          isOpen={isDetailModalOpen}
-          onClose={closeDetailModal}
-          onEdit={handleEditClick}
-          onDelete={handleDeleteEvent}
-          isDeleting={deleteEvent.isPending}
-          deleteError={deleteEvent.error?.message}
-        />
+      {/* Toolbar */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 px-4 py-3 bg-card border-b border-border">
+        <CalendarViewSwitcher />
+        <FamilyFilterPills />
       </div>
+
+      {/* Calendar View */}
+      {renderCalendarView()}
+
+      {/* FAB */}
+      <AddEventButton onClick={openAddEventModal} />
+
+      {/* Add Event Modal */}
+      <EventFormModal
+        mode="add"
+        isOpen={isAddEventModalOpen}
+        onClose={closeAddEventModal}
+        onSubmit={handleAddEvent}
+        isPending={createEvent.isPending}
+      />
+
+      {/* Edit Event Modal */}
+      <EventFormModal
+        mode="edit"
+        isOpen={isEditModalOpen}
+        onClose={closeEditModal}
+        onSubmit={handleUpdateEvent}
+        isPending={updateEvent.isPending}
+        event={editingEvent ?? undefined}
+      />
+
+      {/* Event Detail Modal */}
+      <EventDetailModal
+        event={selectedEvent}
+        isOpen={isDetailModalOpen}
+        onClose={closeDetailModal}
+        onEdit={handleEditClick}
+        onDelete={handleDeleteEvent}
+        isDeleting={deleteEvent.isPending}
+        deleteError={deleteEvent.error?.message}
+      />
+    </div>
   );
 }
