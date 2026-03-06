@@ -50,10 +50,6 @@ src/
 │   ├── services/              # API service functions
 │   │   ├── calendar.service.ts # CRUD operations for calendar
 │   │   └── family.service.ts  # CRUD operations for family/members
-│   ├── mocks/                 # Mock API handlers (dev mode)
-│   │   ├── calendar.mock.ts   # Mock event data and handlers
-│   │   ├── family.mock.ts     # Mock family data with localStorage persistence
-│   │   └── delay.ts           # Simulated network delay
 │   └── index.ts               # Barrel exports
 │
 ├── hooks/                     # Custom React hooks
@@ -211,9 +207,6 @@ familyKeys.family()       // ["family", "data"]
 - `useUpdateFamily(callbacks?)` - Update family name
 - `useAddMember(callbacks?)`, `useUpdateMember(callbacks?)`, `useRemoveMember(callbacks?)` - Member CRUD
 - `useDeleteFamily(callbacks?)` - Reset family
-
-**Mock API:**
-In development, the API uses mock handlers (`src/api/mocks/`) with simulated network delays. Toggle via `USE_MOCK_API` constant. Family mock persists to localStorage; calendar mock generates sample events.
 
 ### Styling
 
