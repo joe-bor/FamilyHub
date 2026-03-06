@@ -2,12 +2,7 @@ import { expect, test } from "@playwright/test";
 import { registerFamily, seedBrowserAuth } from "./helpers/api-helpers";
 import {
   clearStorage,
-  createTestMember,
   safeClick,
-  seedAuth,
-  seedEmptyCalendar,
-  seedFamily,
-  USE_REAL_API,
   waitForCalendarReady,
   waitForDialogReady,
   waitForHydration,
@@ -18,20 +13,11 @@ test.describe("Calendar Event CRUD", () => {
     await page.goto("/");
     await clearStorage(page);
 
-    if (USE_REAL_API) {
-      const reg = await registerFamily(request, {
-        familyName: "Test Family",
-        members: [{ name: "Alice", color: "coral" }],
-      });
-      await seedBrowserAuth(page, reg);
-    } else {
-      await seedAuth(page);
-      await seedFamily(page, {
-        name: "Test Family",
-        members: [createTestMember("Alice", "coral")],
-      });
-      await seedEmptyCalendar(page);
-    }
+    const reg = await registerFamily(request, {
+      familyName: "Test Family",
+      members: [{ name: "Alice", color: "coral" }],
+    });
+    await seedBrowserAuth(page, reg);
 
     await page.reload();
     await waitForHydration(page);

@@ -2,10 +2,6 @@ import { expect, test } from "@playwright/test";
 import { registerFamily, seedBrowserAuth } from "./helpers/api-helpers";
 import {
   clearStorage,
-  createTestMember,
-  seedAuth,
-  seedFamily,
-  USE_REAL_API,
   waitForCalendarReady,
   waitForDialogClosed,
   waitForDialogReady,
@@ -17,19 +13,11 @@ test.describe("Family Member Management", () => {
     await page.goto("/");
     await clearStorage(page);
 
-    if (USE_REAL_API) {
-      const reg = await registerFamily(request, {
-        familyName: "Test Family",
-        members: [{ name: "Alice", color: "coral" }],
-      });
-      await seedBrowserAuth(page, reg);
-    } else {
-      await seedAuth(page);
-      await seedFamily(page, {
-        name: "Test Family",
-        members: [createTestMember("Alice", "coral")],
-      });
-    }
+    const reg = await registerFamily(request, {
+      familyName: "Test Family",
+      members: [{ name: "Alice", color: "coral" }],
+    });
+    await seedBrowserAuth(page, reg);
 
     await page.reload();
     await waitForHydration(page);
