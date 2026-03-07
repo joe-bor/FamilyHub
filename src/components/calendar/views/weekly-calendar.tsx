@@ -282,8 +282,10 @@ export function WeeklyCalendar({
                       type="button"
                       key={event.id}
                       onClick={() => onEventClick?.(event)}
+                      title={event.title}
+                      aria-label={`${event.title} - All day event`}
                       className={cn(
-                        "text-[10px] font-medium px-1.5 py-0.5 rounded-full text-white truncate max-w-full transition-all hover:scale-105",
+                        "text-[10px] font-medium px-2 py-1 min-h-[28px] rounded-full text-white truncate max-w-full transition-all hover:scale-105",
                         colors?.bg || "bg-muted",
                       )}
                     >
