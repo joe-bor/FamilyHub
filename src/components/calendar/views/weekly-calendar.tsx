@@ -5,7 +5,7 @@ import {
   compareEventsByTime,
   parseTime,
 } from "@/lib/time-utils";
-import { type CalendarEvent, colorMap } from "@/lib/types";
+import { type CalendarEvent, colorMap, getFamilyMember } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { CalendarEventCard } from "../components/calendar-event";
 import type { FilterState } from "../components/calendar-filter";
@@ -73,35 +73,50 @@ export function WeeklyCalendar({
   }, [currentDate]);
 
   // Pre-compute events for all 7 days in a single pass (was 14+ calls to getEventsForDay)
-  const eventsByDay = useMemo(() => {
-    const byDay = new Map<string, CalendarEvent[]>();
+  const { timedByDay, allDayByDay, hasAnyAllDayEvents } = useMemo(() => {
+    const timed = new Map<string, CalendarEvent[]>();
+    const allDay = new Map<string, CalendarEvent[]>();
 
     // Initialize all 7 days
     for (const day of weekDays) {
-      byDay.set(day.toDateString(), []);
+      timed.set(day.toDateString(), []);
+      allDay.set(day.toDateString(), []);
     }
 
     // Single pass through events - filter and group by date
     for (const event of events) {
       const eventDate = new Date(event.date);
       const dateKey = eventDate.toDateString();
-      const dayEvents = byDay.get(dateKey);
 
-      if (dayEvents) {
-        const memberMatches = filter.selectedMembers.includes(event.memberId);
-        const allDayMatches = filter.showAllDayEvents || !event.isAllDay;
-        if (memberMatches && allDayMatches) {
-          dayEvents.push(event);
-        }
+      const memberMatches = filter.selectedMembers.includes(event.memberId);
+      const allDayMatches = filter.showAllDayEvents || !event.isAllDay;
+      if (!memberMatches || !allDayMatches) continue;
+
+      if (event.isAllDay) {
+        allDay.get(dateKey)?.push(event);
+      } else {
+        timed.get(dateKey)?.push(event);
       }
     }
 
-    // Sort each day's events by start time
-    for (const dayEvents of byDay.values()) {
+    // Sort timed events by start time
+    for (const dayEvents of timed.values()) {
       dayEvents.sort(compareEventsByTime);
     }
 
-    return byDay;
+    let anyAllDay = false;
+    for (const dayEvents of allDay.values()) {
+      if (dayEvents.length > 0) {
+        anyAllDay = true;
+        break;
+      }
+    }
+
+    return {
+      timedByDay: timed,
+      allDayByDay: allDay,
+      hasAnyAllDayEvents: anyAllDay,
+    };
   }, [events, weekDays, filter.selectedMembers, filter.showAllDayEvents]);
 
   const formatWeekLabel = () => {
@@ -131,9 +146,13 @@ export function WeeklyCalendar({
     return date.toDateString() === today.toDateString();
   };
 
-  // Helper to get events for a day from pre-computed map
+  // Helper to get events for a day from pre-computed maps
   const getEventsForDay = (date: Date) => {
-    return eventsByDay.get(date.toDateString()) ?? [];
+    return timedByDay.get(date.toDateString()) ?? [];
+  };
+
+  const getAllDayEventsForDay = (date: Date) => {
+    return allDayByDay.get(date.toDateString()) ?? [];
   };
 
   const timeSlots = [
@@ -212,9 +231,11 @@ export function WeeklyCalendar({
             )}
             <div className="flex justify-center gap-1 mt-1.5">
               {familyMembers.slice(0, 4).map((member) => {
-                const hasEvent = getEventsForDay(date).some(
-                  (e) => e.memberId === member.id,
-                );
+                const hasEvent =
+                  getEventsForDay(date).some((e) => e.memberId === member.id) ||
+                  getAllDayEventsForDay(date).some(
+                    (e) => e.memberId === member.id,
+                  );
                 return hasEvent ? (
                   <div
                     key={member.id}
@@ -229,6 +250,52 @@ export function WeeklyCalendar({
           </div>
         ))}
       </div>
+
+      {/* All-day events row */}
+      {hasAnyAllDayEvents && (
+        <div
+          className="grid border-b border-border bg-card shrink-0"
+          style={{ gridTemplateColumns }}
+        >
+          <div className="border-r border-border flex items-center justify-end pr-2">
+            <span className="text-xs text-muted-foreground font-medium">
+              All Day
+            </span>
+          </div>
+          {weekDays.map((date, index) => {
+            const dayAllDayEvents = getAllDayEventsForDay(date);
+            return (
+              <div
+                key={index}
+                className={cn(
+                  "border-l border-border p-1 flex flex-wrap gap-1 min-h-[36px]",
+                  isToday(date) && "bg-primary/5",
+                )}
+              >
+                {dayAllDayEvents.map((event) => {
+                  const member = getFamilyMember(familyMembers, event.memberId);
+                  const colors = member
+                    ? colorMap[member.color]
+                    : colorMap.coral;
+                  return (
+                    <button
+                      type="button"
+                      key={event.id}
+                      onClick={() => onEventClick?.(event)}
+                      className={cn(
+                        "text-[10px] font-medium px-1.5 py-0.5 rounded-full text-white truncate max-w-full transition-all hover:scale-105",
+                        colors?.bg || "bg-muted",
+                      )}
+                    >
+                      {event.title}
+                    </button>
+                  );
+                })}
+              </div>
+            );
+          })}
+        </div>
+      )}
 
       {/* Calendar grid with events */}
       <div className="flex-1 overflow-auto" ref={scrollContainerRef}>
