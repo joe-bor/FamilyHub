@@ -57,6 +57,20 @@ export function compareEventsByTime(
 }
 
 /**
+ * Compare events with all-day events sorted first, then by start time.
+ * Use in views where all-day events should appear above/before timed events.
+ */
+export function compareEventsAllDayFirst(
+  a: { startTime: string; isAllDay?: boolean },
+  b: { startTime: string; isAllDay?: boolean },
+): number {
+  if (a.isAllDay && !b.isAllDay) return -1;
+  if (!a.isAllDay && b.isAllDay) return 1;
+  if (a.isAllDay && b.isAllDay) return 0;
+  return getTimeInMinutes(a.startTime) - getTimeInMinutes(b.startTime);
+}
+
+/**
  * Convert 24-hour time format to 12-hour format with AM/PM.
  * Example: "16:00" -> "4:00 PM", "09:30" -> "9:30 AM"
  */

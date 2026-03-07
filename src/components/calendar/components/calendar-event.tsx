@@ -41,7 +41,9 @@ export function CalendarEventCard({
               {event.title}
             </h4>
             <p className="text-sm text-muted-foreground mt-1">
-              {event.startTime} - {event.endTime}
+              {event.isAllDay
+                ? "All day"
+                : `${event.startTime} - ${event.endTime}`}
             </p>
             {event.location && (
               <p className="text-sm text-muted-foreground truncate mt-1">
@@ -104,7 +106,9 @@ export function CalendarEventCard({
             {event.title}
           </h4>
           <p className="text-xs text-muted-foreground mt-0.5">
-            {event.startTime} - {event.endTime}
+            {event.isAllDay
+              ? "All day"
+              : `${event.startTime} - ${event.endTime}`}
           </p>
           {event.location && (
             <p className="text-xs text-muted-foreground truncate mt-0.5">
