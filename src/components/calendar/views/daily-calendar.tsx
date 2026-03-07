@@ -6,7 +6,7 @@ import {
   getTimeInMinutes,
   parseTime,
 } from "@/lib/time-utils";
-import { type CalendarEvent, colorMap } from "@/lib/types";
+import { type CalendarEvent, colorMap, getFamilyMember } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { CalendarEventCard } from "../components/calendar-event";
 import type { FilterState } from "../components/calendar-filter";
@@ -156,10 +156,20 @@ export function DailyCalendar({
       .sort(compareEventsByTime);
   }, [events, currentDate, filter.selectedMembers, filter.showAllDayEvents]);
 
+  const allDayEvents = useMemo(
+    () => dayEvents.filter((e) => e.isAllDay),
+    [dayEvents],
+  );
+
+  const timedEvents = useMemo(
+    () => dayEvents.filter((e) => !e.isAllDay),
+    [dayEvents],
+  );
+
   // Memoize the O(n²) column layout calculation
   const eventsWithLayout = useMemo(
-    () => calculateEventColumns(dayEvents),
-    [dayEvents],
+    () => calculateEventColumns(timedEvents),
+    [timedEvents],
   );
 
   const timeSlots = [
@@ -225,6 +235,36 @@ export function DailyCalendar({
           </div>
         </div>
       </div>
+
+      {/* All-day events section */}
+      {allDayEvents.length > 0 && (
+        <div className="flex border-b border-border bg-card shrink-0">
+          <div className="w-12 sm:w-16 shrink-0 flex items-center justify-end pr-2">
+            <span className="text-xs text-muted-foreground font-medium">
+              All Day
+            </span>
+          </div>
+          <div className="flex-1 flex flex-wrap gap-1.5 p-2">
+            {allDayEvents.map((event) => {
+              const member = getFamilyMember(familyMembers, event.memberId);
+              const colors = member ? colorMap[member.color] : colorMap.coral;
+              return (
+                <button
+                  type="button"
+                  key={event.id}
+                  onClick={() => onEventClick?.(event)}
+                  className={cn(
+                    "text-xs font-medium px-2.5 py-1 rounded-full text-white transition-all hover:scale-105 hover:shadow-sm",
+                    colors?.bg || "bg-muted",
+                  )}
+                >
+                  {event.title}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Calendar grid */}
       <div className="flex-1 flex overflow-y-auto" ref={scrollContainerRef}>
