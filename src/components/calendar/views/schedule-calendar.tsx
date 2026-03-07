@@ -2,7 +2,7 @@ import { Clock, MapPin } from "lucide-react";
 import type React from "react";
 import { useMemo } from "react";
 import { useFamilyMembers } from "@/api";
-import { compareEventsByTime, formatLocalDate } from "@/lib/time-utils";
+import { compareEventsAllDayFirst, formatLocalDate } from "@/lib/time-utils";
 import { type CalendarEvent, colorMap, getFamilyMember } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import type { FilterState } from "../components/calendar-filter";
@@ -40,7 +40,7 @@ export function ScheduleCalendar({
           const allDayMatches = filter.showAllDayEvents || !event.isAllDay;
           return dateMatches && memberMatches && allDayMatches;
         })
-        .sort(compareEventsByTime); // Fixed: use proper time comparison
+        .sort(compareEventsAllDayFirst);
 
       if (dayEvents.length > 0) {
         grouped.push({ date, events: dayEvents });
@@ -139,7 +139,9 @@ export function ScheduleCalendar({
                         <div className="flex items-center gap-1">
                           <Clock className="w-3.5 h-3.5" />
                           <span>
-                            {event.startTime} - {event.endTime}
+                            {event.isAllDay
+                              ? "All day"
+                              : `${event.startTime} - ${event.endTime}`}
                           </span>
                         </div>
                         {event.location && (
