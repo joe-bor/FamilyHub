@@ -253,6 +253,8 @@ export function DailyCalendar({
                   type="button"
                   key={event.id}
                   onClick={() => onEventClick?.(event)}
+                  title={event.title}
+                  aria-label={`${event.title} - All day event`}
                   className={cn(
                     "text-xs font-medium px-2.5 py-1 rounded-full text-white transition-all hover:scale-105 hover:shadow-sm",
                     colors?.bg || "bg-muted",
