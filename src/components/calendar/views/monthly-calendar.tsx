@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { useFamilyMembers } from "@/api";
 import { useIsMobile } from "@/hooks";
+import { compareEventsAllDayFirst } from "@/lib/time-utils";
 import {
   type CalendarEvent,
   colorMap,
@@ -99,6 +100,11 @@ export function MonthlyCalendar({
           dayInfo.events.push(event);
         }
       }
+    }
+
+    // Sort each day's events: all-day first, then by start time
+    for (const dayInfo of data.values()) {
+      dayInfo.events.sort(compareEventsAllDayFirst);
     }
 
     // Compute unique members for each day using O(1) lookup
@@ -228,7 +234,7 @@ export function MonthlyCalendar({
                         "text-white font-medium",
                       )}
                     >
-                      {event.title}
+                      {event.isAllDay ? `● ${event.title}` : event.title}
                     </button>
                   );
                 })}
