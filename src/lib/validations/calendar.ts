@@ -52,7 +52,9 @@ export const eventFormSchema = z
     isAllDay: z.boolean().optional(),
   })
   .refine(
-    (data) => getTimeInMinutes(data.endTime) > getTimeInMinutes(data.startTime),
+    (data) =>
+      data.isAllDay ||
+      getTimeInMinutes(data.endTime) > getTimeInMinutes(data.startTime),
     {
       message: "End time must be after start time",
       path: ["endTime"],
