@@ -75,6 +75,7 @@ function EventForm({
   const startTimeValue = watch("startTime");
   const endTimeValue = watch("endTime");
   const memberIdValue = watch("memberId");
+  const isAllDayValue = watch("isAllDay");
 
   // Reset form when defaultValues change (e.g., switching between events in edit mode)
   useEffect(() => {
@@ -84,6 +85,19 @@ function EventForm({
   const handleFormSubmit = (data: EventFormData) => {
     if (isPending) return;
     onSubmit(data);
+  };
+
+  const toggleAllDay = () => {
+    const next = !isAllDayValue;
+    setValue("isAllDay", next);
+    if (next) {
+      setValue("startTime", "00:00");
+      setValue("endTime", "23:59");
+    } else {
+      const { startTime, endTime } = getSmartDefaultTimes();
+      setValue("startTime", startTime);
+      setValue("endTime", endTime);
+    }
   };
 
   // Convert date string to Date object for DatePicker display
@@ -123,29 +137,55 @@ function EventForm({
         <FormError message={errors.date?.message} />
       </div>
 
-      {/* Start/End Time */}
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label>Start Time</Label>
-          <TimePicker
-            value={startTimeValue}
-            onChange={(time) => setValue("startTime", time)}
-            placeholder="Start time"
-            error={!!errors.startTime}
+      {/* All Day Toggle */}
+      <div className="flex items-center gap-3">
+        <button
+          type="button"
+          role="switch"
+          aria-checked={!!isAllDayValue}
+          onClick={toggleAllDay}
+          className={cn(
+            "relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors",
+            isAllDayValue ? "bg-primary" : "bg-muted",
+          )}
+        >
+          <span
+            className={cn(
+              "pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow-sm transition-transform",
+              isAllDayValue ? "translate-x-5" : "translate-x-0",
+            )}
           />
-          <FormError message={errors.startTime?.message} />
-        </div>
-        <div className="space-y-2">
-          <Label>End Time</Label>
-          <TimePicker
-            value={endTimeValue}
-            onChange={(time) => setValue("endTime", time)}
-            placeholder="End time"
-            error={!!errors.endTime}
-          />
-          <FormError message={errors.endTime?.message} />
-        </div>
+        </button>
+        <Label className="cursor-pointer" onClick={toggleAllDay}>
+          All day
+        </Label>
       </div>
+
+      {/* Start/End Time */}
+      {!isAllDayValue && (
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label>Start Time</Label>
+            <TimePicker
+              value={startTimeValue}
+              onChange={(time) => setValue("startTime", time)}
+              placeholder="Start time"
+              error={!!errors.startTime}
+            />
+            <FormError message={errors.startTime?.message} />
+          </div>
+          <div className="space-y-2">
+            <Label>End Time</Label>
+            <TimePicker
+              value={endTimeValue}
+              onChange={(time) => setValue("endTime", time)}
+              placeholder="End time"
+              error={!!errors.endTime}
+            />
+            <FormError message={errors.endTime?.message} />
+          </div>
+        </div>
+      )}
 
       {/* Family Member */}
       <div className="space-y-2">
