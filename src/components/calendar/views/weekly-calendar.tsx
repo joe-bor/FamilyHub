@@ -268,7 +268,7 @@ export function WeeklyCalendar({
               <div
                 key={index}
                 className={cn(
-                  "border-l border-border p-1 flex flex-wrap gap-1 min-h-[36px]",
+                  "border-l border-border p-1 flex flex-col gap-1 min-h-[36px]",
                   isToday(date) && "bg-primary/5",
                 )}
               >
@@ -285,7 +285,7 @@ export function WeeklyCalendar({
                       title={event.title}
                       aria-label={`${event.title} - All day event`}
                       className={cn(
-                        "text-[10px] font-medium px-2 py-1 min-h-[28px] rounded-full text-white truncate max-w-full transition-all hover:scale-105",
+                        "text-[10px] font-medium px-2 py-1 min-h-[28px] rounded-md text-white truncate w-full text-left transition-all hover:brightness-110",
                         colors?.bg || "bg-muted",
                       )}
                     >
