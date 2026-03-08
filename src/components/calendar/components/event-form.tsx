@@ -132,7 +132,11 @@ function EventForm({
         <DatePicker
           value={dateAsDate}
           onChange={(date) => {
-            setValue("date", date ? format(date, "yyyy-MM-dd") : "");
+            const newDate = date ? format(date, "yyyy-MM-dd") : "";
+            setValue("date", newDate);
+            if (endDateValue && newDate > endDateValue) {
+              setValue("endDate", undefined);
+            }
           }}
           placeholder="Pick a date"
           error={!!errors.date}

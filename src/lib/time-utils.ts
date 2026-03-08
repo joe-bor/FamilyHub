@@ -112,15 +112,18 @@ export function parseLocalDate(dateStr: string): Date {
 /**
  * Check if an event falls on a given date.
  * Handles both single-day events (exact date match) and multi-day events (date range).
+ * Normalizes all dates to midnight to avoid time-of-day comparison bugs.
  */
 export function isEventOnDate(
   event: { date: Date; endDate?: Date },
   targetDate: Date,
 ): boolean {
-  const target = targetDate.toDateString();
-  if (event.date.toDateString() === target) return true;
+  const normalize = (d: Date) =>
+    new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+  const target = normalize(targetDate);
+  if (normalize(event.date) === target) return true;
   if (!event.endDate) return false;
-  return targetDate >= event.date && targetDate <= event.endDate;
+  return target >= normalize(event.date) && target <= normalize(event.endDate);
 }
 
 /**

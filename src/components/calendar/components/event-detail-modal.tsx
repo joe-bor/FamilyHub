@@ -62,7 +62,9 @@ function EventDetailModal({
 
   // Format date for display — multi-day shows range, single-day shows full date
   const formattedDate = event.endDate
-    ? `${format(event.date, "MMMM d")} – ${format(event.endDate, "MMMM d, yyyy")}`
+    ? event.date.getFullYear() !== event.endDate.getFullYear()
+      ? `${format(event.date, "MMMM d, yyyy")} – ${format(event.endDate, "MMMM d, yyyy")}`
+      : `${format(event.date, "MMMM d")} – ${format(event.endDate, "MMMM d, yyyy")}`
     : format(event.date, "EEEE, MMMM d, yyyy");
 
   return (
