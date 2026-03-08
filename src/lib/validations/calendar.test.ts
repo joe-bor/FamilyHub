@@ -438,6 +438,105 @@ describe("calendar validations", () => {
       });
     });
 
+    describe("endDate field", () => {
+      it("accepts valid endDate format", () => {
+        const data = createValidEventData({
+          isAllDay: true,
+          startTime: "00:00",
+          endTime: "23:59",
+          endDate: "2025-12-25",
+        });
+        const result = eventFormSchema.safeParse(data);
+        expect(result.success).toBe(true);
+      });
+
+      it("rejects invalid endDate format", () => {
+        const data = createValidEventData({
+          isAllDay: true,
+          startTime: "00:00",
+          endTime: "23:59",
+          endDate: "12-25-2025",
+        });
+        const result = eventFormSchema.safeParse(data);
+        expect(result.success).toBe(false);
+      });
+
+      it("accepts endDate equal to date", () => {
+        const data = createValidEventData({
+          isAllDay: true,
+          startTime: "00:00",
+          endTime: "23:59",
+          date: "2025-12-23",
+          endDate: "2025-12-23",
+        });
+        const result = eventFormSchema.safeParse(data);
+        expect(result.success).toBe(true);
+      });
+
+      it("accepts endDate after date", () => {
+        const data = createValidEventData({
+          isAllDay: true,
+          startTime: "00:00",
+          endTime: "23:59",
+          date: "2025-12-23",
+          endDate: "2025-12-28",
+        });
+        const result = eventFormSchema.safeParse(data);
+        expect(result.success).toBe(true);
+      });
+
+      it("rejects endDate before date", () => {
+        const data = createValidEventData({
+          isAllDay: true,
+          startTime: "00:00",
+          endTime: "23:59",
+          date: "2025-12-23",
+          endDate: "2025-12-20",
+        });
+        const result = eventFormSchema.safeParse(data);
+        expect(result.success).toBe(false);
+        if (!result.success) {
+          const endDateError = result.error.issues.find(
+            (issue) => issue.path[0] === "endDate",
+          );
+          expect(endDateError?.message).toBe(
+            "End date must be on or after start date",
+          );
+        }
+      });
+
+      it("rejects endDate when isAllDay is false", () => {
+        const data = createValidEventData({
+          isAllDay: false,
+          endDate: "2025-12-25",
+        });
+        const result = eventFormSchema.safeParse(data);
+        expect(result.success).toBe(false);
+        if (!result.success) {
+          const endDateError = result.error.issues.find(
+            (issue) =>
+              issue.path[0] === "endDate" &&
+              issue.message === "End date is only valid for all-day events",
+          );
+          expect(endDateError).toBeDefined();
+        }
+      });
+
+      it("rejects endDate when isAllDay is undefined", () => {
+        const data = createValidEventData({
+          endDate: "2025-12-25",
+        });
+        const result = eventFormSchema.safeParse(data);
+        expect(result.success).toBe(false);
+      });
+
+      it("accepts omitted endDate", () => {
+        const data = createValidEventData();
+        const result = eventFormSchema.safeParse(data);
+        expect(result.success).toBe(true);
+      });
+    });
+
     describe("complete validation scenarios", () => {
       it("validates complete valid event data", () => {
         const data: EventFormData = {
