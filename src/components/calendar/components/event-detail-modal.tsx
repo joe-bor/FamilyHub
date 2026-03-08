@@ -60,8 +60,10 @@ function EventDetailModal({
     onDelete();
   };
 
-  // Format date for display (e.g., "Monday, December 23, 2025")
-  const formattedDate = format(event.date, "EEEE, MMMM d, yyyy");
+  // Format date for display — multi-day shows range, single-day shows full date
+  const formattedDate = event.endDate
+    ? `${format(event.date, "MMMM d")} – ${format(event.endDate, "MMMM d, yyyy")}`
+    : format(event.date, "EEEE, MMMM d, yyyy");
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>

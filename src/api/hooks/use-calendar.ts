@@ -106,6 +106,9 @@ export function useUpdateEvent(callbacks?: UpdateEventCallbacks) {
                     ...event,
                     ...updatedEvent,
                     date: parseLocalDate(updatedEvent.date),
+                    endDate: updatedEvent.endDate
+                      ? parseLocalDate(updatedEvent.endDate)
+                      : undefined,
                   }
                 : event,
             ),
