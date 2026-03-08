@@ -14,7 +14,11 @@ import type {
  * Centralizes date parsing so components always work with proper Date objects.
  */
 function toCalendarEvent(raw: CalendarEventResponse): CalendarEvent {
-  return { ...raw, date: parseLocalDate(raw.date) };
+  return {
+    ...raw,
+    date: parseLocalDate(raw.date),
+    endDate: raw.endDate ? parseLocalDate(raw.endDate) : undefined,
+  };
 }
 
 function mapEventResponse(
