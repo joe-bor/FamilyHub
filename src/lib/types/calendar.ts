@@ -4,6 +4,7 @@ export interface CalendarEvent {
   startTime: string;
   endTime: string;
   date: Date;
+  endDate?: Date;
   memberId: string;
   isAllDay?: boolean;
   location?: string;
@@ -14,8 +15,9 @@ export interface CalendarEvent {
  * `date` is a "yyyy-MM-dd" string — the service layer maps this
  * to a `CalendarEvent` with a proper Date via `toCalendarEvent()`.
  */
-export type CalendarEventResponse = Omit<CalendarEvent, "date"> & {
+export type CalendarEventResponse = Omit<CalendarEvent, "date" | "endDate"> & {
   date: string;
+  endDate?: string;
 };
 
 export type CalendarViewType = "daily" | "weekly" | "monthly" | "schedule";
@@ -31,6 +33,7 @@ export interface CreateEventRequest {
   startTime: string;
   endTime: string;
   date: string; // ISO string for API transport
+  endDate?: string | null;
   memberId: string;
   isAllDay?: boolean;
   location?: string;
@@ -41,6 +44,7 @@ export interface UpdateEventRequest {
   startTime: string;
   endTime: string;
   date: string;
+  endDate?: string | null;
   memberId: string;
   isAllDay?: boolean;
   location?: string;
