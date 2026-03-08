@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { useFamilyMembers } from "@/api";
 import { useIsMobile } from "@/hooks";
-import { compareEventsAllDayFirst } from "@/lib/time-utils";
+import { compareEventsAllDayFirst, isEventOnDate } from "@/lib/time-utils";
 import {
   type CalendarEvent,
   colorMap,
@@ -87,18 +87,16 @@ export function MonthlyCalendar({
       data.set(day.toDateString(), { events: [], members: [] });
     }
 
-    // Single pass through events - filter and group by date
+    // Iterate events against all days to support multi-day events
     for (const event of events) {
-      const eventDate = new Date(event.date);
-      const dateKey = eventDate.toDateString();
-      const dayInfo = data.get(dateKey);
+      const memberMatches = filter.selectedMembers.includes(event.memberId);
+      const allDayMatches = filter.showAllDayEvents || !event.isAllDay;
+      if (!memberMatches || !allDayMatches) continue;
 
-      if (dayInfo) {
-        const memberMatches = filter.selectedMembers.includes(event.memberId);
-        const allDayMatches = filter.showAllDayEvents || !event.isAllDay;
-        if (memberMatches && allDayMatches) {
-          dayInfo.events.push(event);
-        }
+      for (const day of days) {
+        if (!isEventOnDate(event, day)) continue;
+        const dayInfo = data.get(day.toDateString());
+        dayInfo?.events.push(event);
       }
     }
 

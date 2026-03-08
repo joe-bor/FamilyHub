@@ -2,7 +2,11 @@ import { Clock, MapPin } from "lucide-react";
 import type React from "react";
 import { useMemo } from "react";
 import { useFamilyMembers } from "@/api";
-import { compareEventsAllDayFirst, formatLocalDate } from "@/lib/time-utils";
+import {
+  compareEventsAllDayFirst,
+  formatLocalDate,
+  isEventOnDate,
+} from "@/lib/time-utils";
 import { type CalendarEvent, colorMap, getFamilyMember } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import type { FilterState } from "../components/calendar-filter";
@@ -34,8 +38,7 @@ export function ScheduleCalendar({
 
       const dayEvents = events
         .filter((event) => {
-          const eventDate = new Date(event.date);
-          const dateMatches = eventDate.toDateString() === date.toDateString();
+          const dateMatches = isEventOnDate(event, date);
           const memberMatches = filter.selectedMembers.includes(event.memberId);
           const allDayMatches = filter.showAllDayEvents || !event.isAllDay;
           return dateMatches && memberMatches && allDayMatches;

@@ -3,6 +3,7 @@ import { useFamilyMembers } from "@/api";
 import {
   CALENDAR_START_HOUR,
   compareEventsByTime,
+  isEventOnDate,
   parseTime,
 } from "@/lib/time-utils";
 import { type CalendarEvent, colorMap, getFamilyMember } from "@/lib/types";
@@ -83,19 +84,21 @@ export function WeeklyCalendar({
       allDay.set(day.toDateString(), []);
     }
 
-    // Single pass through events - filter and group by date
+    // Iterate events against all 7 days to support multi-day events
     for (const event of events) {
-      const eventDate = new Date(event.date);
-      const dateKey = eventDate.toDateString();
-
       const memberMatches = filter.selectedMembers.includes(event.memberId);
       const allDayMatches = filter.showAllDayEvents || !event.isAllDay;
       if (!memberMatches || !allDayMatches) continue;
 
-      if (event.isAllDay) {
-        allDay.get(dateKey)?.push(event);
-      } else {
-        timed.get(dateKey)?.push(event);
+      for (const day of weekDays) {
+        if (!isEventOnDate(event, day)) continue;
+        const dateKey = day.toDateString();
+        // Multi-day events are always all-day, so route to allDay map
+        if (event.isAllDay) {
+          allDay.get(dateKey)?.push(event);
+        } else {
+          timed.get(dateKey)?.push(event);
+        }
       }
     }
 

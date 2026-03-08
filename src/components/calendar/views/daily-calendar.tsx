@@ -4,6 +4,7 @@ import {
   CALENDAR_START_HOUR,
   compareEventsByTime,
   getTimeInMinutes,
+  isEventOnDate,
   parseTime,
 } from "@/lib/time-utils";
 import { type CalendarEvent, colorMap, getFamilyMember } from "@/lib/types";
@@ -146,9 +147,7 @@ export function DailyCalendar({
   const dayEvents = useMemo(() => {
     return events
       .filter((event) => {
-        const eventDate = new Date(event.date);
-        const dateMatches =
-          eventDate.toDateString() === currentDate.toDateString();
+        const dateMatches = isEventOnDate(event, currentDate);
         const memberMatches = filter.selectedMembers.includes(event.memberId);
         const allDayMatches = filter.showAllDayEvents || !event.isAllDay;
         return dateMatches && memberMatches && allDayMatches;
