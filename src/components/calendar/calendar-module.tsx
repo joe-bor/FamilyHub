@@ -177,6 +177,7 @@ export function CalendarModule() {
       startTime: format24hTo12h(formData.startTime),
       endTime: format24hTo12h(formData.endTime),
       date: formData.date, // Already "yyyy-MM-dd", pass as-is to avoid timezone shift
+      endDate: formData.endDate ?? null, // null explicitly clears endDate on update
       memberId: formData.memberId,
       isAllDay: formData.isAllDay,
       location: formData.location,
@@ -189,6 +190,7 @@ export function CalendarModule() {
       startTime: format24hTo12h(formData.startTime),
       endTime: format24hTo12h(formData.endTime),
       date: formData.date, // Already "yyyy-MM-dd", pass as-is to avoid timezone shift
+      endDate: formData.endDate ?? null,
       memberId: formData.memberId,
       isAllDay: formData.isAllDay,
       location: formData.location,

@@ -72,6 +72,7 @@ function EventForm({
 
   // Watch values for controlled components
   const dateValue = watch("date");
+  const endDateValue = watch("endDate");
   const startTimeValue = watch("startTime");
   const endTimeValue = watch("endTime");
   const memberIdValue = watch("memberId");
@@ -97,12 +98,14 @@ function EventForm({
       const { startTime, endTime } = getSmartDefaultTimes();
       setValue("startTime", startTime);
       setValue("endTime", endTime);
+      setValue("endDate", undefined);
     }
   };
 
-  // Convert date string to Date object for DatePicker display
+  // Convert date strings to Date objects for DatePicker display
   // Use parseLocalDate to ensure consistent local timezone handling
   const dateAsDate = dateValue ? parseLocalDate(dateValue) : undefined;
+  const endDateAsDate = endDateValue ? parseLocalDate(endDateValue) : undefined;
 
   const isAdd = mode === "add";
   const submitText = isAdd ? "Add Event" : "Save Changes";
@@ -160,6 +163,26 @@ function EventForm({
           All day
         </Label>
       </div>
+
+      {/* End Date (multi-day all-day events) */}
+      {isAllDayValue && (
+        <div className="space-y-2">
+          <Label>End Date</Label>
+          <DatePicker
+            value={endDateAsDate}
+            onChange={(date) => {
+              setValue(
+                "endDate",
+                date ? format(date, "yyyy-MM-dd") : undefined,
+              );
+            }}
+            placeholder="Same day (optional)"
+            error={!!errors.endDate}
+            fromDate={dateAsDate}
+          />
+          <FormError message={errors.endDate?.message} />
+        </div>
+      )}
 
       {/* Start/End Time */}
       {!isAllDayValue && (

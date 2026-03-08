@@ -27,6 +27,7 @@ function eventToFormData(event: CalendarEvent): Partial<EventFormData> {
   return {
     title: event.title,
     date: formatLocalDate(event.date),
+    endDate: event.endDate ? formatLocalDate(event.endDate) : undefined,
     startTime: format12hTo24h(event.startTime),
     endTime: format12hTo24h(event.endTime),
     memberId: event.memberId,
