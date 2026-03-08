@@ -389,6 +389,55 @@ describe("calendar validations", () => {
       });
     });
 
+    describe("all-day event time validation bypass", () => {
+      it("skips end-after-start check when isAllDay is true", () => {
+        const data = createValidEventData({
+          startTime: "00:00",
+          endTime: "00:00",
+          isAllDay: true,
+        });
+        const result = eventFormSchema.safeParse(data);
+        expect(result.success).toBe(true);
+      });
+
+      it("allows endTime before startTime when isAllDay is true", () => {
+        const data = createValidEventData({
+          startTime: "23:00",
+          endTime: "01:00",
+          isAllDay: true,
+        });
+        const result = eventFormSchema.safeParse(data);
+        expect(result.success).toBe(true);
+      });
+
+      it("still enforces end-after-start when isAllDay is false", () => {
+        const data = createValidEventData({
+          startTime: "14:00",
+          endTime: "09:00",
+          isAllDay: false,
+        });
+        const result = eventFormSchema.safeParse(data);
+        expect(result.success).toBe(false);
+        if (!result.success) {
+          const endTimeError = result.error.issues.find(
+            (issue) => issue.path[0] === "endTime",
+          );
+          expect(endTimeError?.message).toBe(
+            "End time must be after start time",
+          );
+        }
+      });
+
+      it("still enforces end-after-start when isAllDay is undefined", () => {
+        const data = createValidEventData({
+          startTime: "14:00",
+          endTime: "09:00",
+        });
+        const result = eventFormSchema.safeParse(data);
+        expect(result.success).toBe(false);
+      });
+    });
+
     describe("complete validation scenarios", () => {
       it("validates complete valid event data", () => {
         const data: EventFormData = {

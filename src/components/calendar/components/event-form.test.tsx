@@ -375,6 +375,119 @@ describe("EventForm", () => {
     });
   });
 
+  describe("All Day Toggle", () => {
+    it("renders the all-day toggle switch", () => {
+      render(
+        <EventForm
+          mode="add"
+          onSubmit={mockOnSubmit}
+          onCancel={mockOnCancel}
+        />,
+      );
+
+      expect(screen.getByRole("switch")).toBeInTheDocument();
+      expect(screen.getByText("All day")).toBeInTheDocument();
+    });
+
+    it("hides time pickers when all-day is toggled on", async () => {
+      const { user } = renderWithUser(
+        <EventForm
+          mode="add"
+          onSubmit={mockOnSubmit}
+          onCancel={mockOnCancel}
+        />,
+      );
+
+      // Time pickers visible initially
+      expect(screen.getByText("Start Time")).toBeInTheDocument();
+      expect(screen.getByText("End Time")).toBeInTheDocument();
+
+      // Toggle all-day on
+      await user.click(screen.getByRole("switch"));
+
+      // Time pickers should be hidden
+      expect(screen.queryByText("Start Time")).not.toBeInTheDocument();
+      expect(screen.queryByText("End Time")).not.toBeInTheDocument();
+    });
+
+    it("shows time pickers again when all-day is toggled off", async () => {
+      const { user } = renderWithUser(
+        <EventForm
+          mode="add"
+          onSubmit={mockOnSubmit}
+          onCancel={mockOnCancel}
+        />,
+      );
+
+      // Toggle on then off
+      await user.click(screen.getByRole("switch"));
+      expect(screen.queryByText("Start Time")).not.toBeInTheDocument();
+
+      await user.click(screen.getByRole("switch"));
+      expect(screen.getByText("Start Time")).toBeInTheDocument();
+      expect(screen.getByText("End Time")).toBeInTheDocument();
+    });
+
+    it("submits with isAllDay true when toggled on", async () => {
+      const { user } = renderWithUser(
+        <EventForm
+          mode="add"
+          defaultValues={{ memberId: testMembers[0].id }}
+          onSubmit={mockOnSubmit}
+          onCancel={mockOnCancel}
+        />,
+      );
+
+      await waitForMemberSelected(testMembers[0].name);
+
+      // Toggle all-day on
+      await user.click(screen.getByRole("switch"));
+
+      // Fill title
+      const titleInput = screen.getByLabelText(/event name/i);
+      await typeAndWait(user, titleInput, "Family Picnic");
+
+      // Submit
+      await user.click(screen.getByRole("button", { name: /add event/i }));
+
+      await waitFor(
+        () => {
+          expect(mockOnSubmit).toHaveBeenCalledWith(
+            expect.objectContaining({
+              title: "Family Picnic",
+              isAllDay: true,
+              startTime: "00:00",
+              endTime: "23:59",
+            }),
+          );
+        },
+        { timeout: TEST_TIMEOUTS.FORM_SUBMIT },
+      );
+    });
+
+    it("renders with all-day toggle on in edit mode when event is all-day", () => {
+      render(
+        <EventForm
+          mode="edit"
+          defaultValues={{
+            title: "Holiday",
+            date: "2026-03-07",
+            startTime: "00:00",
+            endTime: "23:59",
+            memberId: testMembers[0].id,
+            isAllDay: true,
+          }}
+          onSubmit={mockOnSubmit}
+          onCancel={mockOnCancel}
+        />,
+      );
+
+      const toggle = screen.getByRole("switch");
+      expect(toggle).toHaveAttribute("aria-checked", "true");
+      expect(screen.queryByText("Start Time")).not.toBeInTheDocument();
+    });
+  });
+
   describe("Member Selection", () => {
     it("allows changing selected family member", async () => {
       // Pass explicit defaultValues to avoid async initialization race condition

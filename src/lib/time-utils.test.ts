@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   CALENDAR_END_HOUR,
   CALENDAR_START_HOUR,
+  compareEventsAllDayFirst,
   compareEventsByTime,
   DEFAULT_EVENT_HOUR,
   format12hTo24h,
@@ -153,6 +154,75 @@ describe("time-utils", () => {
       expect(compareEventsByTime(early, late)).toBeLessThan(0);
       expect(compareEventsByTime(late, early)).toBeGreaterThan(0);
       expect(compareEventsByTime(early, same)).toBe(0);
+    });
+  });
+
+  describe("compareEventsAllDayFirst", () => {
+    it("sorts all-day events before timed events", () => {
+      const events = [
+        { startTime: "9:00 AM", title: "Morning", isAllDay: false },
+        { startTime: "12:00 AM", title: "All Day", isAllDay: true },
+        { startTime: "2:00 PM", title: "Afternoon", isAllDay: false },
+      ];
+
+      const sorted = [...events].sort(compareEventsAllDayFirst);
+
+      expect(sorted[0].title).toBe("All Day");
+      expect(sorted[1].title).toBe("Morning");
+      expect(sorted[2].title).toBe("Afternoon");
+    });
+
+    it("preserves order among multiple all-day events", () => {
+      const events = [
+        { startTime: "12:00 AM", title: "Second All Day", isAllDay: true },
+        { startTime: "12:00 AM", title: "First All Day", isAllDay: true },
+      ];
+
+      const sorted = [...events].sort(compareEventsAllDayFirst);
+
+      // Stable sort preserves original order for equal elements
+      expect(sorted[0].title).toBe("Second All Day");
+      expect(sorted[1].title).toBe("First All Day");
+    });
+
+    it("sorts timed events by start time after all-day events", () => {
+      const events = [
+        { startTime: "3:00 PM", title: "Late", isAllDay: false },
+        { startTime: "12:00 AM", title: "Holiday", isAllDay: true },
+        { startTime: "9:00 AM", title: "Early", isAllDay: false },
+        { startTime: "12:00 AM", title: "Birthday", isAllDay: true },
+      ];
+
+      const sorted = [...events].sort(compareEventsAllDayFirst);
+
+      expect(sorted.map((e) => e.title)).toEqual([
+        "Holiday",
+        "Birthday",
+        "Early",
+        "Late",
+      ]);
+    });
+
+    it("handles undefined isAllDay as timed event", () => {
+      const events = [
+        { startTime: "9:00 AM", title: "No Flag" },
+        { startTime: "12:00 AM", title: "All Day", isAllDay: true },
+      ];
+
+      const sorted = [...events].sort(compareEventsAllDayFirst);
+
+      expect(sorted[0].title).toBe("All Day");
+      expect(sorted[1].title).toBe("No Flag");
+    });
+
+    it("returns correct comparison values", () => {
+      const allDay = { startTime: "12:00 AM", isAllDay: true };
+      const timed = { startTime: "9:00 AM", isAllDay: false };
+      const allDay2 = { startTime: "12:00 AM", isAllDay: true };
+
+      expect(compareEventsAllDayFirst(allDay, timed)).toBeLessThan(0);
+      expect(compareEventsAllDayFirst(timed, allDay)).toBeGreaterThan(0);
+      expect(compareEventsAllDayFirst(allDay, allDay2)).toBe(0);
     });
   });
 
