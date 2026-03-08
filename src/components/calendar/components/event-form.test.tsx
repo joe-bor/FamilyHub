@@ -488,6 +488,178 @@ describe("EventForm", () => {
     });
   });
 
+  describe("End Date (Multi-Day)", () => {
+    it("shows end date picker when all-day is toggled on", async () => {
+      const { user } = renderWithUser(
+        <EventForm
+          mode="add"
+          onSubmit={mockOnSubmit}
+          onCancel={mockOnCancel}
+        />,
+      );
+
+      // End date not visible initially
+      expect(screen.queryByText("End Date")).not.toBeInTheDocument();
+
+      // Toggle all-day on
+      await user.click(screen.getByRole("switch"));
+
+      // End date picker should appear
+      expect(screen.getByText("End Date")).toBeInTheDocument();
+    });
+
+    it("hides end date picker when all-day is toggled off", async () => {
+      const { user } = renderWithUser(
+        <EventForm
+          mode="add"
+          onSubmit={mockOnSubmit}
+          onCancel={mockOnCancel}
+        />,
+      );
+
+      // Toggle on then off
+      await user.click(screen.getByRole("switch"));
+      expect(screen.getByText("End Date")).toBeInTheDocument();
+
+      await user.click(screen.getByRole("switch"));
+      expect(screen.queryByText("End Date")).not.toBeInTheDocument();
+    });
+
+    it("clears endDate when toggling all-day off", async () => {
+      const { user } = renderWithUser(
+        <EventForm
+          mode="add"
+          defaultValues={{
+            memberId: testMembers[0].id,
+            isAllDay: true,
+            startTime: "00:00",
+            endTime: "23:59",
+            endDate: "2026-03-12",
+          }}
+          onSubmit={mockOnSubmit}
+          onCancel={mockOnCancel}
+        />,
+      );
+
+      // Toggle off
+      await user.click(screen.getByRole("switch"));
+
+      // Toggle back on and submit — endDate should have been cleared
+      await user.click(screen.getByRole("switch"));
+
+      await waitForMemberSelected(testMembers[0].name);
+      const titleInput = screen.getByLabelText(/event name/i);
+      await typeAndWait(user, titleInput, "Test Event");
+
+      await user.click(screen.getByRole("button", { name: /add event/i }));
+
+      await waitFor(
+        () => {
+          expect(mockOnSubmit).toHaveBeenCalledWith(
+            expect.objectContaining({
+              isAllDay: true,
+            }),
+          );
+          // endDate should not be present (was cleared on toggle off)
+          expect(mockOnSubmit.mock.calls[0][0].endDate).toBeUndefined();
+        },
+        { timeout: TEST_TIMEOUTS.FORM_SUBMIT },
+      );
+    });
+
+    it("submits with endDate when set", async () => {
+      const { user } = renderWithUser(
+        <EventForm
+          mode="add"
+          defaultValues={{
+            memberId: testMembers[0].id,
+            isAllDay: true,
+            startTime: "00:00",
+            endTime: "23:59",
+            endDate: "2026-03-12",
+          }}
+          onSubmit={mockOnSubmit}
+          onCancel={mockOnCancel}
+        />,
+      );
+
+      await waitForMemberSelected(testMembers[0].name);
+      const titleInput = screen.getByLabelText(/event name/i);
+      await typeAndWait(user, titleInput, "Family Vacation");
+
+      await user.click(screen.getByRole("button", { name: /add event/i }));
+
+      await waitFor(
+        () => {
+          expect(mockOnSubmit).toHaveBeenCalledWith(
+            expect.objectContaining({
+              title: "Family Vacation",
+              isAllDay: true,
+              endDate: "2026-03-12",
+            }),
+          );
+        },
+        { timeout: TEST_TIMEOUTS.FORM_SUBMIT },
+      );
+    });
+
+    it("submits without endDate when not set", async () => {
+      const { user } = renderWithUser(
+        <EventForm
+          mode="add"
+          defaultValues={{
+            memberId: testMembers[0].id,
+            isAllDay: true,
+            startTime: "00:00",
+            endTime: "23:59",
+          }}
+          onSubmit={mockOnSubmit}
+          onCancel={mockOnCancel}
+        />,
+      );
+
+      await waitForMemberSelected(testMembers[0].name);
+      const titleInput = screen.getByLabelText(/event name/i);
+      await typeAndWait(user, titleInput, "Single Day Event");
+
+      await user.click(screen.getByRole("button", { name: /add event/i }));
+
+      await waitFor(
+        () => {
+          expect(mockOnSubmit).toHaveBeenCalledWith(
+            expect.objectContaining({
+              title: "Single Day Event",
+              isAllDay: true,
+            }),
+          );
+          expect(mockOnSubmit.mock.calls[0][0].endDate).toBeUndefined();
+        },
+        { timeout: TEST_TIMEOUTS.FORM_SUBMIT },
+      );
+    });
+
+    it("renders end date picker in edit mode for multi-day event", () => {
+      render(
+        <EventForm
+          mode="edit"
+          defaultValues={{
+            title: "Vacation",
+            date: "2026-03-08",
+            endDate: "2026-03-12",
+            startTime: "00:00",
+            endTime: "23:59",
+            memberId: testMembers[0].id,
+            isAllDay: true,
+          }}
+          onSubmit={mockOnSubmit}
+          onCancel={mockOnCancel}
+        />,
+      );
+
+      expect(screen.getByText("End Date")).toBeInTheDocument();
+    });
+  });
+
   describe("Member Selection", () => {
     it("allows changing selected family member", async () => {
       // Pass explicit defaultValues to avoid async initialization race condition

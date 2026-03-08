@@ -10,6 +10,7 @@ import {
   formatLocalDate,
   getSmartDefaultTimes,
   getTimeInMinutes,
+  isEventOnDate,
   parseLocalDate,
   parseTime,
 } from "./time-utils";
@@ -223,6 +224,58 @@ describe("time-utils", () => {
       expect(compareEventsAllDayFirst(allDay, timed)).toBeLessThan(0);
       expect(compareEventsAllDayFirst(timed, allDay)).toBeGreaterThan(0);
       expect(compareEventsAllDayFirst(allDay, allDay2)).toBe(0);
+    });
+  });
+
+  describe("isEventOnDate", () => {
+    it("matches single-day event on its own date", () => {
+      const event = { date: new Date(2026, 2, 8) };
+      expect(isEventOnDate(event, new Date(2026, 2, 8))).toBe(true);
+    });
+
+    it("does not match single-day event on a different date", () => {
+      const event = { date: new Date(2026, 2, 8) };
+      expect(isEventOnDate(event, new Date(2026, 2, 9))).toBe(false);
+    });
+
+    it("matches multi-day event on start date", () => {
+      const event = {
+        date: new Date(2026, 2, 8),
+        endDate: new Date(2026, 2, 12),
+      };
+      expect(isEventOnDate(event, new Date(2026, 2, 8))).toBe(true);
+    });
+
+    it("matches multi-day event on middle date", () => {
+      const event = {
+        date: new Date(2026, 2, 8),
+        endDate: new Date(2026, 2, 12),
+      };
+      expect(isEventOnDate(event, new Date(2026, 2, 10))).toBe(true);
+    });
+
+    it("matches multi-day event on end date", () => {
+      const event = {
+        date: new Date(2026, 2, 8),
+        endDate: new Date(2026, 2, 12),
+      };
+      expect(isEventOnDate(event, new Date(2026, 2, 12))).toBe(true);
+    });
+
+    it("does not match multi-day event before start date", () => {
+      const event = {
+        date: new Date(2026, 2, 8),
+        endDate: new Date(2026, 2, 12),
+      };
+      expect(isEventOnDate(event, new Date(2026, 2, 7))).toBe(false);
+    });
+
+    it("does not match multi-day event after end date", () => {
+      const event = {
+        date: new Date(2026, 2, 8),
+        endDate: new Date(2026, 2, 12),
+      };
+      expect(isEventOnDate(event, new Date(2026, 2, 13))).toBe(false);
     });
   });
 
