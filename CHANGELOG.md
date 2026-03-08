@@ -1,5 +1,59 @@
 # Changelog
 
+## [0.3.5](https://github.com/joe-bor/FamilyHub/compare/family-hub-v0.3.4...family-hub-v0.3.5) (2026-03-08)
+
+
+### Features
+
+* add all-day event row above time grid in weekly view ([0b23bd7](https://github.com/joe-bor/FamilyHub/commit/0b23bd7b81b73ed3625eb071f94793309e507048))
+* add all-day event section above time grid in daily view ([7c78f89](https://github.com/joe-bor/FamilyHub/commit/7c78f89b582290badf827cc803cc1a872f460d0f))
+* add all-day toggle to event form ([cc2f4f5](https://github.com/joe-bor/FamilyHub/commit/cc2f4f5b018e6d10bf6cf534fc99e4abc16f4812))
+* add compareEventsAllDayFirst utility and show "All day" label on event cards ([f663b92](https://github.com/joe-bor/FamilyHub/commit/f663b92c2db54fd543d6bd776ddc7366d657472e))
+* **calendar:** render multi-day events across all views and detail modal ([c1e259c](https://github.com/joe-bor/FamilyHub/commit/c1e259cf115dcdd55877469c6c2c71680ee6eec5))
+* **form:** add end date picker for multi-day all-day events ([989ed82](https://github.com/joe-bor/FamilyHub/commit/989ed822b3547d8249b9dfbb2864928d1f3a9897))
+* show "All day" label and sort all-day events first in schedule view ([490d45c](https://github.com/joe-bor/FamilyHub/commit/490d45cff6635435dafcda7ed7c6b1983a29e0d6))
+* sort all-day events first and add visual distinction in monthly view ([07f25a3](https://github.com/joe-bor/FamilyHub/commit/07f25a3e625c651b229d45ed96f38dde62d96d71))
+* **time-utils:** add isEventOnDate for multi-day range checking ([cbc84f9](https://github.com/joe-bor/FamilyHub/commit/cbc84f9049bc1a45925a872b14c6611c2a4700a6))
+* **types:** add endDate to calendar event types and service mapping ([70cdf0f](https://github.com/joe-bor/FamilyHub/commit/70cdf0f5e5d5c15533dd33ed37b7b7d4d5d58450))
+* **validation:** add endDate with cross-field validation to event schema ([e763b2b](https://github.com/joe-bor/FamilyHub/commit/e763b2b9c0feff51d37abc2b8ba7534d759ee35d))
+
+
+### Bug Fixes
+
+* address PR review — normalize dates, clear stale endDate, fix cross-year display ([8a6309c](https://github.com/joe-bor/FamilyHub/commit/8a6309c42b17241d576f5647f770658aa71dd6ec))
+* **ci:** add debug step to trace .lighthouseci/ directory ([d7e7dd7](https://github.com/joe-bor/FamilyHub/commit/d7e7dd7af885aec9a3a98a886eec91812b3351f4))
+* **ci:** enable include-hidden-files for Lighthouse artifact upload ([b39a5c5](https://github.com/joe-bor/FamilyHub/commit/b39a5c52a5620de83f2f37c1d19a6d8f9783a17b))
+* **ci:** split lhci autorun to preserve .lighthouseci/ for artifact upload ([182dc4e](https://github.com/joe-bor/FamilyHub/commit/182dc4e6f0e1c2995b1be72c9d1e4f078fea704a))
+* correct indentation after Profiler wrapper removal ([ad52e72](https://github.com/joe-bor/FamilyHub/commit/ad52e72d94b217eeba7544333850f1645999d04f))
+* improve accessibility and touch targets for all-day event pills ([e369e17](https://github.com/joe-bor/FamilyHub/commit/e369e17525b5433b94b55108b5ea6401e4bd5dd1))
+* make husky pre-commit hook executable ([c578482](https://github.com/joe-bor/FamilyHub/commit/c57848220f50fda1975c4b26ae10c30b47c7c365))
+* stretch all-day event pills to fill weekly view column cells ([bed01d4](https://github.com/joe-bor/FamilyHub/commit/bed01d4a50f678f39ba8886c8b8f0741dd092d3f))
+
+
+### Performance Improvements
+
+* remove React Profiler wrapper from CalendarModule ([c63f317](https://github.com/joe-bor/FamilyHub/commit/c63f317f85f27b8cffbbf54c20abaf797902e197))
+* self-host Nunito font to eliminate external request chain ([44399b6](https://github.com/joe-bor/FamilyHub/commit/44399b627b131b6391b7f268fef09e80943e64f3))
+
+
+### Code Refactoring
+
+* **services:** remove USE_MOCK_API branching ([f370363](https://github.com/joe-bor/FamilyHub/commit/f3703639744ad4b8d5a3dbc016d7dd2616e2c1d3))
+
+
+### Documentation
+
+* fix perf-utils description in CLAUDE.md ([32c5235](https://github.com/joe-bor/FamilyHub/commit/32c523535dec0129921c8ede0d930a98f9e0f821))
+* update env example and clean up mock references ([54a5855](https://github.com/joe-bor/FamilyHub/commit/54a58557a30655fc518cd619ab6f05aeef6697d1))
+* update stale mock references in CLAUDE.md and .env.example ([bc27ea5](https://github.com/joe-bor/FamilyHub/commit/bc27ea5ebd9c4cb1d75fa6bea31dd1cc92c51856))
+
+
+### Tests
+
+* add tests for all-day event comparator, validation bypass, and form toggle ([f38acfe](https://github.com/joe-bor/FamilyHub/commit/f38acfe2df636c6ad6f695bd9ba8df4fd5696f51))
+* add tests for multi-day event support ([52afec5](https://github.com/joe-bor/FamilyHub/commit/52afec53b6651e5c8c0d9bab1b18b23e0cce24b5))
+* **e2e:** remove dual-mode toggle and mock seeders ([2446428](https://github.com/joe-bor/FamilyHub/commit/2446428d4418d6a3fe82529e20139a64f2ca75c8))
+
 ## [0.3.4](https://github.com/joe-bor/FamilyHub/compare/family-hub-v0.3.3...family-hub-v0.3.4) (2026-03-05)
 
 
