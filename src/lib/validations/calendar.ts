@@ -50,6 +50,10 @@ export const eventFormSchema = z
       .max(255, "Location must be 255 characters or less")
       .optional(),
     isAllDay: z.boolean().optional(),
+    endDate: z
+      .string()
+      .regex(DATE_FORMAT_REGEX, "Invalid date format")
+      .optional(),
   })
   .refine(
     (data) =>
@@ -59,7 +63,15 @@ export const eventFormSchema = z
       message: "End time must be after start time",
       path: ["endTime"],
     },
-  );
+  )
+  .refine((data) => !data.endDate || data.endDate >= data.date, {
+    message: "End date must be on or after start date",
+    path: ["endDate"],
+  })
+  .refine((data) => !data.endDate || data.isAllDay, {
+    message: "End date is only valid for all-day events",
+    path: ["endDate"],
+  });
 
 /**
  * TypeScript type inferred from the schema
