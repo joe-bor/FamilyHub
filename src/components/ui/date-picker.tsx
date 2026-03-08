@@ -17,6 +17,7 @@ interface DatePickerProps {
   disabled?: boolean;
   error?: boolean;
   className?: string;
+  fromDate?: Date;
 }
 
 function DatePicker({
@@ -26,6 +27,7 @@ function DatePicker({
   disabled = false,
   error = false,
   className,
+  fromDate,
 }: DatePickerProps) {
   const [open, setOpen] = useState(false);
 
@@ -57,6 +59,7 @@ function DatePicker({
           selected={value}
           onSelect={handleSelect}
           initialFocus
+          disabled={fromDate ? { before: fromDate } : undefined}
         />
       </PopoverContent>
     </Popover>
