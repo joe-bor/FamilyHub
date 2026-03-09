@@ -6,7 +6,7 @@ export interface CalendarEvent {
   date: Date;
   endDate?: Date;
   memberId: string;
-  isAllDay?: boolean;
+  isAllDay: boolean;
   location?: string;
 }
 
