@@ -33,6 +33,7 @@ export const testEvents: CalendarEvent[] = [
     endTime: "10:00 AM",
     date: today,
     memberId: testMembers[0].id,
+    isAllDay: false,
   },
   {
     id: "event-2",
@@ -41,6 +42,7 @@ export const testEvents: CalendarEvent[] = [
     endTime: "1:00 PM",
     date: today,
     memberId: testMembers[1].id,
+    isAllDay: false,
     location: "Downtown Cafe",
   },
   {
@@ -50,6 +52,7 @@ export const testEvents: CalendarEvent[] = [
     endTime: "5:30 PM",
     date: today,
     memberId: testMembers[2].id,
+    isAllDay: false,
   },
   {
     id: "event-4",
@@ -77,6 +80,7 @@ export const tomorrowEvent: CalendarEvent = {
   endTime: "11:00 AM",
   date: getRelativeDate(1),
   memberId: testMembers[0].id,
+  isAllDay: false,
 };
 
 /**
@@ -89,6 +93,7 @@ export const yesterdayEvent: CalendarEvent = {
   endTime: "3:00 PM",
   date: getRelativeDate(-1),
   memberId: testMembers[1].id,
+  isAllDay: false,
 };
 
 /**
@@ -104,6 +109,7 @@ export function createTestEvent(
     endTime: "10:00 AM",
     date: today,
     memberId: testMembers[0].id,
+    isAllDay: false,
     ...overrides,
   };
 }
@@ -160,6 +166,7 @@ export function createWeekOfEvents(): CalendarEvent[] {
       endTime: "11:00 AM",
       date: getRelativeDate(i),
       memberId: testMembers[i % testMembers.length].id,
+      isAllDay: false,
     });
   }
   return events;
@@ -190,6 +197,7 @@ export function createTestEventResponse(
     endTime: "10:00 AM",
     date: formatLocalDate(today),
     memberId: testMembers[0].id,
+    isAllDay: false,
     ...overrides,
   };
 }
