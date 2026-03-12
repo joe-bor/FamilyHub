@@ -6,6 +6,8 @@ export { CalendarFilter } from "./calendar-filter";
 export { CalendarNavigation } from "./calendar-navigation";
 export { CalendarViewSwitcher } from "./calendar-view-switcher";
 export { CurrentTimeIndicator } from "./current-time-indicator";
+export type { EditScope } from "./edit-scope-dialog";
+export { EditScopeDialog } from "./edit-scope-dialog";
 export { EventDetailModal } from "./event-detail-modal";
 export { EventForm } from "./event-form";
 export { EventFormModal } from "./event-form-modal";

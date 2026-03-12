@@ -79,4 +79,21 @@ export const calendarService = {
   async deleteEvent(id: string): Promise<void> {
     return httpClient.delete(`/calendar/events/${id}`);
   },
+
+  async updateInstance(
+    parentId: string,
+    date: string,
+    request: UpdateEventRequest,
+  ): Promise<ApiResponse<CalendarEvent>> {
+    return mapEventResponse(
+      await httpClient.put<ApiResponse<CalendarEventResponse>>(
+        `/calendar/events/${parentId}/instances/${date}`,
+        request,
+      ),
+    );
+  },
+
+  async deleteInstance(parentId: string, date: string): Promise<void> {
+    return httpClient.delete(`/calendar/events/${parentId}/instances/${date}`);
+  },
 };

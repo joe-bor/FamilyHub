@@ -24,6 +24,7 @@ export {
   useCreateEvent,
   useDeleteEvent,
   useDeleteFamily,
+  useDeleteInstance,
   useFamily,
   useFamilyData,
   useFamilyLoading,
@@ -39,6 +40,7 @@ export {
   useUnusedColors,
   useUpdateEvent,
   useUpdateFamily,
+  useUpdateInstance,
   useUpdateMember,
 } from "./hooks";
 // Services
