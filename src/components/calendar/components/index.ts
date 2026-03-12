@@ -10,3 +10,4 @@ export { EventDetailModal } from "./event-detail-modal";
 export { EventForm } from "./event-form";
 export { EventFormModal } from "./event-form-modal";
 export { FamilyFilterPills } from "./family-filter-pills";
+export { RecurrencePicker } from "./recurrence-picker";

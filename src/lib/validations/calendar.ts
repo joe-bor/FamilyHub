@@ -54,6 +54,16 @@ export const eventFormSchema = z
       .string()
       .regex(DATE_FORMAT_REGEX, "Invalid date format")
       .optional(),
+    recurrenceFrequency: z
+      .enum(["none", "daily", "weekly", "monthly"])
+      .optional(),
+    recurrenceInterval: z.number().min(1).optional(),
+    recurrenceWeeklyDays: z.array(z.string()).optional(),
+    recurrenceMonthDay: z.number().min(1).max(31).optional(),
+    recurrenceEndDate: z
+      .string()
+      .regex(DATE_FORMAT_REGEX, "Invalid date format")
+      .optional(),
   })
   .refine(
     (data) =>
@@ -71,7 +81,18 @@ export const eventFormSchema = z
   .refine((data) => !data.endDate || data.isAllDay, {
     message: "End date is only valid for all-day events",
     path: ["endDate"],
-  });
+  })
+  .refine(
+    (data) => {
+      if (data.recurrenceFrequency !== "weekly") return true;
+      if (!data.recurrenceWeeklyDays) return true;
+      return data.recurrenceWeeklyDays.length > 0;
+    },
+    {
+      message: "Select at least one day for weekly recurrence",
+      path: ["recurrenceWeeklyDays"],
+    },
+  );
 
 /**
  * TypeScript type inferred from the schema
