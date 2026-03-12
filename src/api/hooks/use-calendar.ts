@@ -3,7 +3,12 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { ApiException } from "@/api/client";
 import { calendarService } from "@/api/services";
 import { parseLocalDate } from "@/lib/time-utils";
-import type { ApiResponse, CalendarEvent, GetEventsParams } from "@/lib/types";
+import type {
+  ApiResponse,
+  CalendarEvent,
+  GetEventsParams,
+  UpdateEventRequest,
+} from "@/lib/types";
 
 // Query keys factory for type-safe cache management
 export const calendarKeys = {
@@ -17,7 +22,7 @@ export const calendarKeys = {
 // Queries
 
 export function useCalendarEvents(
-  params?: GetEventsParams,
+  params: GetEventsParams,
   options?: Omit<
     UseQueryOptions<ApiResponse<CalendarEvent[]>, ApiException>,
     "queryKey" | "queryFn"
@@ -104,6 +109,7 @@ export function useUpdateEvent(callbacks?: UpdateEventCallbacks) {
                     endDate: updatedEvent.endDate
                       ? parseLocalDate(updatedEvent.endDate)
                       : undefined,
+                    recurrenceRule: updatedEvent.recurrenceRule ?? undefined,
                   }
                 : event,
             ),
@@ -195,14 +201,10 @@ export function useUpdateInstance(callbacks?: UpdateInstanceCallbacks) {
   return useMutation({
     mutationFn: ({
       parentId,
-      date,
+      instanceDate,
       ...body
-    }: { parentId: string; date: string } & Record<string, unknown>) =>
-      calendarService.updateInstance(
-        parentId,
-        date,
-        body as Parameters<typeof calendarService.updateInstance>[2],
-      ),
+    }: { parentId: string; instanceDate: string } & UpdateEventRequest) =>
+      calendarService.updateInstance(parentId, instanceDate, body),
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: calendarKeys.events() });
     },

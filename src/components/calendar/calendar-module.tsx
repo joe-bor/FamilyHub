@@ -258,7 +258,7 @@ export function CalendarModule() {
       const parentId = getParentId(currentEditingEvent);
       updateInstance.mutate({
         parentId,
-        date: formatLocalDate(currentEditingEvent.date),
+        instanceDate: formatLocalDate(currentEditingEvent.date),
         ...request,
       });
     } else if (currentEditingEvent.isRecurring && editScope === "all") {
