@@ -33,7 +33,7 @@ const DAY_ABBR_TO_FULL: Record<string, string> = {
 
 const DAY_ORDER = ["MO", "TU", "WE", "TH", "FR", "SA", "SU"];
 
-function getOrdinalSuffix(n: number): string {
+export function getOrdinalSuffix(n: number): string {
   const lastTwo = n % 100;
   if (lastTwo >= 11 && lastTwo <= 13) return `${n}th`;
   const lastOne = n % 10;
@@ -76,7 +76,7 @@ export function buildRRule(state: RecurrenceFormState): string | null {
     parts.push(`UNTIL=${until}`);
   }
 
-  return `RRULE:${parts.join(";")}`;
+  return parts.join(";");
 }
 
 /**
@@ -84,7 +84,7 @@ export function buildRRule(state: RecurrenceFormState): string | null {
  * Used when editing a recurring event in "edit all" mode.
  */
 export function parseRRule(rrule: string): RecurrenceFormState {
-  const rule = rrule.replace(/^RRULE:/, "");
+  const rule = rrule;
   const params = new Map<string, string>();
 
   for (const part of rule.split(";")) {
