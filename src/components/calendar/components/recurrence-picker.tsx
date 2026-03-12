@@ -1,8 +1,12 @@
 import { format } from "date-fns";
+import { useState } from "react";
 import { DatePicker } from "@/components/ui/date-picker";
 import { Label } from "@/components/ui/label";
-import type { RecurrenceFrequency } from "@/lib/recurrence-utils";
-import { parseLocalDate } from "@/lib/time-utils";
+import {
+  getOrdinalSuffix,
+  type RecurrenceFrequency,
+} from "@/lib/recurrence-utils";
+import { formatLocalDate, parseLocalDate } from "@/lib/time-utils";
 import { cn } from "@/lib/utils";
 
 const DAY_BUTTONS = [
@@ -51,16 +55,6 @@ function getEventMonthDay(dateStr: string): number {
   return parseLocalDate(dateStr).getDate();
 }
 
-function getOrdinalSuffix(n: number): string {
-  const lastTwo = n % 100;
-  if (lastTwo >= 11 && lastTwo <= 13) return `${n}th`;
-  const lastOne = n % 10;
-  if (lastOne === 1) return `${n}st`;
-  if (lastOne === 2) return `${n}nd`;
-  if (lastOne === 3) return `${n}rd`;
-  return `${n}th`;
-}
-
 function deriveOption(
   frequency: RecurrenceFrequency,
   weeklyDays?: string[],
@@ -92,10 +86,17 @@ function RecurrencePicker({
   eventDate,
   onChange,
 }: RecurrencePickerProps) {
-  const selectedOption = deriveOption(frequency, weeklyDays, eventDate);
+  // Track when user explicitly picks "weekly-custom" — deriveOption can't
+  // distinguish it from "weekly-on-day" when only the event's day is selected.
+  const [forceCustom, setForceCustom] = useState(false);
+  const selectedOption =
+    forceCustom && frequency === "weekly"
+      ? "weekly-custom"
+      : deriveOption(frequency, weeklyDays, eventDate);
   const isRepeating = frequency !== "none";
 
   const handleOptionChange = (option: RecurrenceOption) => {
+    setForceCustom(option === "weekly-custom");
     switch (option) {
       case "none":
         onChange({
@@ -310,7 +311,7 @@ function RecurrencePicker({
                   interval,
                   weeklyDays,
                   monthDay,
-                  endDate: date ? format(date, "yyyy-MM-dd") : undefined,
+                  endDate: date ? formatLocalDate(date) : undefined,
                 });
               }}
               placeholder="Pick end date"
