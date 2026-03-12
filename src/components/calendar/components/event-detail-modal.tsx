@@ -1,5 +1,13 @@
 import { format } from "date-fns";
-import { Calendar, Clock, Loader2, MapPin, Pencil, Trash2 } from "lucide-react";
+import {
+  Calendar,
+  Clock,
+  Loader2,
+  MapPin,
+  Pencil,
+  Repeat,
+  Trash2,
+} from "lucide-react";
 import { useEffect, useState } from "react";
 import { useFamilyMembers } from "@/api";
 import { Button } from "@/components/ui/button";
@@ -10,6 +18,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { formatRecurrenceLabel } from "@/lib/recurrence-utils";
 import type { CalendarEvent } from "@/lib/types";
 import { colorMap, getFamilyMember } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -109,6 +118,18 @@ function EventDetailModal({
                 </span>
               )}
             </div>
+
+            {/* Recurrence (conditional) */}
+            {event.isRecurring && (
+              <div className="flex items-center gap-3 text-muted-foreground">
+                <Repeat className="w-4 h-4 shrink-0" />
+                <span>
+                  {event.recurrenceRule
+                    ? formatRecurrenceLabel(event.recurrenceRule, event.date)
+                    : "Recurring event"}
+                </span>
+              </div>
+            )}
 
             {/* Location (conditional) */}
             {event.location && (

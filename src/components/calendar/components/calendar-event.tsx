@@ -1,3 +1,4 @@
+import { Repeat } from "lucide-react";
 import { useFamilyMembers } from "@/api";
 import type { CalendarEvent } from "@/lib/types";
 import { colorMap, getFamilyMember } from "@/lib/types";
@@ -44,6 +45,9 @@ export function CalendarEventCard({
               {event.isAllDay
                 ? "All day"
                 : `${event.startTime} - ${event.endTime}`}
+              {event.isRecurring && (
+                <Repeat className="w-3 h-3 inline-block ml-1.5 -mt-0.5" />
+              )}
             </p>
             {event.location && (
               <p className="text-sm text-muted-foreground truncate mt-1">
@@ -116,9 +120,14 @@ export function CalendarEventCard({
             </p>
           )}
         </div>
-        <div
-          className={cn("w-2.5 h-2.5 rounded-full shrink-0 mt-1", colors?.bg)}
-        />
+        <div className="flex items-center gap-1 shrink-0 mt-1">
+          {event.isRecurring && (
+            <Repeat
+              className={cn("w-3 h-3", colors?.text || "text-muted-foreground")}
+            />
+          )}
+          <div className={cn("w-2.5 h-2.5 rounded-full", colors?.bg)} />
+        </div>
       </div>
     </button>
   );
