@@ -50,7 +50,12 @@ import {
  * - Parents have only id
  */
 function getParentId(event: CalendarEvent): string {
-  return event.recurringEventId ?? event.id!;
+  const id = event.recurringEventId ?? event.id;
+  if (!id)
+    throw new Error(
+      "Cannot resolve parent ID: event has no id or recurringEventId",
+    );
+  return id;
 }
 
 export function CalendarModule() {
@@ -151,18 +156,14 @@ export function CalendarModule() {
     onSuccess: () => {
       closeEditModal();
     },
-    onError: (error) => {
-      console.error("Failed to update event:", error.message);
-    },
+    onError: () => {},
   });
 
   const updateInstance = useUpdateInstance({
     onSuccess: () => {
       closeEditModal();
     },
-    onError: (error) => {
-      console.error("Failed to update instance:", error.message);
-    },
+    onError: () => {},
   });
 
   const deleteInstance = useDeleteInstance({
@@ -192,6 +193,8 @@ export function CalendarModule() {
   }, [eventsResponse, filter]);
 
   const handleEventClick = (event: CalendarEvent) => {
+    deleteEvent.reset();
+    deleteInstance.reset();
     openDetailModal(event);
   };
 
@@ -202,7 +205,8 @@ export function CalendarModule() {
       setScopeAction("delete");
       setScopeDialogOpen(true);
     } else {
-      deleteEvent.mutate(selectedEvent.id!);
+      if (!selectedEvent.id) return;
+      deleteEvent.mutate(selectedEvent.id);
     }
   };
 
@@ -280,8 +284,9 @@ export function CalendarModule() {
       });
     } else {
       // Non-recurring event
+      if (!currentEditingEvent.id) return;
       updateEvent.mutate({
-        id: currentEditingEvent.id!,
+        id: currentEditingEvent.id,
         ...request,
       });
     }
