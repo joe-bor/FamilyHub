@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -24,6 +24,10 @@ function EditScopeDialog({
   action,
 }: EditScopeDialogProps) {
   const [scope, setScope] = useState<EditScope>("this");
+
+  useEffect(() => {
+    if (isOpen) setScope("this");
+  }, [isOpen]);
 
   const title =
     action === "edit" ? "Edit recurring event" : "Delete recurring event";
