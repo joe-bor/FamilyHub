@@ -3,6 +3,7 @@ import { useFamilyMembers } from "@/api";
 import {
   CALENDAR_START_HOUR,
   compareEventsByTime,
+  getEventKey,
   isEventOnDate,
   parseTime,
 } from "@/lib/time-utils";
@@ -283,7 +284,7 @@ export function WeeklyCalendar({
                   return (
                     <button
                       type="button"
-                      key={event.id}
+                      key={getEventKey(event)}
                       onClick={() => onEventClick?.(event)}
                       title={event.title}
                       aria-label={`${event.title} - All day event`}
@@ -354,7 +355,7 @@ export function WeeklyCalendar({
                       );
                       return (
                         <div
-                          key={event.id}
+                          key={getEventKey(event)}
                           className="absolute left-0.5 right-0.5 overflow-hidden rounded-xl"
                           style={{ top: `${top}px`, height: `${height}px` }}
                         >

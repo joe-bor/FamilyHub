@@ -127,6 +127,19 @@ export function isEventOnDate(
 }
 
 /**
+ * Get a stable key for any calendar event (regular, parent, instance, or exception).
+ * Regular/parent/exception events have a real UUID id.
+ * Expanded instances have id: null and use recurringEventId + date as composite key.
+ */
+export function getEventKey(event: {
+  id: string | null;
+  recurringEventId?: string;
+  date: Date;
+}): string {
+  return event.id ?? `${event.recurringEventId}_${formatLocalDate(event.date)}`;
+}
+
+/**
  * Calendar grid visible hours constants.
  * These match the weekly/daily view rendering boundaries.
  */

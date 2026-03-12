@@ -5,6 +5,7 @@ import { useFamilyMembers } from "@/api";
 import {
   compareEventsAllDayFirst,
   formatLocalDate,
+  getEventKey,
   isEventOnDate,
 } from "@/lib/time-utils";
 import { type CalendarEvent, colorMap, getFamilyMember } from "@/lib/types";
@@ -122,7 +123,7 @@ export function ScheduleCalendar({
                   return (
                     <button
                       type="button"
-                      key={event.id}
+                      key={getEventKey(event)}
                       onClick={() => onEventClick?.(event)}
                       className={cn(
                         "flex flex-col p-3 rounded-lg cursor-pointer text-left w-full",

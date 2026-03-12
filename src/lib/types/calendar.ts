@@ -1,5 +1,5 @@
 export interface CalendarEvent {
-  id: string;
+  id: string | null;
   title: string;
   startTime: string;
   endTime: string;
@@ -8,6 +8,9 @@ export interface CalendarEvent {
   memberId: string;
   isAllDay: boolean;
   location?: string;
+  recurrenceRule?: string;
+  recurringEventId?: string;
+  isRecurring?: boolean;
 }
 
 /**
@@ -37,6 +40,7 @@ export interface CreateEventRequest {
   memberId: string;
   isAllDay?: boolean;
   location?: string;
+  recurrenceRule?: string | null;
 }
 
 export interface UpdateEventRequest {
@@ -48,11 +52,12 @@ export interface UpdateEventRequest {
   memberId: string;
   isAllDay?: boolean;
   location?: string;
+  recurrenceRule?: string | null;
 }
 
 export interface GetEventsParams {
-  startDate?: string;
-  endDate?: string;
+  startDate: string;
+  endDate: string;
   memberId?: string;
 }
 
