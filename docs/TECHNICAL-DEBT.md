@@ -20,7 +20,37 @@ _No medium priority items at this time._
 
 ## Medium-Low Priority (Follow-up PRs)
 
-_No medium-low priority items at this time._
+### 1. "Edit All" on Recurring Instance Clears Recurrence Rule
+**Source:** E2E test failure — edit-all changes title but removes recurrence
+**Files:** `src/components/calendar/components/event-form-modal.tsx` (line 40), `src/components/calendar/calendar-module.tsx` (line 270-277)
+**Status:** Bug — data loss
+
+**Problem:**
+When editing "all events" from an expanded instance, the recurrence rule is silently dropped. Root cause: expanded instances have `recurrenceRule: null` (by design — §4 of `docs/recurring-events-design.md`). `eventToFormData()` skips recurrence fields when `event.recurrenceRule` is falsy. The form opens with RecurrencePicker defaulting to "Does not repeat". On submit, `buildRRule({ frequency: "none" })` returns `null`, which is sent as `recurrenceRule: null` — clearing the series.
+
+**Impact:** User edits a recurring event title via "all events" → the entire series is silently converted to a one-time event. Future instances disappear.
+
+**Suggested Fix:**
+When `editScope === "all"`, fetch or derive the parent's `recurrenceRule` before opening the edit form. Options:
+- **(A)** Include `recurrenceRule` on expanded instance responses (the same BE change suggested in item #2 below — solves both issues)
+- **(B)** FE fetches the parent event by `recurringEventId` before opening the form
+- **(C)** Store the parent's recurrence rule in the scope dialog flow (cheapest FE-only fix)
+
+---
+
+### 2. Recurring Event Detail Shows Generic "Recurring event" Label
+**Source:** E2E test observation (recurring events spec)
+**Files:** FE: `src/components/calendar/components/event-detail-modal.tsx` (line 127-129), BE: `CalendarEventMapper.toInstanceResponse()`
+**Status:** UX improvement
+
+**Problem:**
+`formatRecurrenceLabel()` is wired up in EventDetailModal and produces specific labels ("Daily", "Weekly on Mon, Wed", "Every 2 days"). However, expanded instances from the backend have `recurrenceRule: null` — by design (see `docs/recurring-events-design.md` §4: "only on parent events, null for instances/regular"). So the modal falls back to the generic "Recurring event" text for every instance.
+
+**Risk assessment:**
+FE expansion is NOT a concern — all RRULE expansion happens on the BE in `RecurrenceExpander`. The FE only uses `recurrenceRule` for: (1) display label in detail modal, (2) pre-populating RecurrencePicker in "edit all" mode, (3) optimistic cache updates. Adding the field to instances would not cause duplicate rendering.
+
+**Suggested Fix:**
+In BE `CalendarEventMapper.toInstanceResponse()`, copy the parent's `recurrenceRule` onto expanded instance responses. The parent is already loaded during expansion so this is a simple field copy, no extra query. No FE changes needed — `formatRecurrenceLabel()` will just start receiving non-null values.
 
 ---
 
