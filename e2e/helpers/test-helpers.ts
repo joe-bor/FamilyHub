@@ -197,20 +197,28 @@ export async function createEvent(
     // Set end date
     if (options.recurrence.endDate) {
       await page.getByText("On date").click();
-      // The DatePicker for end date appears — find it by placeholder
-      const endDatePicker = page.getByPlaceholder("Pick end date");
-      await endDatePicker.click();
-      // Select the day in the calendar popover
+      // "On date" auto-fills with today's date. The recurrence end date
+      // DatePicker is the second date-picker button within the dialog (after
+      // the event date picker). Scope to dialog to avoid hitting view switcher.
+      const dialog = page.getByRole("dialog");
+      const datePickers = dialog.locator("button:has(svg.lucide-calendar)");
+      const endDateBtn = datePickers.nth(1);
+      await endDateBtn.click();
+      // Wait for calendar popover to appear, then click the target day.
+      // react-day-picker v9 renders day buttons inside a table.
       const dayNum = options.recurrence.endDate.getDate();
-      // Use the calendar grid to pick the specific day
-      await page
-        .getByRole("gridcell", { name: String(dayNum), exact: true })
+      const popover = page.locator("[data-radix-popper-content-wrapper]");
+      await expect(popover.first()).toBeVisible();
+      await popover
+        .locator("table button")
+        .filter({ hasText: new RegExp(`^${dayNum}$`) })
         .click();
     }
   }
 
   await page.getByRole("button", { name: "Add Event" }).click();
-  await expect(page.getByRole("dialog")).toBeHidden();
+  // Use named dialog to avoid strict mode violation from closed Radix popovers
+  await expect(page.getByRole("dialog", { name: "Add Event" })).toBeHidden();
 }
 
 /**
@@ -253,10 +261,11 @@ export async function chooseScopeAndConfirm(
   page: Page,
   scope: "this" | "all",
 ): Promise<void> {
-  // Wait for scope dialog to be visible
-  const scopeText = scope === "this" ? "This event" : "All events";
-  await expect(page.getByText(scopeText)).toBeVisible();
-  await page.getByText(scopeText).click();
+  // Use getByLabel to target the radio's wrapping <label>, avoiding
+  // ambiguity with confirmation text like "delete this event?"
+  const radioLabel = scope === "this" ? "This event" : "All events";
+  await expect(page.getByLabel(radioLabel)).toBeVisible();
+  await page.getByLabel(radioLabel).click();
   await page.getByRole("button", { name: "OK" }).click();
   // Brief wait for scope dialog transition
   await page.waitForTimeout(300);
