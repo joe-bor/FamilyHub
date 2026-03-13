@@ -1,6 +1,6 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Camera, Trash2, X } from "lucide-react";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useFamilyMemberById, useFamilyMembers, useUpdateMember } from "@/api";
 import { Button } from "@/components/ui/button";
@@ -35,6 +35,7 @@ export function MemberProfileModal({
   const familyMembers = useFamilyMembers();
   const updateMemberMutation = useUpdateMember();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [avatarError, setAvatarError] = useState<string | null>(null);
 
   const existingNames = familyMembers.map((m) => m.name);
   const usedColors = familyMembers
@@ -72,6 +73,11 @@ export function MemberProfileModal({
     }
   }, [member, reset]);
 
+  // Clear avatar error when dialog reopens
+  useEffect(() => {
+    if (open) setAvatarError(null);
+  }, [open]);
+
   if (!member) return null;
 
   const onSubmit = (data: MemberProfileFormData) => {
@@ -91,13 +97,17 @@ export function MemberProfileModal({
 
     // Validate file type
     if (!file.type.startsWith("image/")) {
+      setAvatarError("Please select an image file");
       return;
     }
 
     // Validate file size (max 500KB for localStorage)
     if (file.size > 500 * 1024) {
+      setAvatarError("Image must be smaller than 500KB");
       return;
     }
+
+    setAvatarError(null);
 
     const reader = new FileReader();
     reader.onload = (e) => {
@@ -179,6 +189,11 @@ export function MemberProfileModal({
               className="hidden"
               aria-label="Upload avatar image"
             />
+            {avatarError && (
+              <p className="text-sm text-destructive" role="alert">
+                {avatarError}
+              </p>
+            )}
             {member.avatarUrl && (
               <Button
                 type="button"
