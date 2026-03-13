@@ -22,7 +22,7 @@ export const calendarKeys = {
 // Queries
 
 export function useCalendarEvents(
-  params?: GetEventsParams,
+  params: GetEventsParams,
   options?: Omit<
     UseQueryOptions<ApiResponse<CalendarEvent[]>, ApiException>,
     "queryKey" | "queryFn"
@@ -109,6 +109,7 @@ export function useUpdateEvent(callbacks?: UpdateEventCallbacks) {
                     endDate: updatedEvent.endDate
                       ? parseLocalDate(updatedEvent.endDate)
                       : undefined,
+                    recurrenceRule: updatedEvent.recurrenceRule ?? undefined,
                   }
                 : event,
             ),
@@ -183,6 +184,58 @@ export function useDeleteEvent(callbacks?: DeleteEventCallbacks) {
     },
     onSuccess: () => {
       callbacks?.onSuccess?.();
+    },
+  });
+}
+
+// Instance mutations (for recurring events — "edit/delete this event")
+
+interface UpdateInstanceCallbacks {
+  onSuccess?: (data: ApiResponse<CalendarEvent>) => void;
+  onError?: (error: ApiException) => void;
+}
+
+export function useUpdateInstance(callbacks?: UpdateInstanceCallbacks) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      parentId,
+      instanceDate,
+      ...body
+    }: { parentId: string; instanceDate: string } & UpdateEventRequest) =>
+      calendarService.updateInstance(parentId, instanceDate, body),
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: calendarKeys.events() });
+    },
+    onSuccess: (data) => {
+      callbacks?.onSuccess?.(data);
+    },
+    onError: (error: ApiException) => {
+      callbacks?.onError?.(error);
+    },
+  });
+}
+
+interface DeleteInstanceCallbacks {
+  onSuccess?: () => void;
+  onError?: (error: ApiException) => void;
+}
+
+export function useDeleteInstance(callbacks?: DeleteInstanceCallbacks) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ parentId, date }: { parentId: string; date: string }) =>
+      calendarService.deleteInstance(parentId, date),
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: calendarKeys.events() });
+    },
+    onSuccess: () => {
+      callbacks?.onSuccess?.();
+    },
+    onError: (error: ApiException) => {
+      callbacks?.onError?.(error);
     },
   });
 }

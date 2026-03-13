@@ -15,7 +15,9 @@ export {
   useCalendarEvents,
   useCreateEvent,
   useDeleteEvent,
+  useDeleteInstance,
   useUpdateEvent,
+  useUpdateInstance,
 } from "./use-calendar";
 
 export {

@@ -1,7 +1,11 @@
 import { useMemo } from "react";
 import { useFamilyMembers } from "@/api";
 import { useIsMobile } from "@/hooks";
-import { compareEventsAllDayFirst, isEventOnDate } from "@/lib/time-utils";
+import {
+  compareEventsAllDayFirst,
+  getEventKey,
+  isEventOnDate,
+} from "@/lib/time-utils";
 import {
   type CalendarEvent,
   colorMap,
@@ -221,7 +225,7 @@ export function MonthlyCalendar({
                   return (
                     <button
                       type="button"
-                      key={event.id}
+                      key={getEventKey(event)}
                       onClick={(e) => {
                         e.stopPropagation();
                         onEventClick?.(event);

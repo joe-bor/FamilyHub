@@ -35,12 +35,14 @@ function mapEventsResponse(
 
 export const calendarService = {
   async getEvents(
-    params?: GetEventsParams,
+    params: GetEventsParams,
   ): Promise<ApiResponse<CalendarEvent[]>> {
     return mapEventsResponse(
       await httpClient.get<ApiResponse<CalendarEventResponse[]>>(
         "/calendar/events",
-        { params: params as Record<string, string | undefined> },
+        {
+          params: params as unknown as Record<string, string | undefined>,
+        },
       ),
     );
   },
@@ -78,5 +80,22 @@ export const calendarService = {
 
   async deleteEvent(id: string): Promise<void> {
     return httpClient.delete(`/calendar/events/${id}`);
+  },
+
+  async updateInstance(
+    parentId: string,
+    date: string,
+    request: UpdateEventRequest,
+  ): Promise<ApiResponse<CalendarEvent>> {
+    return mapEventResponse(
+      await httpClient.put<ApiResponse<CalendarEventResponse>>(
+        `/calendar/events/${parentId}/instances/${date}`,
+        request,
+      ),
+    );
+  },
+
+  async deleteInstance(parentId: string, date: string): Promise<void> {
+    return httpClient.delete(`/calendar/events/${parentId}/instances/${date}`);
   },
 };

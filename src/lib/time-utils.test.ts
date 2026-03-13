@@ -8,6 +8,7 @@ import {
   format12hTo24h,
   format24hTo12h,
   formatLocalDate,
+  getEventKey,
   getSmartDefaultTimes,
   getTimeInMinutes,
   isEventOnDate,
@@ -620,6 +621,38 @@ describe("time-utils", () => {
       expect(CALENDAR_START_HOUR).toBe(6);
       expect(CALENDAR_END_HOUR).toBe(22);
       expect(DEFAULT_EVENT_HOUR).toBe(9);
+    });
+  });
+
+  describe("getEventKey", () => {
+    it("returns id for regular events", () => {
+      const event = { id: "uuid-123", date: new Date(2026, 2, 11) };
+      expect(getEventKey(event)).toBe("uuid-123");
+    });
+
+    it("returns id for exception instances (has both id and recurringEventId)", () => {
+      const event = {
+        id: "uuid-exception",
+        recurringEventId: "uuid-parent",
+        date: new Date(2026, 2, 11),
+      };
+      expect(getEventKey(event)).toBe("uuid-exception");
+    });
+
+    it("returns composite key for expanded instances (id is null)", () => {
+      const event = {
+        id: null,
+        recurringEventId: "uuid-parent",
+        date: new Date(2026, 2, 11),
+      };
+      expect(getEventKey(event)).toBe("uuid-parent_2026-03-11");
+    });
+
+    it("produces different keys for different dates of same parent", () => {
+      const base = { id: null, recurringEventId: "uuid-parent" };
+      const key1 = getEventKey({ ...base, date: new Date(2026, 2, 11) });
+      const key2 = getEventKey({ ...base, date: new Date(2026, 2, 13) });
+      expect(key1).not.toBe(key2);
     });
   });
 

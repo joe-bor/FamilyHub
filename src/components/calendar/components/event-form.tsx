@@ -10,9 +10,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { MemberSelector } from "@/components/ui/member-selector";
 import { TimePicker } from "@/components/ui/time-picker";
+import type { RecurrenceFrequency } from "@/lib/recurrence-utils";
 import { getSmartDefaultTimes, parseLocalDate } from "@/lib/time-utils";
 import { cn } from "@/lib/utils";
 import { type EventFormData, eventFormSchema } from "@/lib/validations";
+import { RecurrencePicker } from "./recurrence-picker";
 
 interface EventFormProps {
   mode: "add" | "edit";
@@ -20,6 +22,7 @@ interface EventFormProps {
   onSubmit: (data: EventFormData) => void;
   onCancel: () => void;
   isPending?: boolean;
+  showRecurrencePicker?: boolean;
 }
 
 function EventForm({
@@ -28,6 +31,7 @@ function EventForm({
   onSubmit,
   onCancel,
   isPending = false,
+  showRecurrencePicker = true,
 }: EventFormProps) {
   const familyMembers = useFamilyMembers();
 
@@ -77,6 +81,11 @@ function EventForm({
   const endTimeValue = watch("endTime");
   const memberIdValue = watch("memberId");
   const isAllDayValue = watch("isAllDay");
+  const recurrenceFrequency = watch("recurrenceFrequency");
+  const recurrenceInterval = watch("recurrenceInterval");
+  const recurrenceWeeklyDays = watch("recurrenceWeeklyDays");
+  const recurrenceMonthDay = watch("recurrenceMonthDay");
+  const recurrenceEndDate = watch("recurrenceEndDate");
 
   // Reset form when defaultValues change (e.g., switching between events in edit mode)
   useEffect(() => {
@@ -143,6 +152,25 @@ function EventForm({
         />
         <FormError message={errors.date?.message} />
       </div>
+
+      {/* Recurrence Picker */}
+      {showRecurrencePicker && dateValue && (
+        <RecurrencePicker
+          frequency={(recurrenceFrequency as RecurrenceFrequency) ?? "none"}
+          interval={recurrenceInterval ?? 1}
+          weeklyDays={recurrenceWeeklyDays}
+          monthDay={recurrenceMonthDay}
+          endDate={recurrenceEndDate}
+          eventDate={dateValue}
+          onChange={(updates) => {
+            setValue("recurrenceFrequency", updates.frequency);
+            setValue("recurrenceInterval", updates.interval);
+            setValue("recurrenceWeeklyDays", updates.weeklyDays);
+            setValue("recurrenceMonthDay", updates.monthDay);
+            setValue("recurrenceEndDate", updates.endDate);
+          }}
+        />
+      )}
 
       {/* All Day Toggle */}
       <div className="flex items-center gap-3">

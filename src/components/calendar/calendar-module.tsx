@@ -6,17 +6,21 @@ import {
   startOfMonth,
   startOfWeek,
 } from "date-fns";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   useCalendarEvents,
   useCreateEvent,
   useDeleteEvent,
+  useDeleteInstance,
   useUpdateEvent,
+  useUpdateInstance,
 } from "@/api";
 import {
   AddEventButton,
   CalendarViewSwitcher,
   DailyCalendar,
+  type EditScope,
+  EditScopeDialog,
   EventDetailModal,
   EventFormModal,
   FamilyFilterPills,
@@ -25,7 +29,8 @@ import {
   WeeklyCalendar,
 } from "@/components/calendar";
 import { useIsMobile } from "@/hooks";
-import { format24hTo12h } from "@/lib/time-utils";
+import { buildRRule } from "@/lib/recurrence-utils";
+import { format24hTo12h, formatLocalDate } from "@/lib/time-utils";
 import type { CalendarEvent, CreateEventRequest } from "@/lib/types";
 import type { EventFormData } from "@/lib/validations";
 import {
@@ -37,6 +42,21 @@ import {
   useHasUserSetView,
   useIsViewingToday,
 } from "@/stores";
+
+/**
+ * Get the parent event ID for recurring event operations.
+ * - Virtual instances have recurringEventId but no id
+ * - Exceptions have both recurringEventId and id
+ * - Parents have only id
+ */
+function getParentId(event: CalendarEvent): string {
+  const id = event.recurringEventId ?? event.id;
+  if (!id)
+    throw new Error(
+      "Cannot resolve parent ID: event has no id or recurringEventId",
+    );
+  return id;
+}
 
 export function CalendarModule() {
   // Mobile detection for smart view defaulting
@@ -136,10 +156,31 @@ export function CalendarModule() {
     onSuccess: () => {
       closeEditModal();
     },
-    onError: (error) => {
-      console.error("Failed to update event:", error.message);
+    onError: () => {},
+  });
+
+  const updateInstance = useUpdateInstance({
+    onSuccess: () => {
+      closeEditModal();
+    },
+    onError: () => {},
+  });
+
+  const deleteInstance = useDeleteInstance({
+    onSuccess: () => {
+      closeDetailModal();
+      closeScopeDialog();
     },
   });
+
+  // Scope dialog state for recurring events
+  const [scopeDialogOpen, setScopeDialogOpen] = useState(false);
+  const [scopeAction, setScopeAction] = useState<"edit" | "delete">("edit");
+  const [editScope, setEditScope] = useState<EditScope | null>(null);
+
+  const closeScopeDialog = () => {
+    setScopeDialogOpen(false);
+  };
 
   // Client-side filtering based on filter state
   const events = useMemo(() => {
@@ -152,18 +193,52 @@ export function CalendarModule() {
   }, [eventsResponse, filter]);
 
   const handleEventClick = (event: CalendarEvent) => {
+    deleteEvent.reset();
+    deleteInstance.reset();
     openDetailModal(event);
   };
 
   const handleDeleteEvent = () => {
-    if (selectedEvent) {
+    if (!selectedEvent) return;
+
+    if (selectedEvent.isRecurring) {
+      setScopeAction("delete");
+      setScopeDialogOpen(true);
+    } else {
+      if (!selectedEvent.id) return;
       deleteEvent.mutate(selectedEvent.id);
     }
   };
 
   const handleEditClick = () => {
-    if (selectedEvent) {
+    if (!selectedEvent) return;
+
+    if (selectedEvent.isRecurring) {
+      setScopeAction("edit");
+      setScopeDialogOpen(true);
+    } else {
       openEditModal(selectedEvent);
+    }
+  };
+
+  const handleScopeSelect = (scope: EditScope) => {
+    if (!selectedEvent) return;
+    closeScopeDialog();
+
+    if (scopeAction === "edit") {
+      setEditScope(scope);
+      openEditModal(selectedEvent);
+    } else {
+      // Delete
+      const parentId = getParentId(selectedEvent);
+      if (scope === "this") {
+        deleteInstance.mutate({
+          parentId,
+          date: formatLocalDate(selectedEvent.date),
+        });
+      } else {
+        deleteEvent.mutate(parentId);
+      }
     }
   };
 
@@ -171,29 +246,74 @@ export function CalendarModule() {
     const currentEditingEvent = useCalendarStore.getState().editingEvent;
     if (!currentEditingEvent) return;
 
-    updateEvent.mutate({
-      id: currentEditingEvent.id,
+    const request = {
       title: formData.title,
       startTime: format24hTo12h(formData.startTime),
       endTime: format24hTo12h(formData.endTime),
-      date: formData.date, // Already "yyyy-MM-dd", pass as-is to avoid timezone shift
-      endDate: formData.endDate ?? null, // null explicitly clears endDate on update
-      memberId: formData.memberId,
-      isAllDay: formData.isAllDay,
-      location: formData.location,
-    });
-  };
-
-  const handleAddEvent = (formData: EventFormData) => {
-    const request: CreateEventRequest = {
-      title: formData.title,
-      startTime: format24hTo12h(formData.startTime),
-      endTime: format24hTo12h(formData.endTime),
-      date: formData.date, // Already "yyyy-MM-dd", pass as-is to avoid timezone shift
+      date: formData.date,
       endDate: formData.endDate ?? null,
       memberId: formData.memberId,
       isAllDay: formData.isAllDay,
       location: formData.location,
+    };
+
+    if (currentEditingEvent.isRecurring && editScope === "this") {
+      // "This event" — always use instance endpoint
+      const parentId = getParentId(currentEditingEvent);
+      updateInstance.mutate({
+        parentId,
+        instanceDate: formatLocalDate(currentEditingEvent.date),
+        ...request,
+      });
+    } else if (currentEditingEvent.isRecurring && editScope === "all") {
+      // "All events" — update the parent, include recurrence rule
+      const recurrenceRule =
+        buildRRule({
+          frequency: formData.recurrenceFrequency ?? "none",
+          interval: formData.recurrenceInterval ?? 1,
+          weeklyDays: formData.recurrenceWeeklyDays,
+          monthDay: formData.recurrenceMonthDay,
+          endDate: formData.recurrenceEndDate,
+        }) ?? null;
+
+      const parentId = getParentId(currentEditingEvent);
+      updateEvent.mutate({
+        id: parentId,
+        ...request,
+        recurrenceRule,
+      });
+    } else {
+      // Non-recurring event
+      if (!currentEditingEvent.id) return;
+      updateEvent.mutate({
+        id: currentEditingEvent.id,
+        ...request,
+      });
+    }
+
+    setEditScope(null);
+  };
+
+  const handleAddEvent = (formData: EventFormData) => {
+    const recurrenceRule =
+      buildRRule({
+        frequency: formData.recurrenceFrequency ?? "none",
+        interval: formData.recurrenceInterval ?? 1,
+        weeklyDays: formData.recurrenceWeeklyDays,
+        monthDay: formData.recurrenceMonthDay,
+        endDate: formData.recurrenceEndDate,
+      }) ?? null;
+
+    const request: CreateEventRequest = {
+      title: formData.title,
+      startTime: format24hTo12h(formData.startTime),
+      endTime: format24hTo12h(formData.endTime),
+      date: formData.date,
+      endDate: formData.endDate ?? null,
+      memberId: formData.memberId,
+      isAllDay: formData.isAllDay,
+      location: formData.location,
+      recurrenceRule,
     };
     createEvent.mutate(request);
   };
@@ -280,10 +400,14 @@ export function CalendarModule() {
       <EventFormModal
         mode="edit"
         isOpen={isEditModalOpen}
-        onClose={closeEditModal}
+        onClose={() => {
+          closeEditModal();
+          setEditScope(null);
+        }}
         onSubmit={handleUpdateEvent}
-        isPending={updateEvent.isPending}
+        isPending={updateEvent.isPending || updateInstance.isPending}
         event={editingEvent ?? undefined}
+        showRecurrencePicker={editScope !== "this"}
       />
 
       {/* Event Detail Modal */}
@@ -293,8 +417,18 @@ export function CalendarModule() {
         onClose={closeDetailModal}
         onEdit={handleEditClick}
         onDelete={handleDeleteEvent}
-        isDeleting={deleteEvent.isPending}
-        deleteError={deleteEvent.error?.message}
+        isDeleting={deleteEvent.isPending || deleteInstance.isPending}
+        deleteError={
+          deleteEvent.error?.message ?? deleteInstance.error?.message
+        }
+      />
+
+      {/* Scope Dialog for Recurring Events */}
+      <EditScopeDialog
+        isOpen={scopeDialogOpen}
+        onClose={closeScopeDialog}
+        onSelect={handleScopeSelect}
+        action={scopeAction}
       />
     </div>
   );
