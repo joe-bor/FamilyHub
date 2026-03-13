@@ -139,3 +139,125 @@ export async function waitForCalendarReady(page: Page): Promise<void> {
   // This allows React to finish any pending state updates
   await page.waitForTimeout(100);
 }
+
+/**
+ * Options for creating an event via the Add Event modal.
+ */
+interface CreateEventOptions {
+  title: string;
+  recurrence?: {
+    frequency: "daily" | "weekly-on-day" | "weekly-custom" | "monthly";
+    customDays?: string[];
+    interval?: number;
+    endDate?: Date;
+  };
+  allDay?: boolean;
+}
+
+/**
+ * Opens the Add Event modal, fills in event details, and submits.
+ * Waits for modal to close after successful submission.
+ */
+export async function createEvent(
+  page: Page,
+  options: CreateEventOptions,
+): Promise<void> {
+  await page.getByRole("button", { name: "Add event" }).click();
+  await expect(page.getByRole("dialog")).toBeVisible();
+
+  await page.getByLabel("Event Name").fill(options.title);
+
+  // Toggle all-day if requested (before recurrence, since form order matters)
+  if (options.allDay) {
+    await page.getByRole("switch").click();
+  }
+
+  // Set recurrence if requested
+  if (options.recurrence) {
+    const select = page.locator("select");
+    await select.selectOption(options.recurrence.frequency);
+
+    // Toggle custom day buttons
+    if (
+      options.recurrence.frequency === "weekly-custom" &&
+      options.recurrence.customDays
+    ) {
+      for (const day of options.recurrence.customDays) {
+        await page.getByRole("button", { name: day, exact: true }).click();
+      }
+    }
+
+    // Set custom interval
+    if (options.recurrence.interval) {
+      const spinbutton = page.getByRole("spinbutton");
+      await spinbutton.clear();
+      await spinbutton.fill(String(options.recurrence.interval));
+    }
+
+    // Set end date
+    if (options.recurrence.endDate) {
+      await page.getByText("On date").click();
+      // The DatePicker for end date appears — find it by placeholder
+      const endDatePicker = page.getByPlaceholder("Pick end date");
+      await endDatePicker.click();
+      // Select the day in the calendar popover
+      const dayNum = options.recurrence.endDate.getDate();
+      // Use the calendar grid to pick the specific day
+      await page
+        .getByRole("gridcell", { name: String(dayNum), exact: true })
+        .click();
+    }
+  }
+
+  await page.getByRole("button", { name: "Add Event" }).click();
+  await expect(page.getByRole("dialog")).toBeHidden();
+}
+
+/**
+ * Navigates forward or backward in daily calendar view by clicking
+ * the Next/Previous button the specified number of times.
+ */
+export async function navigateDay(
+  page: Page,
+  direction: "next" | "prev",
+  count = 1,
+): Promise<void> {
+  const buttonName = direction === "next" ? "Next" : "Previous";
+  for (let i = 0; i < count; i++) {
+    await page.getByRole("button", { name: buttonName }).click();
+    // Allow calendar to settle between clicks
+    await page.waitForTimeout(200);
+  }
+}
+
+/**
+ * Clicks an event card by name and waits for the detail dialog to open.
+ * Returns the dialog locator for scoped queries.
+ */
+export async function openEventDetail(
+  page: Page,
+  eventName: string,
+): Promise<Locator> {
+  const eventCard = page
+    .getByRole("button", { name: new RegExp(eventName) })
+    .first();
+  await safeClick(eventCard);
+  return waitForDialogReady(page);
+}
+
+/**
+ * In the EditScopeDialog, selects a scope radio and clicks OK.
+ * Waits for the scope dialog to close.
+ */
+export async function chooseScopeAndConfirm(
+  page: Page,
+  scope: "this" | "all",
+): Promise<void> {
+  // Wait for scope dialog to be visible
+  const scopeText = scope === "this" ? "This event" : "All events";
+  await expect(page.getByText(scopeText)).toBeVisible();
+  await page.getByText(scopeText).click();
+  await page.getByRole("button", { name: "OK" }).click();
+  // Brief wait for scope dialog transition
+  await page.waitForTimeout(300);
+}
