@@ -14,21 +14,7 @@ _No high priority items at this time._
 
 ## Medium Priority (Future Sprint)
 
-### 1. Orphaned Events Warning
-**Source:** PR #10 Review (Sprint 5)
-**Files:** `src/stores/family-store.ts`, `src/components/settings/family-settings-modal.tsx`
-**Status:** Deferred to Backend Integration
-
-**Problem:**
-When a member is deleted:
-1. Their events become orphaned (hidden by filter but still exist)
-2. No warning shown to user
-3. Backend sync could fail if it validates member IDs
-
-**Suggested Fix:**
-- Count assigned events before delete
-- Show confirmation dialog: "This member has X events. Delete anyway?"
-- Consider cascade delete or reassignment to "Unassigned" member
+_No medium priority items at this time._
 
 ---
 
@@ -112,22 +98,7 @@ The 100ms wait allows React to settle after UI indicators are visible. This is a
 
 ---
 
-### 4. Google Fonts Render-Blocking
-**Source:** Lighthouse CI (PR #60)
-**Status:** Optimization opportunity
-
-**Problem:**
-Google Fonts CSS is render-blocking, adding to the critical request chain (3 levels, ~131ms).
-
-**Suggested Fixes:**
-- Add `font-display: swap` to font declarations
-- Preload critical fonts: `<link rel="preload" as="font" ...>`
-- Self-host fonts to eliminate external dependency
-- Use `font-display: optional` for non-critical fonts
-
----
-
-### 5. Unused JavaScript
+### 4. Unused JavaScript
 **Source:** Lighthouse CI (PR #60)
 **Status:** Optimization opportunity
 
@@ -142,7 +113,7 @@ Lighthouse detected unused JavaScript in the bundle.
 
 ---
 
-### 6. MemberProfileModal Component Tests
+### 5. MemberProfileModal Component Tests
 **Source:** PR #67 Review
 **Files:** `src/components/settings/member-profile-modal.tsx`
 **Status:** Testing gap
@@ -157,7 +128,7 @@ No component-level tests verify that each mutation call site (form submit, avata
 
 ---
 
-### 7. Silent Avatar Upload Validation Failures
+### 6. Silent Avatar Upload Validation Failures
 **Source:** PR #67 Review (pre-existing)
 **Files:** `src/components/settings/member-profile-modal.tsx` (lines 92-99)
 **Status:** UX gap
@@ -171,7 +142,7 @@ No component-level tests verify that each mutation call site (form submit, avata
 
 ---
 
-### 8. PWA Optimizations
+### 7. PWA Optimizations
 **Source:** Lighthouse CI (PR #60)
 **Files:** `vite.config.ts` (vite-plugin-pwa)
 **Status:** Deferred - PWA basics in place
@@ -203,10 +174,12 @@ See `.env.example` for environment variable documentation.
 - [x] All family hooks use TanStack Query
 - [x] Both calendar and family ready for backend
 
-**Phase 2: Backend Implementation**
-- [ ] Set `VITE_API_BASE_URL` to backend URL
-- [ ] Implement calendar endpoints
-- [ ] Implement family endpoints
+**Phase 2: Backend Implementation** ✅ COMPLETED (PRs #83, #87, #89, #96, #105, #106)
+- [x] Set `VITE_API_BASE_URL` to backend URL
+- [x] Implement calendar endpoints
+- [x] Implement family endpoints
+- [x] Remove mock API layer (#106)
+- [x] E2E tests run against real backend (#105)
 
 **Phase 3: Authentication** ✅ COMPLETED (PR #35)
 - [x] Add auth system (JWT-based with mock API)
@@ -231,10 +204,10 @@ Types: `src/lib/types/calendar.ts`
 ```
 GET    /family                   → ApiResponse<FamilyData | null>
 POST   /family                   body: CreateFamilyRequest
-PATCH  /family                   body: UpdateFamilyRequest
+PUT    /family                   body: UpdateFamilyRequest
 DELETE /family
 POST   /family/members           body: AddMemberRequest
-PATCH  /family/members/:id       body: UpdateMemberRequest (no id in body)
+PUT    /family/members/:id       body: UpdateMemberRequest (no id in body)
 DELETE /family/members/:id
 ```
 Types: `src/lib/types/family.ts`
@@ -243,7 +216,7 @@ Types: `src/lib/types/family.ts`
 
 1. **Member ID Format**: Frontend uses `crypto.randomUUID()`. Backend must accept UUID v4 format without reassigning IDs.
 
-2. **Event-Member Relationship**: Need to decide on cascade delete vs. orphan handling when members are removed. See Medium Priority #1.
+2. **Event-Member Relationship**: ✅ Resolved — Backend uses `ON DELETE CASCADE`, so member deletion automatically removes their events.
 
 3. **PWA API Response Caching**: Add service worker caching for API responses to enable offline functionality.
    - **Files:** `vite.config.ts` (workbox runtimeCaching)
@@ -267,6 +240,8 @@ Types: `src/lib/types/family.ts`
 
 | Item | Sprint | PR | Date |
 |------|--------|----|----|
+| Google Fonts Render-Blocking (self-host Nunito font) | - | #109 | Mar 13, 2026 |
+| Orphaned Events Warning (BE handles via ON DELETE CASCADE) | - | - | Mar 13, 2026 |
 | Lighthouse CI Integration (performance/a11y tracking in CI) | - | #60 | Feb 3, 2026 |
 | Family Mutation Tests (optimistic updates, rollback, useUpdateMember, useDeleteFamily) | - | #56 | Feb 1, 2026 |
 | Outdated TODO Comments in use-family.ts | - | #46 | Jan 29, 2026 |

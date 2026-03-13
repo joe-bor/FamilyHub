@@ -16,6 +16,7 @@ import type {
   UpdateMemberRequest,
 } from "@/lib/types";
 import { familyColors } from "@/lib/types";
+import { validateFamilyData } from "@/lib/validations/family";
 import { useIsAuthenticated } from "@/stores";
 
 // ============================================================================
@@ -67,7 +68,7 @@ export function readFamilyFromStorage(): FamilyData | null {
     if (!stored) return null;
 
     const parsed = JSON.parse(stored);
-    return parsed?.state?.family ?? null;
+    return validateFamilyData(parsed?.state?.family);
   } catch (error) {
     if (import.meta.env.DEV) {
       console.error("Failed to read family from localStorage:", error);
