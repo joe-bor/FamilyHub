@@ -534,7 +534,8 @@ describe("EventForm", () => {
             isAllDay: true,
             startTime: "00:00",
             endTime: "23:59",
-            endDate: "2026-03-12",
+            date: "2026-12-20",
+            endDate: "2026-12-25",
           }}
           onSubmit={mockOnSubmit}
           onCancel={mockOnCancel}
@@ -576,7 +577,8 @@ describe("EventForm", () => {
             isAllDay: true,
             startTime: "00:00",
             endTime: "23:59",
-            endDate: "2026-03-12",
+            date: "2026-12-20",
+            endDate: "2026-12-25",
           }}
           onSubmit={mockOnSubmit}
           onCancel={mockOnCancel}
@@ -595,7 +597,7 @@ describe("EventForm", () => {
             expect.objectContaining({
               title: "Family Vacation",
               isAllDay: true,
-              endDate: "2026-03-12",
+              endDate: "2026-12-25",
             }),
           );
         },
