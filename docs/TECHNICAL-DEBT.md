@@ -1,6 +1,6 @@
 # Technical Debt & Deferred Improvements
 
-**Last Updated:** Feb 4, 2026
+**Last Updated:** Mar 13, 2026
 
 This document tracks known technical debt, deferred improvements, and future enhancements identified during code reviews. Items are prioritized and linked to relevant sprints.
 
@@ -29,6 +29,38 @@ When a member is deleted:
 - Count assigned events before delete
 - Show confirmation dialog: "This member has X events. Delete anyway?"
 - Consider cascade delete or reassignment to "Unassigned" member
+
+---
+
+## Medium-Low Priority (Follow-up PRs)
+
+### 1. E2E Tests for Recurring Events
+**Source:** PR #117 Review
+**Files:** `e2e/`
+**Status:** Testing gap
+
+**Problem:**
+No E2E test coverage for the recurring events flow — creating, editing (this/all), and deleting (this/all) recurring events are only covered by unit tests.
+
+**Suggested Fix:**
+- Add E2E tests covering: create recurring event, edit single instance, edit all events, delete single instance, delete all events
+- Verify RecurrencePicker interactions (frequency selection, custom days, end date)
+- Verify EditScopeDialog behavior for both edit and delete actions
+
+---
+
+### 2. `CalendarEvent.id` Null Safety
+**Source:** PR #117 Review
+**Files:** `src/lib/types/calendar.ts`, consumers of `CalendarEvent`
+**Status:** Key spots guarded, wider audit needed
+
+**Problem:**
+`CalendarEvent.id` changed from `string` to `string | null` to support virtual recurring instances (which have no database ID). The key code paths in `calendar-module.tsx` now have runtime guards, but other consumers across the codebase may still assume `id` is non-null.
+
+**Suggested Fix:**
+- Audit all usages of `CalendarEvent.id` outside `calendar-module.tsx`
+- Add runtime guards or type narrowing where needed
+- Consider a branded type or discriminated union (`VirtualInstance | PersistedEvent`) to make the null case explicit at the type level
 
 ---
 
