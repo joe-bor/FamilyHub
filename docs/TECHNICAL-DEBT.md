@@ -35,21 +35,6 @@ No E2E test coverage for the recurring events flow — creating, editing (this/a
 
 ---
 
-### 2. `CalendarEvent.id` Null Safety
-**Source:** PR #117 Review
-**Files:** `src/lib/types/calendar.ts`, consumers of `CalendarEvent`
-**Status:** Key spots guarded, wider audit needed
-
-**Problem:**
-`CalendarEvent.id` changed from `string` to `string | null` to support virtual recurring instances (which have no database ID). The key code paths in `calendar-module.tsx` now have runtime guards, but other consumers across the codebase may still assume `id` is non-null.
-
-**Suggested Fix:**
-- Audit all usages of `CalendarEvent.id` outside `calendar-module.tsx`
-- Add runtime guards or type narrowing where needed
-- Consider a branded type or discriminated union (`VirtualInstance | PersistedEvent`) to make the null case explicit at the type level
-
----
-
 ## Low Priority (Nice to Have)
 
 ### 1. Web Vitals Tracking
@@ -113,36 +98,7 @@ Lighthouse detected unused JavaScript in the bundle.
 
 ---
 
-### 5. MemberProfileModal Component Tests
-**Source:** PR #67 Review
-**Files:** `src/components/settings/member-profile-modal.tsx`
-**Status:** Testing gap
-
-**Problem:**
-No component-level tests verify that each mutation call site (form submit, avatar upload, avatar remove) sends the correct fields. Hook-level tests cover optimistic updates, but a modal refactor could regress the payload completeness fix from PR #67.
-
-**Suggested Fix:**
-- Add tests asserting each mutation call includes all required fields (`name`, `color`, `email`, `avatarUrl`)
-- Verify avatar removal sends `avatarUrl: null` (not `undefined`)
-- Verify form submit preserves `avatarUrl` from current member data
-
----
-
-### 6. Silent Avatar Upload Validation Failures
-**Source:** PR #67 Review (pre-existing)
-**Files:** `src/components/settings/member-profile-modal.tsx` (lines 92-99)
-**Status:** UX gap
-
-**Problem:**
-`handleAvatarUpload` silently returns on invalid file type or file size (>500KB) with no user feedback. Users get no indication why their upload didn't work.
-
-**Suggested Fix:**
-- Show a toast or inline error for invalid file type ("Please select an image file")
-- Show a toast or inline error for oversized files ("Image must be under 500KB")
-
----
-
-### 7. PWA Optimizations
+### 5. PWA Optimizations
 **Source:** Lighthouse CI (PR #60)
 **Files:** `vite.config.ts` (vite-plugin-pwa)
 **Status:** Deferred - PWA basics in place
@@ -240,6 +196,9 @@ Types: `src/lib/types/family.ts`
 
 | Item | Sprint | PR | Date |
 |------|--------|----|----|
+| CalendarEvent.id Null Safety (guard optimistic update comparison) | - | #118 | Mar 13, 2026 |
+| Silent Avatar Upload Validation Failures (inline error messages) | - | #118 | Mar 13, 2026 |
+| MemberProfileModal Component Tests (mutation payload assertions) | - | #118 | Mar 13, 2026 |
 | Google Fonts Render-Blocking (self-host Nunito font) | - | #109 | Mar 13, 2026 |
 | Orphaned Events Warning (BE handles via ON DELETE CASCADE) | - | - | Mar 13, 2026 |
 | Lighthouse CI Integration (performance/a11y tracking in CI) | - | #60 | Feb 3, 2026 |
