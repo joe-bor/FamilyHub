@@ -101,7 +101,7 @@ export function useUpdateEvent(callbacks?: UpdateEventCallbacks) {
           return {
             ...old,
             data: old.data.map((event) =>
-              event.id === updatedEvent.id
+              event.id != null && event.id === updatedEvent.id
                 ? {
                     ...event,
                     ...updatedEvent,
