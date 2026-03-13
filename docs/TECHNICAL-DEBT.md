@@ -20,18 +20,7 @@ _No medium priority items at this time._
 
 ## Medium-Low Priority (Follow-up PRs)
 
-### 1. E2E Tests for Recurring Events
-**Source:** PR #117 Review
-**Files:** `e2e/`
-**Status:** Testing gap
-
-**Problem:**
-No E2E test coverage for the recurring events flow — creating, editing (this/all), and deleting (this/all) recurring events are only covered by unit tests.
-
-**Suggested Fix:**
-- Add E2E tests covering: create recurring event, edit single instance, edit all events, delete single instance, delete all events
-- Verify RecurrencePicker interactions (frequency selection, custom days, end date)
-- Verify EditScopeDialog behavior for both edit and delete actions
+_No medium-low priority items at this time._
 
 ---
 
@@ -196,6 +185,7 @@ Types: `src/lib/types/family.ts`
 
 | Item | Sprint | PR | Date |
 |------|--------|----|----|
+| E2E Tests for Recurring Events (8 tests: create, edit this/all, delete this/all, monthly, all-day, end date) | - | #TBD | Mar 13, 2026 |
 | CalendarEvent.id Null Safety (guard optimistic update comparison) | - | #118 | Mar 13, 2026 |
 | Silent Avatar Upload Validation Failures (inline error messages) | - | #118 | Mar 13, 2026 |
 | MemberProfileModal Component Tests (mutation payload assertions) | - | #118 | Mar 13, 2026 |
