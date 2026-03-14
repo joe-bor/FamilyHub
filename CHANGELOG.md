@@ -1,5 +1,54 @@
 # Changelog
 
+## [0.3.6](https://github.com/joe-bor/FamilyHub/compare/family-hub-v0.3.5...family-hub-v0.3.6) (2026-03-14)
+
+
+### Features
+
+* **calendar:** add edit scope dialog and instance-level API routing ([02c7fac](https://github.com/joe-bor/FamilyHub/commit/02c7fac14b0eac561d2338b7feabed2f3b042c79))
+* **calendar:** add RecurrencePicker component and extend form schema ([3bcbd0a](https://github.com/joe-bor/FamilyHub/commit/3bcbd0a659d833d23314a26134b8f68b20a88fe5))
+* **calendar:** add recurring events support ([cdd52ba](https://github.com/joe-bor/FamilyHub/commit/cdd52baf8c86ecc395b224a29f211c7cb1d9be65))
+* **calendar:** integrate RecurrencePicker into EventForm ([683136b](https://github.com/joe-bor/FamilyHub/commit/683136b94ddf100a95f5b7d8e03fc8852122b306))
+* **calendar:** show recurrence info in detail modal and event cards ([5e1b976](https://github.com/joe-bor/FamilyHub/commit/5e1b97680d2cb7f93756a1c0488146c332210105))
+* **recurrence:** add RRULE builder, parser, and label formatter ([3b6312f](https://github.com/joe-bor/FamilyHub/commit/3b6312fb7370d7e6b2420c10bf12803b7aab5192))
+* **types:** extend CalendarEvent for recurring events and add getEventKey utility ([9489a17](https://github.com/joe-bor/FamilyHub/commit/9489a17483ce6d5f3e42cb5be05722b376668eb4))
+
+
+### Bug Fixes
+
+* **calendar:** guard against null id in optimistic update comparison ([d45c2fc](https://github.com/joe-bor/FamilyHub/commit/d45c2fc55bdac4b07deb4a420868c34b51c474b6))
+* **calendar:** remove console.error, add runtime guards, clear stale delete errors ([75d4e95](https://github.com/joe-bor/FamilyHub/commit/75d4e953cf13912764dafe773ed384d018326598))
+* **calendar:** remove RRULE: prefix from buildRRule output ([fdf090a](https://github.com/joe-bor/FamilyHub/commit/fdf090a16d90cf76a924d89f5785df4ec1d064fa))
+* **calendar:** reset EditScopeDialog scope to 'this' on reopen ([fd7cb96](https://github.com/joe-bor/FamilyHub/commit/fd7cb969e61db08a389c36cb2e54bc1813da2628))
+* **docs:** update tech debt tracking and validate family data on rehydration ([42545c7](https://github.com/joe-bor/FamilyHub/commit/42545c7b2973faf79b56ed89d83438c59560d1b6))
+* **e2e:** fix selector issues and document edit-all recurrence bug ([e6d6417](https://github.com/joe-bor/FamilyHub/commit/e6d6417037d87ed7faaefa3bff1c26f9d9dc29a7))
+* **e2e:** resolve mobile-chrome FAB overlap in weekly view ([cab683c](https://github.com/joe-bor/FamilyHub/commit/cab683ca53cca7ee2fbda5103f198f6b2dd255ea))
+* **e2e:** strengthen recurring event assertions after BE PR [#21](https://github.com/joe-bor/FamilyHub/issues/21) ([18e64f8](https://github.com/joe-bor/FamilyHub/commit/18e64f8d70f711b54daf0837d766421c49fc6f2e))
+* **e2e:** use exact match for "Daily" recurrence label assertion ([eb3be1d](https://github.com/joe-bor/FamilyHub/commit/eb3be1de8de33120f3e4858ec22a66c6500d265e))
+* **settings:** show validation errors for avatar upload ([d649b8c](https://github.com/joe-bor/FamilyHub/commit/d649b8c333e6dcb7f99b1891adadf400f8e42b37))
+* **test:** use explicit dates in endDate form tests to avoid validation failure ([051747b](https://github.com/joe-bor/FamilyHub/commit/051747b8c8d1321ebf993674c8f3dcb960beb28d))
+* **types:** make isAllDay required in CalendarEvent ([fb700d5](https://github.com/joe-bor/FamilyHub/commit/fb700d5b4da354fce5923d846422f101bf70308a))
+* **types:** resolve build errors from id/params type changes ([ec13076](https://github.com/joe-bor/FamilyHub/commit/ec13076610aa6fb4b639a0a43d75644281dd6325))
+
+
+### Code Refactoring
+
+* **calendar:** deduplicate getOrdinalSuffix, use formatLocalDate in RecurrencePicker ([a1eb31f](https://github.com/joe-bor/FamilyHub/commit/a1eb31f535d176aacd614329b668bc3c5753929e))
+
+
+### Documentation
+
+* add recurring events tech debt items from PR [#117](https://github.com/joe-bor/FamilyHub/issues/117) review ([c412ccf](https://github.com/joe-bor/FamilyHub/commit/c412ccfeb3f51d9b2b5634318a299d8a15dd821c))
+* mark resolved tech debt items as completed ([125aaef](https://github.com/joe-bor/FamilyHub/commit/125aaef525307435651049c7fd4c0e4d2a725280))
+* move recurring events E2E item to completed in TECHNICAL-DEBT.md ([c0d05e0](https://github.com/joe-bor/FamilyHub/commit/c0d05e076c5b6df07818d361acd0087888363269))
+* move resolved recurring event tech debt items to completed ([22733ee](https://github.com/joe-bor/FamilyHub/commit/22733ee1e2f6f16a9c87da7715b46f4533fc34b3))
+
+
+### Tests
+
+* **e2e:** add recurring events E2E test suite ([f989d9f](https://github.com/joe-bor/FamilyHub/commit/f989d9f49e160cfdb409d27c66fd469ea52d2708))
+* **settings:** add MemberProfileModal mutation payload tests ([f0e3d6a](https://github.com/joe-bor/FamilyHub/commit/f0e3d6a8b4a1c99e343be85270ee3ebaac0bc5e9))
+
 ## [0.3.5](https://github.com/joe-bor/FamilyHub/compare/family-hub-v0.3.4...family-hub-v0.3.5) (2026-03-08)
 
 
