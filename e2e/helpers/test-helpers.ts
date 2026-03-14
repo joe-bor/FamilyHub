@@ -162,7 +162,9 @@ export async function createEvent(
   page: Page,
   options: CreateEventOptions,
 ): Promise<void> {
-  await page.getByRole("button", { name: "Add event" }).click();
+  // Use safeClick for the FAB to handle TanStack Query DevTools overlap
+  // when running locally without VITE_E2E=true
+  await safeClick(page.getByRole("button", { name: "Add event" }));
   await expect(page.getByRole("dialog")).toBeVisible();
 
   await page.getByLabel("Event Name").fill(options.title);
