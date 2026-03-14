@@ -72,7 +72,13 @@ test.describe("Recurring Events", () => {
     // The event was created today, so current week should show it
     await expect(page.getByText("Gym").first()).toBeVisible({ timeout: 10000 });
 
-    // Open detail modal and verify it's marked as recurring
+    // Switch back to daily view before opening detail modal.
+    // On mobile, the FAB overlaps event cards in the narrow weekly columns,
+    // causing clicks to hit the FAB instead of the event card.
+    await viewSwitcher.locator("button").nth(0).click();
+    await page.waitForTimeout(200);
+
+    // Open detail modal and verify recurrence label
     const dialog = await openEventDetail(page, "Gym");
     await expect(dialog.getByText(/Mon, Wed/)).toBeVisible();
   });
