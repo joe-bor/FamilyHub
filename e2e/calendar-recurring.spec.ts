@@ -53,7 +53,7 @@ test.describe("Recurring Events", () => {
 
     // Open detail modal and verify recurrence label
     const dialog = await openEventDetail(page, "Daily Standup");
-    await expect(dialog.getByText("Daily")).toBeVisible();
+    await expect(dialog.getByText("Daily", { exact: true })).toBeVisible();
   });
 
   test("creates weekly recurring event with custom days and verifies placement", async ({
