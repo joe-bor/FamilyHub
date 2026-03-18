@@ -138,7 +138,7 @@ export default function FamilyHub() {
 
   return (
     <div className="h-screen flex flex-col bg-background">
-      <AppHeader />
+      {!(isMobile && activeModule === "calendar") && <AppHeader />}
 
       <div className="flex-1 flex overflow-hidden">
         <NavigationTabs />

@@ -12,6 +12,8 @@ import {
   useCreateEvent,
   useDeleteEvent,
   useDeleteInstance,
+  useFamilyMemberMap,
+  useFamilyMembers,
   useUpdateEvent,
   useUpdateInstance,
 } from "@/api";
@@ -24,6 +26,10 @@ import {
   EventDetailModal,
   EventFormModal,
   FamilyFilterPills,
+  MobileDailyView,
+  MobileMonthlyView,
+  MobileToolbar,
+  MobileWeeklyView,
   MonthlyCalendar,
   ScheduleCalendar,
   WeeklyCalendar,
@@ -34,6 +40,7 @@ import { format24hTo12h, formatLocalDate } from "@/lib/time-utils";
 import type { CalendarEvent, CreateEventRequest } from "@/lib/types";
 import type { EventFormData } from "@/lib/validations";
 import {
+  useAppStore,
   useCalendarActions,
   useCalendarState,
   useCalendarStore,
@@ -93,10 +100,19 @@ export function CalendarModule() {
     goToToday,
     goToPrevious,
     goToNext,
+    setDate,
     selectDateAndSwitchToDaily,
     openAddEventModal,
     closeAddEventModal,
   } = useCalendarActions();
+
+  // App store actions for mobile toolbar
+  const openSidebar = useAppStore((state) => state.openSidebar);
+  const setActiveModule = useAppStore((state) => state.setActiveModule);
+
+  // Family data for mobile views
+  const members = useFamilyMembers();
+  const memberMap = useFamilyMemberMap();
 
   // Compute date range based on current view for API query
   const dateRange = useMemo(() => {
@@ -353,6 +369,50 @@ export function CalendarModule() {
       );
     }
 
+    if (isMobile) {
+      switch (calendarView) {
+        case "daily":
+          return (
+            <MobileDailyView
+              events={events}
+              currentDate={currentDate}
+              memberMap={memberMap}
+              onEventClick={handleEventClick}
+              onSwipeLeft={goToNext}
+              onSwipeRight={goToPrevious}
+            />
+          );
+        case "weekly":
+          return (
+            <MobileWeeklyView
+              events={events}
+              currentDate={currentDate}
+              memberMap={memberMap}
+              onEventClick={handleEventClick}
+              onDayClick={(date) => selectDateAndSwitchToDaily(date)}
+              onSwipeLeft={goToNext}
+              onSwipeRight={goToPrevious}
+            />
+          );
+        case "monthly":
+          return (
+            <MobileMonthlyView
+              events={events}
+              currentDate={currentDate}
+              memberMap={memberMap}
+              onEventClick={handleEventClick}
+              onDaySelect={(date) => setDate(date)}
+              onSwipeLeft={goToNext}
+              onSwipeRight={goToPrevious}
+            />
+          );
+        case "schedule":
+          return <ScheduleCalendar {...commonProps} />;
+        default:
+          return <ScheduleCalendar {...commonProps} />;
+      }
+    }
+
     switch (calendarView) {
       case "daily":
         return <DailyCalendar {...commonProps} {...navigationProps} />;
@@ -376,10 +436,18 @@ export function CalendarModule() {
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
       {/* Toolbar */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 px-4 py-3 bg-card border-b border-border">
-        <CalendarViewSwitcher />
-        <FamilyFilterPills />
-      </div>
+      {isMobile ? (
+        <MobileToolbar
+          members={members}
+          onOpenSidebar={openSidebar}
+          onGoHome={() => setActiveModule(null)}
+        />
+      ) : (
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 px-4 py-3 bg-card border-b border-border">
+          <CalendarViewSwitcher />
+          <FamilyFilterPills />
+        </div>
+      )}
 
       {/* Calendar View */}
       {renderCalendarView()}

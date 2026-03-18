@@ -18,10 +18,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { useIsMobile } from "@/hooks";
 import { formatRecurrenceLabel } from "@/lib/recurrence-utils";
 import type { CalendarEvent } from "@/lib/types";
 import { colorMap, getFamilyMember } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { MobileEventDetail } from "./mobile-event-detail";
 
 interface EventDetailModalProps {
   event: CalendarEvent | null;
@@ -42,6 +44,7 @@ function EventDetailModal({
   isDeleting = false,
   deleteError,
 }: EventDetailModalProps) {
+  const isMobile = useIsMobile();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const familyMembers = useFamilyMembers();
 
@@ -56,6 +59,21 @@ function EventDetailModal({
 
   const member = getFamilyMember(familyMembers, event.memberId);
   const colors = member ? colorMap[member.color] : null;
+
+  if (isMobile && member) {
+    return (
+      <MobileEventDetail
+        event={event}
+        member={member}
+        isOpen={isOpen}
+        onClose={onClose}
+        onEdit={onEdit}
+        onDelete={onDelete}
+        isDeleting={isDeleting}
+        deleteError={deleteError}
+      />
+    );
+  }
 
   const handleDeleteClick = () => {
     setShowDeleteConfirm(true);

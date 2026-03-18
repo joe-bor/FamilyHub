@@ -12,4 +12,8 @@ export { EventDetailModal } from "./event-detail-modal";
 export { EventForm } from "./event-form";
 export { EventFormModal } from "./event-form-modal";
 export { FamilyFilterPills } from "./family-filter-pills";
+export { MemberAvatar } from "./member-avatar";
+export { MobileEventDetail } from "./mobile-event-detail";
+export { MobileEventSheet } from "./mobile-event-sheet";
+export { MobileToolbar } from "./mobile-toolbar";
 export { RecurrencePicker } from "./recurrence-picker";
