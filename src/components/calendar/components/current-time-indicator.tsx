@@ -4,10 +4,12 @@ import { useEffect, useState } from "react";
 
 interface CurrentTimeIndicatorProps {
   startHour?: number;
+  rowHeight?: number;
 }
 
 export function CurrentTimeIndicator({
   startHour = 6,
+  rowHeight = 80,
 }: CurrentTimeIndicatorProps) {
   const [currentTime, setCurrentTime] = useState(new Date());
 
@@ -24,7 +26,7 @@ export function CurrentTimeIndicator({
 
   const hourOffset = hours - startHour;
   const minuteOffset = minutes / 60;
-  const topPosition = (hourOffset + minuteOffset) * 80;
+  const topPosition = (hourOffset + minuteOffset) * rowHeight;
 
   if (hours < startHour || hours >= 23) {
     return null;
@@ -52,6 +54,7 @@ export function CurrentTimeIndicator({
 export function useAutoScrollToNow(
   containerRef: React.RefObject<HTMLElement | null>,
   startHour = 6,
+  rowHeight = 80,
 ) {
   useEffect(() => {
     if (!containerRef.current) return;
@@ -62,11 +65,11 @@ export function useAutoScrollToNow(
 
     const hourOffset = hours - startHour;
     const minuteOffset = minutes / 60;
-    const scrollPosition = (hourOffset + minuteOffset) * 80 - 200;
+    const scrollPosition = (hourOffset + minuteOffset) * rowHeight - 200;
 
     containerRef.current.scrollTo({
       top: Math.max(0, scrollPosition),
       behavior: "smooth",
     });
-  }, [containerRef, startHour]);
+  }, [containerRef, startHour, rowHeight]);
 }
