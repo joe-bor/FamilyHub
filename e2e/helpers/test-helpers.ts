@@ -131,9 +131,15 @@ export async function waitForCalendarReady(page: Page): Promise<void> {
   const addButton = page.getByRole("button", { name: "Add event" });
   await expect(addButton).toBeVisible({ timeout: 10000 });
 
-  // Wait for secondary indicator (view switcher)
+  // Wait for secondary indicator — works on both desktop (view-switcher) and mobile (toolbar buttons)
   const viewSwitcher = page.getByTestId("view-switcher");
-  await expect(viewSwitcher).toBeVisible({ timeout: 5000 });
+  const mobileViewButton = page.getByRole("button", { name: /daily view/i });
+
+  // Either desktop or mobile indicator should be visible
+  await Promise.race([
+    expect(viewSwitcher).toBeVisible({ timeout: 5000 }),
+    expect(mobileViewButton).toBeVisible({ timeout: 5000 }),
+  ]);
 
   // Brief stability wait instead of unreliable networkidle
   // This allows React to finish any pending state updates
