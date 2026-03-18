@@ -1,3 +1,4 @@
+import { format } from "date-fns";
 import { Clock, MapPin } from "lucide-react";
 import type React from "react";
 import { useMemo } from "react";
@@ -11,6 +12,7 @@ import {
 import { type CalendarEvent, colorMap, getFamilyMember } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import type { FilterState } from "../components/calendar-filter";
+import { MemberAvatar } from "../components/member-avatar";
 
 interface ScheduleCalendarProps {
   events: CalendarEvent[];
@@ -64,23 +66,15 @@ export function ScheduleCalendar({
     return date.toDateString() === tomorrow.toDateString();
   };
 
-  const formatDateLabel = (date: Date) => {
-    if (isToday(date)) return "Today";
-    if (isTomorrow(date)) return "Tomorrow";
-    return date.toLocaleDateString("en-US", {
-      weekday: "long",
-    });
-  };
-
-  const formatDateSuffix = (date: Date) => {
-    return date.toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-    });
+  const formatDateHeader = (date: Date) => {
+    if (isToday(date)) return `Today \u2014 ${format(date, "EEE, MMM d")}`;
+    if (isTomorrow(date))
+      return `Tomorrow \u2014 ${format(date, "EEE, MMM d")}`;
+    return format(date, "EEEE, MMM d");
   };
 
   return (
-    <div className="flex-1 overflow-y-auto bg-background p-4 scroll-pt-12">
+    <div className="flex-1 overflow-y-auto bg-background p-3 sm:p-4 scroll-pt-12">
       {groupedEvents.length === 0 ? (
         <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
           <Calendar className="w-16 h-16 mb-4 opacity-50" />
@@ -103,17 +97,7 @@ export function ScheduleCalendar({
                     : "bg-muted/80",
                 )}
               >
-                <span className="font-semibold">{formatDateLabel(date)}</span>
-                <span
-                  className={cn(
-                    "text-sm font-normal",
-                    isToday(date)
-                      ? "text-primary-foreground/80"
-                      : "text-muted-foreground",
-                  )}
-                >
-                  · {formatDateSuffix(date)}
-                </span>
+                <span className="font-semibold">{formatDateHeader(date)}</span>
               </div>
 
               {/* Events list - simplified cards with colored left border */}
@@ -126,7 +110,7 @@ export function ScheduleCalendar({
                       key={getEventKey(event)}
                       onClick={() => onEventClick?.(event)}
                       className={cn(
-                        "flex flex-col p-3 rounded-lg cursor-pointer text-left w-full",
+                        "flex items-center p-2.5 sm:p-3 rounded-lg cursor-pointer text-left w-full min-h-[48px]",
                         "transition-all hover:shadow-md hover:scale-[1.005]",
                         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
                         "border-l-4 ring-1 ring-inset ring-black/5",
@@ -136,28 +120,41 @@ export function ScheduleCalendar({
                         member ? colorMap[member.color]?.light : "bg-muted",
                       )}
                     >
-                      <h3 className="font-semibold text-foreground truncate">
-                        {event.title}
-                      </h3>
-                      <div className="flex items-center gap-2 mt-1 text-sm text-muted-foreground">
-                        <div className="flex items-center gap-1">
-                          <Clock className="w-3.5 h-3.5" />
-                          <span>
-                            {event.isAllDay
-                              ? "All day"
-                              : `${event.startTime} - ${event.endTime}`}
-                          </span>
+                      <div className="flex flex-col flex-1 min-w-0">
+                        <h3 className="font-semibold text-foreground truncate">
+                          {event.title}
+                        </h3>
+                        <div className="flex items-center gap-2 mt-1 text-sm text-muted-foreground">
+                          <div className="flex items-center gap-1">
+                            <Clock className="w-3.5 h-3.5" />
+                            <span>
+                              {event.isAllDay
+                                ? "All day"
+                                : `${event.startTime} - ${event.endTime}`}
+                            </span>
+                          </div>
+                          {event.location && (
+                            <>
+                              <span className="text-muted-foreground/50">
+                                ·
+                              </span>
+                              <div className="flex items-center gap-1">
+                                <MapPin className="w-3.5 h-3.5" />
+                                <span className="truncate">
+                                  {event.location}
+                                </span>
+                              </div>
+                            </>
+                          )}
                         </div>
-                        {event.location && (
-                          <>
-                            <span className="text-muted-foreground/50">·</span>
-                            <div className="flex items-center gap-1">
-                              <MapPin className="w-3.5 h-3.5" />
-                              <span className="truncate">{event.location}</span>
-                            </div>
-                          </>
-                        )}
                       </div>
+                      {member && (
+                        <MemberAvatar
+                          name={member.name}
+                          color={member.color}
+                          size="md"
+                        />
+                      )}
                     </button>
                   );
                 })}
