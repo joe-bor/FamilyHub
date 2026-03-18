@@ -36,3 +36,4 @@ test-results/
 
 # Personal learning notes
 docs/VERSIONING-WALKTHROUGH.md
+.worktrees/
