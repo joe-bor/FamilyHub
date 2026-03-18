@@ -162,6 +162,7 @@ export function MobileDailyView({
   useAutoScrollToNow(
     isCurrentDay ? scrollContainerRef : { current: null },
     START_HOUR,
+    ROW_HEIGHT,
   );
 
   const timedEvents = useMemo(() => {
@@ -220,7 +221,10 @@ export function MobileDailyView({
             {/* Current time indicator */}
             {isCurrentDay && (
               <div className="absolute inset-0 pointer-events-none">
-                <CurrentTimeIndicator startHour={START_HOUR} />
+                <CurrentTimeIndicator
+                  startHour={START_HOUR}
+                  rowHeight={ROW_HEIGHT}
+                />
               </div>
             )}
 
