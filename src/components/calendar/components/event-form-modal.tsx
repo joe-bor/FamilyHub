@@ -4,11 +4,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { useIsMobile } from "@/hooks";
 import { parseRRule } from "@/lib/recurrence-utils";
 import { format12hTo24h, formatLocalDate } from "@/lib/time-utils";
 import type { CalendarEvent } from "@/lib/types";
 import type { EventFormData } from "@/lib/validations";
 import { EventForm } from "./event-form";
+import { MobileEventSheet } from "./mobile-event-sheet";
 
 interface EventFormModalProps {
   mode: "add" | "edit";
@@ -58,10 +60,26 @@ function EventFormModal({
   event,
   showRecurrencePicker,
 }: EventFormModalProps) {
+  const isMobile = useIsMobile();
   const title = mode === "add" ? "Add Event" : "Edit Event";
 
   // For edit mode, convert the event to form data
   const defaultValues = event ? eventToFormData(event) : undefined;
+
+  if (isMobile) {
+    return (
+      <MobileEventSheet isOpen={isOpen} onClose={onClose} title={title}>
+        <EventForm
+          mode={mode}
+          defaultValues={defaultValues}
+          onSubmit={onSubmit}
+          onCancel={onClose}
+          isPending={isPending}
+          showRecurrencePicker={showRecurrencePicker}
+        />
+      </MobileEventSheet>
+    );
+  }
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
