@@ -65,14 +65,14 @@ All views get separate mobile rendering paths (conditional on `useIsMobile()` ho
 - **Week date strip (header):**
   - 7-column grid showing day initial (S M T W T F S) + date number
   - Today highlighted with purple circle background
-  - Days with events show small colored dots below the date number
+  - Days with events show up to 3 member-colored dots (4px diameter) below the date number, matching the monthly view dot behavior
   - Tapping a day scrolls to that day's section in the list below
 - **Day-by-day event list:**
   - Each day is a section: day label (left, `min-w-28px`, day-of-week abbreviation + date number) + event list (right)
   - Events shown as compact rows: member-colored dot (6px) + title + time (right-aligned, muted)
   - Today section gets subtle purple background accent
   - Tapping an event opens the event detail sheet
-  - Tapping a day label jumps to the daily view for that day
+  - Tapping a day label jumps to the daily view for that day (uses existing `selectDateAndSwitchToDaily` store action). User returns to weekly view via the W pill in the view switcher. Add a subtle chevron icon on day labels to signal this is tappable.
 - **Swipe navigation:** Swipe left/right to change weeks
 - **Empty days:** Show day label with "No events" in muted text, or collapse to single line
 
@@ -99,6 +99,7 @@ All views get separate mobile rendering paths (conditional on `useIsMobile()` ho
   - If no events: "No events" message with subtle add-event prompt
 - **Swipe navigation:** Swipe left/right on the calendar grid to change months
 - **Default selection:** Today is selected on load
+- **Selected day state:** Use `currentDate` from the calendar store as the selected day. When a user taps a day in the monthly grid, `currentDate` updates. This is intentional cross-view coupling — if the user switches from monthly to daily view, they see the day they just selected. This matches Apple Calendar behavior.
 
 **Desktop:** Keeps the existing cell-based layout with event text.
 
@@ -114,7 +115,8 @@ All views get separate mobile rendering paths (conditional on `useIsMobile()` ho
 - **Event card layout:** Color bar (4px, left) + content (title 13px semibold, time 11px muted) + member avatar (right)
 - **Sticky date headers:** Already sticky (`top-0 z-10`), refine styling — use subtle background tint, bolder date text
 - **Touch targets:** Event cards minimum 48px height
-- **Date header format:** "Today — Wed, Mar 18" for today, "Tomorrow — Thu, Mar 19" for tomorrow, then "Friday, Mar 20" etc.
+- **Date header format:** "Today — Wed, Mar 18" for today, "Tomorrow — Thu, Mar 19" for tomorrow, then "Friday, Mar 20" etc. (Note: this changes the existing format which uses "Today . Mar 18" with a centered dot and no weekday.)
+- **Event detail:** Tapping an event opens the full-screen event detail view (same as all other mobile views — see section 2.4).
 
 ---
 
@@ -127,6 +129,7 @@ Replace centered modal dialogs with full-screen sheets on mobile.
 - On mobile (`useIsMobile()`): Render form as a full-screen overlay (`fixed inset-0 z-50 bg-card`)
 - On desktop: Keep existing `Dialog` modal (no changes)
 - Transition: Slide up from bottom with `translate-y` animation (200ms ease-out)
+- Close mechanisms: "Cancel" button in header, or Android back gesture. Swipe-to-dismiss is excluded from this iteration to keep scope contained.
 
 ### 2.2 Create Event Form
 
@@ -135,7 +138,7 @@ Replace centered modal dialogs with full-screen sheets on mobile.
 **Form layout (top to bottom):**
 
 1. **Event name** — Large input (18px, semibold), no border, bottom accent line (2px purple). Autofocus on open.
-2. **All-day toggle** — Label + switch control, row with bottom border
+2. **All-day toggle** — Label + switch control, row with bottom border. When toggled on, time chips are hidden and only date chips are shown. The "Ends" row shows an end date chip for multi-day all-day events.
 3. **Date/time section:**
    - "Starts" row: label (left) + date chip + time chip (right)
    - "Ends" row: label (left) + date chip + time chip (right)
@@ -183,12 +186,12 @@ Replace the current 3-row toolbar (view switcher + filter pills + date navigatio
 ### 3.1 Row 1: Header Bar
 
 - **Left:** Current context label — "March 2026" (monthly), "Mar 16 – 22" (weekly), "Wed, Mar 18" (daily), "Upcoming" (schedule). Bold, 16px.
-- **Right:** "Today" text button (purple, highlighted when navigated away from today) + hamburger menu icon
+- **Right:** "Today" text button (purple, highlighted when navigated away from today) + hamburger menu icon (opens the existing `SidebarMenu`). On mobile, the `MobileToolbar` replaces the `AppHeader` for the calendar module — the `AppHeader` is hidden when a calendar view is active on mobile, and the hamburger in the `MobileToolbar` takes over its sidebar-opening responsibility.
 
 ### 3.2 Row 2: Controls Bar
 
 - **Left:** View switcher — 4 letter pills in a segmented control: D / W / M / S. Active view gets purple fill. Compact: ~120px total width.
-- **Right:** Member filter dots — circular color dots (24px). Filled = included in filter. Ring outline (2px border, hollow center) = excluded. Tap to toggle. Horizontally scrollable if many members.
+- **Right:** Member filter dots — circular color dots (24px) with the member's initial letter inside (white text when filled, member color text when ring). Filled = included in filter. Ring outline (2px border, hollow center with initial) = excluded. Tap to toggle. Horizontally scrollable if many members. The initial letter provides a secondary identifier beyond color for accessibility.
 
 ### 3.3 Date Navigation
 
@@ -216,6 +219,8 @@ Replace the current 3-row toolbar (view switcher + filter pills + date navigatio
 
 **Implementation:** Use touch event handlers (`touchstart`, `touchmove`, `touchend`) with a minimum 50px horizontal threshold to distinguish from vertical scroll. Apply `touch-action: pan-y` on swipeable containers.
 
+**Edge-zone exclusion:** Ignore swipes that start within 20px of the left or right screen edge. This prevents conflicts with iOS Safari and Android browser back/forward navigation gestures. Check `touchstart` event's `clientX` against `window.innerWidth` to determine edge proximity.
+
 ### 4.2 Tap Targets
 
 All interactive elements must meet 44x44px minimum touch target (Apple HIG). This applies to:
@@ -232,7 +237,7 @@ All interactive elements must meet 44x44px minimum touch target (Apple HIG). Thi
 - **Form open:** Slide up from bottom (200ms ease-out)
 - **Form close:** Slide down (150ms ease-in)
 - **Date swipe:** Slide left/right with the swipe gesture, snap to next/previous
-- **Respect `prefers-reduced-motion`:** All animations disabled when set to "reduce" (existing Playwright config already sets this)
+- **Respect `prefers-reduced-motion`:** When set to "reduce", all CSS transitions are disabled (0ms duration). Swipe gestures still function but apply instant content swaps with no slide animation. Sheet open/close skips the slide transition and appears/disappears immediately. View switching uses no cross-fade.
 
 ---
 
@@ -260,12 +265,13 @@ All interactive elements must meet 44x44px minimum touch target (Apple HIG). Thi
 | `EventDetailModal` | On mobile: render full-screen detail with colored header |
 | `AddEventButton` | Add safe-area-inset padding for notched phones |
 | `CalendarNavigation` | Hide on mobile (replaced by swipe + header) |
+| `AppHeader` | Hidden on mobile when calendar module is active (replaced by `MobileToolbar`) |
 
 ### 5.3 Shared Components (Used by Both Mobile & Desktop)
 
 | Component | Usage |
 |-----------|-------|
-| `CalendarEventCard` | Rendered inside both mobile and desktop views (may need a `mobile` variant) |
+| `CalendarEventCard` | Rendered inside mobile daily view and desktop views. Schedule view renders its own inline event rows (with `MemberAvatar`) rather than using `CalendarEventCard`. Weekly mobile view uses compact dot+text rows, not `CalendarEventCard`. No new variant needed — the existing `default` and `compact` variants cover the daily mobile use case with adjusted sizing via props/classes. |
 | `EventForm` | The form itself is shared; only the wrapper changes (Dialog vs MobileEventSheet) |
 | `FamilyFilterPills` | Redesigned as dots on mobile, pills on desktop |
 | `CalendarViewSwitcher` | Letter pills on mobile, full labels on desktop |
