@@ -6,6 +6,7 @@ services:
       - "8080:8080"
     environment:
       - JWT_SECRET=dGVzdC1zZWNyZXQta2V5LXRoYXQtaXMtbG9uZy1lbm91Z2gtZm9yLWhtYWMtc2hhLTI1Ng==
+      - TOKEN_ENCRYPTION_KEY=dGVzdC1lbmNyeXB0aW9uLWtleS0zMi1ieXRlcw==
       - SPRING_PROFILES_ACTIVE=dev
     healthcheck:
       test: ["CMD", "curl", "-sf", "http://localhost:8080/api/health"]
