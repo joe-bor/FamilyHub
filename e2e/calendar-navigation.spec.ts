@@ -3,6 +3,7 @@ import { registerFamily, seedBrowserAuth } from "./helpers/api-helpers";
 import {
   clearStorage,
   safeClick,
+  switchCalendarView,
   waitForCalendarReady,
   waitForHydration,
 } from "./helpers/test-helpers";
@@ -28,7 +29,12 @@ test.describe("Calendar View Navigation", () => {
 
   test("switches views, navigates dates, and filters members", async ({
     page,
+    isMobile,
   }) => {
+    test.skip(
+      !!isMobile,
+      "Desktop-specific test — mobile equivalents in mobile-calendar.spec.ts",
+    );
     // ============================================
     // CREATE AN EVENT FOR TESTING FILTERS
     // ============================================
@@ -48,29 +54,26 @@ test.describe("Calendar View Navigation", () => {
     // VIEW SWITCHING
     // ============================================
 
-    // Get the view switcher container
-    const viewSwitcher = page.getByTestId("view-switcher");
-
-    // Click Week view (second button)
-    await viewSwitcher.locator("button").nth(1).click();
+    // Click Week view
+    await switchCalendarView(page, "weekly");
 
     // Verify we're on weekly view by looking for the week grid structure
     // The weekly view has 7 day columns - use exact match to avoid matching "Month"
     await expect(page.getByText("Mon", { exact: true })).toBeVisible();
     await expect(page.getByText("Tue", { exact: true })).toBeVisible();
 
-    // Click Month view (third button)
-    await viewSwitcher.locator("button").nth(2).click();
+    // Click Month view
+    await switchCalendarView(page, "monthly");
 
     // Monthly view shows a calendar grid - look for typical month structure
 
-    // Click Schedule view (fourth button)
-    await viewSwitcher.locator("button").nth(3).click();
+    // Click Schedule view
+    await switchCalendarView(page, "schedule");
 
     // Schedule view shows a list format
 
-    // Go back to Day view (first button)
-    await viewSwitcher.locator("button").nth(0).click();
+    // Go back to Day view
+    await switchCalendarView(page, "daily");
 
     // ============================================
     // DATE NAVIGATION

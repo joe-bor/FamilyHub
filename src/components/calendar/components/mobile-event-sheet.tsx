@@ -37,7 +37,7 @@ export function MobileEventSheet({
         >
           Cancel
         </button>
-        <span className="font-bold text-base">{title}</span>
+        <h2 className="font-bold text-base">{title}</h2>
         {
           headerRight ?? (
             <div className="w-16" />

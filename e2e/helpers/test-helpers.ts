@@ -104,8 +104,16 @@ export async function waitForDialogReady(page: Page): Promise<Locator> {
   // Use expect with auto-retry for better CI stability
   await expect(dialog).toBeVisible({ timeout: 10000 });
 
-  // Ensure Radix has finished mounting — scoped to the dialog, not page-wide
-  await expect(dialog).toHaveAttribute("data-state", "open", { timeout: 5000 });
+  // Ensure Radix has finished mounting — only check data-state for Radix dialogs
+  // Mobile components (MobileEventSheet, MobileEventDetail) don't use Radix
+  const hasDataState = await dialog
+    .getAttribute("data-state")
+    .catch(() => null);
+  if (hasDataState !== null) {
+    await expect(dialog).toHaveAttribute("data-state", "open", {
+      timeout: 5000,
+    });
+  }
 
   return dialog;
 }
@@ -136,7 +144,8 @@ export async function waitForCalendarReady(page: Page): Promise<void> {
   const mobileViewButton = page.getByRole("button", { name: /daily view/i });
 
   // Either desktop or mobile indicator should be visible
-  await Promise.race([
+  // Use Promise.any to succeed when either resolves (Promise.race rejects on first rejection)
+  await Promise.any([
     expect(viewSwitcher).toBeVisible({ timeout: 5000 }),
     expect(mobileViewButton).toBeVisible({ timeout: 5000 }),
   ]);
@@ -227,6 +236,39 @@ export async function createEvent(
   await page.getByRole("button", { name: "Add Event" }).click();
   // Use named dialog to avoid strict mode violation from closed Radix popovers
   await expect(page.getByRole("dialog", { name: "Add Event" })).toBeHidden();
+}
+
+/**
+ * Switches to the specified calendar view.
+ * Works on both desktop (data-testid="view-switcher") and mobile (aria-label buttons).
+ */
+const VIEW_ARIA_LABELS: Record<string, RegExp> = {
+  daily: /daily view/i,
+  weekly: /weekly view/i,
+  monthly: /monthly view/i,
+  schedule: /schedule view/i,
+};
+
+const VIEW_INDEX: Record<string, number> = {
+  daily: 0,
+  weekly: 1,
+  monthly: 2,
+  schedule: 3,
+};
+
+export async function switchCalendarView(
+  page: Page,
+  view: "daily" | "weekly" | "monthly" | "schedule",
+): Promise<void> {
+  const viewSwitcher = page.getByTestId("view-switcher");
+  const isDesktop = await viewSwitcher.isVisible().catch(() => false);
+
+  if (isDesktop) {
+    await viewSwitcher.locator("button").nth(VIEW_INDEX[view]).click();
+  } else {
+    await page.getByRole("button", { name: VIEW_ARIA_LABELS[view] }).click();
+  }
+  await page.waitForTimeout(200);
 }
 
 /**
