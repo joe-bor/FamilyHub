@@ -23,6 +23,7 @@ interface EventFormProps {
   onCancel: () => void;
   isPending?: boolean;
   showRecurrencePicker?: boolean;
+  hideActions?: boolean;
 }
 
 function EventForm({
@@ -32,6 +33,7 @@ function EventForm({
   onCancel,
   isPending = false,
   showRecurrencePicker = true,
+  hideActions = false,
 }: EventFormProps) {
   const familyMembers = useFamilyMembers();
 
@@ -121,7 +123,11 @@ function EventForm({
   const pendingText = isAdd ? "Adding..." : "Saving...";
 
   return (
-    <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-4">
+    <form
+      id="event-form"
+      onSubmit={handleSubmit(handleFormSubmit)}
+      className="space-y-4"
+    >
       {/* Event Name */}
       <div className="space-y-2">
         <Label htmlFor="title">Event Name</Label>
@@ -255,27 +261,29 @@ function EventForm({
       </div>
 
       {/* Actions */}
-      <div className="flex gap-3 pt-4">
-        <Button
-          type="button"
-          variant="outline"
-          onClick={onCancel}
-          className="flex-1 bg-transparent"
-          disabled={isPending}
-        >
-          Cancel
-        </Button>
-        <Button
-          type="submit"
-          className="flex-1 bg-primary hover:bg-primary/90"
-          disabled={isPending}
-        >
-          {isPending ? pendingText : submitText}
-        </Button>
-      </div>
+      {!hideActions && (
+        <div className="flex gap-3 pt-4">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onCancel}
+            className="flex-1 bg-transparent"
+            disabled={isPending}
+          >
+            Cancel
+          </Button>
+          <Button
+            type="submit"
+            className="flex-1 bg-primary hover:bg-primary/90"
+            disabled={isPending}
+          >
+            {isPending ? pendingText : submitText}
+          </Button>
+        </div>
+      )}
     </form>
   );
 }
 
-export { EventForm };
 export type { EventFormProps };
+export { EventForm };

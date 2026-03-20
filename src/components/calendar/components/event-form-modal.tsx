@@ -68,7 +68,21 @@ function EventFormModal({
 
   if (isMobile) {
     return (
-      <MobileEventSheet isOpen={isOpen} onClose={onClose} title={title}>
+      <MobileEventSheet
+        isOpen={isOpen}
+        onClose={onClose}
+        title={title}
+        headerRight={
+          <button
+            type="submit"
+            form="event-form"
+            className="text-primary font-semibold text-sm"
+            disabled={isPending}
+          >
+            {isPending ? "Saving..." : mode === "add" ? "Add" : "Save"}
+          </button>
+        }
+      >
         <EventForm
           mode={mode}
           defaultValues={defaultValues}
@@ -76,6 +90,7 @@ function EventFormModal({
           onCancel={onClose}
           isPending={isPending}
           showRecurrencePicker={showRecurrencePicker}
+          hideActions
         />
       </MobileEventSheet>
     );
@@ -100,5 +115,5 @@ function EventFormModal({
   );
 }
 
-export { EventFormModal };
 export type { EventFormModalProps };
+export { EventFormModal };

@@ -107,24 +107,26 @@ test.describe("First-Time User Onboarding", () => {
       page.getByRole("heading", { name: /create your login/i }),
     ).toBeHidden({ timeout: 10000 });
 
-    // Verify main app is showing
-    // On mobile, this shows home dashboard first; on desktop, shows calendar
-    // waitForCalendarReady handles both cases by navigating from home if needed
-    await waitForCalendarReady(page);
+    // Verify main app is showing — family name is visible on home dashboard/header
+    // Check BEFORE navigating to calendar (mobile hides AppHeader in calendar view)
+    await expect(page.getByText("The Johnsons")).toBeVisible({
+      timeout: 10000,
+    });
 
-    // Verify family name appears in header
-    await expect(page.getByText("The Johnsons")).toBeVisible();
+    // Now navigate to calendar view
+    await waitForCalendarReady(page);
 
     // Step 4: Verify persistence on reload
     await page.reload();
     await waitForHydration(page);
 
-    // Should still be on main app (not onboarding)
-    // On mobile, this will be home dashboard; waitForCalendarReady handles it
-    await waitForCalendarReady(page);
+    // Family name should be visible on initial load (home dashboard/header)
+    await expect(page.getByText("The Johnsons")).toBeVisible({
+      timeout: 10000,
+    });
 
-    // Family name should still be visible
-    await expect(page.getByText("The Johnsons")).toBeVisible();
+    // Navigate to calendar
+    await waitForCalendarReady(page);
 
     // Onboarding welcome should NOT be visible
     await expect(

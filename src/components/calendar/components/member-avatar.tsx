@@ -38,7 +38,7 @@ export function MemberAvatar({
       style={
         variant === "ring"
           ? {
-              borderColor: colors.bg.replace("bg-[", "").replace("]", ""),
+              borderColor: colors.bg.match(/#[0-9a-fA-F]{6}/)?.[0] ?? "",
             }
           : undefined
       }
