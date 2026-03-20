@@ -76,13 +76,13 @@ test.describe("Mobile Calendar Views", () => {
     // Should see full-screen sheet (dialog role) with Cancel button
     const dialog = page.getByRole("dialog");
     await expect(dialog).toBeVisible();
-    await expect(page.getByRole("button", { name: "Cancel" })).toBeVisible();
+    await expect(dialog.getByRole("button", { name: "Cancel" })).toBeVisible();
 
     // Fill in event name
     await page.getByLabel("Event Name").fill("Test Event");
 
-    // Submit
-    await page.getByRole("button", { name: "Add Event" }).click();
+    // Submit via the header "Add" button
+    await dialog.getByRole("button", { name: /add/i }).click();
 
     // Sheet should close after submission
     await expect(dialog).toBeHidden();

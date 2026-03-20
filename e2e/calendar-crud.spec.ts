@@ -42,7 +42,8 @@ test.describe("Calendar Event CRUD", () => {
     await page.getByLabel("Event Name").fill("Team Meeting");
 
     // Submit the form (date, time, and member are pre-filled with smart defaults)
-    await page.getByRole("button", { name: "Add Event" }).click();
+    const addDialog = page.getByRole("dialog");
+    await addDialog.getByRole("button", { name: /add/i }).click();
 
     // Wait for modal to close
     await expect(page.getByRole("dialog")).toBeHidden();
@@ -92,7 +93,8 @@ test.describe("Calendar Event CRUD", () => {
     await titleInput.fill("Updated Meeting");
 
     // Save changes
-    await page.getByRole("button", { name: "Save Changes" }).click();
+    const editDialog = page.getByRole("dialog");
+    await editDialog.getByRole("button", { name: /save/i }).click();
 
     // Wait for modal to close
     await expect(page.getByRole("dialog")).toBeHidden();
