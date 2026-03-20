@@ -1,6 +1,6 @@
 services:
   family-hub-api:
-    image: ghcr.io/joe-bor/family-hub-api:latest
+    image: ghcr.io/joe-bor/family-hub-api:${BE_IMAGE_TAG:-latest}
     platform: linux/amd64
     ports:
       - "8080:8080"
