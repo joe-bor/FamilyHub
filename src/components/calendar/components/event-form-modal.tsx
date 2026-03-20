@@ -82,5 +82,5 @@ function EventFormModal({
   );
 }
 
-export { EventFormModal };
 export type { EventFormModalProps };
+export { EventFormModal };

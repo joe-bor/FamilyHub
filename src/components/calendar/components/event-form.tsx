@@ -277,5 +277,5 @@ function EventForm({
   );
 }
 
-export { EventForm };
 export type { EventFormProps };
+export { EventForm };

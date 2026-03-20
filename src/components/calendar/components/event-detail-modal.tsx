@@ -208,5 +208,5 @@ function EventDetailModal({
   );
 }
 
-export { EventDetailModal };
 export type { EventDetailModalProps };
+export { EventDetailModal };
