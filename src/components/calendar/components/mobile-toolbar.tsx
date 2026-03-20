@@ -1,5 +1,6 @@
 import { endOfWeek, format, startOfWeek } from "date-fns";
 import { Home, Menu } from "lucide-react";
+import { useEffect } from "react";
 import type { FamilyMember } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { useCalendarStore, useIsViewingToday } from "@/stores";
@@ -47,7 +48,24 @@ export function MobileToolbar({
   const goToToday = useCalendarStore((s) => s.goToToday);
   const filter = useCalendarStore((s) => s.filter);
   const toggleMember = useCalendarStore((s) => s.toggleMember);
+  const initializeSelectedMembers = useCalendarStore(
+    (s) => s.initializeSelectedMembers,
+  );
   const isViewingToday = useIsViewingToday();
+
+  // Initialize selected members on first load or when persisted filter is stale
+  useEffect(() => {
+    if (members.length === 0) return;
+
+    const currentMemberIds = members.map((m) => m.id);
+    const hasValidSelection = filter.selectedMembers.some((id) =>
+      currentMemberIds.includes(id),
+    );
+
+    if (filter.selectedMembers.length === 0 || !hasValidSelection) {
+      initializeSelectedMembers(currentMemberIds);
+    }
+  }, [members, filter.selectedMembers, initializeSelectedMembers]);
 
   const contextLabel = getContextLabel(calendarView, currentDate);
 
