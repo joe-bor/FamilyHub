@@ -23,7 +23,7 @@ interface EventFormProps {
   onCancel: () => void;
   isPending?: boolean;
   showRecurrencePicker?: boolean;
-  hideActions?: boolean;
+  hideCancelButton?: boolean;
 }
 
 function EventForm({
@@ -33,7 +33,7 @@ function EventForm({
   onCancel,
   isPending = false,
   showRecurrencePicker = true,
-  hideActions = false,
+  hideCancelButton = false,
 }: EventFormProps) {
   const familyMembers = useFamilyMembers();
 
@@ -261,8 +261,8 @@ function EventForm({
       </div>
 
       {/* Actions */}
-      {!hideActions && (
-        <div className="flex gap-3 pt-4">
+      <div className="flex gap-3 pt-4">
+        {!hideCancelButton && (
           <Button
             type="button"
             variant="outline"
@@ -272,15 +272,15 @@ function EventForm({
           >
             Cancel
           </Button>
-          <Button
-            type="submit"
-            className="flex-1 bg-primary hover:bg-primary/90"
-            disabled={isPending}
-          >
-            {isPending ? pendingText : submitText}
-          </Button>
-        </div>
-      )}
+        )}
+        <Button
+          type="submit"
+          className="flex-1 bg-primary hover:bg-primary/90"
+          disabled={isPending}
+        >
+          {isPending ? pendingText : submitText}
+        </Button>
+      </div>
     </form>
   );
 }
