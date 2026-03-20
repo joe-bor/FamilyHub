@@ -6,13 +6,20 @@ import {
   createEvent,
   navigateDay,
   openEventDetail,
+  switchCalendarView,
   waitForCalendarReady,
   waitForDialogClosed,
   waitForHydration,
 } from "./helpers/test-helpers";
 
 test.describe("Recurring Events", () => {
-  test.beforeEach(async ({ page, request }) => {
+  test.beforeEach(async ({ page, request, isMobile }) => {
+    // Mobile uses swipe navigation instead of Previous/Next buttons
+    test.skip(
+      !!isMobile,
+      "Desktop-specific test — mobile uses swipe navigation",
+    );
+
     await page.goto("/");
     await clearStorage(page);
 
@@ -27,9 +34,7 @@ test.describe("Recurring Events", () => {
     await waitForCalendarReady(page);
 
     // Ensure we start in daily view
-    const viewSwitcher = page.getByTestId("view-switcher");
-    await viewSwitcher.locator("button").nth(0).click();
-    await page.waitForTimeout(200);
+    await switchCalendarView(page, "daily");
   });
 
   test("creates daily recurring event and verifies instances on consecutive days", async ({
@@ -65,8 +70,7 @@ test.describe("Recurring Events", () => {
     });
 
     // Switch to weekly view to verify day-column placement
-    const viewSwitcher = page.getByTestId("view-switcher");
-    await viewSwitcher.locator("button").nth(1).click();
+    await switchCalendarView(page, "weekly");
 
     // Navigate to ensure we're on a week that includes the event
     // The event was created today, so current week should show it
@@ -75,8 +79,7 @@ test.describe("Recurring Events", () => {
     // Switch back to daily view before opening detail modal.
     // On mobile, the FAB overlaps event cards in the narrow weekly columns,
     // causing clicks to hit the FAB instead of the event card.
-    await viewSwitcher.locator("button").nth(0).click();
-    await page.waitForTimeout(200);
+    await switchCalendarView(page, "daily");
 
     // Open detail modal and verify recurrence label
     const dialog = await openEventDetail(page, "Gym");
@@ -229,8 +232,7 @@ test.describe("Recurring Events", () => {
     await expect(page.getByText("Rent Payment")).toBeVisible();
 
     // Switch to monthly view
-    const viewSwitcher = page.getByTestId("view-switcher");
-    await viewSwitcher.locator("button").nth(2).click();
+    await switchCalendarView(page, "monthly");
     await page.waitForTimeout(300);
 
     // Navigate to next month

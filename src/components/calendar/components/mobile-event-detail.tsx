@@ -72,7 +72,11 @@ function MobileEventDetail({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col bg-background">
+    <div
+      role="dialog"
+      aria-label={event.title}
+      className="fixed inset-0 z-50 flex flex-col bg-background"
+    >
       {/* Colored gradient header */}
       <div
         className="flex flex-col px-4 pt-safe pb-4"
@@ -224,5 +228,5 @@ function MobileEventDetail({
   );
 }
 
-export { MobileEventDetail };
 export type { MobileEventDetailProps };
+export { MobileEventDetail };

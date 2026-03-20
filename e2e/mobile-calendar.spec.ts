@@ -8,7 +8,9 @@ import {
 } from "./helpers/test-helpers";
 
 test.describe("Mobile Calendar Views", () => {
-  test.beforeEach(async ({ page, request }) => {
+  test.beforeEach(async ({ page, request, isMobile }) => {
+    test.skip(!isMobile, "Mobile-only tests");
+
     await page.goto("/");
     await clearStorage(page);
 
