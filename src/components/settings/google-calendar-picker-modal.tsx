@@ -1,5 +1,5 @@
 import { Loader2 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useGoogleCalendars, useUpdateGoogleCalendars } from "@/api";
 import { Button } from "@/components/ui/button";
 import {
@@ -28,6 +28,7 @@ export function GoogleCalendarPickerModal({
   );
   const updateCalendars = useUpdateGoogleCalendars();
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const hasSynced = useRef(false);
 
   const calendars = calendarsResponse?.data ?? [];
 
@@ -38,14 +39,22 @@ export function GoogleCalendarPickerModal({
     return a.name.localeCompare(b.name);
   });
 
-  // Sync local state when data loads
+  // Sync local state only on initial data load
   useEffect(() => {
-    if (calendars.length > 0) {
+    if (calendars.length > 0 && !hasSynced.current) {
+      hasSynced.current = true;
       setSelectedIds(
         new Set(calendars.filter((c) => c.enabled).map((c) => c.id)),
       );
     }
   }, [calendars]);
+
+  // Reset sync flag when modal closes so next open re-syncs
+  useEffect(() => {
+    if (!open) {
+      hasSynced.current = false;
+    }
+  }, [open]);
 
   const handleToggle = (calendarId: string) => {
     setSelectedIds((prev) => {

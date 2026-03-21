@@ -53,7 +53,9 @@ export function toast({
     open: true,
   };
 
-  dispatch([newToast, ...memoryToasts].slice(0, TOAST_LIMIT));
+  dispatch(
+    [newToast, ...memoryToasts.filter((t) => t.open)].slice(0, TOAST_LIMIT),
+  );
 
   setTimeout(() => {
     dispatch(
