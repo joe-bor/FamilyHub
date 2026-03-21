@@ -1,11 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { ApiException } from "@/api/client";
 import { googleCalendarService } from "@/api/services";
-import type {
-  ApiResponse,
-  GoogleCalendarInfo,
-  GoogleConnectionStatus,
-} from "@/lib/types";
+import type { ApiResponse, GoogleCalendarInfo } from "@/lib/types";
 import { calendarKeys } from "./use-calendar";
 
 export const googleCalendarKeys = {
