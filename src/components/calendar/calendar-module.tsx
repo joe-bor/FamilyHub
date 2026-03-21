@@ -34,6 +34,7 @@ import {
   ScheduleCalendar,
   WeeklyCalendar,
 } from "@/components/calendar";
+import { toast } from "@/components/ui/toaster";
 import { useIsMobile } from "@/hooks";
 import { buildRRule } from "@/lib/recurrence-utils";
 import { format24hTo12h, formatLocalDate } from "@/lib/time-utils";
@@ -217,6 +218,15 @@ export function CalendarModule() {
   const handleDeleteEvent = () => {
     if (!selectedEvent) return;
 
+    // Guard: Google events are read-only
+    if (selectedEvent.source === "GOOGLE") {
+      toast({
+        title: "Synced from Google Calendar",
+        description: "Delete this event in Google Calendar.",
+      });
+      return;
+    }
+
     if (selectedEvent.isRecurring) {
       setScopeAction("delete");
       setScopeDialogOpen(true);
@@ -228,6 +238,15 @@ export function CalendarModule() {
 
   const handleEditClick = () => {
     if (!selectedEvent) return;
+
+    // Guard: Google events are read-only
+    if (selectedEvent.source === "GOOGLE") {
+      toast({
+        title: "Synced from Google Calendar",
+        description: "Edit this event in Google Calendar.",
+      });
+      return;
+    }
 
     if (selectedEvent.isRecurring) {
       setScopeAction("edit");
@@ -271,6 +290,7 @@ export function CalendarModule() {
       memberId: formData.memberId,
       isAllDay: formData.isAllDay,
       location: formData.location,
+      description: formData.description,
     };
 
     if (currentEditingEvent.isRecurring && editScope === "this") {
@@ -329,6 +349,7 @@ export function CalendarModule() {
       memberId: formData.memberId,
       isAllDay: formData.isAllDay,
       location: formData.location,
+      description: formData.description,
       recurrenceRule,
     };
     createEvent.mutate(request);
