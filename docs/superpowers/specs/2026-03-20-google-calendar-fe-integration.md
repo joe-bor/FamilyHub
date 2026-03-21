@@ -134,12 +134,20 @@ The BE returns Google events in the regular events endpoint. `useCalendarEvents`
 
 ### Handling the return
 
-The BE callback redirects to the FE with a query param. The exact param name and values must be confirmed from the merged BE code before implementation — assumed to be `/?google-auth=success` or `/?google-auth=error&message=...`.
+The BE redirects to the configured `frontendRedirectUrl` (which includes `/settings` in the path) with one of these query params:
+- Success: `?googleConnected=true`
+- Error (consent denied): `?error=consent_denied`
+- Error (token exchange): `?error=token_exchange_failed`
 
-1. On app mount, check for `google-auth` query param
+Since our SPA handles routing client-side, the `useGoogleAuthReturn()` hook checks query params regardless of path.
+
+1. On app mount, check for `googleConnected` or `error` query param
 2. If present, read return state from `sessionStorage`, clean up both (query param via `replaceState`, storage entry)
-3. On success: open sidebar → open member profile modal for the saved `memberId` → show success toast
-4. On error: show error toast with message from `message` query param, or a hardcoded fallback ("Failed to connect Google Calendar. Please try again.")
+3. On success (`?googleConnected=true`): open sidebar → open member profile modal for the saved `memberId` → show success toast
+4. On error (`?error=...`): show error toast with a mapping to user-friendly message:
+   - `consent_denied` → "You denied access to your Google Calendar. Please try again if you'd like to connect."
+   - `token_exchange_failed` → "Failed to exchange the auth code. Please try again."
+   - Fallback for unknown errors → "Failed to connect Google Calendar. Please try again."
 5. Stale entries ignored via timestamp check
 
 ### Implementation
