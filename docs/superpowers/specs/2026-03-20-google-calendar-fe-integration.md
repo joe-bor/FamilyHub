@@ -39,13 +39,25 @@ Add `description?: string` to both `CreateEventRequest` and `UpdateEventRequest`
 
 ```typescript
 // src/lib/types/google-calendar.ts
+
+// Return type for GET /api/google/auth?memberId={uuid}
+// Wrapped in ApiResponse<GoogleAuthUrl> by the service layer
+interface GoogleAuthUrl {
+  url: string;
+}
+
+// Return type for GET /api/google/calendars/{memberId}
+// and PUT /api/google/calendars/{memberId}
+// Wrapped in ApiResponse<GoogleCalendarInfo[]>
 interface GoogleCalendarInfo {
   id: string;            // "primary" or specific calendar ID
   name: string;
-  primary: boolean;
-  enabled: boolean;
+  primary: boolean;      // Google's default calendar — shown first, labeled "(Primary)" in picker
+  enabled: boolean;      // whether the user selected it for sync
 }
 
+// Return type for GET /api/google/status/{memberId}
+// Wrapped in ApiResponse<GoogleConnectionStatus>
 interface GoogleConnectionStatus {
   connected: boolean;
   calendars: Array<{
@@ -56,6 +68,8 @@ interface GoogleConnectionStatus {
   }>;
 }
 ```
+
+All service methods return `ApiResponse<T>` (same `{ data, message }` wrapper used throughout the codebase). The service layer unwraps `data` for consumers.
 
 ### Zod schema update
 
@@ -78,7 +92,7 @@ Handles all `/api/google/*` endpoints:
 | `getConnectionStatus(memberId)` | `GET /api/google/status/{memberId}` | Returns connection status |
 | `getCalendars(memberId)` | `GET /api/google/calendars/{memberId}` | Lists available Google calendars |
 | `updateCalendars(memberId, calendarIds)` | `PUT /api/google/calendars/{memberId}` | Sets which calendars to sync |
-| `syncNow(memberId)` | `POST /api/google/sync/{memberId}` | Triggers manual sync |
+| `syncCalendar(memberId)` | `POST /api/google/sync/{memberId}` | Triggers manual sync |
 | `disconnect(memberId)` | `DELETE /api/google/disconnect/{memberId}` | Revokes tokens, removes Google events |
 
 ### New hooks: use-google-calendar.ts
@@ -99,7 +113,7 @@ googleCalendarKeys = {
 |------|------|-------------|
 | `useGoogleConnectionStatus(memberId)` | Query | — |
 | `useGoogleCalendars(memberId)` | Query | — |
-| `useUpdateGoogleCalendars(callbacks)` | Mutation | `calendars`, `status` |
+| `useUpdateGoogleCalendars(callbacks)` | Mutation | `calendars`, `status`, `calendarKeys.events()` |
 | `useSyncGoogleCalendar(callbacks)` | Mutation | `status`, `calendarKeys.events()` |
 | `useDisconnectGoogle(callbacks)` | Mutation | `status`, `calendarKeys.events()` |
 
@@ -120,12 +134,12 @@ The BE returns Google events in the regular events endpoint. `useCalendarEvents`
 
 ### Handling the return
 
-The BE callback redirects to the FE with a query param (e.g., `/?google-auth=success` or `/?google-auth=error`).
+The BE callback redirects to the FE with a query param. The exact param name and values must be confirmed from the merged BE code before implementation — assumed to be `/?google-auth=success` or `/?google-auth=error&message=...`.
 
 1. On app mount, check for `google-auth` query param
 2. If present, read return state from `sessionStorage`, clean up both (query param via `replaceState`, storage entry)
 3. On success: open sidebar → open member profile modal for the saved `memberId` → show success toast
-4. On error: show error toast with message
+4. On error: show error toast with message from `message` query param, or a hardcoded fallback ("Failed to connect Google Calendar. Please try again.")
 5. Stale entries ignored via timestamp check
 
 ### Implementation
@@ -142,7 +156,9 @@ A `useGoogleAuthReturn()` hook that runs once on mount in `App.tsx`. Handles det
 
 Below the email field in `MemberProfileModal`. The email field already has helper text saying "Used for Google Calendar sync (coming soon)" — replace that with the actual integration.
 
-### Three states
+### States
+
+**Loading:** While `useGoogleConnectionStatus` is fetching, show a subtle skeleton/shimmer placeholder for the section. No buttons rendered until status is known.
 
 **Disconnected:**
 - "Connect Google Calendar" button (primary style)
@@ -162,7 +178,7 @@ Below the email field in `MemberProfileModal`. The email field already has helpe
 
 Separate modal (opened from "Choose Calendars" button) with:
 - Checkboxes for each calendar from `useGoogleCalendars(memberId)`
-- Calendar names as labels, primary calendar indicated
+- Calendar names as labels; primary calendar sorted first with "(Primary)" suffix
 - Save button calls `useUpdateGoogleCalendars` and triggers a sync
 - Cancel to dismiss
 
