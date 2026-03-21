@@ -49,6 +49,10 @@ export const eventFormSchema = z
       .string()
       .max(255, "Location must be 255 characters or less")
       .optional(),
+    description: z
+      .string()
+      .max(2000, "Description must be 2000 characters or less")
+      .optional(),
     isAllDay: z.boolean().optional(),
     endDate: z
       .string()
