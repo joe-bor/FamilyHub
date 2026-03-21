@@ -3,6 +3,8 @@ import {
   ArrowLeft,
   Calendar,
   Clock,
+  ExternalLink,
+  FileText,
   Loader2,
   MapPin,
   Pencil,
@@ -11,6 +13,7 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { toast } from "@/components/ui/toaster";
 import { formatRecurrenceLabel } from "@/lib/recurrence-utils";
 import type { CalendarEvent } from "@/lib/types";
 import { colorMap, type FamilyColor } from "@/lib/types";
@@ -47,6 +50,30 @@ function MobileEventDetail({
   }, [isOpen]);
 
   if (!isOpen) return null;
+
+  const isGoogleEvent = event.source === "GOOGLE";
+
+  const handleEditClick = () => {
+    if (isGoogleEvent) {
+      toast({
+        title: "Synced from Google Calendar",
+        description: "Edit this event in Google Calendar.",
+      });
+      return;
+    }
+    onEdit();
+  };
+
+  const handleDeleteAttempt = () => {
+    if (isGoogleEvent) {
+      toast({
+        title: "Synced from Google Calendar",
+        description: "Delete this event in Google Calendar.",
+      });
+      return;
+    }
+    handleDeleteClick();
+  };
 
   const colors = colorMap[member.color];
   const hexColor = colors.hex;
@@ -99,7 +126,7 @@ function MobileEventDetail({
             <Button
               variant="ghost"
               size="sm"
-              onClick={onEdit}
+              onClick={handleEditClick}
               disabled={isDeleting}
               className="text-white hover:text-white hover:bg-white/20 h-9 px-3"
             >
@@ -109,7 +136,7 @@ function MobileEventDetail({
             <Button
               variant="ghost"
               size="sm"
-              onClick={handleDeleteClick}
+              onClick={handleDeleteAttempt}
               disabled={isDeleting}
               className="text-white hover:text-white hover:bg-white/20 h-9 px-3"
             >
@@ -178,6 +205,31 @@ function MobileEventDetail({
             <div className="flex items-center gap-3">
               <MapPin className={cn("w-5 h-5 shrink-0", colors.text)} />
               <span className="text-foreground truncate">{event.location}</span>
+            </div>
+          )}
+
+          {/* Description (conditional) */}
+          {event.description && (
+            <div className="flex items-start gap-3">
+              <FileText className={cn("w-5 h-5 shrink-0", colors.text)} />
+              <p className="text-foreground text-sm whitespace-pre-wrap">
+                {event.description}
+              </p>
+            </div>
+          )}
+
+          {/* Open in Google Calendar (conditional) */}
+          {isGoogleEvent && event.htmlLink && (
+            <div className="flex items-center gap-3">
+              <ExternalLink className={cn("w-5 h-5 shrink-0", colors.text)} />
+              <a
+                href={event.htmlLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary hover:underline text-sm"
+              >
+                Open in Google Calendar
+              </a>
             </div>
           )}
         </div>

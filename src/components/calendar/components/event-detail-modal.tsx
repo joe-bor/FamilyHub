@@ -2,6 +2,8 @@ import { format } from "date-fns";
 import {
   Calendar,
   Clock,
+  ExternalLink,
+  FileText,
   Loader2,
   MapPin,
   Pencil,
@@ -18,6 +20,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { toast } from "@/components/ui/toaster";
 import { useIsMobile } from "@/hooks";
 import { formatRecurrenceLabel } from "@/lib/recurrence-utils";
 import type { CalendarEvent } from "@/lib/types";
@@ -57,6 +60,19 @@ function EventDetailModal({
 
   if (!event) return null;
 
+  const isGoogleEvent = event.source === "GOOGLE";
+
+  const handleEditClick = () => {
+    if (isGoogleEvent) {
+      toast({
+        title: "Synced from Google Calendar",
+        description: "Edit this event in Google Calendar.",
+      });
+      return;
+    }
+    onEdit();
+  };
+
   const member = getFamilyMember(familyMembers, event.memberId);
   const colors = member ? colorMap[member.color] : null;
 
@@ -77,6 +93,17 @@ function EventDetailModal({
 
   const handleDeleteClick = () => {
     setShowDeleteConfirm(true);
+  };
+
+  const handleDeleteAttempt = () => {
+    if (isGoogleEvent) {
+      toast({
+        title: "Synced from Google Calendar",
+        description: "Delete this event in Google Calendar.",
+      });
+      return;
+    }
+    handleDeleteClick();
   };
 
   const handleCancelDelete = () => {
@@ -156,6 +183,31 @@ function EventDetailModal({
                 <span className="truncate">{event.location}</span>
               </div>
             )}
+
+            {/* Description (conditional) */}
+            {event.description && (
+              <div className="flex items-start gap-3 text-muted-foreground">
+                <FileText className="w-4 h-4 shrink-0 mt-0.5" />
+                <p className="text-sm whitespace-pre-wrap">
+                  {event.description}
+                </p>
+              </div>
+            )}
+
+            {/* Open in Google Calendar (conditional) */}
+            {isGoogleEvent && event.htmlLink && (
+              <div className="flex items-center gap-3">
+                <ExternalLink className="w-4 h-4 shrink-0 text-muted-foreground" />
+                <a
+                  href={event.htmlLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm text-primary hover:underline"
+                >
+                  Open in Google Calendar
+                </a>
+              </div>
+            )}
           </div>
 
           {/* Error message */}
@@ -202,7 +254,7 @@ function EventDetailModal({
             <div className="flex gap-3 w-full">
               <Button
                 variant="outline"
-                onClick={onEdit}
+                onClick={handleEditClick}
                 disabled={isDeleting}
                 className="flex-1 min-h-[48px]"
               >
@@ -211,7 +263,7 @@ function EventDetailModal({
               </Button>
               <Button
                 variant="destructive"
-                onClick={handleDeleteClick}
+                onClick={handleDeleteAttempt}
                 disabled={isDeleting}
                 className="flex-1 min-h-[48px]"
               >
@@ -226,5 +278,5 @@ function EventDetailModal({
   );
 }
 
-export { EventDetailModal };
 export type { EventDetailModalProps };
+export { EventDetailModal };
