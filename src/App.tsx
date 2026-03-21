@@ -4,7 +4,7 @@ import { CalendarModule } from "@/components/calendar";
 import { HomeDashboard } from "@/components/home";
 import { AppHeader, NavigationTabs, SidebarMenu } from "@/components/shared";
 import { Toaster } from "@/components/ui/toaster";
-import { useIsMobile } from "@/hooks";
+import { useGoogleAuthReturn, useIsMobile } from "@/hooks";
 import {
   type ModuleType,
   useAppStore,
@@ -96,6 +96,8 @@ export default function FamilyHub() {
   const isAuthenticated = useIsAuthenticated();
   const setupComplete = useSetupComplete();
   const isMobile = useIsMobile();
+
+  useGoogleAuthReturn();
 
   // State to toggle between login and onboarding for new users
   const [showOnboarding, setShowOnboarding] = useState(false);
