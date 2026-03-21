@@ -7,12 +7,7 @@ import {
   isEventOnDate,
   parseTime,
 } from "@/lib/time-utils";
-import {
-  type CalendarEvent,
-  colorMap,
-  type FamilyColor,
-  type FamilyMember,
-} from "@/lib/types";
+import { type CalendarEvent, colorMap, type FamilyMember } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import {
   CurrentTimeIndicator,
@@ -56,22 +51,6 @@ const EVEN_HOUR_SET = new Set(EVEN_TIME_SLOTS.map((s) => s.hour));
 const EVEN_HOUR_LABEL: Record<number, string> = Object.fromEntries(
   EVEN_TIME_SLOTS.map((s) => [s.hour, s.label]),
 );
-
-/**
- * Extract the raw hex color from a Tailwind arbitrary-value bg class.
- * e.g. "bg-[#e88470]" → "#e88470"
- */
-function extractHexFromBgClass(bgClass: string): string {
-  const match = bgClass.match(/bg-\[([^\]]+)\]/);
-  return match ? match[1] : "#e88470";
-}
-
-const COLOR_HEX: Record<FamilyColor, string> = Object.fromEntries(
-  Object.entries(colorMap).map(([key, val]) => [
-    key,
-    extractHexFromBgClass(val.bg),
-  ]),
-) as Record<FamilyColor, string>;
 
 function getEventGridPosition(startTime: string, endTime: string) {
   const start = parseTime(startTime);
@@ -243,8 +222,8 @@ export function MobileDailyView({
 
               const member = memberMap.get(event.memberId);
               const borderColor = member
-                ? COLOR_HEX[member.color]
-                : COLOR_HEX.coral;
+                ? colorMap[member.color].hex
+                : colorMap.coral.hex;
 
               // Strip layout fields before passing to caller
               const {

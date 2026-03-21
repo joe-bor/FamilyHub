@@ -8,7 +8,11 @@ import {
 } from "date-fns";
 import { ChevronRight } from "lucide-react";
 import { useMemo } from "react";
-import { compareEventsByTime, isEventOnDate } from "@/lib/time-utils";
+import {
+  compareEventsByTime,
+  DAY_INITIALS,
+  isEventOnDate,
+} from "@/lib/time-utils";
 import { type CalendarEvent, colorMap, type FamilyMember } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { SwipeContainer } from "./swipe-container";
@@ -22,8 +26,6 @@ interface MobileWeeklyViewProps {
   onSwipeLeft: () => void;
   onSwipeRight: () => void;
 }
-
-const DAY_INITIALS = ["S", "M", "T", "W", "T", "F", "S"];
 
 export function MobileWeeklyView({
   events,

@@ -49,8 +49,7 @@ function MobileEventDetail({
   if (!isOpen) return null;
 
   const colors = colorMap[member.color];
-  // Extract hex from Tailwind class like "bg-[#e88470]" → "#e88470"
-  const hexColor = colors.bg.match(/#[0-9a-fA-F]{6}/)?.[0] ?? colors.bg;
+  const hexColor = colors.hex;
 
   // Format date for display — multi-day shows range, single-day shows full date
   const formattedDate = event.endDate
