@@ -14,6 +14,7 @@ export {
   clearStoredToken,
   familyKeys,
   getStoredToken,
+  googleCalendarKeys,
   readFamilyFromStorage,
   setStoredToken,
   syncFamilyFromStorage,
@@ -25,6 +26,7 @@ export {
   useDeleteEvent,
   useDeleteFamily,
   useDeleteInstance,
+  useDisconnectGoogle,
   useFamily,
   useFamilyData,
   useFamilyLoading,
@@ -32,16 +34,25 @@ export {
   useFamilyMemberMap,
   useFamilyMembers,
   useFamilyName,
+  useGoogleCalendars,
+  useGoogleConnectionStatus,
   useLogin,
   useLogout,
   useRegister,
   useRemoveMember,
   useSetupComplete,
+  useSyncGoogleCalendar,
   useUnusedColors,
   useUpdateEvent,
   useUpdateFamily,
+  useUpdateGoogleCalendars,
   useUpdateInstance,
   useUpdateMember,
 } from "./hooks";
 // Services
-export { authService, calendarService, familyService } from "./services";
+export {
+  authService,
+  calendarService,
+  familyService,
+  googleCalendarService,
+} from "./services";
