@@ -11,6 +11,10 @@ export interface CalendarEvent {
   recurrenceRule?: string;
   recurringEventId?: string;
   isRecurring?: boolean;
+  // Google Calendar integration
+  source?: "NATIVE" | "GOOGLE";
+  description?: string;
+  htmlLink?: string;
 }
 
 /**
@@ -41,6 +45,7 @@ export interface CreateEventRequest {
   isAllDay?: boolean;
   location?: string;
   recurrenceRule?: string | null;
+  description?: string;
 }
 
 export interface UpdateEventRequest {
@@ -53,6 +58,7 @@ export interface UpdateEventRequest {
   isAllDay?: boolean;
   location?: string;
   recurrenceRule?: string | null;
+  description?: string;
 }
 
 export interface GetEventsParams {
