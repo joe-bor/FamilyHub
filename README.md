@@ -52,7 +52,7 @@ Why I chose what I chose:
 
 ## Current Status
 
-**v0.3.6** — Calendar is feature-complete with mock API. Ready for backend integration. <!-- x-release-please-version -->
+**v0.3.7** — Calendar is feature-complete with mock API. Ready for backend integration. <!-- x-release-please-version -->
 
 | Module   | Status           |
 | -------- | ---------------- |
