@@ -1,5 +1,48 @@
 # Changelog
 
+## [0.3.7](https://github.com/joe-bor/FamilyHub/compare/family-hub-v0.3.6...family-hub-v0.3.7) (2026-03-21)
+
+
+### Features
+
+* **calendar:** add member avatars and responsive spacing to schedule view ([2eb53c4](https://github.com/joe-bor/FamilyHub/commit/2eb53c479155ff776a1524c1e497329c2531b331))
+* **calendar:** add MemberAvatar component for member identity display ([f3a1ecb](https://github.com/joe-bor/FamilyHub/commit/f3a1ecbc0a5bc79e188aec9503ec38accee9b742))
+* **calendar:** add MobileDailyView with 60px rows and swipe navigation ([f825d91](https://github.com/joe-bor/FamilyHub/commit/f825d91a48df6e251b6ccdf31934afad303045e6))
+* **calendar:** add MobileEventDetail full-screen view with colored header ([1a330dc](https://github.com/joe-bor/FamilyHub/commit/1a330dce8a617df5f12e59c3d2849d01add73e86))
+* **calendar:** add MobileEventSheet full-screen form wrapper ([e80db98](https://github.com/joe-bor/FamilyHub/commit/e80db9859e37e1c11f73b20edd20807f30c7e934))
+* **calendar:** add MobileMonthlyView with dot grid and day event list ([7d310cf](https://github.com/joe-bor/FamilyHub/commit/7d310cf7776921dc64b7c24171650dc0c1d75555))
+* **calendar:** add MobileToolbar compact 2-row toolbar ([4f53e02](https://github.com/joe-bor/FamilyHub/commit/4f53e0243bf117a39a2af6631409a8abaa2d40de))
+* **calendar:** add MobileWeeklyView with date strip and event list ([125f308](https://github.com/joe-bor/FamilyHub/commit/125f308c8144840bc1e23fbf42c893cc100ee836))
+* **calendar:** add SwipeContainer gesture handler for mobile navigation ([1a75530](https://github.com/joe-bor/FamilyHub/commit/1a755301857ea0503fe549e049623d1ec1c63247))
+* **calendar:** wire mobile views into CalendarModule with responsive branching ([37a0372](https://github.com/joe-bor/FamilyHub/commit/37a037213676f98f8245f03c27ddbdf42f403989))
+
+
+### Bug Fixes
+
+* **calendar:** initialize member filter on mobile and use hideCancelButton ([afaea96](https://github.com/joe-bor/FamilyHub/commit/afaea9627cd27cd55bce68a5128cf6a8a270ab01))
+* **calendar:** parameterize ROW_HEIGHT in CurrentTimeIndicator for mobile ([4dd6b33](https://github.com/joe-bor/FamilyHub/commit/4dd6b335f2281be6dd979db90c9b04fa4a360fdd))
+* **e2e:** add TOKEN_ENCRYPTION_KEY to docker-compose.e2e.yml ([edbfe4a](https://github.com/joe-bor/FamilyHub/commit/edbfe4a4477281671bbf79776fd30740255badf8))
+* **e2e:** resolve mobile-chrome test failures from calendar redesign ([d35f7c2](https://github.com/joe-bor/FamilyHub/commit/d35f7c2f4877a0b40a0c56e625e8fa03c3a983d6))
+* **e2e:** use valid 32-byte TOKEN_ENCRYPTION_KEY for AES-256 ([5ec583e](https://github.com/joe-bor/FamilyHub/commit/5ec583e418266712e9abd35bbd83ecdb8b19643c))
+* resolve duplicate buttons on mobile and CodeQL string replacement warnings ([fe999c1](https://github.com/joe-bor/FamilyHub/commit/fe999c11618849b4a82830f35f8ec0fc1c65d209))
+
+
+### Code Refactoring
+
+* **calendar:** consolidate hex colors, DAY_INITIALS, and fix cross-month label ([472c4c3](https://github.com/joe-bor/FamilyHub/commit/472c4c37c0b99dabd76a99b4fe3251243dae0aa2))
+
+
+### Documentation
+
+* add mobile calendar redesign implementation plan ([618565e](https://github.com/joe-bor/FamilyHub/commit/618565e242b24a421f53b456ea8b003d2fb16f96))
+* add mobile calendar redesign spec ([2475c71](https://github.com/joe-bor/FamilyHub/commit/2475c719cd660ceefd20167f844b9dd924a74e78))
+* address spec review feedback (critical + important items) ([19e1c8e](https://github.com/joe-bor/FamilyHub/commit/19e1c8e08d6c172c4c349cb608278cc8cc44471e))
+
+
+### Tests
+
+* **e2e:** add mobile calendar E2E tests for views, forms, and navigation ([d5e4e73](https://github.com/joe-bor/FamilyHub/commit/d5e4e739ecc26df555d812888b7b48c835886bc7))
+
 ## [0.3.6](https://github.com/joe-bor/FamilyHub/compare/family-hub-v0.3.5...family-hub-v0.3.6) (2026-03-14)
 
 
