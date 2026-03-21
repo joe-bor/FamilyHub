@@ -1,5 +1,5 @@
 import { LogOut, Users, X } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useFamilyMembers, useFamilyName, useLogout } from "@/api";
 import { FamilySettingsModal, MemberProfileModal } from "@/components/settings";
 import { Button } from "@/components/ui/button";
@@ -21,6 +21,16 @@ export function SidebarMenu() {
   // Modal state
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [selectedMemberId, setSelectedMemberId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (isOpen) {
+      const autoOpenMemberId = sessionStorage.getItem("open-member-profile");
+      if (autoOpenMemberId) {
+        sessionStorage.removeItem("open-member-profile");
+        setSelectedMemberId(autoOpenMemberId);
+      }
+    }
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
