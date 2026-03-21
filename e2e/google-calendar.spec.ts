@@ -24,21 +24,27 @@ test.describe("Google Calendar Integration", () => {
 
   test("member profile shows Google Calendar section", async ({ page }) => {
     // Open sidebar
-    await page.getByRole("button", { name: /settings/i }).click();
+    await page.getByRole("button", { name: "Menu" }).click();
+    const sidebar = page.locator("aside");
+    await expect(sidebar).toBeVisible();
 
     // Click on member name to open profile
-    await page.getByText("Alice").click();
+    await sidebar.getByText("Alice").click();
 
     // Verify Google Calendar section is visible
-    await expect(page.getByText("Google Calendar")).toBeVisible();
+    await expect(
+      page.getByText("Google Calendar", { exact: true }),
+    ).toBeVisible();
     await expect(
       page.getByRole("button", { name: /connect google calendar/i }),
     ).toBeVisible();
   });
 
   test("connect button is disabled without email", async ({ page }) => {
-    await page.getByRole("button", { name: /settings/i }).click();
-    await page.getByText("Alice").click();
+    await page.getByRole("button", { name: "Menu" }).click();
+    const sidebar = page.locator("aside");
+    await expect(sidebar).toBeVisible();
+    await sidebar.getByText("Alice").click();
 
     const connectButton = page.getByRole("button", {
       name: /connect google calendar/i,
@@ -53,10 +59,10 @@ test.describe("Google Calendar Integration", () => {
 
     // Description should be collapsed
     await expect(page.getByText(/add description/i)).toBeVisible();
-    await expect(page.getByLabelText(/description/i)).not.toBeVisible();
+    await expect(page.getByLabel(/description/i)).not.toBeVisible();
 
     // Expand it
     await page.getByText(/add description/i).click();
-    await expect(page.getByLabelText(/description/i)).toBeVisible();
+    await expect(page.getByLabel(/description/i)).toBeVisible();
   });
 });
