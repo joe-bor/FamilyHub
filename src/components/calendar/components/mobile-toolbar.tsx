@@ -26,7 +26,10 @@ function getContextLabel(calendarView: string, currentDate: Date): string {
     case "weekly": {
       const weekStart = startOfWeek(currentDate);
       const weekEnd = endOfWeek(currentDate);
-      return `${format(weekStart, "MMM d")} \u2013 ${format(weekEnd, "d")}`;
+      const sameMonth = weekStart.getMonth() === weekEnd.getMonth();
+      return sameMonth
+        ? `${format(weekStart, "MMM d")} \u2013 ${format(weekEnd, "d")}`
+        : `${format(weekStart, "MMM d")} \u2013 ${format(weekEnd, "MMM d")}`;
     }
     case "daily":
       return format(currentDate, "EEE, MMM d");

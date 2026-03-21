@@ -147,6 +147,9 @@ export const CALENDAR_START_HOUR = 6; // 6 AM
 export const CALENDAR_END_HOUR = 22; // 10 PM (leaves room for 1hr event before 11 PM)
 export const DEFAULT_EVENT_HOUR = 9; // Fallback when outside visible range
 
+/** Sunday-first day initials for weekly/monthly calendar grids */
+export const DAY_INITIALS = ["S", "M", "T", "W", "T", "F", "S"] as const;
+
 /**
  * Get a smart default time for new events.
  * - If current time is within visible calendar hours (6 AM - 10 PM), rounds up to next 15-min slot

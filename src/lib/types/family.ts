@@ -50,42 +50,49 @@ export function getFamilyMember(
  */
 export const colorMap: Record<
   FamilyColor,
-  { bg: string; text: string; light: string }
+  { bg: string; text: string; light: string; hex: string }
 > = {
   coral: {
     bg: "bg-[#e88470]",
     text: "text-[#8b3d32]",
     light: "bg-[#fbe9e6]",
+    hex: "#e88470",
   },
   teal: {
     bg: "bg-[#5cb8b2]",
     text: "text-[#2d6360]",
     light: "bg-[#e0f4f3]",
+    hex: "#5cb8b2",
   },
   pink: {
     bg: "bg-[#e896b8]",
     text: "text-[#8b4660]",
     light: "bg-[#fce8f0]",
+    hex: "#e896b8",
   },
   green: {
     bg: "bg-[#7bc67b]",
     text: "text-[#3d6b3d]",
     light: "bg-[#e6f5e6]",
+    hex: "#7bc67b",
   },
   purple: {
     bg: "bg-[#9b7bcf]",
     text: "text-[#523d70]",
     light: "bg-[#ede6f7]",
+    hex: "#9b7bcf",
   },
   yellow: {
     bg: "bg-[#f5c842]",
     text: "text-[#7a5f10]",
     light: "bg-[#fef6dc]",
+    hex: "#f5c842",
   },
   orange: {
     bg: "bg-[#f5a442]",
     text: "text-[#7a4f10]",
     light: "bg-[#fef0dc]",
+    hex: "#f5a442",
   },
 };
 

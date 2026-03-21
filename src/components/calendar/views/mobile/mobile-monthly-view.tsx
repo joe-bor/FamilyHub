@@ -10,7 +10,11 @@ import {
   startOfWeek,
 } from "date-fns";
 import { useEffect, useMemo, useState } from "react";
-import { compareEventsByTime, isEventOnDate } from "@/lib/time-utils";
+import {
+  compareEventsByTime,
+  DAY_INITIALS,
+  isEventOnDate,
+} from "@/lib/time-utils";
 import { type CalendarEvent, colorMap, type FamilyMember } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { SwipeContainer } from "./swipe-container";
@@ -24,8 +28,6 @@ interface MobileMonthlyViewProps {
   onSwipeLeft: () => void;
   onSwipeRight: () => void;
 }
-
-const DAY_INITIALS = ["S", "M", "T", "W", "T", "F", "S"];
 
 export function MobileMonthlyView({
   events,
