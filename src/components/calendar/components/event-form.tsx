@@ -1,6 +1,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { format } from "date-fns";
-import { useEffect, useMemo } from "react";
+import { ChevronDown } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useFamilyMembers } from "@/api";
 import { Button } from "@/components/ui/button";
@@ -76,6 +77,8 @@ function EventForm({
     defaultValues: initialValues,
   });
 
+  const [showDescription, setShowDescription] = useState(false);
+
   // Watch values for controlled components
   const dateValue = watch("date");
   const endDateValue = watch("endDate");
@@ -88,11 +91,19 @@ function EventForm({
   const recurrenceWeeklyDays = watch("recurrenceWeeklyDays");
   const recurrenceMonthDay = watch("recurrenceMonthDay");
   const recurrenceEndDate = watch("recurrenceEndDate");
+  const descriptionValue = watch("description");
 
   // Reset form when defaultValues change (e.g., switching between events in edit mode)
   useEffect(() => {
     reset(initialValues);
   }, [initialValues, reset]);
+
+  // Auto-expand description if initial value has content
+  useEffect(() => {
+    if (initialValues.description) {
+      setShowDescription(true);
+    }
+  }, [initialValues.description]);
 
   const handleFormSubmit = (data: EventFormData) => {
     if (isPending) return;
@@ -258,6 +269,41 @@ function EventForm({
           error={!!errors.memberId}
         />
         <FormError message={errors.memberId?.message} />
+      </div>
+
+      {/* Description (collapsible) */}
+      <div className="space-y-2">
+        {!showDescription ? (
+          <button
+            type="button"
+            onClick={() => setShowDescription(true)}
+            className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <ChevronDown className="w-3.5 h-3.5" />
+            Add description
+          </button>
+        ) : (
+          <>
+            <Label htmlFor="description">Description</Label>
+            <textarea
+              id="description"
+              {...register("description")}
+              placeholder="Add notes or details..."
+              className={cn(
+                "flex min-h-[80px] w-full rounded-md border border-input bg-input px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 resize-y",
+                errors.description && "border-destructive",
+              )}
+              maxLength={2000}
+              aria-invalid={!!errors.description}
+            />
+            {descriptionValue && descriptionValue.length > 1900 && (
+              <p className="text-xs text-muted-foreground text-right">
+                {descriptionValue.length}/2000
+              </p>
+            )}
+            <FormError message={errors.description?.message} />
+          </>
+        )}
       </div>
 
       {/* Actions */}

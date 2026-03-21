@@ -662,6 +662,71 @@ describe("EventForm", () => {
     });
   });
 
+  describe("Description Field", () => {
+    it("hides description textarea by default in add mode", () => {
+      render(
+        <EventForm
+          mode="add"
+          onSubmit={mockOnSubmit}
+          onCancel={mockOnCancel}
+        />,
+      );
+      expect(screen.queryByLabelText(/description/i)).not.toBeInTheDocument();
+      expect(screen.getByText(/add description/i)).toBeInTheDocument();
+    });
+
+    it("shows description textarea when 'Add description' is clicked", async () => {
+      const { user } = renderWithUser(
+        <EventForm
+          mode="add"
+          onSubmit={mockOnSubmit}
+          onCancel={mockOnCancel}
+        />,
+      );
+
+      await user.click(screen.getByText(/add description/i));
+      expect(screen.getByLabelText(/description/i)).toBeInTheDocument();
+    });
+
+    it("auto-expands in edit mode when description has value", () => {
+      render(
+        <EventForm
+          mode="edit"
+          defaultValues={{
+            title: "Test",
+            date: "2026-01-15",
+            startTime: "09:00",
+            endTime: "10:00",
+            memberId: testMembers[0].id,
+            description: "Some notes",
+          }}
+          onSubmit={mockOnSubmit}
+          onCancel={mockOnCancel}
+        />,
+      );
+      expect(screen.getByLabelText(/description/i)).toBeInTheDocument();
+      expect(screen.getByLabelText(/description/i)).toHaveValue("Some notes");
+    });
+
+    it("does not auto-expand in edit mode when description is empty", () => {
+      render(
+        <EventForm
+          mode="edit"
+          defaultValues={{
+            title: "Test",
+            date: "2026-01-15",
+            startTime: "09:00",
+            endTime: "10:00",
+            memberId: testMembers[0].id,
+          }}
+          onSubmit={mockOnSubmit}
+          onCancel={mockOnCancel}
+        />,
+      );
+      expect(screen.queryByLabelText(/description/i)).not.toBeInTheDocument();
+    });
+  });
+
   describe("Member Selection", () => {
     it("allows changing selected family member", async () => {
       // Pass explicit defaultValues to avoid async initialization race condition
