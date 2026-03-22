@@ -79,4 +79,34 @@ describe("googleCalendarService", () => {
       expect(result.data).toHaveLength(2);
     });
   });
+
+  describe("updateCalendars", () => {
+    it("sends selected calendar IDs and returns updated calendars", async () => {
+      const selectedIds = ["cal-1", "cal-3"];
+      const updatedCalendars: GoogleCalendarInfo[] = [
+        { id: "cal-1", name: "Personal", primary: true, enabled: true },
+        { id: "cal-2", name: "Work", primary: false, enabled: false },
+        { id: "cal-3", name: "Holidays", primary: false, enabled: true },
+      ];
+
+      let capturedBody: unknown;
+
+      server.use(
+        http.put(`*/google/calendars/${MEMBER_ID}`, async ({ request }) => {
+          capturedBody = await request.json();
+          return HttpResponse.json({
+            data: updatedCalendars,
+            message: null,
+          });
+        }),
+      );
+
+      const result = await googleCalendarService.updateCalendars(
+        MEMBER_ID,
+        selectedIds,
+      );
+      expect(capturedBody).toEqual({ calendarIds: selectedIds });
+      expect(result.data).toEqual(updatedCalendars);
+    });
+  });
 });
