@@ -454,4 +454,20 @@ export const handlers = [
 
     return HttpResponse.json(response);
   }),
+
+  // ============================================================================
+  // Google Calendar API Handlers (default: disconnected state)
+  // ============================================================================
+
+  // GET /google/status/:memberId - Connection status (default: disconnected)
+  http.get(`${API_BASE}/google/status/:memberId`, () => {
+    return HttpResponse.json(
+      createApiResponse({ connected: false, calendars: [] }),
+    );
+  }),
+
+  // GET /google/calendars/:memberId - Calendar list (default: empty)
+  http.get(`${API_BASE}/google/calendars/:memberId`, () => {
+    return HttpResponse.json(createApiResponse([]));
+  }),
 ];

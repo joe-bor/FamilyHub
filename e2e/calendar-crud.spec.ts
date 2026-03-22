@@ -43,7 +43,7 @@ test.describe("Calendar Event CRUD", () => {
 
     // Submit the form (date, time, and member are pre-filled with smart defaults)
     const addDialog = page.getByRole("dialog");
-    await addDialog.getByRole("button", { name: /add/i }).click();
+    await addDialog.getByRole("button", { name: /add event/i }).click();
 
     // Wait for modal to close
     await expect(page.getByRole("dialog")).toBeHidden();

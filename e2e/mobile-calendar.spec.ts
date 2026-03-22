@@ -82,7 +82,7 @@ test.describe("Mobile Calendar Views", () => {
     await page.getByLabel("Event Name").fill("Test Event");
 
     // Submit via the header "Add" button
-    await dialog.getByRole("button", { name: /add/i }).click();
+    await dialog.getByRole("button", { name: /add event/i }).click();
 
     // Sheet should close after submission
     await expect(dialog).toBeHidden();

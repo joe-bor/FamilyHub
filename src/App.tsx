@@ -3,7 +3,8 @@ import { useSetupComplete } from "@/api";
 import { CalendarModule } from "@/components/calendar";
 import { HomeDashboard } from "@/components/home";
 import { AppHeader, NavigationTabs, SidebarMenu } from "@/components/shared";
-import { useIsMobile } from "@/hooks";
+import { Toaster } from "@/components/ui/toaster";
+import { useGoogleAuthReturn, useIsMobile } from "@/hooks";
 import {
   type ModuleType,
   useAppStore,
@@ -96,6 +97,8 @@ export default function FamilyHub() {
   const setupComplete = useSetupComplete();
   const isMobile = useIsMobile();
 
+  useGoogleAuthReturn();
+
   // State to toggle between login and onboarding for new users
   const [showOnboarding, setShowOnboarding] = useState(false);
 
@@ -115,39 +118,51 @@ export default function FamilyHub() {
   if (!isAuthenticated) {
     if (showOnboarding) {
       return (
-        <Suspense fallback={<LoadingScreen />}>
-          <OnboardingFlow />
-        </Suspense>
+        <>
+          <Suspense fallback={<LoadingScreen />}>
+            <OnboardingFlow />
+          </Suspense>
+          <Toaster />
+        </>
       );
     }
     return (
-      <Suspense fallback={<LoadingScreen />}>
-        <LoginFlow onStartOnboarding={() => setShowOnboarding(true)} />
-      </Suspense>
+      <>
+        <Suspense fallback={<LoadingScreen />}>
+          <LoginFlow onStartOnboarding={() => setShowOnboarding(true)} />
+        </Suspense>
+        <Toaster />
+      </>
     );
   }
 
   // Authenticated but setup not complete (edge case)
   if (!setupComplete) {
     return (
-      <Suspense fallback={<LoadingScreen />}>
-        <OnboardingFlow />
-      </Suspense>
+      <>
+        <Suspense fallback={<LoadingScreen />}>
+          <OnboardingFlow />
+        </Suspense>
+        <Toaster />
+      </>
     );
   }
 
   return (
-    <div className="h-screen flex flex-col bg-background">
-      {!(isMobile && activeModule === "calendar") && <AppHeader />}
+    <>
+      <div className="h-screen flex flex-col bg-background">
+        {!(isMobile && activeModule === "calendar") && <AppHeader />}
 
-      <div className="flex-1 flex overflow-hidden">
-        <NavigationTabs />
-        <main className="flex-1 flex flex-col overflow-hidden">
-          {renderModule(activeModule)}
-        </main>
+        <div className="flex-1 flex overflow-hidden">
+          <NavigationTabs />
+          <main className="flex-1 flex flex-col overflow-hidden">
+            {renderModule(activeModule)}
+          </main>
+        </div>
+
+        <SidebarMenu />
       </div>
-
-      <SidebarMenu />
-    </div>
+      <Toaster />
+    </>
   );
 }
