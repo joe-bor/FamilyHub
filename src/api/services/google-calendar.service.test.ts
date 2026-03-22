@@ -109,4 +109,19 @@ describe("googleCalendarService", () => {
       expect(result.data).toEqual(updatedCalendars);
     });
   });
+
+  describe("syncCalendar", () => {
+    it("calls POST endpoint and resolves", async () => {
+      server.use(
+        http.post(
+          `*/google/sync/${MEMBER_ID}`,
+          () => new HttpResponse(null, { status: 204 }),
+        ),
+      );
+
+      await expect(
+        googleCalendarService.syncCalendar(MEMBER_ID),
+      ).resolves.not.toThrow();
+    });
+  });
 });
