@@ -1,0 +1,16 @@
+name: Add family-hub issues to Project
+
+on:
+  issues:
+    types: [opened, labeled, reopened]
+
+jobs:
+  add-to-project:
+    name: Add issue to Family Hub Project
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/add-to-project@v1
+        with:
+          project-url: https://github.com/users/joe-bor/projects/11
+          github-token: ${{ secrets.ADD_TO_PROJECT_PAT }}
+          labeled: family-hub
