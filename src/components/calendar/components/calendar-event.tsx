@@ -4,7 +4,7 @@ import type { CalendarEvent } from "@/lib/types";
 import { colorMap, getFamilyMember } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
-function GoogleBadge({ size = 14 }: { size?: number }) {
+export function GoogleBadge({ size = 14 }: { size?: number }) {
   return (
     <span
       role="img"
@@ -41,7 +41,8 @@ function GoogleBadge({ size = 14 }: { size?: number }) {
   );
 }
 
-const isGoogleEvent = (event: CalendarEvent) => event.source === "GOOGLE";
+export const isGoogleEvent = (event: CalendarEvent) =>
+  event.source === "GOOGLE";
 
 interface CalendarEventCardProps {
   event: CalendarEvent;
