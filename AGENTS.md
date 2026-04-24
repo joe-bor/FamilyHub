@@ -1,17 +1,6 @@
-# CLAUDE.md
+# AGENTS.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
-
-## Product source of truth (cross-repo)
-
-The Family Hub product vision, roadmap, and backlog live in the root workspace repo `joe-bor/family-hub`, in `docs/product/`. Before starting a story or feature, read the linked story file.
-
-- PRD: `../docs/product/prd.md` (if working in the cloned workspace)
-- Roadmap: `../docs/product/roadmap.md`
-- Backlog: `../docs/product/backlog/`
-- Agent entry: `../AGENTS.md`
-
-Tasks come in as GitHub Issues with a `Story:` line pointing to the story file. Follow that link for context.
+This file provides guidance to Codex (Codex.ai/code) when working with code in this repository.
 
 ## Commands
 
