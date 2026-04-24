@@ -13,6 +13,7 @@ import {
   getFamilyMember,
 } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { GoogleBadge, isGoogleEvent } from "../components/calendar-event";
 import type { FilterState } from "../components/calendar-filter";
 import { CalendarNavigation } from "../components/calendar-navigation";
 
@@ -231,12 +232,19 @@ export function MonthlyCalendar({
                         onEventClick?.(event);
                       }}
                       className={cn(
-                        "text-xs px-1.5 py-1 sm:py-0.5 rounded truncate text-left w-full min-h-[28px] sm:min-h-0",
+                        "text-xs px-1.5 py-1 sm:py-0.5 rounded text-left w-full min-h-[28px] sm:min-h-0 flex items-center gap-1",
                         member ? colorMap[member.color]?.bg : "bg-muted",
                         "text-white font-medium",
                       )}
                     >
-                      {event.isAllDay ? `● ${event.title}` : event.title}
+                      {isGoogleEvent(event) && (
+                        <span className="shrink-0">
+                          <GoogleBadge size={8} />
+                        </span>
+                      )}
+                      <span className="truncate">
+                        {event.isAllDay ? `● ${event.title}` : event.title}
+                      </span>
                     </button>
                   );
                 })}
