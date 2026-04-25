@@ -1,5 +1,77 @@
 # Changelog
 
+## [0.3.7](https://github.com/joe-bor/FamilyHub/compare/family-hub-v0.3.6...family-hub-v0.3.7) (2026-04-25)
+
+
+### Features
+
+* **api:** add Google Calendar service layer ([8f0668c](https://github.com/joe-bor/FamilyHub/commit/8f0668c1487199dd40db90be350baac37ec8cde0))
+* **api:** add Google Calendar TanStack Query hooks ([1f3ea61](https://github.com/joe-bor/FamilyHub/commit/1f3ea61bb05de04823952f9cabadb7bb6f6b7092))
+* **auth:** add Google OAuth return handler with state restoration ([003f6b5](https://github.com/joe-bor/FamilyHub/commit/003f6b558072264bf0a87aae58bdec6d25e41f1d))
+* **calendar:** add collapsible description field to event form ([bc95ca0](https://github.com/joe-bor/FamilyHub/commit/bc95ca01e0b908d98033b39ee2e911240e5e657f))
+* **calendar:** add description, Google link, and edit/delete guard to event detail ([ac1494b](https://github.com/joe-bor/FamilyHub/commit/ac1494b9d3c5dae363379dd3e9f9185d66d35e0d))
+* **calendar:** add Google event guard at orchestrator level and description in mutations ([adfbd61](https://github.com/joe-bor/FamilyHub/commit/adfbd61c929ec7938715726b3dcfd2967ef5e22e))
+* **calendar:** add Google icon badge to event cards ([2ac9e3b](https://github.com/joe-bor/FamilyHub/commit/2ac9e3b37a92be5929aafbc60bfad31da6488677))
+* **calendar:** add member avatars and responsive spacing to schedule view ([2eb53c4](https://github.com/joe-bor/FamilyHub/commit/2eb53c479155ff776a1524c1e497329c2531b331))
+* **calendar:** add MemberAvatar component for member identity display ([f3a1ecb](https://github.com/joe-bor/FamilyHub/commit/f3a1ecbc0a5bc79e188aec9503ec38accee9b742))
+* **calendar:** add MobileDailyView with 60px rows and swipe navigation ([f825d91](https://github.com/joe-bor/FamilyHub/commit/f825d91a48df6e251b6ccdf31934afad303045e6))
+* **calendar:** add MobileEventDetail full-screen view with colored header ([1a330dc](https://github.com/joe-bor/FamilyHub/commit/1a330dce8a617df5f12e59c3d2849d01add73e86))
+* **calendar:** add MobileEventSheet full-screen form wrapper ([e80db98](https://github.com/joe-bor/FamilyHub/commit/e80db9859e37e1c11f73b20edd20807f30c7e934))
+* **calendar:** add MobileMonthlyView with dot grid and day event list ([7d310cf](https://github.com/joe-bor/FamilyHub/commit/7d310cf7776921dc64b7c24171650dc0c1d75555))
+* **calendar:** add MobileToolbar compact 2-row toolbar ([4f53e02](https://github.com/joe-bor/FamilyHub/commit/4f53e0243bf117a39a2af6631409a8abaa2d40de))
+* **calendar:** add MobileWeeklyView with date strip and event list ([125f308](https://github.com/joe-bor/FamilyHub/commit/125f308c8144840bc1e23fbf42c893cc100ee836))
+* **calendar:** add SwipeContainer gesture handler for mobile navigation ([1a75530](https://github.com/joe-bor/FamilyHub/commit/1a755301857ea0503fe549e049623d1ec1c63247))
+* **calendar:** wire mobile views into CalendarModule with responsive branching ([37a0372](https://github.com/joe-bor/FamilyHub/commit/37a037213676f98f8245f03c27ddbdf42f403989))
+* **settings:** add Google Calendar connection section to member profile ([59b853e](https://github.com/joe-bor/FamilyHub/commit/59b853e07b774b9c0af6e776bebc83bf9946db13))
+* **settings:** add Google Calendar picker modal ([94145a6](https://github.com/joe-bor/FamilyHub/commit/94145a6477543b00063846af171b051241874c63))
+* **types:** add Google Calendar types and description field ([d71ca5a](https://github.com/joe-bor/FamilyHub/commit/d71ca5a410d7fc3530b78c837b1f6ab09fb615bb))
+* **ui:** add toast notification component using Radix Toast ([a5eaaa1](https://github.com/joe-bor/FamilyHub/commit/a5eaaa14916caeb8dd210e2a1a091332a1c2b27f))
+
+
+### Bug Fixes
+
+* **calendar:** initialize member filter on mobile and use hideCancelButton ([afaea96](https://github.com/joe-bor/FamilyHub/commit/afaea9627cd27cd55bce68a5128cf6a8a270ab01))
+* **calendar:** parameterize ROW_HEIGHT in CurrentTimeIndicator for mobile ([4dd6b33](https://github.com/joe-bor/FamilyHub/commit/4dd6b335f2281be6dd979db90c9b04fa4a360fdd))
+* **calendar:** pass description to edit form so textarea auto-expands ([45b3daf](https://github.com/joe-bor/FamilyHub/commit/45b3dafe5687dea0728910a9972b79fa1a7b4dc9))
+* **calendar:** show Google badge on monthly view event pills ([1661866](https://github.com/joe-bor/FamilyHub/commit/16618665fee262c2b188061ef6ab56c629681f74))
+* **ci:** pin actions/add-to-project to v1.0.2 (no v1 tag exists) ([#142](https://github.com/joe-bor/FamilyHub/issues/142)) ([843132f](https://github.com/joe-bor/FamilyHub/commit/843132f67e11b0c41ea6a74db895abba0047e7b5))
+* **e2e:** add TOKEN_ENCRYPTION_KEY to docker-compose.e2e.yml ([edbfe4a](https://github.com/joe-bor/FamilyHub/commit/edbfe4a4477281671bbf79776fd30740255badf8))
+* **e2e:** resolve mobile-chrome test failures from calendar redesign ([d35f7c2](https://github.com/joe-bor/FamilyHub/commit/d35f7c2f4877a0b40a0c56e625e8fa03c3a983d6))
+* **e2e:** resolve strict mode violations from description field ([1e9da85](https://github.com/joe-bor/FamilyHub/commit/1e9da85183130aa15b2e48a85b99c4bb3e985a65))
+* **e2e:** use valid 32-byte TOKEN_ENCRYPTION_KEY for AES-256 ([5ec583e](https://github.com/joe-bor/FamilyHub/commit/5ec583e418266712e9abd35bbd83ecdb8b19643c))
+* prevent picker modal selection reset and toast memory leak ([baff20b](https://github.com/joe-bor/FamilyHub/commit/baff20b38457680698c30cca33ef4f2a9de97cd2))
+* remove unused GoogleConnectionStatus type import ([4d11af9](https://github.com/joe-bor/FamilyHub/commit/4d11af91b1acf1ca08d41d557bfb8503938e440f))
+* resolve duplicate buttons on mobile and CodeQL string replacement warnings ([fe999c1](https://github.com/joe-bor/FamilyHub/commit/fe999c11618849b4a82830f35f8ec0fc1c65d209))
+* **test:** use 202 with JSON body for syncCalendar test ([7d53608](https://github.com/joe-bor/FamilyHub/commit/7d53608edfaf07ed76a63991cc82247e3b3df72b))
+
+
+### Code Refactoring
+
+* **calendar:** consolidate hex colors, DAY_INITIALS, and fix cross-month label ([472c4c3](https://github.com/joe-bor/FamilyHub/commit/472c4c37c0b99dabd76a99b4fe3251243dae0aa2))
+
+
+### Documentation
+
+* add cross-repo pointer to product source of truth ([#143](https://github.com/joe-bor/FamilyHub/issues/143)) ([cb47698](https://github.com/joe-bor/FamilyHub/commit/cb4769811547746f117b49ae0508f433759b8f58))
+* add Google Calendar FE integration design spec ([749ad1f](https://github.com/joe-bor/FamilyHub/commit/749ad1f4dd9269069b1f3d9cd2bd74ec8453c5c7))
+* add Google Calendar FE integration implementation plan ([8583e6d](https://github.com/joe-bor/FamilyHub/commit/8583e6d495b049e7772541f5b4c87e958358b61e))
+* add mobile calendar redesign implementation plan ([618565e](https://github.com/joe-bor/FamilyHub/commit/618565e242b24a421f53b456ea8b003d2fb16f96))
+* add mobile calendar redesign spec ([2475c71](https://github.com/joe-bor/FamilyHub/commit/2475c719cd660ceefd20167f844b9dd924a74e78))
+* added AGENTS.md for codex ([c246348](https://github.com/joe-bor/FamilyHub/commit/c24634824e90efad26d55bfc14b4793d2e5d8f22))
+* address spec review — type mapping, naming, cache invalidation, error states ([3677074](https://github.com/joe-bor/FamilyHub/commit/367707456bd40cafcda57aa97447c5f3a642af0a))
+* address spec review feedback (critical + important items) ([19e1c8e](https://github.com/joe-bor/FamilyHub/commit/19e1c8e08d6c172c4c349cb608278cc8cc44471e))
+* confirm BE OAuth redirect params in spec ([42053b0](https://github.com/joe-bor/FamilyHub/commit/42053b09a5d4fc414a35463fecdb407c450e4426))
+
+
+### Tests
+
+* add default MSW handlers for Google Calendar endpoints ([88b0c41](https://github.com/joe-bor/FamilyHub/commit/88b0c41b19f9a17f4538fe9af990856d8e66678d))
+* add getCalendars service test ([c6e625c](https://github.com/joe-bor/FamilyHub/commit/c6e625c2d134427590b0d8c59e6c64bc6252fccc))
+* add syncCalendar service test ([79ee74a](https://github.com/joe-bor/FamilyHub/commit/79ee74a424ddf735843b71ce94d8e2e8c26ce8f0))
+* add updateCalendars service test with body assertion ([68c83db](https://github.com/joe-bor/FamilyHub/commit/68c83db38699713fb2dc527b0dc59d95362a6f6d))
+* **e2e:** add Google Calendar integration E2E tests ([40363d4](https://github.com/joe-bor/FamilyHub/commit/40363d4b5ade9244f28059365eb8516e7d2360ad))
+* **e2e:** add mobile calendar E2E tests for views, forms, and navigation ([d5e4e73](https://github.com/joe-bor/FamilyHub/commit/d5e4e739ecc26df555d812888b7b48c835886bc7))
+
 ## [0.3.6](https://github.com/joe-bor/FamilyHub/compare/family-hub-v0.3.5...family-hub-v0.3.6) (2026-03-14)
 
 
