@@ -55,5 +55,5 @@ function MemberSelector({
   );
 }
 
-export { MemberSelector };
 export type { MemberSelectorProps };
+export { MemberSelector };

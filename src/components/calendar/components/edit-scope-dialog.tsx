@@ -91,5 +91,5 @@ function EditScopeDialog({
   );
 }
 
-export { EditScopeDialog };
 export type { EditScopeDialogProps };
+export { EditScopeDialog };

@@ -151,10 +151,13 @@ function renderWithUser(ui: ReactElement, options?: CustomRenderOptions) {
 
 // Re-export everything from testing-library
 export * from "@testing-library/react";
-export { userEvent };
-
 // Export custom utilities
-export { customRender as render, renderWithUser, createTestQueryClient };
+export {
+  createTestQueryClient,
+  customRender as render,
+  renderWithUser,
+  userEvent,
+};
 
 // =============================================================================
 // Store Seeding Utilities
