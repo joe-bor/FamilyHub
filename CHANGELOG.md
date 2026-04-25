@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.3.8](https://github.com/joe-bor/FamilyHub/compare/family-hub-v0.3.7...family-hub-v0.3.8) (2026-04-25)
+
+
+### Bug Fixes
+
+* unblock frontend release lint ([99174b1](https://github.com/joe-bor/FamilyHub/commit/99174b161c90835e48939f28c1d0adbe329eed07))
+* unblock frontend release lint ([a555bc9](https://github.com/joe-bor/FamilyHub/commit/a555bc995bdf9214b57f082fed48721f55e74280))
+
 ## [0.3.7](https://github.com/joe-bor/FamilyHub/compare/family-hub-v0.3.6...family-hub-v0.3.7) (2026-04-25)
 
 
