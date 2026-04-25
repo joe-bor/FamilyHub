@@ -7,6 +7,7 @@ SERVER="root@joe-bor.me"
 REMOTE_PATH="/var/www/familyhub"
 URL="https://familyhub.joe-bor.me"
 VERSION=$(node -p "require('./package.json').version")
+RELEASE_TAG="family-hub-v$VERSION"
 
 # === PRE-DEPLOY CHECKS (ordered fastest → slowest) ===
 
@@ -25,6 +26,7 @@ fi
 
 # 3. Synced with remote?
 git fetch origin main --quiet
+git fetch origin --tags --quiet
 LOCAL=$(git rev-parse HEAD)
 REMOTE=$(git rev-parse origin/main)
 if [ "$LOCAL" != "$REMOTE" ]; then
@@ -32,14 +34,20 @@ if [ "$LOCAL" != "$REMOTE" ]; then
   exit 1
 fi
 
-# 4. Tagged release? (warning only)
-if ! git tag -l "v$VERSION" | grep -q .; then
-  echo "⚠ No git tag found for v$VERSION."
-  read -r -p "Deploy untagged version? [y/N] " response
-  if [[ ! "$response" =~ ^[Yy]$ ]]; then
-    echo "Deploy cancelled."
-    exit 0
-  fi
+# 4. Released FE commit?
+if ! git rev-parse -q --verify "refs/tags/$RELEASE_TAG" >/dev/null; then
+  echo "✗ Required release tag '$RELEASE_TAG' does not exist."
+  echo "  Merge the FE release PR before deploying."
+  exit 1
+fi
+
+TAG_COMMIT=$(git rev-list -n 1 "$RELEASE_TAG")
+if [ "$LOCAL" != "$TAG_COMMIT" ]; then
+  echo "✗ Current commit is not the released FE commit for $RELEASE_TAG."
+  echo "  Current HEAD: $LOCAL"
+  echo "  Release tag:  $TAG_COMMIT"
+  echo "  Deploy only from the released FE commit on main."
+  exit 1
 fi
 
 # 5. Lint
@@ -51,7 +59,7 @@ echo "Running tests..."
 npm test -- --run
 
 # === BUILD & DEPLOY ===
-echo "Building v$VERSION..."
+echo "Building $RELEASE_TAG..."
 npm run build
 
 echo "Deploying to $SERVER..."
@@ -63,7 +71,7 @@ sleep 2
 STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$URL")
 
 if [ "$STATUS" = "200" ]; then
-  echo "✓ Deploy successful! v$VERSION is live at $URL"
+  echo "✓ Deploy successful! $RELEASE_TAG is live at $URL"
 else
   echo "✗ Warning: Site returned HTTP $STATUS"
   exit 1

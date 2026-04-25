@@ -86,10 +86,17 @@ See `src/test/test-utils.tsx` for `waitForMemberSelected`, `typeAndWait`, `TEST_
 `deploy.sh` runs checks fastest-to-slowest:
 1. Clean working tree
 2. Must be on `main`, synced with `origin/main`
-3. Tagged release check (warns if untagged)
+3. Must be the exact released FE commit tagged `family-hub-v<package.json version>`
 4. `npm run lint`
 5. `npm test -- --run`
 6. Build → rsync to server → HTTP health check
+
+## Shipping Semantics
+
+- Backend `main` may merge incrementally. FE should treat only published BE releases as stable integration contracts.
+- FE CI E2E resolves the latest published BE release from GitHub Releases and sets `BE_IMAGE_TAG` before starting the backend container.
+- Manual FE deploys still happen from a local terminal via `deploy.sh`; CI does not have droplet access.
+- FE production deploys must ship only a released FE commit on `main`. Do not deploy arbitrary `main` commits.
 
 ## Versioning
 
