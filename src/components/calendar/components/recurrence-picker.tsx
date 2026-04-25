@@ -324,5 +324,5 @@ function RecurrencePicker({
   );
 }
 
-export { RecurrencePicker };
 export type { RecurrencePickerProps };
+export { RecurrencePicker };

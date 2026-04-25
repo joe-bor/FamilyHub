@@ -168,9 +168,9 @@ export function formatRecurrenceLabel(rrule: string, eventDate: Date): string {
 
   if (state.endDate) {
     const endDate = new Date(
-      Number.parseInt(state.endDate.slice(0, 4)),
-      Number.parseInt(state.endDate.slice(5, 7)) - 1,
-      Number.parseInt(state.endDate.slice(8, 10)),
+      Number.parseInt(state.endDate.slice(0, 4), 10),
+      Number.parseInt(state.endDate.slice(5, 7), 10) - 1,
+      Number.parseInt(state.endDate.slice(8, 10), 10),
     );
     const formatted = format(endDate, "MMM d, yyyy");
     return `${base} until ${formatted}`;
