@@ -155,7 +155,7 @@ export default function FamilyHub() {
 
         <div className="flex-1 flex overflow-hidden">
           <NavigationTabs />
-          <main className="flex-1 flex flex-col overflow-hidden">
+          <main className="flex-1 flex flex-col overflow-hidden pb-[calc(env(safe-area-inset-bottom)+4rem)] sm:pb-0">
             {renderModule(activeModule)}
           </main>
         </div>

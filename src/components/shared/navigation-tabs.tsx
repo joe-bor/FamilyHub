@@ -24,27 +24,59 @@ export function NavigationTabs() {
   const setActiveModule = useAppStore((state) => state.setActiveModule);
 
   return (
-    <nav className="hidden sm:flex w-20 flex-col items-center gap-2 py-6 bg-card border-r border-border shrink-0">
-      {tabs.map((tab) => {
-        const Icon = tab.icon;
-        const isActive = activeModule === tab.id;
+    <>
+      <nav className="hidden sm:flex w-20 flex-col items-center gap-2 py-6 bg-card border-r border-border shrink-0">
+        {tabs.map((tab) => {
+          const Icon = tab.icon;
+          const isActive = activeModule === tab.id;
 
-        return (
-          <button
-            key={tab.id}
-            onClick={() => setActiveModule(tab.id)}
-            className={cn(
-              "flex flex-col items-center gap-1 px-2 py-3 rounded-xl w-16 transition-colors",
-              isActive
-                ? "bg-primary text-primary-foreground"
-                : "text-muted-foreground hover:bg-muted hover:text-foreground",
-            )}
-          >
-            <Icon className="h-5 w-5" />
-            <span className="text-[10px] font-medium">{tab.label}</span>
-          </button>
-        );
-      })}
-    </nav>
+          return (
+            <button
+              type="button"
+              key={tab.id}
+              onClick={() => setActiveModule(tab.id)}
+              className={cn(
+                "flex flex-col items-center gap-1 px-2 py-3 rounded-xl w-16 transition-colors",
+                isActive
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:bg-muted hover:text-foreground",
+              )}
+            >
+              <Icon className="h-5 w-5" />
+              <span className="text-[10px] font-medium">{tab.label}</span>
+            </button>
+          );
+        })}
+      </nav>
+
+      <nav className="sm:hidden fixed inset-x-0 bottom-0 z-30 border-t border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80 pb-[env(safe-area-inset-bottom)]">
+        <div className="grid grid-cols-5">
+          {tabs.map((tab) => {
+            const Icon = tab.icon;
+            const isActive = activeModule === tab.id;
+
+            return (
+              <button
+                type="button"
+                key={tab.id}
+                onClick={() => setActiveModule(tab.id)}
+                className={cn(
+                  "flex min-h-16 flex-col items-center justify-center gap-1 px-1 py-2 transition-colors",
+                  isActive
+                    ? "text-primary"
+                    : "text-muted-foreground hover:text-foreground",
+                )}
+                aria-current={isActive ? "page" : undefined}
+              >
+                <Icon className="h-5 w-5" />
+                <span className="text-[10px] font-medium leading-none">
+                  {tab.label}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </nav>
+    </>
   );
 }

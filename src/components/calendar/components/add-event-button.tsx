@@ -9,8 +9,7 @@ export function AddEventButton({ onClick }: AddEventButtonProps) {
   return (
     <Button
       onClick={onClick}
-      className="fixed right-8 z-40 w-14 h-14 rounded-full bg-primary hover:bg-primary/90 shadow-lg hover:shadow-xl transition-all"
-      style={{ bottom: "max(2rem, calc(env(safe-area-inset-bottom) + 1rem))" }}
+      className="fixed right-8 z-40 w-14 h-14 rounded-full bg-primary hover:bg-primary/90 shadow-lg hover:shadow-xl transition-all bottom-[calc(env(safe-area-inset-bottom)+5rem)] sm:bottom-8"
       size="icon"
       aria-label="Add event"
     >
