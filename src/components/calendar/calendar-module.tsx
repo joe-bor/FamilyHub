@@ -109,7 +109,6 @@ export function CalendarModule() {
 
   // App store actions for mobile toolbar
   const openSidebar = useAppStore((state) => state.openSidebar);
-  const setActiveModule = useAppStore((state) => state.setActiveModule);
 
   // Family data for mobile views
   const members = useFamilyMembers();
@@ -458,11 +457,7 @@ export function CalendarModule() {
     <div className="flex-1 flex flex-col overflow-hidden">
       {/* Toolbar */}
       {isMobile ? (
-        <MobileToolbar
-          members={members}
-          onOpenSidebar={openSidebar}
-          onGoHome={() => setActiveModule(null)}
-        />
+        <MobileToolbar members={members} onOpenSidebar={openSidebar} />
       ) : (
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 px-4 py-3 bg-card border-b border-border">
           <CalendarViewSwitcher />

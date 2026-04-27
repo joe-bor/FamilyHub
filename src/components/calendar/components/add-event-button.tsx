@@ -1,16 +1,23 @@
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useIsMobile } from "@/hooks";
 
 interface AddEventButtonProps {
   onClick: () => void;
 }
 
 export function AddEventButton({ onClick }: AddEventButtonProps) {
+  const isMobile = useIsMobile();
+
   return (
     <Button
       onClick={onClick}
       className="fixed right-8 z-40 w-14 h-14 rounded-full bg-primary hover:bg-primary/90 shadow-lg hover:shadow-xl transition-all"
-      style={{ bottom: "max(2rem, calc(env(safe-area-inset-bottom) + 1rem))" }}
+      style={{
+        bottom: isMobile
+          ? "max(4.5rem, calc(env(safe-area-inset-bottom) + 4.5rem))"
+          : "max(2rem, calc(env(safe-area-inset-bottom) + 1rem))",
+      }}
       size="icon"
       aria-label="Add event"
     >
