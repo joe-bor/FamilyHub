@@ -2,7 +2,12 @@ import { lazy, Suspense, useEffect, useState } from "react";
 import { useSetupComplete } from "@/api";
 import { CalendarModule } from "@/components/calendar";
 import { HomeDashboard } from "@/components/home";
-import { AppHeader, NavigationTabs, SidebarMenu } from "@/components/shared";
+import {
+  AppHeader,
+  MobileBottomNav,
+  NavigationTabs,
+  SidebarMenu,
+} from "@/components/shared";
 import { Toaster } from "@/components/ui/toaster";
 import { useGoogleAuthReturn, useIsMobile } from "@/hooks";
 import {
@@ -153,13 +158,14 @@ export default function FamilyHub() {
       <div className="h-screen flex flex-col bg-background">
         {!(isMobile && activeModule === "calendar") && <AppHeader />}
 
-        <div className="flex-1 flex overflow-hidden">
+        <div className="flex-1 flex min-h-0 overflow-hidden">
           <NavigationTabs />
-          <main className="flex-1 flex flex-col overflow-hidden">
+          <main className="flex-1 min-h-0 flex flex-col overflow-hidden">
             {renderModule(activeModule)}
           </main>
         </div>
 
+        {isMobile && isAuthenticated && setupComplete && <MobileBottomNav />}
         <SidebarMenu />
       </div>
       <Toaster />

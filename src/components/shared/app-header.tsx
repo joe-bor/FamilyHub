@@ -1,4 +1,4 @@
-import { Cloud, Home, Menu, Settings, Sun } from "lucide-react";
+import { Cloud, Menu, Settings, Sun } from "lucide-react";
 import { useFamilyMembers, useFamilyName } from "@/api";
 import { Button } from "@/components/ui/button";
 import { useIsMobile } from "@/hooks";
@@ -14,13 +14,10 @@ export function AppHeader() {
   const familyMembers = useFamilyMembers();
 
   // From app-store
-  const activeModule = useAppStore((state) => state.activeModule);
-  const setActiveModule = useAppStore((state) => state.setActiveModule);
   const openSidebar = useAppStore((state) => state.openSidebar);
 
   // Mobile detection
   const isMobile = useIsMobile();
-  const showHomeButton = isMobile && activeModule !== null;
 
   const formatDate = (date: Date) => {
     return date.toLocaleDateString("en-US", {
@@ -41,18 +38,6 @@ export function AppHeader() {
   return (
     <header className="flex items-center justify-between px-6 py-4 bg-card border-b border-border">
       <div className="flex items-center gap-4">
-        {/* Home button - mobile only, when not on home dashboard */}
-        {showHomeButton && (
-          <Button
-            variant="ghost"
-            size="icon"
-            aria-label="Home"
-            className="text-muted-foreground hover:text-foreground"
-            onClick={() => setActiveModule(null)}
-          >
-            <Home className="h-6 w-6" />
-          </Button>
-        )}
         <Button
           variant="ghost"
           size="icon"
