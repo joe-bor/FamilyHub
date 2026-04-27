@@ -1,5 +1,5 @@
 import { endOfWeek, format, startOfWeek } from "date-fns";
-import { Home, Menu } from "lucide-react";
+import { Menu } from "lucide-react";
 import { useEffect } from "react";
 import type { FamilyMember } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -9,7 +9,6 @@ import { MemberAvatar } from "./member-avatar";
 interface MobileToolbarProps {
   members: FamilyMember[];
   onOpenSidebar: () => void;
-  onGoHome: () => void;
 }
 
 const VIEW_PILLS = [
@@ -40,11 +39,7 @@ function getContextLabel(calendarView: string, currentDate: Date): string {
   }
 }
 
-export function MobileToolbar({
-  members,
-  onOpenSidebar,
-  onGoHome,
-}: MobileToolbarProps) {
+export function MobileToolbar({ members, onOpenSidebar }: MobileToolbarProps) {
   const calendarView = useCalendarStore((s) => s.calendarView);
   const currentDate = useCalendarStore((s) => s.currentDate);
   const setCalendarView = useCalendarStore((s) => s.setCalendarView);
@@ -89,14 +84,6 @@ export function MobileToolbar({
             )}
           >
             Today
-          </button>
-          <button
-            type="button"
-            onClick={onGoHome}
-            aria-label="Home"
-            className="p-2 text-foreground/70 hover:text-foreground"
-          >
-            <Home className="w-4 h-4" />
           </button>
           <button
             type="button"

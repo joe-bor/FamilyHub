@@ -12,24 +12,12 @@ describe("MobileToolbar", () => {
       calendarView: "monthly",
       currentDate: new Date(2026, 2, 18), // March 2026
     });
-    render(
-      <MobileToolbar
-        members={mockMembers}
-        onOpenSidebar={vi.fn()}
-        onGoHome={vi.fn()}
-      />,
-    );
+    render(<MobileToolbar members={mockMembers} onOpenSidebar={vi.fn()} />);
     expect(screen.getByText(/March 2026/)).toBeInTheDocument();
   });
 
   it("renders view switcher with D/W/M/S pills", () => {
-    render(
-      <MobileToolbar
-        members={mockMembers}
-        onOpenSidebar={vi.fn()}
-        onGoHome={vi.fn()}
-      />,
-    );
+    render(<MobileToolbar members={mockMembers} onOpenSidebar={vi.fn()} />);
     expect(screen.getByRole("button", { name: /daily/i })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /weekly/i })).toBeInTheDocument();
     expect(
@@ -41,38 +29,29 @@ describe("MobileToolbar", () => {
   });
 
   it("renders member filter dots for each member", () => {
-    render(
-      <MobileToolbar
-        members={mockMembers}
-        onOpenSidebar={vi.fn()}
-        onGoHome={vi.fn()}
-      />,
-    );
+    render(<MobileToolbar members={mockMembers} onOpenSidebar={vi.fn()} />);
     expect(screen.getByText("A")).toBeInTheDocument(); // Alice initial
     expect(screen.getByText("B")).toBeInTheDocument(); // Bob initial
   });
 
   it("renders Today button", () => {
-    render(
-      <MobileToolbar
-        members={mockMembers}
-        onOpenSidebar={vi.fn()}
-        onGoHome={vi.fn()}
-      />,
-    );
+    render(<MobileToolbar members={mockMembers} onOpenSidebar={vi.fn()} />);
     expect(screen.getByRole("button", { name: /today/i })).toBeInTheDocument();
   });
 
   it("renders hamburger menu button", () => {
     const onOpenSidebar = vi.fn();
     render(
-      <MobileToolbar
-        members={mockMembers}
-        onOpenSidebar={onOpenSidebar}
-        onGoHome={vi.fn()}
-      />,
+      <MobileToolbar members={mockMembers} onOpenSidebar={onOpenSidebar} />,
     );
     const menuButton = screen.getByRole("button", { name: /menu/i });
     expect(menuButton).toBeInTheDocument();
+  });
+
+  it("does not render a Home button", () => {
+    render(<MobileToolbar members={mockMembers} onOpenSidebar={vi.fn()} />);
+    expect(
+      screen.queryByRole("button", { name: /^home$/i }),
+    ).not.toBeInTheDocument();
   });
 });
