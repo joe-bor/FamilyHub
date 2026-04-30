@@ -41,28 +41,28 @@ test.describe("Mobile Bottom Navigation", () => {
       await expect(nav.getByRole("button", { name: tab })).toBeVisible();
     }
 
-    await page.getByRole("button", { name: "Calendar" }).click();
+    await nav.getByRole("button", { name: "Calendar" }).click();
     await expect(page.getByRole("button", { name: "Add event" })).toBeVisible();
 
-    await page.getByRole("button", { name: "Home" }).click();
+    await nav.getByRole("button", { name: "Home" }).click();
     await expect(
       page.getByRole("heading", { name: "Home", level: 1 }),
     ).toBeVisible();
 
-    await page.getByRole("button", { name: "Lists" }).click();
+    await nav.getByRole("button", { name: "Lists" }).click();
     await expect(page.getByRole("heading", { name: "My Lists" })).toBeVisible();
 
-    await page.getByRole("button", { name: "Chores" }).click();
+    await nav.getByRole("button", { name: "Chores" }).click();
     await expect(
       page.getByRole("heading", { name: "Today's Chores" }),
     ).toBeVisible();
 
-    await page.getByRole("button", { name: "Meals" }).click();
+    await nav.getByRole("button", { name: "Meals" }).click();
     await expect(
       page.getByRole("heading", { name: "Meal Planning" }),
     ).toBeVisible();
 
-    await page.getByRole("button", { name: "Photos" }).click();
+    await nav.getByRole("button", { name: "Photos" }).click();
     await expect(
       page.getByRole("heading", { name: "Family Photos" }),
     ).toBeVisible();
@@ -80,13 +80,11 @@ test.describe("Mobile Bottom Navigation", () => {
     ).not.toBeVisible();
   });
 
-  test("is absent on onboarding/setup", async ({ page }) => {
-    await page.evaluate(() => {
-      localStorage.setItem("family-hub-auth-token", "setup-only-token");
-    });
-
+  test("is absent on onboarding", async ({ page }) => {
     await page.reload();
     await waitForHydration(page);
+
+    await page.getByRole("button", { name: "Create an account" }).click();
 
     await expect(
       page.getByRole("heading", { name: "Welcome to FamilyHub" }),
