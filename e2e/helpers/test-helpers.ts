@@ -180,18 +180,19 @@ export async function createEvent(
   // Use safeClick for the FAB to handle TanStack Query DevTools overlap
   // when running locally without VITE_E2E=true
   await safeClick(page.getByRole("button", { name: "Add event" }));
-  await expect(page.getByRole("dialog")).toBeVisible();
+  const dialog = page.getByRole("dialog", { name: "Add Event" });
+  await expect(dialog).toBeVisible();
 
-  await page.getByLabel("Event Name").fill(options.title);
+  await dialog.getByLabel("Event Name").fill(options.title);
 
   // Toggle all-day if requested (before recurrence, since form order matters)
   if (options.allDay) {
-    await page.getByRole("switch").click();
+    await dialog.getByRole("switch").click();
   }
 
   // Set recurrence if requested
   if (options.recurrence) {
-    const select = page.locator("select");
+    const select = dialog.locator("select");
     await select.selectOption(options.recurrence.frequency);
 
     // Toggle custom day buttons
@@ -199,43 +200,55 @@ export async function createEvent(
       options.recurrence.frequency === "weekly-custom" &&
       options.recurrence.customDays
     ) {
-      for (const day of options.recurrence.customDays) {
-        await page.getByRole("button", { name: day, exact: true }).click();
+      const desiredDays = new Set(options.recurrence.customDays);
+      for (const day of ["MO", "TU", "WE", "TH", "FR", "SA", "SU"]) {
+        const dayButton = dialog.getByRole("button", {
+          name: day,
+          exact: true,
+        });
+        const isPressed =
+          (await dayButton.getAttribute("aria-pressed")) === "true";
+        const shouldBePressed = desiredDays.has(day);
+
+        if (isPressed !== shouldBePressed) {
+          await dayButton.click();
+        }
       }
     }
 
     // Set custom interval
     if (options.recurrence.interval) {
-      const spinbutton = page.getByRole("spinbutton");
+      const spinbutton = dialog.getByRole("spinbutton");
       await spinbutton.clear();
       await spinbutton.fill(String(options.recurrence.interval));
     }
 
     // Set end date
     if (options.recurrence.endDate) {
-      await page.getByText("On date").click();
+      await dialog.getByText("On date").click();
       // "On date" auto-fills with today's date. The recurrence end date
       // DatePicker is the second date-picker button within the dialog (after
       // the event date picker). Scope to dialog to avoid hitting view switcher.
-      const dialog = page.getByRole("dialog");
       const datePickers = dialog.locator("button:has(svg.lucide-calendar)");
       const endDateBtn = datePickers.nth(1);
       await endDateBtn.click();
       // Wait for calendar popover to appear, then click the target day.
       // react-day-picker v9 renders day buttons inside a table.
       const dayNum = options.recurrence.endDate.getDate();
-      const popover = page.locator("[data-radix-popper-content-wrapper]");
-      await expect(popover.first()).toBeVisible();
+      const popover = page
+        .locator("[data-radix-popper-content-wrapper]")
+        .last();
+      await expect(popover).toBeVisible();
       await popover
-        .locator("table button")
+        .locator("table button:not([disabled])")
         .filter({ hasText: new RegExp(`^${dayNum}$`) })
         .click();
     }
   }
 
-  await page.getByRole("button", { name: "Add Event" }).click();
+  await dialog.getByRole("button", { name: "Add Event" }).click();
   // Use named dialog to avoid strict mode violation from closed Radix popovers
-  await expect(page.getByRole("dialog", { name: "Add Event" })).toBeHidden();
+  await expect(dialog).toBeHidden();
 }
 
 /**
