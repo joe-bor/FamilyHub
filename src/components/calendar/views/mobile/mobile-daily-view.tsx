@@ -9,11 +9,11 @@ import {
 } from "@/lib/time-utils";
 import { type CalendarEvent, colorMap, type FamilyMember } from "@/lib/types";
 import { cn } from "@/lib/utils";
-import { MOBILE_FAB_SCROLL_PADDING } from "../../components/floating-action-layout";
 import {
   CurrentTimeIndicator,
   useAutoScrollToNow,
 } from "../../components/current-time-indicator";
+import { MOBILE_FAB_SCROLL_PADDING } from "../../components/floating-action-layout";
 import { SwipeContainer } from "./swipe-container";
 
 interface MobileDailyViewProps {

@@ -12,8 +12,8 @@ import {
 } from "@/lib/time-utils";
 import { type CalendarEvent, colorMap, getFamilyMember } from "@/lib/types";
 import { cn } from "@/lib/utils";
-import { MOBILE_FAB_SCROLL_PADDING } from "../components/floating-action-layout";
 import type { FilterState } from "../components/calendar-filter";
+import { MOBILE_FAB_SCROLL_PADDING } from "../components/floating-action-layout";
 import { MemberAvatar } from "../components/member-avatar";
 
 interface ScheduleCalendarProps {
