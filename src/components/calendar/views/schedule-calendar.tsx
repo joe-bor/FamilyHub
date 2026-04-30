@@ -3,6 +3,7 @@ import { Clock, MapPin } from "lucide-react";
 import type React from "react";
 import { useMemo } from "react";
 import { useFamilyMembers } from "@/api";
+import { useIsMobile } from "@/hooks";
 import {
   compareEventsAllDayFirst,
   formatLocalDate,
@@ -11,6 +12,7 @@ import {
 } from "@/lib/time-utils";
 import { type CalendarEvent, colorMap, getFamilyMember } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { MOBILE_FAB_SCROLL_PADDING } from "../components/floating-action-layout";
 import type { FilterState } from "../components/calendar-filter";
 import { MemberAvatar } from "../components/member-avatar";
 
@@ -28,6 +30,7 @@ export function ScheduleCalendar({
   filter,
 }: ScheduleCalendarProps) {
   const familyMembers = useFamilyMembers();
+  const isMobile = useIsMobile();
   const today = new Date();
 
   // Memoize grouped events for the next 14 days
@@ -74,7 +77,12 @@ export function ScheduleCalendar({
   };
 
   return (
-    <div className="flex-1 overflow-y-auto bg-background p-3 sm:p-4 scroll-pt-12">
+    <div
+      className="flex-1 overflow-y-auto bg-background p-3 sm:p-4 scroll-pt-12"
+      style={{
+        paddingBottom: isMobile ? MOBILE_FAB_SCROLL_PADDING : undefined,
+      }}
+    >
       {groupedEvents.length === 0 ? (
         <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
           <Calendar className="w-16 h-16 mb-4 opacity-50" />

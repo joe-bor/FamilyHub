@@ -13,6 +13,26 @@ const defaultFilter = {
   showAllDayEvents: true,
 };
 
+const expectedBottomPadding =
+  "max(8.5rem, calc(env(safe-area-inset-bottom) + 8.5rem))";
+
+function setMobile(isMobile: boolean) {
+  Object.defineProperty(window, "innerWidth", {
+    configurable: true,
+    value: isMobile ? 390 : 1024,
+  });
+  vi.mocked(window.matchMedia).mockImplementation((query: string) => ({
+    matches: isMobile && query.includes("max-width: 639px"),
+    media: query,
+    onchange: null,
+    addListener: vi.fn(),
+    removeListener: vi.fn(),
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+    dispatchEvent: vi.fn(),
+  }));
+}
+
 describe("ScheduleCalendar", () => {
   beforeEach(() => {
     seedFamilyStore({
@@ -157,5 +177,23 @@ describe("ScheduleCalendar", () => {
 
     // testEvents[1] belongs to member-2 (Jane) — should NOT appear
     expect(screen.queryByText("Lunch with Team")).not.toBeInTheDocument();
+  });
+
+  it("reserves bottom clearance on mobile for the floating action button", () => {
+    setMobile(true);
+
+    const { container } = render(
+      <ScheduleCalendar
+        events={testEvents}
+        currentDate={new Date(2026, 2, 18)}
+        filter={defaultFilter}
+      />,
+    );
+
+    const scrollArea = container.querySelector(".overflow-y-auto");
+    expect(scrollArea).not.toBeNull();
+    expect(scrollArea).toHaveStyle({
+      paddingBottom: expectedBottomPadding,
+    });
   });
 });

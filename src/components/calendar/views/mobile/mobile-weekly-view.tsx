@@ -15,6 +15,7 @@ import {
 } from "@/lib/time-utils";
 import { type CalendarEvent, colorMap, type FamilyMember } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { MOBILE_FAB_SCROLL_PADDING } from "../../components/floating-action-layout";
 import { SwipeContainer } from "./swipe-container";
 
 interface MobileWeeklyViewProps {
@@ -132,7 +133,10 @@ export function MobileWeeklyView({
       </nav>
 
       {/* Day-by-Day Event List */}
-      <div className="flex-1 overflow-y-auto">
+      <div
+        className="flex-1 overflow-y-auto"
+        style={{ paddingBottom: MOBILE_FAB_SCROLL_PADDING }}
+      >
         {weekDays.map((day, index) => {
           const dayEvents = eventsByDay[index];
           const today = isToday(day);

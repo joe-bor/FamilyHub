@@ -9,6 +9,7 @@ import {
 } from "@/lib/time-utils";
 import { type CalendarEvent, colorMap, type FamilyMember } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { MOBILE_FAB_SCROLL_PADDING } from "../../components/floating-action-layout";
 import {
   CurrentTimeIndicator,
   useAutoScrollToNow,
@@ -162,7 +163,11 @@ export function MobileDailyView({
       className="flex flex-col"
     >
       {/* Scrollable grid */}
-      <div className="flex-1 overflow-y-auto" ref={scrollContainerRef}>
+      <div
+        className="flex-1 overflow-y-auto"
+        ref={scrollContainerRef}
+        style={{ paddingBottom: MOBILE_FAB_SCROLL_PADDING }}
+      >
         <div className="flex">
           {/* Time column — 32px (w-8) */}
           <div className="w-8 shrink-0 bg-card border-r border-border">

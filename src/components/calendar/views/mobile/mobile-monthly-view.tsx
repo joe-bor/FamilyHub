@@ -17,6 +17,7 @@ import {
 } from "@/lib/time-utils";
 import { type CalendarEvent, colorMap, type FamilyMember } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { MOBILE_FAB_SCROLL_PADDING } from "../../components/floating-action-layout";
 import { SwipeContainer } from "./swipe-container";
 
 interface MobileMonthlyViewProps {
@@ -162,7 +163,10 @@ export function MobileMonthlyView({
       <div className="border-t border-border my-2 shrink-0" />
 
       {/* Selected Day Event List */}
-      <div className="flex-1 overflow-y-auto">
+      <div
+        className="flex-1 overflow-y-auto"
+        style={{ paddingBottom: MOBILE_FAB_SCROLL_PADDING }}
+      >
         {/* Selected day header */}
         <div className="px-4 pb-2 shrink-0">
           <h2 className="font-semibold text-sm text-foreground">
