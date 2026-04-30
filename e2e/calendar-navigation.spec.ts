@@ -42,10 +42,11 @@ test.describe("Calendar View Navigation", () => {
     // Create an event so we can test filtering
     // Use safeClick because on mobile the sticky header can intercept pointer events
     await safeClick(page.getByRole("button", { name: "Add event" }));
-    await expect(page.getByRole("dialog")).toBeVisible();
-    await page.getByLabel("Event Name").fill("Alice's Task");
-    await page.getByRole("button", { name: "Add Event" }).click();
-    await expect(page.getByRole("dialog")).toBeHidden();
+    const addDialog = page.getByRole("dialog", { name: "Add Event" });
+    await expect(addDialog).toBeVisible();
+    await addDialog.getByLabel("Event Name").fill("Alice's Task");
+    await addDialog.getByRole("button", { name: "Add Event" }).click();
+    await expect(addDialog).toBeHidden();
 
     // Verify event is visible
     await expect(page.getByText("Alice's Task")).toBeVisible();
