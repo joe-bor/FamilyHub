@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { useShallow } from "zustand/shallow";
 import type { CalendarEvent, CalendarViewType, FilterState } from "@/lib/types";
+import type { EventFormData } from "@/lib/validations";
 
 interface CalendarState {
   // Client-only state (server state is now in TanStack Query)
@@ -10,6 +11,7 @@ interface CalendarState {
   hasUserSetView: boolean; // Track if user explicitly changed view (for smart defaulting)
   filter: FilterState;
   isAddEventModalOpen: boolean;
+  addEventDefaults: Partial<EventFormData> | null;
 
   // Event detail modal state
   selectedEvent: CalendarEvent | null;
@@ -37,7 +39,7 @@ interface CalendarState {
   initializeSelectedMembers: (memberIds: string[]) => void;
 
   // Modal actions
-  openAddEventModal: () => void;
+  openAddEventModal: (defaultValues?: Partial<EventFormData>) => void;
   closeAddEventModal: () => void;
 
   // Detail modal actions
@@ -61,6 +63,7 @@ export const useCalendarStore = create<CalendarState>()(
         showAllDayEvents: true,
       },
       isAddEventModalOpen: false,
+      addEventDefaults: null,
 
       // Event detail modal state
       selectedEvent: null,
@@ -204,8 +207,13 @@ export const useCalendarStore = create<CalendarState>()(
       },
 
       // Modal actions
-      openAddEventModal: () => set({ isAddEventModalOpen: true }),
-      closeAddEventModal: () => set({ isAddEventModalOpen: false }),
+      openAddEventModal: (defaultValues) =>
+        set({
+          isAddEventModalOpen: true,
+          addEventDefaults: defaultValues ?? null,
+        }),
+      closeAddEventModal: () =>
+        set({ isAddEventModalOpen: false, addEventDefaults: null }),
 
       // Detail modal actions
       openDetailModal: (event) =>
@@ -276,6 +284,7 @@ export const useCalendarState = () =>
       calendarView: state.calendarView,
       filter: state.filter,
       isAddEventModalOpen: state.isAddEventModalOpen,
+      addEventDefaults: state.addEventDefaults,
     })),
   );
 

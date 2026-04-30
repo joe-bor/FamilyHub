@@ -1,7 +1,8 @@
 import type { APIRequestContext, Page } from "@playwright/test";
+import type { CreateEventRequest } from "../../src/lib/types/calendar";
 import type { FamilyColor } from "../../src/lib/types/family";
 
-const API_BASE = "http://localhost:8080/api";
+const API_BASE = "http://127.0.0.1:8080/api";
 
 interface RegisterOptions {
   familyName: string;
@@ -69,4 +70,25 @@ export async function seedBrowserAuth(
       }),
     );
   }, registration);
+}
+
+/**
+ * Create a calendar event through the real backend API using an authenticated token.
+ */
+export async function createCalendarEvent(
+  request: APIRequestContext,
+  token: string,
+  event: CreateEventRequest,
+): Promise<void> {
+  const response = await request.post(`${API_BASE}/calendar/events`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    data: event,
+  });
+
+  if (!response.ok()) {
+    const body = await response.text();
+    throw new Error(`Create event failed (${response.status()}): ${body}`);
+  }
 }

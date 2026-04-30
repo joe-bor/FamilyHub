@@ -8,13 +8,27 @@ import {
   waitFor,
 } from "./test/test-utils";
 
-function setMobile(isMobile: boolean) {
+function setViewportWidth(width: number) {
   Object.defineProperty(window, "innerWidth", {
     configurable: true,
-    value: isMobile ? 390 : 1024,
+    value: width,
   });
+
   vi.mocked(window.matchMedia).mockImplementation((query: string) => ({
-    matches: isMobile && query.includes("max-width: 639px"),
+    matches: (() => {
+      const maxWidth = Number.parseInt(
+        query.match(/max-width:\s*(\d+)px/)?.[1] ?? "",
+        10,
+      );
+      const minWidth = Number.parseInt(
+        query.match(/min-width:\s*(\d+)px/)?.[1] ?? "",
+        10,
+      );
+
+      const matchesMax = Number.isNaN(maxWidth) || width <= maxWidth;
+      const matchesMin = Number.isNaN(minWidth) || width >= minWidth;
+      return matchesMax && matchesMin;
+    })(),
     media: query,
     onchange: null,
     addListener: vi.fn(),
@@ -35,7 +49,7 @@ describe("App shell", () => {
   });
 
   it("renders mobile bottom nav with Home active on mobile home", async () => {
-    setMobile(true);
+    setViewportWidth(768);
     useAppStore.setState({ activeModule: null, isSidebarOpen: false });
 
     render(<FamilyHub />);
@@ -51,7 +65,7 @@ describe("App shell", () => {
   });
 
   it("suppresses AppHeader on mobile calendar while keeping bottom nav", async () => {
-    setMobile(true);
+    setViewportWidth(768);
     useAppStore.setState({ activeModule: "calendar", isSidebarOpen: false });
 
     render(<FamilyHub />);
@@ -67,7 +81,7 @@ describe("App shell", () => {
   });
 
   it("does not render bottom nav on desktop", async () => {
-    setMobile(false);
+    setViewportWidth(769);
     useAppStore.setState({ activeModule: "calendar", isSidebarOpen: false });
 
     render(<FamilyHub />);
@@ -81,7 +95,7 @@ describe("App shell", () => {
   });
 
   it("does not render bottom nav on login screen", async () => {
-    setMobile(true);
+    setViewportWidth(768);
     seedAuthStore({ isAuthenticated: false });
 
     render(<FamilyHub />);

@@ -124,14 +124,30 @@ export const handlers = [
 
     let events = [...mockEvents];
 
-    // Apply date range filter (use parseLocalDate for consistent timezone handling)
-    if (startDate) {
-      const start = parseLocalDate(startDate);
-      events = events.filter((e) => parseLocalDate(e.date) >= start);
-    }
-    if (endDate) {
-      const end = parseLocalDate(endDate);
-      events = events.filter((e) => parseLocalDate(e.date) <= end);
+    // Apply date range overlap filtering to match the real backend.
+    // Multi-day all-day events should be returned when any part of the
+    // event overlaps the requested range, not only when the start date
+    // falls inside the range.
+    if (startDate || endDate) {
+      const rangeStart = startDate ? parseLocalDate(startDate) : null;
+      const rangeEnd = endDate ? parseLocalDate(endDate) : null;
+
+      events = events.filter((event) => {
+        const eventStart = parseLocalDate(event.date);
+        const eventEnd = event.endDate
+          ? parseLocalDate(event.endDate)
+          : eventStart;
+
+        if (rangeStart && eventEnd < rangeStart) {
+          return false;
+        }
+
+        if (rangeEnd && eventStart > rangeEnd) {
+          return false;
+        }
+
+        return true;
+      });
     }
 
     // Apply member filter

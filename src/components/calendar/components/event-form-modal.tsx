@@ -18,6 +18,7 @@ interface EventFormModalProps {
   onClose: () => void;
   onSubmit: (data: EventFormData) => void;
   isPending?: boolean;
+  defaultValues?: Partial<EventFormData>;
   /** For edit mode: the event to pre-populate the form with */
   event?: CalendarEvent;
   showRecurrencePicker?: boolean;
@@ -58,6 +59,7 @@ function EventFormModal({
   onClose,
   onSubmit,
   isPending = false,
+  defaultValues,
   event,
   showRecurrencePicker,
 }: EventFormModalProps) {
@@ -65,14 +67,14 @@ function EventFormModal({
   const title = mode === "add" ? "Add Event" : "Edit Event";
 
   // For edit mode, convert the event to form data
-  const defaultValues = event ? eventToFormData(event) : undefined;
+  const formDefaultValues = event ? eventToFormData(event) : defaultValues;
 
   if (isMobile) {
     return (
       <MobileEventSheet isOpen={isOpen} onClose={onClose} title={title}>
         <EventForm
           mode={mode}
-          defaultValues={defaultValues}
+          defaultValues={formDefaultValues}
           onSubmit={onSubmit}
           onCancel={onClose}
           isPending={isPending}
@@ -91,7 +93,7 @@ function EventFormModal({
         </DialogHeader>
         <EventForm
           mode={mode}
-          defaultValues={defaultValues}
+          defaultValues={formDefaultValues}
           onSubmit={onSubmit}
           onCancel={onClose}
           isPending={isPending}

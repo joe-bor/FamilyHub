@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-const MOBILE_BREAKPOINT = 640; // Matches Tailwind's sm: breakpoint
+const MOBILE_BREAKPOINT = 768; // Matches the dashboard contract's mobile shell boundary
 
 /**
  * Hook to detect if the current viewport is mobile-sized.
@@ -9,11 +9,11 @@ const MOBILE_BREAKPOINT = 640; // Matches Tailwind's sm: breakpoint
 export function useIsMobile(): boolean {
   const [isMobile, setIsMobile] = useState(() => {
     if (typeof window === "undefined") return false;
-    return window.innerWidth < MOBILE_BREAKPOINT;
+    return window.innerWidth <= MOBILE_BREAKPOINT;
   });
 
   useEffect(() => {
-    const mq = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT - 1}px)`);
+    const mq = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT}px)`);
     const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches);
 
     setIsMobile(mq.matches);
