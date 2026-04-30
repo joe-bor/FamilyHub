@@ -2,6 +2,9 @@ import type { CalendarEvent } from "@/lib/types";
 import { fireEvent, render, screen } from "@/test/test-utils";
 import { MobileDailyView } from "./mobile-daily-view";
 
+const expectedBottomPadding =
+  "max(8.5rem, calc(env(safe-area-inset-bottom) + 8.5rem))";
+
 const mockEvents: CalendarEvent[] = [
   {
     id: "1",
@@ -93,5 +96,24 @@ describe("MobileDailyView", () => {
     // so we check the element's inline style property directly.
     const swipeEl = container.firstChild as HTMLElement;
     expect(swipeEl.style.touchAction).toBe("pan-y");
+  });
+
+  it("reserves bottom clearance for the floating action button", () => {
+    const { container } = render(
+      <MobileDailyView
+        events={mockEvents}
+        currentDate={new Date(2026, 2, 18)}
+        memberMap={mockMemberMap}
+        onEventClick={vi.fn()}
+        onSwipeLeft={vi.fn()}
+        onSwipeRight={vi.fn()}
+      />,
+    );
+
+    const scrollArea = container.querySelector(".overflow-y-auto");
+    expect(scrollArea).not.toBeNull();
+    expect(scrollArea).toHaveStyle({
+      paddingBottom: expectedBottomPadding,
+    });
   });
 });

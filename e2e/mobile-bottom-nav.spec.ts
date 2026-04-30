@@ -1,6 +1,12 @@
 import { expect, test } from "@playwright/test";
 import { registerFamily, seedBrowserAuth } from "./helpers/api-helpers";
-import { clearStorage, waitForHydration } from "./helpers/test-helpers";
+import {
+  clearStorage,
+  createEvent,
+  switchCalendarView,
+  waitForCalendarReady,
+  waitForHydration,
+} from "./helpers/test-helpers";
 
 test.describe("Mobile Bottom Navigation", () => {
   test.beforeEach(async ({ page, isMobile }) => {
@@ -92,5 +98,46 @@ test.describe("Mobile Bottom Navigation", () => {
     await expect(
       page.getByRole("navigation", { name: /primary/i }),
     ).not.toBeVisible();
+  });
+
+  test("keeps lower weekly events tappable above the bottom nav and FAB", async ({
+    page,
+    request,
+  }) => {
+    const reg = await registerFamily(request, {
+      familyName: "Calendar Clearance Family",
+      members: [{ name: "Alice", color: "coral" }],
+    });
+    await seedBrowserAuth(page, reg);
+
+    await page.reload();
+    await waitForHydration(page);
+    await waitForCalendarReady(page);
+
+    await createEvent(page, {
+      title: "Saturday Soccer",
+      recurrence: { frequency: "weekly-custom", customDays: ["SA"] },
+    });
+
+    await switchCalendarView(page, "weekly");
+
+    const weeklyList = page.locator("main div.overflow-y-auto").last();
+    await weeklyList.evaluate((element) => {
+      element.scrollTop = element.scrollHeight;
+    });
+
+    const eventCard = page.getByRole("button", { name: /Saturday Soccer/i });
+    await expect(eventCard).toBeVisible();
+
+    const box = await eventCard.boundingBox();
+    expect(box).not.toBeNull();
+    await page.touchscreen.tap(
+      box!.x + box!.width / 2,
+      box!.y + box!.height / 2,
+    );
+
+    await expect(
+      page.getByRole("dialog", { name: "Saturday Soccer" }),
+    ).toBeVisible();
   });
 });

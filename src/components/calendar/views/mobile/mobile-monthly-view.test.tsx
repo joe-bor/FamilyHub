@@ -2,6 +2,9 @@ import type { CalendarEvent } from "@/lib/types";
 import { fireEvent, render, screen } from "@/test/test-utils";
 import { MobileMonthlyView } from "./mobile-monthly-view";
 
+const expectedBottomPadding =
+  "max(8.5rem, calc(env(safe-area-inset-bottom) + 8.5rem))";
+
 const mockEvents: CalendarEvent[] = [
   {
     id: "1",
@@ -114,5 +117,25 @@ describe("MobileMonthlyView", () => {
     );
     fireEvent.click(screen.getByText("15"));
     expect(onDaySelect).toHaveBeenCalled();
+  });
+
+  it("reserves bottom clearance for the floating action button", () => {
+    const { container } = render(
+      <MobileMonthlyView
+        events={mockEvents}
+        currentDate={new Date(2026, 2, 18)}
+        memberMap={mockMemberMap}
+        onEventClick={vi.fn()}
+        onDaySelect={vi.fn()}
+        onSwipeLeft={vi.fn()}
+        onSwipeRight={vi.fn()}
+      />,
+    );
+
+    const scrollArea = container.querySelector(".overflow-y-auto");
+    expect(scrollArea).not.toBeNull();
+    expect(scrollArea).toHaveStyle({
+      paddingBottom: expectedBottomPadding,
+    });
   });
 });
