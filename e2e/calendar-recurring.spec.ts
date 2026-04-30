@@ -72,14 +72,14 @@ test.describe("Recurring Events", () => {
     // Switch to weekly view to verify day-column placement
     await switchCalendarView(page, "weekly");
 
-    // Navigate to ensure we're on a week that includes the event
-    // The event was created today, so current week should show it
-    await expect(page.getByText("Gym").first()).toBeVisible({ timeout: 10000 });
-
-    // Switch back to daily view before opening detail modal.
-    // On mobile, the FAB overlaps event cards in the narrow weekly columns,
-    // causing clicks to hit the FAB instead of the event card.
-    await switchCalendarView(page, "daily");
+    // If the selected custom days have already passed in the current week,
+    // the first visible occurrence will land in the following week.
+    const eventCard = page.getByText("Gym").first();
+    const isVisibleThisWeek = await eventCard.isVisible().catch(() => false);
+    if (!isVisibleThisWeek) {
+      await page.getByRole("button", { name: "Next" }).click();
+    }
+    await expect(eventCard).toBeVisible({ timeout: 10000 });
 
     // Open detail modal and verify recurrence label
     const dialog = await openEventDetail(page, "Gym");
