@@ -120,19 +120,22 @@ export async function waitForDialogReady(page: Page): Promise<Locator> {
 
 /**
  * Enhanced calendar ready check that replaces networkidle with more reliable indicators.
- * Handles mobile home dashboard navigation and waits for multiple UI indicators.
+ * Handles mobile home dashboard navigation via the existing shell state and
+ * waits for multiple UI indicators.
  */
 export async function waitForCalendarReady(page: Page): Promise<void> {
-  // Check if we're on the mobile home dashboard
-  const homeHeading = page.getByRole("heading", { name: "Home", level: 1 });
-  const isOnHomeDashboard = await homeHeading.isVisible().catch(() => false);
+  const primaryNav = page.getByRole("navigation", { name: /primary/i });
+  const hasMobileNav = await primaryNav.isVisible().catch(() => false);
 
-  if (isOnHomeDashboard) {
-    // Navigate to calendar from mobile home dashboard
-    await page
-      .locator("main")
-      .getByRole("button", { name: "Calendar" })
-      .click();
+  if (hasMobileNav) {
+    const homeTab = primaryNav.getByRole("button", { name: "Home" });
+    const calendarTab = primaryNav.getByRole("button", { name: "Calendar" });
+    const homeIsActive =
+      (await homeTab.getAttribute("aria-current").catch(() => null)) === "page";
+
+    if (homeIsActive) {
+      await calendarTab.click();
+    }
   }
 
   // Wait for primary calendar indicator (Add event FAB)

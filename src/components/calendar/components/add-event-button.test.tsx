@@ -1,13 +1,27 @@
 import { render, screen } from "@/test/test-utils";
 import { AddEventButton } from "./add-event-button";
 
-function setMobile(isMobile: boolean) {
+function setViewportWidth(width: number) {
   Object.defineProperty(window, "innerWidth", {
     configurable: true,
-    value: isMobile ? 390 : 1024,
+    value: width,
   });
+
   vi.mocked(window.matchMedia).mockImplementation((query: string) => ({
-    matches: isMobile && query.includes("max-width: 639px"),
+    matches: (() => {
+      const maxWidth = Number.parseInt(
+        query.match(/max-width:\s*(\d+)px/)?.[1] ?? "",
+        10,
+      );
+      const minWidth = Number.parseInt(
+        query.match(/min-width:\s*(\d+)px/)?.[1] ?? "",
+        10,
+      );
+
+      const matchesMax = Number.isNaN(maxWidth) || width <= maxWidth;
+      const matchesMin = Number.isNaN(minWidth) || width >= minWidth;
+      return matchesMax && matchesMin;
+    })(),
     media: query,
     onchange: null,
     addListener: vi.fn(),
@@ -19,8 +33,8 @@ function setMobile(isMobile: boolean) {
 }
 
 describe("AddEventButton", () => {
-  it("uses mobile bottom offset that clears bottom nav", () => {
-    setMobile(true);
+  it("uses the mobile bottom offset at 768px so the FAB clears the bottom nav", () => {
+    setViewportWidth(768);
     render(<AddEventButton onClick={vi.fn()} />);
 
     expect(screen.getByRole("button", { name: /add event/i })).toHaveStyle({
@@ -29,7 +43,7 @@ describe("AddEventButton", () => {
   });
 
   it("keeps existing desktop bottom offset", () => {
-    setMobile(false);
+    setViewportWidth(769);
     render(<AddEventButton onClick={vi.fn()} />);
 
     expect(screen.getByRole("button", { name: /add event/i })).toHaveStyle({

@@ -17,12 +17,27 @@ const expectedBottomPadding =
   "max(8.5rem, calc(env(safe-area-inset-bottom) + 8.5rem))";
 
 function setMobile(isMobile: boolean) {
+  const width = isMobile ? 390 : 1024;
+
   Object.defineProperty(window, "innerWidth", {
     configurable: true,
-    value: isMobile ? 390 : 1024,
+    value: width,
   });
   vi.mocked(window.matchMedia).mockImplementation((query: string) => ({
-    matches: isMobile && query.includes("max-width: 639px"),
+    matches: (() => {
+      const maxWidth = Number.parseInt(
+        query.match(/max-width:\s*(\d+)px/)?.[1] ?? "",
+        10,
+      );
+      const minWidth = Number.parseInt(
+        query.match(/min-width:\s*(\d+)px/)?.[1] ?? "",
+        10,
+      );
+
+      const matchesMax = Number.isNaN(maxWidth) || width <= maxWidth;
+      const matchesMin = Number.isNaN(minWidth) || width >= minWidth;
+      return matchesMax && matchesMin;
+    })(),
     media: query,
     onchange: null,
     addListener: vi.fn(),

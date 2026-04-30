@@ -51,8 +51,9 @@ test.describe("Mobile Bottom Navigation", () => {
     await expect(page.getByRole("button", { name: "Add event" })).toBeVisible();
 
     await nav.getByRole("button", { name: "Home" }).click();
+    await expect(page.getByTestId("dashboard-header")).toBeVisible();
     await expect(
-      page.getByRole("heading", { name: "Home", level: 1 }),
+      page.getByRole("button", { name: "Focus on Alice's events" }),
     ).toBeVisible();
 
     await nav.getByRole("button", { name: "Lists" }).click();
