@@ -27,7 +27,7 @@ export function MobileBottomNav() {
   return (
     <nav
       aria-label="Primary"
-      className="shrink-0 border-t border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/85 z-30"
+      className="z-30 shrink-0 border-t border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/85"
     >
       <div
         className="grid grid-cols-6 gap-1 px-2 pt-2"
@@ -45,14 +45,14 @@ export function MobileBottomNav() {
               aria-label={tab.label}
               aria-current={isActive ? "page" : undefined}
               className={cn(
-                "flex min-w-0 flex-col items-center justify-center gap-1 rounded-lg py-1.5 text-[10px] font-medium transition-colors",
+                "flex min-h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-xl px-1 py-2 text-[11px] leading-none font-semibold transition-colors",
                 isActive
-                  ? "bg-primary text-primary-foreground"
+                  ? "bg-primary text-primary-foreground shadow-sm shadow-primary/20"
                   : "text-muted-foreground hover:bg-muted hover:text-foreground",
               )}
             >
-              <Icon className="h-4 w-4" />
-              <span className="truncate leading-none">{tab.label}</span>
+              <Icon className="h-5 w-5" />
+              <span className="truncate leading-[14px]">{tab.label}</span>
             </button>
           );
         })}
