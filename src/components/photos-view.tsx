@@ -68,31 +68,33 @@ export function PhotosView() {
   };
 
   return (
-    <div className="flex-1 p-6 overflow-y-auto">
+    <div className="flex-1 overflow-y-auto p-4 sm:p-6">
       <div className="max-w-4xl mx-auto">
         {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-bold text-foreground">Family Photos</h2>
+        <div className="mb-6 flex items-center justify-between gap-3">
+          <h2 className="text-[24px] leading-8 font-semibold text-foreground">
+            Family Photos
+          </h2>
           <Button className="bg-primary hover:bg-primary/90">
-            <Upload className="h-4 w-4 mr-2" />
+            <Upload className="mr-2 h-4 w-4" />
             Upload Photo
           </Button>
         </div>
 
         {/* Photo grid */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-4 lg:grid-cols-4">
           {samplePhotos.map((photo) => (
             <button
               key={photo.id}
               onClick={() => setSelectedPhoto(photo)}
-              className="group relative aspect-square rounded-xl overflow-hidden bg-muted"
+              className="group relative aspect-square overflow-hidden rounded-xl bg-muted"
             >
               <img
                 src={photo.url || "/placeholder.svg"}
                 alt={photo.caption}
-                className="w-full h-full object-cover transition-transform group-hover:scale-105"
+                className="h-full w-full object-cover transition-transform group-hover:scale-105"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-foreground/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
+              <div className="absolute inset-0 bg-gradient-to-t from-foreground/60 to-transparent opacity-0 transition-opacity group-hover:opacity-100">
                 <span className="absolute bottom-3 left-3 text-card text-sm font-medium">
                   {photo.caption}
                 </span>
@@ -107,7 +109,7 @@ export function PhotosView() {
             <Button
               variant="ghost"
               size="icon"
-              className="absolute top-4 right-4 text-card hover:bg-card/20"
+              className="absolute right-4 top-4 text-card hover:bg-card/20"
               onClick={() => setSelectedPhoto(null)}
             >
               <X className="h-6 w-6" />
@@ -126,13 +128,13 @@ export function PhotosView() {
               <ChevronLeft className="h-8 w-8" />
             </Button>
 
-            <div className="max-w-4xl max-h-[80vh] mx-16">
+            <div className="mx-16 max-h-[80vh] max-w-4xl">
               <img
                 src={selectedPhoto.url || "/placeholder.svg"}
                 alt={selectedPhoto.caption}
-                className="max-w-full max-h-[70vh] object-contain rounded-lg"
+                className="max-h-[70vh] max-w-full rounded-lg object-contain"
               />
-              <p className="text-card text-center mt-4 text-lg font-medium">
+              <p className="mt-4 text-center text-lg font-medium text-card">
                 {selectedPhoto.caption}
               </p>
             </div>
