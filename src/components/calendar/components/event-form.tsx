@@ -197,13 +197,13 @@ function EventForm({
           aria-checked={!!isAllDayValue}
           onClick={toggleAllDay}
           className={cn(
-            "relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors",
+            "relative inline-flex h-7 w-12 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors",
             isAllDayValue ? "bg-primary" : "bg-muted",
           )}
         >
           <span
             className={cn(
-              "pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow-sm transition-transform",
+              "pointer-events-none inline-block h-6 w-6 rounded-full bg-white shadow-sm transition-transform",
               isAllDayValue ? "translate-x-5" : "translate-x-0",
             )}
           />
@@ -290,7 +290,7 @@ function EventForm({
               {...register("description")}
               placeholder="Add notes or details..."
               className={cn(
-                "flex min-h-[80px] w-full rounded-md border border-input bg-input px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 resize-y",
+                "flex min-h-[88px] w-full resize-y rounded-lg border border-input bg-input px-3 py-2 text-[15px] leading-5 placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50",
                 errors.description && "border-destructive",
               )}
               maxLength={2000}
@@ -307,7 +307,7 @@ function EventForm({
       </div>
 
       {/* Actions */}
-      <div className="flex gap-3 pt-4">
+      <div className="flex gap-3 pt-3">
         {!hideCancelButton && (
           <Button
             type="button"

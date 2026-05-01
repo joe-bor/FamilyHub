@@ -82,13 +82,17 @@ export function MobileMonthlyView({
     >
       {/* Compact Calendar Grid */}
       {/* biome-ignore lint/a11y/useSemanticElements: CSS grid layout, not table data */}
-      <div role="grid" aria-label="Monthly calendar" className="shrink-0 px-1">
+      <div
+        role="grid"
+        aria-label="Monthly calendar"
+        className="shrink-0 px-2 pt-2"
+      >
         {/* Day initials header */}
-        <div className="grid grid-cols-7 mb-1">
+        <div className="mb-1 grid grid-cols-7">
           {DAY_INITIALS.map((initial, i) => (
             <div
               key={i}
-              className="text-xs text-muted-foreground text-center py-1 font-medium"
+              className="py-1 text-center text-xs font-semibold text-muted-foreground"
             >
               {initial}
             </div>
@@ -125,8 +129,8 @@ export function MobileMonthlyView({
                 aria-label={ariaLabel}
                 aria-selected={isSelected}
                 className={cn(
-                  "flex flex-col items-center justify-center min-h-[44px] py-1 px-0.5 relative rounded-lg",
-                  "active:bg-muted/50 transition-colors",
+                  "relative flex min-h-12 flex-col items-center justify-center rounded-lg px-0.5 py-1",
+                  "transition-colors active:bg-muted/50",
                   isSelected && !today && "ring-2 ring-primary/30",
                   !isCurrentMonth && "text-muted-foreground/40",
                 )}
@@ -134,7 +138,7 @@ export function MobileMonthlyView({
                 {/* Date number */}
                 <span
                   className={cn(
-                    "text-sm font-medium leading-none w-7 h-7 flex items-center justify-center rounded-full",
+                    "flex h-7 w-7 items-center justify-center rounded-full text-sm leading-none font-semibold",
                     today && "bg-primary text-primary-foreground font-semibold",
                     !today && isSelected && "text-primary font-semibold",
                     !today && !isSelected && "text-foreground",
@@ -145,7 +149,7 @@ export function MobileMonthlyView({
                 </span>
 
                 {/* Event color dots */}
-                <div className="flex gap-0.5 items-center justify-center min-h-[6px] mt-0.5">
+                <div className="mt-1 flex min-h-[6px] items-center justify-center gap-0.5">
                   {memberColors.map((color) => (
                     <span
                       key={color}
@@ -160,7 +164,7 @@ export function MobileMonthlyView({
       </div>
 
       {/* Divider */}
-      <div className="border-t border-border my-2 shrink-0" />
+      <div className="my-3 shrink-0 border-t border-border" />
 
       {/* Selected Day Event List */}
       <div
@@ -168,19 +172,19 @@ export function MobileMonthlyView({
         style={{ paddingBottom: MOBILE_FAB_SCROLL_PADDING }}
       >
         {/* Selected day header */}
-        <div className="px-4 pb-2 shrink-0">
-          <h2 className="font-semibold text-sm text-foreground">
+        <div className="shrink-0 px-4 pb-2">
+          <h2 className="text-base leading-6 font-semibold text-foreground">
             {format(selectedDate, "EEEE, MMM d")}
           </h2>
         </div>
 
         {/* Event rows */}
         {selectedDayEvents.length === 0 ? (
-          <div className="flex items-center min-h-[44px] px-4">
-            <span className="text-muted-foreground text-sm">No events</span>
+          <div className="flex min-h-12 items-center px-4">
+            <span className="text-sm text-muted-foreground">No events</span>
           </div>
         ) : (
-          <div className="space-y-1 px-3">
+          <div className="space-y-2 px-3">
             {selectedDayEvents.map((event) => {
               const member = memberMap.get(event.memberId);
               const color = (member?.color ?? "coral") as keyof typeof colorMap;
@@ -195,21 +199,21 @@ export function MobileMonthlyView({
                   type="button"
                   onClick={() => onEventClick(event)}
                   className={cn(
-                    "w-full flex items-center gap-3 px-3 min-h-[44px] rounded-lg",
-                    "active:bg-muted/50 transition-colors text-left bg-muted/20",
+                    "flex min-h-12 w-full items-center gap-3 rounded-xl px-3",
+                    "bg-muted/20 text-left transition-colors active:bg-muted/50",
                   )}
                 >
                   {/* Member color left border accent */}
                   <span
                     className={cn(
-                      "w-[3px] self-stretch rounded-sm shrink-0",
+                      "w-[3px] shrink-0 self-stretch rounded-sm",
                       borderColorClass,
                     )}
                   />
 
                   {/* Event details */}
-                  <div className="flex-1 min-w-0 py-2">
-                    <span className="text-sm font-medium truncate block">
+                  <div className="min-w-0 flex-1 py-2">
+                    <span className="block truncate text-[15px] leading-5 font-semibold">
                       {event.title}
                     </span>
                     <span className="text-xs text-muted-foreground">

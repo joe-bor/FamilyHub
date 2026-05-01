@@ -78,7 +78,7 @@ export function ScheduleCalendar({
 
   return (
     <div
-      className="flex-1 overflow-y-auto bg-background p-3 sm:p-4 scroll-pt-12"
+      className="scroll-pt-12 flex-1 overflow-y-auto bg-background p-4"
       style={{
         paddingBottom: isMobile ? MOBILE_FAB_SCROLL_PADDING : undefined,
       }}
@@ -92,13 +92,13 @@ export function ScheduleCalendar({
           </p>
         </div>
       ) : (
-        <div className="space-y-6 max-w-3xl mx-auto">
+        <div className="mx-auto max-w-3xl space-y-5">
           {groupedEvents.map(({ date, events: dayEvents }) => (
             <div key={formatLocalDate(date)}>
               {/* Date header - sticky with colored background for Today */}
               <div
                 className={cn(
-                  "sticky top-0 z-10 py-2 px-3 mb-3 rounded-lg",
+                  "sticky top-0 z-10 mb-3 rounded-xl px-3 py-2.5",
                   "flex items-center gap-2",
                   isToday(date)
                     ? "bg-primary text-primary-foreground"
@@ -109,7 +109,7 @@ export function ScheduleCalendar({
               </div>
 
               {/* Events list - simplified cards with colored left border */}
-              <div className="space-y-1.5">
+              <div className="space-y-2">
                 {dayEvents.map((event) => {
                   const member = getFamilyMember(familyMembers, event.memberId);
                   return (
@@ -118,7 +118,7 @@ export function ScheduleCalendar({
                       key={getEventKey(event)}
                       onClick={() => onEventClick?.(event)}
                       className={cn(
-                        "flex items-center p-2.5 sm:p-3 rounded-lg cursor-pointer text-left w-full min-h-[48px]",
+                        "flex min-h-14 w-full cursor-pointer items-center rounded-xl p-3 text-left",
                         "transition-all hover:shadow-md hover:scale-[1.005]",
                         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
                         "border-l-4 ring-1 ring-inset ring-black/5",
@@ -128,13 +128,13 @@ export function ScheduleCalendar({
                         member ? colorMap[member.color]?.light : "bg-muted",
                       )}
                     >
-                      <div className="flex flex-col flex-1 min-w-0">
-                        <h3 className="font-semibold text-foreground truncate">
+                      <div className="flex min-w-0 flex-1 flex-col">
+                        <h3 className="truncate text-[17px] leading-6 font-semibold text-foreground">
                           {event.title}
                         </h3>
-                        <div className="flex items-center gap-2 mt-1 text-sm text-muted-foreground">
+                        <div className="mt-1 flex items-center gap-2 text-sm leading-5 text-muted-foreground">
                           <div className="flex items-center gap-1">
-                            <Clock className="w-3.5 h-3.5" />
+                            <Clock className="h-3.5 w-3.5" />
                             <span>
                               {event.isAllDay
                                 ? "All day"
@@ -147,7 +147,7 @@ export function ScheduleCalendar({
                                 ·
                               </span>
                               <div className="flex items-center gap-1">
-                                <MapPin className="w-3.5 h-3.5" />
+                                <MapPin className="h-3.5 w-3.5" />
                                 <span className="truncate">
                                   {event.location}
                                 </span>

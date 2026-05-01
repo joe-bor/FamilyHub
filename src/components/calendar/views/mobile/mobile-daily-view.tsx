@@ -170,15 +170,15 @@ export function MobileDailyView({
       >
         <div className="flex">
           {/* Time column — 32px (w-8) */}
-          <div className="w-8 shrink-0 bg-card border-r border-border">
+          <div className="w-9 shrink-0 border-r border-border bg-card">
             {ALL_HOURS.map((hour) => (
               <div
                 key={hour}
-                className="flex items-start justify-end pr-1 pt-0.5 border-b border-border/50"
+                className="flex items-start justify-end border-b border-border/50 pr-1.5 pt-1"
                 style={{ height: `${ROW_HEIGHT}px` }}
               >
                 {EVEN_HOUR_SET.has(hour) && (
-                  <span className="text-[10px] text-foreground/60 font-medium leading-none">
+                  <span className="text-[10px] leading-none font-semibold text-foreground/55">
                     {EVEN_HOUR_LABEL[hour]}
                   </span>
                 )}
@@ -188,7 +188,7 @@ export function MobileDailyView({
 
           {/* Event grid — relative container for absolute-positioned events */}
           <div
-            className={cn("flex-1 relative", isCurrentDay && "bg-primary/5")}
+            className={cn("relative flex-1", isCurrentDay && "bg-primary/5")}
           >
             {/* Grid rows */}
             {ALL_HOURS.map((hour, index) => (
@@ -243,9 +243,9 @@ export function MobileDailyView({
                   key={getEventKey(event)}
                   onClick={() => onEventClick(originalEvent)}
                   className={cn(
-                    "absolute overflow-hidden rounded-lg text-left",
-                    "bg-card border border-border/50 shadow-sm",
-                    "active:opacity-80 transition-opacity",
+                    "absolute overflow-hidden rounded-xl text-left",
+                    "border border-border/60 bg-card shadow-sm",
+                    "transition-opacity active:opacity-80",
                   )}
                   style={{
                     top: `${top}px`,
@@ -256,12 +256,12 @@ export function MobileDailyView({
                     borderLeftColor: borderColor,
                   }}
                 >
-                  <div className="px-1.5 py-1 h-full flex flex-col justify-start">
-                    <span className="font-semibold text-[13px] leading-tight truncate block">
+                  <div className="flex h-full flex-col justify-start px-2 py-1.5">
+                    <span className="block truncate text-[13px] leading-4 font-semibold">
                       {event.title}
                     </span>
                     {height >= 30 && (
-                      <span className="text-[11px] text-muted-foreground leading-tight">
+                      <span className="text-[11px] leading-4 text-muted-foreground">
                         {event.startTime}
                       </span>
                     )}
