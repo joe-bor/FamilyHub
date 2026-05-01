@@ -107,11 +107,14 @@ test.describe("First-Time User Onboarding", () => {
       page.getByRole("heading", { name: /create your login/i }),
     ).toBeHidden({ timeout: 10000 });
 
-    // Verify main app is showing — family name is visible on home dashboard/header
-    // Check BEFORE navigating to calendar (mobile hides AppHeader in calendar view)
-    await expect(page.getByText("The Johnsons")).toBeVisible({
+    // Verify the app lands on mobile Home. Scope to the dashboard header because
+    // the family name now appears in both the shell header and dashboard greeting.
+    // Check BEFORE navigating to calendar (mobile hides AppHeader in calendar view).
+    const dashboardHeader = page.getByTestId("dashboard-header");
+    await expect(dashboardHeader).toBeVisible({
       timeout: 10000,
     });
+    await expect(dashboardHeader).toContainText("The Johnsons");
 
     // Now navigate to calendar view
     await waitForCalendarReady(page);
@@ -120,10 +123,12 @@ test.describe("First-Time User Onboarding", () => {
     await page.reload();
     await waitForHydration(page);
 
-    // Family name should be visible on initial load (home dashboard/header)
-    await expect(page.getByText("The Johnsons")).toBeVisible({
+    // After reload, scope to the dashboard header again instead of assuming the
+    // family name is unique on the page in the mobile Home shell.
+    await expect(dashboardHeader).toBeVisible({
       timeout: 10000,
     });
+    await expect(dashboardHeader).toContainText("The Johnsons");
 
     // Navigate to calendar
     await waitForCalendarReady(page);
