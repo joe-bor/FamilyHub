@@ -126,17 +126,24 @@ export async function waitForDialogReady(page: Page): Promise<Locator> {
  */
 export async function waitForCalendarReady(page: Page): Promise<void> {
   const primaryNav = page.getByRole("navigation", { name: /primary/i });
-  const hasMobileNav = await primaryNav.isVisible().catch(() => false);
+  const hasMobileNav = await primaryNav
+    .waitFor({ state: "visible", timeout: 3000 })
+    .then(() => true)
+    .catch(() => false);
 
   if (hasMobileNav) {
-    const homeTab = primaryNav.getByRole("button", { name: "Home" });
     const calendarTab = primaryNav.getByRole("button", { name: "Calendar" });
-    const homeIsActive =
-      (await homeTab.getAttribute("aria-current").catch(() => null)) === "page";
+    const calendarIsActive =
+      (await calendarTab.getAttribute("aria-current").catch(() => null)) ===
+      "page";
 
-    if (homeIsActive) {
-      await calendarTab.click();
+    if (!calendarIsActive) {
+      await safeClick(calendarTab);
     }
+
+    await expect(calendarTab).toHaveAttribute("aria-current", "page", {
+      timeout: 10000,
+    });
   }
 
   // Wait for primary calendar indicator (Add event FAB)
