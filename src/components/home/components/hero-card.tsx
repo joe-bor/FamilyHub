@@ -73,18 +73,18 @@ export function HeroCard({
       ? state.event.location || state.event.description
       : null;
   const content = (
-    <div className="relative overflow-hidden rounded-[1.75rem] border border-border/60 bg-card px-6 py-7 shadow-md motion-reduce:transition-none">
+    <div className="relative overflow-hidden rounded-2xl border border-border/70 bg-card px-5 py-6 shadow-sm motion-reduce:transition-none">
       {isEventState(state) && colors && (
         <span
           data-testid="hero-accent"
-          className="absolute inset-y-5 left-0 w-1 rounded-r-full"
+          className="absolute inset-y-4 left-0 w-1 rounded-r-full"
           style={{ backgroundColor: colors.hex }}
         />
       )}
 
       <div className="pl-2">
         {metaLine && (
-          <p className="mb-2 flex items-center gap-2 text-sm text-foreground/70">
+          <p className="mb-2 flex items-center gap-2 text-sm leading-5 font-medium text-foreground/65">
             {state.kind === "RIGHT_NOW" && colors && (
               <span
                 data-testid="hero-live-dot"
@@ -98,11 +98,13 @@ export function HeroCard({
 
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
-            <h2 className="text-3xl font-semibold leading-tight text-foreground">
+            <h2 className="text-[28px] leading-8 font-semibold text-foreground">
               {title}
             </h2>
             {subtitle && (
-              <p className="mt-2 text-sm text-foreground/60">{subtitle}</p>
+              <p className="mt-2 text-[15px] leading-5 text-foreground/60">
+                {subtitle}
+              </p>
             )}
           </div>
 
@@ -119,7 +121,7 @@ export function HeroCard({
   );
 
   return (
-    <section aria-label={sectionLabel} className="px-4 pt-4">
+    <section aria-label={sectionLabel} className="px-4 pt-5">
       {isEventState(state) && onTap ? (
         <button
           type="button"

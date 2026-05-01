@@ -47,11 +47,13 @@ export const ComingUp = memo(function ComingUp({
 
   return (
     <div className="px-4 pt-6 pb-4">
-      <div className="mb-3 border-t border-border/60 pt-4">
-        <h3 className="text-sm text-foreground/60">Coming up</h3>
+      <div className="mb-3 border-t border-border/70 pt-4">
+        <h3 className="text-base leading-6 font-semibold text-foreground/65">
+          Coming up
+        </h3>
       </div>
 
-      <div className="space-y-3">
+      <div className="space-y-2">
         {visibleEvents.map((event) => {
           const member = getFamilyMember(members, event.memberId);
           const colors = member ? colorMap[member.color] : colorMap.coral;
@@ -61,7 +63,7 @@ export const ComingUp = memo(function ComingUp({
               key={event.id ?? `${event.title}-${formatLocalDate(event.date)}`}
               type="button"
               onClick={() => onSelect(event)}
-              className="flex min-h-11 w-full items-center gap-3 rounded-2xl px-1 py-2 text-left text-sm text-foreground/70 transition-transform duration-[150ms] ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.98] motion-reduce:transition-none"
+              className="flex min-h-12 w-full items-center gap-3 rounded-xl px-1 py-2.5 text-left text-[15px] leading-5 text-foreground/65 transition-transform duration-[150ms] ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.98] motion-reduce:transition-none"
             >
               <span className="w-18 shrink-0 text-foreground/60">
                 {getDateLabel(event.date, currentDate)}

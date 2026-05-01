@@ -48,7 +48,7 @@ function getParentId(event: {
 
 function LoadingDashboard() {
   return (
-    <div className="px-4 pt-4">
+    <div className="px-4 pt-5">
       <div className="animate-pulse space-y-4">
         <div className="h-5 w-40 rounded-full bg-muted" />
         <div className="flex gap-2">

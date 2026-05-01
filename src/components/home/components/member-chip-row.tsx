@@ -16,7 +16,7 @@ export function MemberChipRow({
 }) {
   return (
     <div className="overflow-x-auto px-4 pt-3 scrollbar-hide">
-      <div className="flex min-w-max gap-2 pb-1">
+      <div className="flex min-w-max gap-2 pb-1.5">
         {members.map((member) => {
           const colors = colorMap[member.color];
           const isFocused = focusedId === member.id;
@@ -32,7 +32,7 @@ export function MemberChipRow({
               className={cn(
                 "flex h-11 w-11 items-center justify-center rounded-full p-1 transition-[opacity,transform,box-shadow] duration-[250ms] ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none",
                 isFocused && "scale-[1.04]",
-                isDimmed && "opacity-60",
+                isDimmed && "opacity-55",
               )}
               style={{
                 boxShadow: isFocused
@@ -42,7 +42,7 @@ export function MemberChipRow({
             >
               <span
                 className={cn(
-                  "flex h-9 w-9 items-center justify-center rounded-full text-sm font-semibold text-white",
+                  "flex h-9 w-9 items-center justify-center rounded-full text-sm font-semibold leading-none text-white",
                   colors.bg,
                 )}
               >
