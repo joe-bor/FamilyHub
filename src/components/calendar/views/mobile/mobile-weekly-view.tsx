@@ -62,7 +62,7 @@ export function MobileWeeklyView({
       {/* Date Strip Header */}
       <nav
         aria-label="Week navigation"
-        className="grid grid-cols-7 border-b border-border bg-card shrink-0"
+        className="grid shrink-0 grid-cols-7 border-b border-border bg-card"
       >
         {weekDays.map((day, index) => {
           const dayEvents = eventsByDay[index];
@@ -85,20 +85,20 @@ export function MobileWeeklyView({
               onClick={() => onDayClick(day)}
               aria-label={`View day ${format(day, "MMMM d, yyyy")}`}
               className={cn(
-                "flex flex-col items-center py-2 px-1 gap-0.5 relative",
-                "active:bg-muted/50 transition-colors",
+                "relative flex min-h-16 flex-col items-center gap-1 px-1 py-2",
+                "transition-colors active:bg-muted/50",
                 isSelected && !today && "bg-muted/30",
               )}
             >
               {/* Day initial */}
-              <span className="text-[10px] font-medium text-muted-foreground leading-none">
+              <span className="text-[10px] leading-none font-semibold text-muted-foreground">
                 {DAY_INITIALS[index]}
               </span>
 
               {/* Date number */}
               <span
                 className={cn(
-                  "text-sm font-semibold leading-none w-7 h-7 flex items-center justify-center rounded-full",
+                  "flex h-7 w-7 items-center justify-center rounded-full text-sm leading-none font-semibold",
                   today && "bg-primary text-primary-foreground",
                   !today && isSelected && "text-primary",
                 )}
@@ -108,14 +108,14 @@ export function MobileWeeklyView({
 
               {/* TODAY label */}
               {today && (
-                <span className="text-[8px] text-primary font-semibold leading-none uppercase tracking-wide">
+                <span className="text-[8px] leading-none font-semibold uppercase text-primary">
                   Today
                 </span>
               )}
 
               {/* Event color dots */}
               {memberColors.length > 0 && (
-                <div className="flex gap-0.5 items-center justify-center min-h-[6px]">
+                <div className="flex min-h-[6px] items-center justify-center gap-0.5">
                   {memberColors.map((color) => (
                     <span
                       key={color}
@@ -126,7 +126,7 @@ export function MobileWeeklyView({
               )}
 
               {/* Subtle chevron */}
-              <ChevronRight className="w-2.5 h-2.5 text-muted-foreground/50 absolute right-0.5 top-1/2 -translate-y-1/2" />
+              <ChevronRight className="absolute right-0.5 top-1/2 h-2.5 w-2.5 -translate-y-1/2 text-muted-foreground/50" />
             </button>
           );
         })}
@@ -150,13 +150,13 @@ export function MobileWeeklyView({
               )}
             >
               {/* Day label (left column) */}
-              <div className="min-w-[52px] w-[52px] flex flex-col items-center pt-3 pb-2 border-r border-border/50 shrink-0">
-                <span className="text-[10px] font-medium text-muted-foreground uppercase leading-none">
+              <div className="flex w-[56px] min-w-[56px] shrink-0 flex-col items-center border-r border-border/50 pb-2 pt-3">
+                <span className="text-[10px] leading-none font-semibold uppercase text-muted-foreground">
                   {format(day, "EEE")}
                 </span>
                 <span
                   className={cn(
-                    "text-base font-semibold leading-none mt-0.5",
+                    "mt-1 text-base leading-none font-semibold",
                     today && "text-primary",
                   )}
                 >
@@ -165,10 +165,10 @@ export function MobileWeeklyView({
               </div>
 
               {/* Events list (right column) */}
-              <div className="flex-1 py-1">
+              <div className="flex-1 py-1.5">
                 {dayEvents.length === 0 ? (
-                  <div className="flex items-center min-h-[44px] px-3">
-                    <span className="text-muted-foreground text-xs">
+                  <div className="flex min-h-11 items-center px-3">
+                    <span className="text-xs text-muted-foreground">
                       No events
                     </span>
                   </div>
@@ -187,31 +187,31 @@ export function MobileWeeklyView({
                         type="button"
                         onClick={() => onEventClick(event)}
                         className={cn(
-                          "w-full flex items-center gap-2 px-3 min-h-[44px]",
-                          "active:bg-muted/50 transition-colors text-left",
+                          "flex min-h-11 w-full items-center gap-2 px-3",
+                          "text-left transition-colors active:bg-muted/50",
                         )}
                       >
                         {/* Member color dot */}
                         <span
                           className={cn(
-                            "w-1.5 h-1.5 rounded-full shrink-0",
+                            "h-1.5 w-1.5 shrink-0 rounded-full",
                             dotColorClass,
                           )}
                         />
 
                         {/* Event title */}
-                        <span className="text-sm truncate flex-1">
+                        <span className="flex-1 truncate text-[15px] leading-5">
                           {event.title}
                         </span>
 
                         {/* Time */}
                         {!event.isAllDay && (
-                          <span className="text-xs text-muted-foreground ml-auto shrink-0">
+                          <span className="ml-auto shrink-0 text-xs text-muted-foreground">
                             {event.startTime}
                           </span>
                         )}
                         {event.isAllDay && (
-                          <span className="text-xs text-muted-foreground ml-auto shrink-0">
+                          <span className="ml-auto shrink-0 text-xs text-muted-foreground">
                             All day
                           </span>
                         )}

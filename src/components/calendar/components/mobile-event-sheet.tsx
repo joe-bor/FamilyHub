@@ -24,20 +24,20 @@ export function MobileEventSheet({
       aria-label={title}
       aria-describedby={undefined}
       className={cn(
-        "fixed inset-0 z-50 bg-card flex flex-col",
+        "fixed inset-0 z-50 flex flex-col bg-card",
         "motion-safe:animate-in motion-safe:slide-in-from-bottom motion-safe:duration-200",
       )}
     >
       {/* Fixed header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-border">
+      <div className="flex items-center justify-between border-b border-border px-4 py-3">
         <button
           type="button"
           onClick={onClose}
-          className="text-primary font-medium text-sm"
+          className="rounded-lg px-1 py-1 text-sm font-semibold text-primary"
         >
           Cancel
         </button>
-        <h2 className="font-bold text-base">{title}</h2>
+        <h2 className="text-[20px] leading-7 font-semibold">{title}</h2>
         {
           headerRight ?? (
             <div className="w-16" />
@@ -46,7 +46,7 @@ export function MobileEventSheet({
       </div>
 
       {/* Scrollable body */}
-      <div className="flex-1 overflow-y-auto">{children}</div>
+      <div className="flex-1 overflow-y-auto px-4 py-5">{children}</div>
     </div>
   );
 }

@@ -68,19 +68,21 @@ export function MobileToolbar({ members, onOpenSidebar }: MobileToolbarProps) {
   const contextLabel = getContextLabel(calendarView, currentDate);
 
   return (
-    <div className="flex flex-col bg-background border-b border-border">
+    <div className="flex flex-col border-b border-border bg-background">
       {/* Row 1: Header Bar */}
-      <div className="flex items-center justify-between px-3 py-2">
-        <span className="text-sm font-semibold text-foreground">
+      <div className="flex items-center justify-between px-4 py-3">
+        <span className="text-[22px] leading-7 font-semibold text-foreground">
           {contextLabel}
         </span>
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-2">
           <button
             type="button"
             onClick={goToToday}
             className={cn(
-              "px-2 py-1 text-sm font-semibold rounded",
-              isViewingToday ? "text-primary/50" : "text-primary",
+              "rounded-lg px-2.5 py-1.5 text-sm leading-5 font-semibold transition-colors",
+              isViewingToday
+                ? "text-primary/50"
+                : "text-primary hover:bg-primary/10",
             )}
           >
             Today
@@ -89,17 +91,17 @@ export function MobileToolbar({ members, onOpenSidebar }: MobileToolbarProps) {
             type="button"
             onClick={onOpenSidebar}
             aria-label="Menu"
-            className="p-2 text-foreground/70 hover:text-foreground"
+            className="rounded-lg p-2 text-foreground/70 transition-colors hover:bg-muted hover:text-foreground"
           >
-            <Menu className="w-4 h-4" />
+            <Menu className="h-5 w-5" />
           </button>
         </div>
       </div>
 
       {/* Row 2: Controls Bar */}
-      <div className="flex items-center justify-between px-3 pb-2">
+      <div className="flex items-center justify-between gap-3 px-4 pb-3">
         {/* View Switcher */}
-        <div className="flex items-center bg-muted rounded-lg p-0.5 gap-0.5">
+        <div className="flex items-center gap-0.5 rounded-xl bg-muted p-1">
           {VIEW_PILLS.map(({ view, label, ariaLabel }) => (
             <button
               key={view}
@@ -107,9 +109,9 @@ export function MobileToolbar({ members, onOpenSidebar }: MobileToolbarProps) {
               aria-label={ariaLabel}
               onClick={() => setCalendarView(view)}
               className={cn(
-                "px-2.5 py-1 text-xs font-semibold rounded-md transition-colors",
+                "flex h-8 min-w-8 items-center justify-center rounded-lg px-2 text-sm leading-none font-semibold transition-colors",
                 calendarView === view
-                  ? "bg-primary text-primary-foreground"
+                  ? "bg-primary text-primary-foreground shadow-sm shadow-primary/20"
                   : "text-muted-foreground hover:text-foreground",
               )}
             >
@@ -128,7 +130,7 @@ export function MobileToolbar({ members, onOpenSidebar }: MobileToolbarProps) {
                 type="button"
                 onClick={() => toggleMember(member.id)}
                 aria-label={`${member.name} filter`}
-                className="p-2.5"
+                className="rounded-full p-2 transition-colors hover:bg-muted"
               >
                 <MemberAvatar
                   name={member.name}

@@ -23,14 +23,14 @@ export function CalendarViewSwitcher() {
   return (
     <div
       data-testid="view-switcher"
-      className="flex items-center gap-1 bg-muted rounded-lg p-1"
+      className="flex items-center gap-1 rounded-xl bg-muted p-1"
     >
       {views.map((v) => (
         <button
           key={v.id}
           onClick={() => setCalendarView(v.id)}
           className={cn(
-            "flex items-center justify-center gap-1.5 px-2 sm:px-3 py-1.5 min-h-11 min-w-11 rounded-md text-sm font-medium transition-all",
+            "flex min-h-10 min-w-10 items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-sm font-semibold transition-all sm:px-3",
             calendarView === v.id
               ? "bg-background text-foreground shadow-sm"
               : "text-muted-foreground hover:text-foreground hover:bg-background/50",
