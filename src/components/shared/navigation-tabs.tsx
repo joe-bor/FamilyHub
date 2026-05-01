@@ -24,7 +24,7 @@ export function NavigationTabs() {
   const setActiveModule = useAppStore((state) => state.setActiveModule);
 
   return (
-    <nav className="hidden md:flex w-20 flex-col items-center gap-2 py-6 bg-card border-r border-border shrink-0">
+    <nav className="flex w-20 flex-col items-center gap-2 py-6 bg-card border-r border-border shrink-0">
       {tabs.map((tab) => {
         const Icon = tab.icon;
         const isActive = activeModule === tab.id;

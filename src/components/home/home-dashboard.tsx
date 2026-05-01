@@ -16,7 +16,7 @@ import {
   EventFormModal,
 } from "@/components/calendar";
 import { buildRRule } from "@/lib/recurrence-utils";
-import { format24hTo12h, formatLocalDate } from "@/lib/time-utils";
+import { format24hTo12h, formatLocalDate, getEventKey } from "@/lib/time-utils";
 import type { CreateEventRequest } from "@/lib/types";
 import type { EventFormData } from "@/lib/validations";
 import {
@@ -95,6 +95,7 @@ export function HomeDashboard({ nowOverride }: { nowOverride?: Date } = {}) {
     [now, today],
   );
   const heroEvent = "event" in heroState ? heroState.event : null;
+  const heroEventKey = heroEvent ? getEventKey(heroEvent) : null;
   const createEvent = useCreateEvent({
     onSuccess: () => {
       closeAddEventModal();
@@ -133,6 +134,12 @@ export function HomeDashboard({ nowOverride }: { nowOverride?: Date } = {}) {
       date: formatLocalDate(now),
       memberId: focusedMemberId ?? members[0]?.id ?? "",
     });
+  };
+
+  const handleEventClick = (event: (typeof today)[number]) => {
+    deleteEvent.reset();
+    deleteInstance.reset();
+    openDetailModal(event);
   };
 
   const handleAddEvent = (formData: EventFormData) => {
@@ -288,20 +295,20 @@ export function HomeDashboard({ nowOverride }: { nowOverride?: Date } = {}) {
                 : undefined
             }
             now={now}
-            onTap={heroEvent ? () => openDetailModal(heroEvent) : undefined}
+            onTap={heroEvent ? () => handleEventClick(heroEvent) : undefined}
           />
           <TodayList
             currentDate={now}
             events={today}
             members={members}
-            excludeId={heroEvent?.id ?? null}
-            onSelect={openDetailModal}
+            excludeKey={heroEventKey}
+            onSelect={handleEventClick}
           />
           <ComingUp
             currentDate={now}
             events={comingUp}
             members={members}
-            onSelect={openDetailModal}
+            onSelect={handleEventClick}
           />
         </>
       )}

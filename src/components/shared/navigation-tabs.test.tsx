@@ -8,9 +8,9 @@ describe("NavigationTabs", () => {
     useAppStore.setState({ activeModule: "calendar", isSidebarOpen: false });
   });
 
-  it("stays hidden until the desktop breakpoint", () => {
+  it("renders the desktop navigation rail", () => {
     render(<NavigationTabs />);
 
-    expect(screen.getByRole("navigation")).toHaveClass("hidden", "md:flex");
+    expect(screen.getByRole("navigation")).toHaveClass("flex", "w-20");
   });
 });

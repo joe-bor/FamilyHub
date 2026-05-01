@@ -27,7 +27,7 @@ export function MobileBottomNav() {
   return (
     <nav
       aria-label="Primary"
-      className="md:hidden shrink-0 border-t border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/85 z-30"
+      className="shrink-0 border-t border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/85 z-30"
     >
       <div
         className="grid grid-cols-6 gap-1 px-2 pt-2"

@@ -57,7 +57,7 @@ describe("TodayList", () => {
           }),
         ]}
         members={testMembers}
-        excludeId="hero-event"
+        excludeKey="hero-event"
         onSelect={vi.fn()}
       />,
     );

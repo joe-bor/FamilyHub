@@ -17,7 +17,10 @@ test.describe("First-Time User Onboarding", () => {
     await page.getByRole("button", { name: "Create an account" }).click();
   });
 
-  test("completes full onboarding flow and persists data", async ({ page }) => {
+  test("completes full onboarding flow and persists data", async ({
+    page,
+    isMobile,
+  }) => {
     // Step 1: Welcome screen
     await expect(
       page.getByRole("heading", { name: "Welcome to FamilyHub" }),
@@ -107,14 +110,22 @@ test.describe("First-Time User Onboarding", () => {
       page.getByRole("heading", { name: /create your login/i }),
     ).toBeHidden({ timeout: 10000 });
 
-    // Verify the app lands on mobile Home. Scope to the dashboard header because
-    // the family name now appears in both the shell header and dashboard greeting.
-    // Check BEFORE navigating to calendar (mobile hides AppHeader in calendar view).
-    const dashboardHeader = page.getByTestId("dashboard-header");
-    await expect(dashboardHeader).toBeVisible({
-      timeout: 10000,
-    });
-    await expect(dashboardHeader).toContainText("The Johnsons");
+    if (isMobile) {
+      // Mobile lands on Home first, so verify the dashboard header before
+      // navigating away to Calendar.
+      const dashboardHeader = page.getByTestId("dashboard-header");
+      await expect(dashboardHeader).toBeVisible({
+        timeout: 10000,
+      });
+      await expect(dashboardHeader).toContainText("The Johnsons");
+    } else {
+      // Desktop preserves the existing contract: null state redirects to Calendar.
+      await expect(
+        page.getByRole("heading", { name: "The Johnsons", level: 1 }),
+      ).toBeVisible({
+        timeout: 10000,
+      });
+    }
 
     // Now navigate to calendar view
     await waitForCalendarReady(page);
@@ -123,12 +134,19 @@ test.describe("First-Time User Onboarding", () => {
     await page.reload();
     await waitForHydration(page);
 
-    // After reload, scope to the dashboard header again instead of assuming the
-    // family name is unique on the page in the mobile Home shell.
-    await expect(dashboardHeader).toBeVisible({
-      timeout: 10000,
-    });
-    await expect(dashboardHeader).toContainText("The Johnsons");
+    if (isMobile) {
+      const dashboardHeader = page.getByTestId("dashboard-header");
+      await expect(dashboardHeader).toBeVisible({
+        timeout: 10000,
+      });
+      await expect(dashboardHeader).toContainText("The Johnsons");
+    } else {
+      await expect(
+        page.getByRole("heading", { name: "The Johnsons", level: 1 }),
+      ).toBeVisible({
+        timeout: 10000,
+      });
+    }
 
     // Navigate to calendar
     await waitForCalendarReady(page);

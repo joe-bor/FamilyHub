@@ -1,4 +1,5 @@
 import { expect, type Locator, type Page } from "@playwright/test";
+import { format } from "date-fns";
 import type { FamilyColor, FamilyMember } from "../../src/lib/types/family";
 
 /**
@@ -236,16 +237,17 @@ export async function createEvent(
       const endDateBtn = datePickers.nth(1);
       await endDateBtn.click();
       // Wait for calendar popover to appear, then click the target day.
-      // react-day-picker v9 renders day buttons inside a table.
-      const dayNum = options.recurrence.endDate.getDate();
+      // Match the full accessible name so duplicate day numbers across months
+      // do not trip strict-mode lookups.
       const popover = page
         .locator("[data-radix-popper-content-wrapper]")
         .last();
       await expect(popover).toBeVisible();
-      await popover
-        .locator("table button:not([disabled])")
-        .filter({ hasText: new RegExp(`^${dayNum}$`) })
-        .click();
+      const endDateLabel = format(
+        options.recurrence.endDate,
+        "EEEE, MMMM do, yyyy",
+      );
+      await popover.getByRole("button", { name: endDateLabel }).click();
     }
   }
 

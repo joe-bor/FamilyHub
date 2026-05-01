@@ -1,6 +1,6 @@
 import { format } from "date-fns";
 import { memo, useMemo } from "react";
-import { formatLocalDate } from "@/lib/time-utils";
+import { formatLocalDate, getEventKey } from "@/lib/time-utils";
 import type { CalendarEvent, FamilyMember } from "@/lib/types";
 import { colorMap, getFamilyMember } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -33,19 +33,21 @@ export const TodayList = memo(function TodayList({
   currentDate = new Date(),
   events,
   members,
-  excludeId,
+  excludeKey,
   onSelect,
 }: {
   currentDate?: Date;
   events: CalendarEvent[];
   members: FamilyMember[];
-  excludeId?: string | null;
+  excludeKey?: string | null;
   onSelect: (event: CalendarEvent) => void;
 }) {
   const visibleEvents = useMemo(
     () =>
-      events.filter((event) => event.id !== excludeId).sort(sortTodayEvents),
-    [events, excludeId],
+      events
+        .filter((event) => getEventKey(event) !== excludeKey)
+        .sort(sortTodayEvents),
+    [events, excludeKey],
   );
 
   if (visibleEvents.length === 0) {
@@ -62,7 +64,7 @@ export const TodayList = memo(function TodayList({
 
           return (
             <button
-              key={event.id ?? `${event.title}-${formatLocalDate(event.date)}`}
+              key={getEventKey(event)}
               type="button"
               onClick={() => onSelect(event)}
               className="flex min-h-11 w-full items-start gap-3 rounded-2xl px-1 py-2 text-left transition-transform duration-[150ms] ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.98] motion-reduce:transition-none"

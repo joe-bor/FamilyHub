@@ -14,7 +14,6 @@ describe("MobileBottomNav", () => {
     const nav = screen.getByRole("navigation", { name: /primary/i });
 
     expect(nav).toBeInTheDocument();
-    expect(nav).toHaveClass("md:hidden");
     expect(screen.getByRole("button", { name: /^home$/i })).toHaveAttribute(
       "aria-current",
       "page",

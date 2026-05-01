@@ -1,8 +1,11 @@
+import { HttpResponse, http } from "msw";
 import { afterEach, beforeEach } from "vitest";
 import { createTestEventResponse, testMembers } from "@/test/fixtures";
 import {
+  API_BASE,
   resetMockEvents,
   seedMockEvents,
+  server,
   setupMswServer,
 } from "@/test/mocks/server";
 import {
@@ -160,6 +163,84 @@ describe("HomeDashboard", () => {
     expect(screen.queryByText("John event")).not.toBeInTheDocument();
     expect(screen.queryByText("John tomorrow")).not.toBeInTheDocument();
     expect(screen.getByText("Up next · in 2 hrs")).toBeInTheDocument();
+  });
+
+  it("keeps non-hero recurring instances visible when the hero event is virtual", async () => {
+    seedMockEvents([
+      createTestEventResponse({
+        id: null,
+        recurringEventId: "series-1",
+        isRecurring: true,
+        title: "Morning standup",
+        date: "2026-04-25",
+        startTime: "9:30 AM",
+        endTime: "10:00 AM",
+        memberId: testMembers[0].id,
+      }),
+      createTestEventResponse({
+        id: null,
+        recurringEventId: "series-2",
+        isRecurring: true,
+        title: "Doctor follow-up",
+        date: "2026-04-25",
+        startTime: "11:00 AM",
+        endTime: "11:30 AM",
+        memberId: testMembers[1].id,
+      }),
+    ]);
+
+    render(<HomeDashboard nowOverride={currentDate} />);
+
+    expect(await screen.findByText("Morning standup")).toBeInTheDocument();
+    expect(screen.getByText("Doctor follow-up")).toBeInTheDocument();
+  });
+
+  it("clears stale delete errors before opening a different event detail", async () => {
+    setViewportWidth(1024);
+    server.use(
+      http.delete(`${API_BASE}/calendar/events/:id`, () =>
+        HttpResponse.json({ message: "Delete failed" }, { status: 500 }),
+      ),
+    );
+    seedMockEvents([
+      createTestEventResponse({
+        id: "event-breakfast",
+        title: "Breakfast",
+        date: "2026-04-25",
+        startTime: "8:00 AM",
+        endTime: "9:00 AM",
+        memberId: testMembers[0].id,
+      }),
+      createTestEventResponse({
+        id: "event-pickup",
+        title: "School pickup",
+        date: "2026-04-25",
+        startTime: "10:00 AM",
+        endTime: "11:00 AM",
+        memberId: testMembers[1].id,
+      }),
+    ]);
+
+    const { user } = renderWithUser(
+      <HomeDashboard nowOverride={new Date(2026, 3, 25, 12, 0, 0, 0)} />,
+    );
+
+    await screen.findByText("Breakfast");
+
+    await user.click(screen.getByRole("button", { name: /breakfast/i }));
+    await user.click(screen.getByRole("button", { name: /^delete$/i }));
+    await user.click(screen.getByRole("button", { name: /delete event/i }));
+
+    expect(
+      await screen.findByText("Failed to delete event. Please try again."),
+    ).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /close/i }));
+    await user.click(screen.getByRole("button", { name: /school pickup/i }));
+
+    expect(
+      screen.queryByText("Failed to delete event. Please try again."),
+    ).not.toBeInTheDocument();
   });
 
   it("opens the reused add-event flow prefilled for the focused member and today", async () => {

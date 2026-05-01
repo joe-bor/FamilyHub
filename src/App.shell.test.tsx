@@ -64,6 +64,18 @@ describe("App shell", () => {
     expect(screen.getByRole("button", { name: /^menu$/i })).toBeInTheDocument();
   });
 
+  it("does not render the desktop rail at the 768px mobile boundary", async () => {
+    setViewportWidth(768);
+    useAppStore.setState({ activeModule: null, isSidebarOpen: false });
+
+    render(<FamilyHub />);
+
+    expect(
+      await screen.findByRole("navigation", { name: /primary/i }),
+    ).toBeInTheDocument();
+    expect(screen.getAllByText(/^calendar$/i)).toHaveLength(1);
+  });
+
   it("suppresses AppHeader on mobile calendar while keeping bottom nav", async () => {
     setViewportWidth(768);
     useAppStore.setState({ activeModule: "calendar", isSidebarOpen: false });
