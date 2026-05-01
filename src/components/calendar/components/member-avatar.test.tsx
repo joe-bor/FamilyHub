@@ -10,8 +10,7 @@ describe("MemberAvatar", () => {
   it("applies member color as background", () => {
     render(<MemberAvatar name="Alice" color="coral" />);
     const el = screen.getByText("A");
-    // coral bg maps to bg-[#e88470] via colorMap
-    expect(el).toHaveClass("bg-[#e88470]");
+    expect(el).toHaveClass("bg-[#b95443]");
   });
 
   it("renders at default size (24px)", () => {
@@ -30,6 +29,6 @@ describe("MemberAvatar", () => {
     render(<MemberAvatar name="Carol" color="green" variant="ring" />);
     const el = screen.getByText("C");
     expect(el).toHaveClass("border-2");
-    expect(el).not.toHaveClass("bg-[#7bc67b]");
+    expect(el).not.toHaveClass("bg-[#467c4b]");
   });
 });

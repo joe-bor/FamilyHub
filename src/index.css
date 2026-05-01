@@ -25,14 +25,14 @@
   --input: oklch(0.92 0.01 85);
   --ring: oklch(0.55 0.18 285);
 
-  /* FamilyHub family member colors */
-  --color-coral: oklch(0.72 0.15 25);
-  --color-teal: oklch(0.65 0.12 195);
-  --color-green: oklch(0.7 0.14 145);
-  --color-purple: oklch(0.6 0.18 285);
-  --color-yellow: oklch(0.85 0.15 90);
-  --color-pink: oklch(0.75 0.12 350);
-  --color-orange: oklch(0.75 0.15 50);
+  /* FamilyHub member colors: seven distinct hues with AA white-text contrast. */
+  --color-coral: oklch(0.57 0.135 31);
+  --color-teal: oklch(0.556 0.079 192);
+  --color-green: oklch(0.535 0.095 146);
+  --color-purple: oklch(0.514 0.14 296);
+  --color-yellow: oklch(0.548 0.105 82);
+  --color-pink: oklch(0.551 0.131 354);
+  --color-orange: oklch(0.575 0.119 56);
 
   --radius: 0.75rem;
   --sidebar: oklch(1 0 0);

@@ -53,46 +53,46 @@ export const colorMap: Record<
   { bg: string; text: string; light: string; hex: string }
 > = {
   coral: {
-    bg: "bg-[#e88470]",
+    bg: "bg-[#b95443]",
     text: "text-[#8b3d32]",
     light: "bg-[#fbe9e6]",
-    hex: "#e88470",
+    hex: "#b95443",
   },
   teal: {
-    bg: "bg-[#5cb8b2]",
+    bg: "bg-[#2f827f]",
     text: "text-[#2d6360]",
     light: "bg-[#e0f4f3]",
-    hex: "#5cb8b2",
+    hex: "#2f827f",
   },
   pink: {
-    bg: "bg-[#e896b8]",
+    bg: "bg-[#aa4d77]",
     text: "text-[#8b4660]",
     light: "bg-[#fce8f0]",
-    hex: "#e896b8",
+    hex: "#aa4d77",
   },
   green: {
-    bg: "bg-[#7bc67b]",
+    bg: "bg-[#467c4b]",
     text: "text-[#3d6b3d]",
     light: "bg-[#e6f5e6]",
-    hex: "#7bc67b",
+    hex: "#467c4b",
   },
   purple: {
-    bg: "bg-[#9b7bcf]",
+    bg: "bg-[#7052ad]",
     text: "text-[#523d70]",
     light: "bg-[#ede6f7]",
-    hex: "#9b7bcf",
+    hex: "#7052ad",
   },
   yellow: {
-    bg: "bg-[#f5c842]",
+    bg: "bg-[#8f6a16]",
     text: "text-[#7a5f10]",
     light: "bg-[#fef6dc]",
-    hex: "#f5c842",
+    hex: "#8f6a16",
   },
   orange: {
-    bg: "bg-[#f5a442]",
+    bg: "bg-[#ad6429]",
     text: "text-[#7a4f10]",
     light: "bg-[#fef0dc]",
-    hex: "#f5a442",
+    hex: "#ad6429",
   },
 };
 
