@@ -3,6 +3,7 @@ import { useFamilyMembers, useFamilyName } from "@/api";
 import { Button } from "@/components/ui/button";
 import { useIsMobile } from "@/hooks";
 import { colorMap } from "@/lib/types";
+import { cn } from "@/lib/utils";
 import { useAppStore, useCalendarStore } from "@/stores";
 
 export function AppHeader() {
@@ -36,8 +37,14 @@ export function AppHeader() {
   };
 
   return (
-    <header className="flex items-center justify-between px-6 py-4 bg-card border-b border-border">
-      <div className="flex items-center gap-4">
+    <header
+      className={cn(
+        "shrink-0 border-b border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/85",
+        "flex items-center justify-between",
+        isMobile ? "min-h-16 px-4 py-3" : "px-6 py-4",
+      )}
+    >
+      <div className={cn("flex items-center", isMobile ? "gap-3" : "gap-4")}>
         <Button
           variant="ghost"
           size="icon"
@@ -45,10 +52,10 @@ export function AppHeader() {
           className="text-muted-foreground hover:text-foreground"
           onClick={openSidebar}
         >
-          <Menu className="h-6 w-6" />
+          <Menu className="h-5 w-5" />
         </Button>
         <div>
-          <h1 className="text-xl font-bold text-foreground">
+          <h1 className="text-[22px] leading-7 font-semibold text-foreground">
             {familyName || "Family Hub"}
           </h1>
           {/* Date/time - hidden on mobile (device shows in status bar) */}
@@ -62,7 +69,7 @@ export function AppHeader() {
         </div>
       </div>
 
-      <div className="flex items-center gap-6">
+      <div className={cn("flex items-center", isMobile ? "gap-2" : "gap-6")}>
         {/* Weather - hidden on mobile (future: widget on desktop) */}
         {!isMobile && (
           <div className="flex items-center gap-2 text-muted-foreground">
