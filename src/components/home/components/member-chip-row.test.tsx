@@ -48,6 +48,6 @@ describe("MemberChipRow", () => {
     ).toHaveAttribute("aria-pressed", "true");
     expect(
       screen.getByRole("button", { name: "Focus on John's events" }),
-    ).toHaveClass("opacity-60");
+    ).toHaveClass("opacity-55");
   });
 });
