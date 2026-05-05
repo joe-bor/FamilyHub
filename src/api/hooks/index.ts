@@ -21,6 +21,14 @@ export {
 } from "./use-calendar";
 
 export {
+  choreKeys,
+  useChores,
+  useCreateChore,
+  useDeleteChore,
+  useUpdateChore,
+} from "./use-chores";
+
+export {
   familyKeys,
   readFamilyFromStorage,
   syncFamilyFromStorage,

@@ -4,6 +4,8 @@ import type {
   AddMemberRequest,
   ApiResponse,
   CalendarEventResponse,
+  Chore,
+  CreateChoreRequest,
   CreateEventRequest,
   FamilyData,
   FamilyMember,
@@ -11,6 +13,7 @@ import type {
   LoginResponse,
   RegisterRequest,
   RegisterResponse,
+  UpdateChoreRequest,
   UpdateEventRequest,
   UpdateFamilyRequest,
   UpdateMemberRequest,
@@ -20,6 +23,9 @@ import type {
 // In-memory storage for mock calendar events (reset between tests)
 // Uses CalendarEventResponse (string dates) to match real API wire format
 let mockEvents: CalendarEventResponse[] = [];
+
+// In-memory storage for mock chores (reset between tests)
+let mockChores: Chore[] = [];
 
 // In-memory storage for mock family data (reset between tests)
 let mockFamily: FamilyData | null = null;
@@ -52,6 +58,27 @@ export function seedMockEvents(events: CalendarEventResponse[]): void {
  */
 export function getMockEvents(): CalendarEventResponse[] {
   return [...mockEvents];
+}
+
+/**
+ * Reset mock chores between tests
+ */
+export function resetMockChores(): void {
+  mockChores = [];
+}
+
+/**
+ * Seed mock chores for testing.
+ */
+export function seedMockChores(chores: Chore[]): void {
+  mockChores = [...chores];
+}
+
+/**
+ * Get current mock chores (for assertions)
+ */
+export function getMockChores(): Chore[] {
+  return [...mockChores];
 }
 
 /**
@@ -243,6 +270,89 @@ export const handlers = [
     }
 
     mockEvents = mockEvents.filter((e) => e.id !== id);
+
+    return new HttpResponse(null, { status: 204 });
+  }),
+
+  // ============================================================================
+  // Chores API Handlers
+  // ============================================================================
+
+  // GET /chores - List chores
+  http.get(`${API_BASE}/chores`, () => {
+    return HttpResponse.json(createApiResponse(mockChores));
+  }),
+
+  // POST /chores - Create chore
+  http.post(`${API_BASE}/chores`, async ({ request }) => {
+    const body = (await request.json()) as CreateChoreRequest;
+    const now = "2026-05-05T09:00:00";
+    const newChore: Chore = {
+      id: `chore-${mockChores.length + 1}`,
+      title: body.title,
+      assignedToMemberId: body.assignedToMemberId,
+      dueDate: body.dueDate ?? null,
+      completed: false,
+      completedAt: null,
+      createdAt: now,
+      updatedAt: now,
+    };
+
+    mockChores = [...mockChores, newChore];
+
+    return HttpResponse.json(
+      createApiResponse(newChore, "Chore created successfully"),
+      { status: 201 },
+    );
+  }),
+
+  // PATCH /chores/:id - Toggle chore completion
+  http.patch(`${API_BASE}/chores/:id`, async ({ params, request }) => {
+    const { id } = params;
+    const body = (await request.json()) as UpdateChoreRequest;
+    const index = mockChores.findIndex((chore) => chore.id === id);
+
+    if (index === -1) {
+      return HttpResponse.json(
+        { message: `Chore with id "${id}" not found` },
+        { status: 404 },
+      );
+    }
+
+    const existingChore = mockChores[index];
+    const updatedChore: Chore = {
+      ...existingChore,
+      completed: body.completed,
+      completedAt: body.completed
+        ? (existingChore.completedAt ?? "2026-05-05T10:00:00")
+        : null,
+      updatedAt: "2026-05-05T10:00:00",
+    };
+
+    mockChores = [
+      ...mockChores.slice(0, index),
+      updatedChore,
+      ...mockChores.slice(index + 1),
+    ];
+
+    return HttpResponse.json(
+      createApiResponse(updatedChore, "Chore updated successfully"),
+    );
+  }),
+
+  // DELETE /chores/:id - Delete chore
+  http.delete(`${API_BASE}/chores/:id`, ({ params }) => {
+    const { id } = params;
+
+    const index = mockChores.findIndex((chore) => chore.id === id);
+    if (index === -1) {
+      return HttpResponse.json(
+        { message: `Chore with id "${id}" not found` },
+        { status: 404 },
+      );
+    }
+
+    mockChores = mockChores.filter((chore) => chore.id !== id);
 
     return new HttpResponse(null, { status: 204 });
   }),

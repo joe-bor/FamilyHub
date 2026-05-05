@@ -7,10 +7,12 @@ export {
 } from "./client";
 // Hooks - Auth
 // Hooks - Calendar
+// Hooks - Chores
 // Hooks - Family
 export {
   authKeys,
   calendarKeys,
+  choreKeys,
   clearStoredToken,
   familyKeys,
   getStoredToken,
@@ -22,7 +24,10 @@ export {
   useCalendarEvent,
   useCalendarEvents,
   useCheckUsername,
+  useChores,
+  useCreateChore,
   useCreateEvent,
+  useDeleteChore,
   useDeleteEvent,
   useDeleteFamily,
   useDeleteInstance,
@@ -43,6 +48,7 @@ export {
   useSetupComplete,
   useSyncGoogleCalendar,
   useUnusedColors,
+  useUpdateChore,
   useUpdateEvent,
   useUpdateFamily,
   useUpdateGoogleCalendars,
@@ -53,6 +59,7 @@ export {
 export {
   authService,
   calendarService,
+  choreService,
   familyService,
   googleCalendarService,
 } from "./services";

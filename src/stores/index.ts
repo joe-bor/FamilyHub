@@ -17,8 +17,6 @@ export {
   useHasUserSetView,
   useIsViewingToday,
 } from "./calendar-store";
-// Module Stores
-export { useChoresStore } from "./chores-store";
 // Family Store - Hydration only (data selectors moved to @/api)
 export { useFamilyStore, useHasHydrated } from "./family-store";
 export { type List, type ListItem, useListsStore } from "./lists-store";
