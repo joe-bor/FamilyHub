@@ -42,6 +42,11 @@ export function ChoresView() {
     [chores, members, today],
   );
   const defaultAssigneeId = members[0]?.id;
+  const createDefaultValues = useMemo(
+    () =>
+      defaultAssigneeId ? { assignedToMemberId: defaultAssigneeId } : undefined,
+    [defaultAssigneeId],
+  );
 
   return (
     <>
@@ -130,11 +135,7 @@ export function ChoresView() {
         isOpen={isCreateOpen}
         onClose={() => setCreateOpen(false)}
         isPending={createChore.isPending}
-        defaultValues={
-          defaultAssigneeId
-            ? { assignedToMemberId: defaultAssigneeId }
-            : undefined
-        }
+        defaultValues={createDefaultValues}
         onSubmit={(values) =>
           createChore.mutate({
             title: values.title,
@@ -175,7 +176,7 @@ export function buildChoreLanes({
 
   const activeLanes = lanes.filter((lane) => lane.hasIncomplete);
   if (activeLanes.length > 0) {
-    return { mode: "active", lanes: activeLanes };
+    return { mode: "active", lanes: lanes.filter((lane) => lane.hasAny) };
   }
 
   const completedOnlyLanes = lanes.filter((lane) => lane.hasAny);
