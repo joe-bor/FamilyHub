@@ -1,10 +1,13 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { renderHook, waitFor } from "@testing-library/react";
+import { HttpResponse, http } from "msw";
 import type { ReactNode } from "react";
 import type { ApiResponse, Chore } from "@/lib/types";
 import {
+  API_BASE,
   getMockChores,
   seedMockChores,
+  server,
   setupMswServer,
 } from "@/test/mocks/server";
 import { createTestQueryClient, seedFamilyStore } from "@/test/test-utils";
@@ -116,6 +119,80 @@ describe("useChores hooks", () => {
         dueDate: null,
       }),
     ]);
+  });
+
+  it("optimistically creates a chore before success and reconciles the server response", async () => {
+    const existing = createMockChore({
+      id: "existing-chore",
+      title: "Existing chore",
+    });
+    const serverChore = createMockChore({
+      id: "server-chore",
+      title: "Fold laundry",
+      assignedToMemberId: "member-1",
+      dueDate: null,
+      createdAt: "2026-05-05T10:00:00",
+      updatedAt: "2026-05-05T10:00:00",
+    });
+    let releaseCreate!: () => void;
+    const createCanFinish = new Promise<void>((resolve) => {
+      releaseCreate = resolve;
+    });
+
+    server.use(
+      http.post(`${API_BASE}/chores`, async () => {
+        await createCanFinish;
+        seedMockChores([existing, serverChore]);
+        return HttpResponse.json(
+          { data: serverChore, message: "Chore created successfully" },
+          { status: 201 },
+        );
+      }),
+    );
+
+    seedMockChores([existing]);
+    const queryClient = createOptimisticQueryClient();
+    queryClient.setQueryData<ApiResponse<Chore[]>>(choreKeys.list(), {
+      data: [existing],
+    });
+
+    const { result } = renderHook(() => useCreateChore(), {
+      wrapper: createWrapper(queryClient),
+    });
+
+    result.current.mutate({
+      title: "Fold laundry",
+      assignedToMemberId: "member-1",
+      dueDate: null,
+    });
+
+    await waitFor(() => {
+      expect(
+        queryClient.getQueryData<ApiResponse<Chore[]>>(choreKeys.list())?.data,
+      ).toEqual([
+        existing,
+        expect.objectContaining({
+          id: expect.stringMatching(/^temp-chore-/),
+          title: "Fold laundry",
+          assignedToMemberId: "member-1",
+          dueDate: null,
+          completed: false,
+          completedAt: null,
+        }),
+      ]);
+    });
+    expect(result.current.isSuccess).toBe(false);
+
+    releaseCreate();
+
+    await waitFor(() => {
+      expect(result.current.isSuccess).toBe(true);
+    });
+    await waitFor(() => {
+      expect(
+        queryClient.getQueryData<ApiResponse<Chore[]>>(choreKeys.list())?.data,
+      ).toEqual([existing, serverChore]);
+    });
   });
 
   it("optimistically toggles a chore completion state", async () => {

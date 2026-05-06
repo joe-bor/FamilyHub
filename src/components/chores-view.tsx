@@ -29,9 +29,7 @@ export function ChoresView() {
   const [isCreateOpen, setCreateOpen] = useState(false);
   const members = useFamilyMembers();
   const { data, isError, isLoading } = useChores();
-  const createChore = useCreateChore({
-    onSuccess: () => setCreateOpen(false),
-  });
+  const createChore = useCreateChore();
   const updateChore = useUpdateChore();
   const deleteChore = useDeleteChore();
 
@@ -136,13 +134,14 @@ export function ChoresView() {
         onClose={() => setCreateOpen(false)}
         isPending={createChore.isPending}
         defaultValues={createDefaultValues}
-        onSubmit={(values) =>
+        onSubmit={(values) => {
+          setCreateOpen(false);
           createChore.mutate({
             title: values.title,
             assignedToMemberId: values.assignedToMemberId,
             dueDate: values.dueDate ?? null,
-          })
-        }
+          });
+        }}
       />
     </>
   );
@@ -176,7 +175,7 @@ export function buildChoreLanes({
 
   const activeLanes = lanes.filter((lane) => lane.hasIncomplete);
   if (activeLanes.length > 0) {
-    return { mode: "active", lanes: lanes.filter((lane) => lane.hasAny) };
+    return { mode: "active", lanes: activeLanes };
   }
 
   const completedOnlyLanes = lanes.filter((lane) => lane.hasAny);
