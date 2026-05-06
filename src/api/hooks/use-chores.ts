@@ -2,7 +2,12 @@ import type { UseQueryOptions } from "@tanstack/react-query";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { ApiException } from "@/api/client";
 import { choreService } from "@/api/services";
-import type { ApiResponse, Chore, UpdateChoreRequest } from "@/lib/types";
+import type {
+  ApiResponse,
+  Chore,
+  CreateChoreRequest,
+  UpdateChoreRequest,
+} from "@/lib/types";
 
 export const choreKeys = {
   all: ["chores"] as const,
@@ -28,21 +33,82 @@ interface CreateChoreCallbacks {
   onError?: (error: ApiException) => void;
 }
 
+let optimisticChoreCounter = 0;
+
+function createOptimisticChore(request: CreateChoreRequest): Chore {
+  const now = new Date();
+  optimisticChoreCounter += 1;
+
+  return {
+    id: `temp-chore-${now.getTime()}-${optimisticChoreCounter}`,
+    title: request.title,
+    assignedToMemberId: request.assignedToMemberId,
+    dueDate: request.dueDate ?? null,
+    completed: false,
+    completedAt: null,
+    createdAt: now.toISOString(),
+    updatedAt: now.toISOString(),
+  };
+}
+
 export function useCreateChore(callbacks?: CreateChoreCallbacks) {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: choreService.createChore,
-    onSuccess: (response) => {
+    onMutate: async (request) => {
+      await queryClient.cancelQueries({ queryKey: choreKeys.list() });
+
+      const previousData = queryClient.getQueryData<ApiResponse<Chore[]>>(
+        choreKeys.list(),
+      );
+      const optimisticChore = createOptimisticChore(request);
+
       queryClient.setQueryData<ApiResponse<Chore[]>>(choreKeys.list(), (old) =>
         old
-          ? { ...old, data: [...old.data, response.data] }
+          ? { ...old, data: [...old.data, optimisticChore] }
+          : { data: [optimisticChore] },
+      );
+
+      return { optimisticChoreId: optimisticChore.id, previousData };
+    },
+    onError: (error: ApiException, _request, context) => {
+      if (context?.previousData) {
+        queryClient.setQueryData(choreKeys.list(), context.previousData);
+      } else if (context?.optimisticChoreId) {
+        queryClient.setQueryData<ApiResponse<Chore[]>>(
+          choreKeys.list(),
+          (old) =>
+            old
+              ? {
+                  ...old,
+                  data: old.data.filter(
+                    (chore) => chore.id !== context.optimisticChoreId,
+                  ),
+                }
+              : old,
+        );
+      }
+      callbacks?.onError?.(error);
+    },
+    onSuccess: (response, _request, context) => {
+      queryClient.setQueryData<ApiResponse<Chore[]>>(choreKeys.list(), (old) =>
+        old
+          ? {
+              ...old,
+              data: old.data.some(
+                (chore) => chore.id === context?.optimisticChoreId,
+              )
+                ? old.data.map((chore) =>
+                    chore.id === context?.optimisticChoreId
+                      ? response.data
+                      : chore,
+                  )
+                : [...old.data, response.data],
+            }
           : { data: [response.data] },
       );
       callbacks?.onSuccess?.(response);
-    },
-    onError: (error: ApiException) => {
-      callbacks?.onError?.(error);
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: choreKeys.list() });

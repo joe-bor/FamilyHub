@@ -1,12 +1,17 @@
+import { HttpResponse, http } from "msw";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { Chore } from "@/lib/types";
-import { seedMockChores, setupMswServer } from "@/test/mocks/server";
+import type { Chore, CreateChoreRequest } from "@/lib/types";
+import {
+  API_BASE,
+  seedMockChores,
+  server,
+  setupMswServer,
+} from "@/test/mocks/server";
 import {
   render,
   renderWithUser,
   screen,
   seedFamilyStore,
-  TEST_TIMEOUTS,
   typeAndWait,
   waitFor,
   waitForMemberSelected,
@@ -127,7 +132,7 @@ describe("ChoresView", () => {
     );
   });
 
-  it("keeps completed-only lanes reachable while other lanes are active", async () => {
+  it("hides completed-only lanes while active lanes still show their completed rows", async () => {
     seedMockChores([
       createMockChore({
         id: "leo-done",
@@ -141,22 +146,60 @@ describe("ChoresView", () => {
         title: "Maya active",
         assignedToMemberId: "maya",
       }),
+      createMockChore({
+        id: "maya-done",
+        title: "Maya done",
+        assignedToMemberId: "maya",
+        completed: true,
+        completedAt: "2026-05-05T08:30:00",
+      }),
     ]);
 
     render(<ChoresView />);
 
-    expect(await screen.findByRole("heading", { name: "Leo" })).toBeVisible();
-    expect(screen.getByRole("heading", { name: "Maya" })).toBeVisible();
-    expect(screen.getByTestId("chore-row-leo-done")).toHaveClass("bg-muted/40");
+    expect(await screen.findByRole("heading", { name: "Maya" })).toBeVisible();
     expect(
-      screen.getByRole("button", { name: /mark leo done incomplete/i }),
-    ).toBeVisible();
-    expect(
-      screen.getByRole("button", { name: /delete leo done/i }),
-    ).toBeVisible();
+      screen.queryByRole("heading", { name: "Leo" }),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByTestId("chore-row-leo-done")).not.toBeInTheDocument();
+
+    const rows = await screen.findAllByTestId(/chore-row-/);
+    expect(rows.map((row) => row.textContent)).toEqual([
+      expect.stringContaining("Maya active"),
+      expect.stringContaining("Maya done"),
+    ]);
+    expect(screen.getByTestId("chore-row-maya-done")).toHaveClass(
+      "bg-muted/40",
+    );
   });
 
-  it("opens the full-screen create sheet and adds a chore", async () => {
+  it("closes the create sheet and shows the new chore before create succeeds", async () => {
+    let releaseCreate!: () => void;
+    let createResponded = false;
+    const createCanFinish = new Promise<void>((resolve) => {
+      releaseCreate = resolve;
+    });
+
+    server.use(
+      http.post(`${API_BASE}/chores`, async ({ request }) => {
+        const body = (await request.json()) as CreateChoreRequest;
+        await createCanFinish;
+        const newChore = createMockChore({
+          id: "server-created-chore",
+          title: body.title,
+          assignedToMemberId: body.assignedToMemberId,
+          dueDate: body.dueDate ?? null,
+          createdAt: "2026-05-05T10:00:00",
+          updatedAt: "2026-05-05T10:00:00",
+        });
+        seedMockChores([newChore]);
+        createResponded = true;
+        return HttpResponse.json(
+          { data: newChore, message: "Chore created successfully" },
+          { status: 201 },
+        );
+      }),
+    );
     seedMockChores([]);
     const { user } = renderWithUser(<ChoresView />);
 
@@ -175,15 +218,27 @@ describe("ChoresView", () => {
       screen.getByLabelText(/chore name/i),
       "Take out trash",
     );
-    await user.click(screen.getByRole("button", { name: /save chore/i }));
 
-    expect(await screen.findByText("Take out trash")).toBeVisible();
-    await waitFor(
-      () => {
-        expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-      },
-      { timeout: TEST_TIMEOUTS.DIALOG_READY },
-    );
+    try {
+      await user.click(screen.getByRole("button", { name: /save chore/i }));
+
+      await waitFor(
+        () => {
+          expect(
+            screen.queryByRole("dialog", { name: "New Chore" }),
+          ).not.toBeInTheDocument();
+        },
+        { timeout: 500 },
+      );
+      expect(await screen.findByText("Take out trash")).toBeVisible();
+      expect(createResponded).toBe(false);
+    } finally {
+      releaseCreate();
+    }
+
+    await waitFor(() => {
+      expect(createResponded).toBe(true);
+    });
   });
 
   it("supports complete, uncomplete, and delete", async () => {
