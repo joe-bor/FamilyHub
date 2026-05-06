@@ -68,6 +68,33 @@ describe("ChoreForm", () => {
     expect(onSubmit).not.toHaveBeenCalled();
   });
 
+  it("preserves entered values when equivalent defaults rerender", async () => {
+    const { user, rerender } = renderWithUser(
+      <ChoreForm
+        defaultValues={{ assignedToMemberId: "member-1" }}
+        onSubmit={onSubmit}
+        onCancel={onCancel}
+      />,
+    );
+
+    await waitForMemberSelected("Leo");
+    await typeAndWait(
+      user,
+      screen.getByLabelText(/chore name/i),
+      "Take out trash",
+    );
+
+    rerender(
+      <ChoreForm
+        defaultValues={{ assignedToMemberId: "member-1" }}
+        onSubmit={onSubmit}
+        onCancel={onCancel}
+      />,
+    );
+
+    expect(screen.getByLabelText(/chore name/i)).toHaveValue("Take out trash");
+  });
+
   it("calls onCancel from the secondary action", async () => {
     const { user } = renderWithUser(
       <ChoreForm onSubmit={onSubmit} onCancel={onCancel} />,

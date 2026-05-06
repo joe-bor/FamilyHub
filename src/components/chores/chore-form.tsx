@@ -33,15 +33,17 @@ export function ChoreForm({
   hideCancelButton = false,
 }: ChoreFormProps) {
   const familyMembers = useFamilyMembers();
+  const defaultTitle = defaultValues?.title;
+  const defaultAssignedToMemberId = defaultValues?.assignedToMemberId;
+  const defaultDueDate = defaultValues?.dueDate;
 
   const initialValues = useMemo(
     (): Partial<ChoreFormInput> => ({
-      title: "",
-      assignedToMemberId: "",
-      dueDate: undefined,
-      ...defaultValues,
+      title: defaultTitle ?? "",
+      assignedToMemberId: defaultAssignedToMemberId ?? "",
+      dueDate: defaultDueDate,
     }),
-    [defaultValues],
+    [defaultTitle, defaultAssignedToMemberId, defaultDueDate],
   );
 
   const {

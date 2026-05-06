@@ -75,13 +75,6 @@ describe("ChoresView", () => {
         completed: true,
         completedAt: "2026-05-05T08:00:00",
       }),
-      createMockChore({
-        id: "maya-done",
-        title: "Maya done",
-        assignedToMemberId: "maya",
-        completed: true,
-        completedAt: "2026-05-05T08:30:00",
-      }),
     ]);
 
     render(<ChoresView />);
@@ -132,6 +125,35 @@ describe("ChoresView", () => {
     expect(screen.getByTestId("chore-row-maya-done")).toHaveClass(
       "bg-muted/40",
     );
+  });
+
+  it("keeps completed-only lanes reachable while other lanes are active", async () => {
+    seedMockChores([
+      createMockChore({
+        id: "leo-done",
+        title: "Leo done",
+        assignedToMemberId: "leo",
+        completed: true,
+        completedAt: "2026-05-05T08:00:00",
+      }),
+      createMockChore({
+        id: "maya-active",
+        title: "Maya active",
+        assignedToMemberId: "maya",
+      }),
+    ]);
+
+    render(<ChoresView />);
+
+    expect(await screen.findByRole("heading", { name: "Leo" })).toBeVisible();
+    expect(screen.getByRole("heading", { name: "Maya" })).toBeVisible();
+    expect(screen.getByTestId("chore-row-leo-done")).toHaveClass("bg-muted/40");
+    expect(
+      screen.getByRole("button", { name: /mark leo done incomplete/i }),
+    ).toBeVisible();
+    expect(
+      screen.getByRole("button", { name: /delete leo done/i }),
+    ).toBeVisible();
   });
 
   it("opens the full-screen create sheet and adds a chore", async () => {
