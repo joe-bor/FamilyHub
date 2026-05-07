@@ -1,7 +1,10 @@
+import { HttpResponse, http } from "msw";
 import type { ListDetail } from "@/lib/types";
 import {
+  API_BASE,
   seedMockListPreferences,
   seedMockLists,
+  server,
   setupMswServer,
 } from "@/test/mocks/server";
 import {
@@ -154,6 +157,21 @@ describe("ListsView hub", () => {
     expect(screen.queryByText("Grocery List")).not.toBeInTheDocument();
   });
 
+  it("does not treat a list API failure as an empty family list", async () => {
+    server.use(
+      http.get(`${API_BASE}/lists`, () =>
+        HttpResponse.json({ message: "Server error" }, { status: 500 }),
+      ),
+    );
+
+    render(<ListsView />);
+
+    expect(
+      await screen.findByText("Lists could not be loaded"),
+    ).toBeInTheDocument();
+    expect(screen.queryByText("No lists yet")).not.toBeInTheDocument();
+  });
+
   it("creates a new grocery list through the mobile sheet flow", async () => {
     seedMockLists([]);
 
@@ -170,6 +188,20 @@ describe("ListsView hub", () => {
     await waitFor(() => {
       expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     });
+  });
+
+  it("creates a list when the form is submitted with Enter", async () => {
+    seedMockLists([]);
+
+    const { user } = renderWithUser(<ListsView />);
+
+    await user.click(await screen.findByRole("button", { name: /new list/i }));
+    await typeAndWait(user, screen.getByLabelText("List name"), "Packing");
+    await user.keyboard("{Enter}");
+
+    expect(
+      await screen.findByRole("heading", { name: "Packing" }),
+    ).toBeInTheDocument();
   });
 
   it("renders grouped grocery categories, toggles flat mode, and keeps completed items muted", async () => {
@@ -212,6 +244,26 @@ describe("ListsView hub", () => {
     ).toBeInTheDocument();
   });
 
+  it("does not render list detail with a fabricated completed preference on preference failure", async () => {
+    seedMockLists([todoList]);
+    server.use(
+      http.get(`${API_BASE}/lists/preferences`, () =>
+        HttpResponse.json({ message: "Server error" }, { status: 500 }),
+      ),
+    );
+
+    const { user } = renderWithUser(<ListsView />);
+
+    await user.click(
+      await screen.findByRole("button", { name: /Weekend Reset/i }),
+    );
+
+    expect(
+      await screen.findByText("List preferences could not be loaded"),
+    ).toBeInTheDocument();
+    expect(screen.queryByText("Pay bills")).not.toBeInTheDocument();
+  });
+
   it("adds, edits, checks, unchecks, and deletes an item", async () => {
     seedMockLists([{ ...generalList, items: [] }]);
 
@@ -244,6 +296,21 @@ describe("ListsView hub", () => {
     await waitFor(() => {
       expect(screen.queryByText("Kettle corn")).not.toBeInTheDocument();
     });
+  });
+
+  it("adds an item when the item form is submitted with Enter", async () => {
+    seedMockLists([{ ...generalList, items: [] }]);
+
+    const { user } = renderWithUser(<ListsView />);
+
+    await user.click(
+      await screen.findByRole("button", { name: /Movie Night/i }),
+    );
+    await user.click(screen.getByRole("button", { name: "Add item" }));
+    await typeAndWait(user, screen.getByLabelText("Item text"), "Blankets");
+    await user.keyboard("{Enter}");
+
+    expect(await screen.findByText("Blankets")).toBeInTheDocument();
   });
 
   it("supports per-list completed override and clear completed", async () => {

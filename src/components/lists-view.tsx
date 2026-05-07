@@ -13,10 +13,40 @@ export function ListsView() {
   const preferences = useListPreferences();
 
   if (selectedListId !== null) {
+    if (preferences.isLoading) {
+      return (
+        <div className="flex-1 p-4 text-sm text-muted-foreground">
+          Loading list preferences
+        </div>
+      );
+    }
+
+    if (preferences.isError || !preferences.data?.data) {
+      return (
+        <div className="flex-1 p-4">
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={() => setSelectedListId(null)}
+          >
+            Back to Lists
+          </Button>
+          <div className="mt-6 rounded-lg border border-border bg-card p-6 shadow-sm">
+            <h3 className="text-lg font-semibold text-foreground">
+              List preferences could not be loaded
+            </h3>
+            <p className="mt-2 text-sm leading-5 text-muted-foreground">
+              Try again before changing completed-item visibility.
+            </p>
+          </div>
+        </div>
+      );
+    }
+
     return (
       <ListDetailView
         listId={selectedListId}
-        preferences={preferences.data?.data ?? { showCompletedByDefault: true }}
+        preferences={preferences.data.data}
         onBack={() => setSelectedListId(null)}
       />
     );
@@ -26,6 +56,47 @@ export function ListsView() {
     return (
       <div className="flex-1 p-4 text-sm text-muted-foreground">
         Loading lists
+      </div>
+    );
+  }
+
+  if (lists.isError) {
+    return (
+      <div className="flex-1 overflow-y-auto p-4 sm:p-6">
+        <div className="mx-auto max-w-2xl space-y-6">
+          <div className="flex items-center justify-between gap-3">
+            <h2 className="text-[24px] font-semibold leading-8 text-foreground">
+              My Lists
+            </h2>
+            <Button type="button" onClick={() => setCreateOpen(true)}>
+              <Plus className="h-4 w-4" />
+              New List
+            </Button>
+          </div>
+
+          <div className="rounded-lg border border-border bg-card p-6 shadow-sm">
+            <h3 className="text-lg font-semibold text-foreground">
+              Lists could not be loaded
+            </h3>
+            <p className="mt-2 text-sm leading-5 text-muted-foreground">
+              Check your connection and try again.
+            </p>
+            <Button
+              type="button"
+              variant="outline"
+              className="mt-4"
+              onClick={() => lists.refetch()}
+            >
+              Try again
+            </Button>
+          </div>
+
+          <ListCreateSheet
+            open={createOpen}
+            onOpenChange={setCreateOpen}
+            onCreated={(id) => setSelectedListId(id)}
+          />
+        </div>
       </div>
     );
   }
