@@ -86,6 +86,10 @@ export function ListDetailView({
       : list.showCompletedOverride
         ? "show"
         : "hide";
+  const clearCompletedDisabled =
+    !list.items.some((item) => item.completed) ||
+    updateItem.isPending ||
+    clearCompleted.isPending;
 
   return (
     <div className="flex-1 overflow-y-auto p-4 sm:p-6">
@@ -184,7 +188,7 @@ export function ListDetailView({
               type="button"
               variant="outline"
               onClick={() => clearCompleted.mutate()}
-              disabled={!list.items.some((item) => item.completed)}
+              disabled={clearCompletedDisabled}
             >
               <Trash2 className="h-4 w-4" />
               Remove all completed

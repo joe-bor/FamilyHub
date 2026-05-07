@@ -342,6 +342,67 @@ describe("ListsView hub", () => {
     });
   });
 
+  it("disables clear completed while an item update is pending", async () => {
+    seedMockLists([todoList]);
+    let resolvePatchStarted: () => void = () => {};
+    let resolvePatch: () => void = () => {};
+    const patchStarted = new Promise<void>((resolve) => {
+      resolvePatchStarted = resolve;
+    });
+    const patchCanFinish = new Promise<void>((resolve) => {
+      resolvePatch = resolve;
+    });
+
+    server.use(
+      http.patch(
+        `${API_BASE}/lists/:listId/items/:itemId`,
+        async ({ request }) => {
+          resolvePatchStarted();
+          const body = (await request.json()) as {
+            text: string;
+            completed: boolean;
+            categoryId?: string | null;
+          };
+
+          await patchCanFinish;
+
+          return HttpResponse.json({
+            data: {
+              ...todoList.items[0],
+              text: body.text,
+              completed: body.completed,
+              completedAt: body.completed ? "2026-05-07T09:00:00" : null,
+              categoryId: body.categoryId ?? null,
+              updatedAt: "2026-05-07T09:00:00",
+            },
+            message: "List item updated successfully",
+          });
+        },
+      ),
+    );
+
+    const { user } = renderWithUser(<ListsView />);
+
+    await user.click(
+      await screen.findByRole("button", { name: /Weekend Reset/i }),
+    );
+    const clearCompletedButton = screen.getByRole("button", {
+      name: /remove all completed/i,
+    });
+    expect(clearCompletedButton).toBeEnabled();
+
+    await user.click(screen.getByRole("button", { name: /^Call dentist$/ }));
+    await patchStarted;
+
+    try {
+      await waitFor(() => {
+        expect(clearCompletedButton).toBeDisabled();
+      });
+    } finally {
+      resolvePatch();
+    }
+  });
+
   it("shows the empty-list state inside a list detail", async () => {
     seedMockLists([{ ...generalList, items: [] }]);
 
