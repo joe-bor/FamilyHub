@@ -76,6 +76,34 @@ export function useUpdateList(id: string) {
   return useMutation({
     mutationFn: (request: UpdateListRequest) =>
       listsService.updateList(id, request),
+    onMutate: async (request) => {
+      await queryClient.cancelQueries({ queryKey: listsKeys.detail(id) });
+      const previous = queryClient.getQueryData<ListDetailApiResponse>(
+        listsKeys.detail(id),
+      );
+
+      queryClient.setQueryData<ListDetailApiResponse>(
+        listsKeys.detail(id),
+        (current) =>
+          current
+            ? {
+                ...current,
+                data: {
+                  ...current.data,
+                  categoryDisplayMode: request.categoryDisplayMode,
+                  showCompletedOverride: request.showCompletedOverride,
+                },
+              }
+            : current,
+      );
+
+      return { previous };
+    },
+    onError: (_error, _request, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(listsKeys.detail(id), context.previous);
+      }
+    },
     onSuccess: (response) => {
       queryClient.setQueryData(listsKeys.detail(id), response);
       queryClient.invalidateQueries({ queryKey: listsKeys.hub() });
@@ -111,6 +139,37 @@ export function useUpdateListItem(listId: string) {
       itemId: string;
       request: UpdateListItemRequest;
     }) => listsService.updateItem(listId, itemId, request),
+    onMutate: async ({ itemId, request }) => {
+      await queryClient.cancelQueries({ queryKey: listsKeys.detail(listId) });
+      const previous = queryClient.getQueryData<ListDetailApiResponse>(
+        listsKeys.detail(listId),
+      );
+
+      queryClient.setQueryData<ListDetailApiResponse>(
+        listsKeys.detail(listId),
+        (current) =>
+          updateDetailItems(current, (items) =>
+            items.map((item) =>
+              item.id === itemId
+                ? {
+                    ...item,
+                    text: request.text,
+                    completed: request.completed,
+                    completedAt: request.completed ? item.completedAt : null,
+                    categoryId: request.categoryId ?? null,
+                  }
+                : item,
+            ),
+          ),
+      );
+
+      return { previous };
+    },
+    onError: (_error, _variables, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(listsKeys.detail(listId), context.previous);
+      }
+    },
     onSuccess: (response) => {
       queryClient.setQueryData<ListDetailApiResponse>(
         listsKeys.detail(listId),
@@ -131,6 +190,27 @@ export function useDeleteListItem(listId: string) {
 
   return useMutation({
     mutationFn: (itemId: string) => listsService.deleteItem(listId, itemId),
+    onMutate: async (itemId) => {
+      await queryClient.cancelQueries({ queryKey: listsKeys.detail(listId) });
+      const previous = queryClient.getQueryData<ListDetailApiResponse>(
+        listsKeys.detail(listId),
+      );
+
+      queryClient.setQueryData<ListDetailApiResponse>(
+        listsKeys.detail(listId),
+        (current) =>
+          updateDetailItems(current, (items) =>
+            items.filter((item) => item.id !== itemId),
+          ),
+      );
+
+      return { previous };
+    },
+    onError: (_error, _itemId, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(listsKeys.detail(listId), context.previous);
+      }
+    },
     onSuccess: (_data, itemId) => {
       queryClient.setQueryData<ListDetailApiResponse>(
         listsKeys.detail(listId),
@@ -149,6 +229,27 @@ export function useClearCompleted(listId: string) {
 
   return useMutation({
     mutationFn: () => listsService.clearCompleted(listId),
+    onMutate: async () => {
+      await queryClient.cancelQueries({ queryKey: listsKeys.detail(listId) });
+      const previous = queryClient.getQueryData<ListDetailApiResponse>(
+        listsKeys.detail(listId),
+      );
+
+      queryClient.setQueryData<ListDetailApiResponse>(
+        listsKeys.detail(listId),
+        (current) =>
+          updateDetailItems(current, (items) =>
+            items.filter((item) => !item.completed),
+          ),
+      );
+
+      return { previous };
+    },
+    onError: (_error, _variables, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(listsKeys.detail(listId), context.previous);
+      }
+    },
     onSuccess: () => {
       queryClient.setQueryData<ListDetailApiResponse>(
         listsKeys.detail(listId),

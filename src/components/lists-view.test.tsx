@@ -20,8 +20,51 @@ const groceryList: ListDetail = {
   kind: "grocery",
   categoryDisplayMode: "grouped",
   showCompletedOverride: null,
-  categories: [],
-  items: [],
+  categories: [
+    {
+      id: "00000000-0000-4000-8000-000000000301",
+      kind: "grocery",
+      name: "Produce",
+      seeded: true,
+      sortOrder: 0,
+    },
+    {
+      id: "00000000-0000-4000-8000-000000000302",
+      kind: "grocery",
+      name: "Dairy",
+      seeded: true,
+      sortOrder: 1,
+    },
+  ],
+  items: [
+    {
+      id: "00000000-0000-4000-8000-000000000201",
+      text: "Bananas",
+      completed: false,
+      completedAt: null,
+      categoryId: "00000000-0000-4000-8000-000000000301",
+      createdAt: "2026-05-06T09:05:00",
+      updatedAt: "2026-05-06T09:05:00",
+    },
+    {
+      id: "00000000-0000-4000-8000-000000000202",
+      text: "Spinach",
+      completed: true,
+      completedAt: "2026-05-06T10:00:00",
+      categoryId: "00000000-0000-4000-8000-000000000301",
+      createdAt: "2026-05-06T09:10:00",
+      updatedAt: "2026-05-06T10:00:00",
+    },
+    {
+      id: "00000000-0000-4000-8000-000000000203",
+      text: "Paper towels",
+      completed: false,
+      completedAt: null,
+      categoryId: null,
+      createdAt: "2026-05-06T09:15:00",
+      updatedAt: "2026-05-06T09:15:00",
+    },
+  ],
   createdAt: "2026-05-06T09:00:00",
   updatedAt: "2026-05-06T09:00:00",
 };
@@ -55,6 +98,18 @@ const todoList: ListDetail = {
   ],
   createdAt: "2026-05-06T09:05:00",
   updatedAt: "2026-05-06T10:00:00",
+};
+
+const generalList: ListDetail = {
+  id: "00000000-0000-4000-8000-000000000103",
+  name: "Movie Night",
+  kind: "general",
+  categoryDisplayMode: "flat",
+  showCompletedOverride: null,
+  categories: [],
+  items: [],
+  createdAt: "2026-05-06T09:20:00",
+  updatedAt: "2026-05-06T09:20:00",
 };
 
 describe("ListsView hub", () => {
@@ -115,5 +170,123 @@ describe("ListsView hub", () => {
     await waitFor(() => {
       expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     });
+  });
+
+  it("renders grouped grocery categories, toggles flat mode, and keeps completed items muted", async () => {
+    seedMockLists([groceryList]);
+
+    const { user } = renderWithUser(<ListsView />);
+
+    await user.click(
+      await screen.findByRole("button", { name: /Trader Joe's Run/i }),
+    );
+
+    expect(screen.getByLabelText("Categories")).toHaveValue("grouped");
+    expect(screen.getByText("Produce")).toBeInTheDocument();
+    expect(screen.getByText("Uncategorized")).toBeInTheDocument();
+    expect(screen.getByText("Spinach")).toHaveClass(
+      "line-through",
+      "text-muted-foreground",
+    );
+
+    await user.selectOptions(screen.getByLabelText("Categories"), "flat");
+
+    await waitFor(() => {
+      expect(screen.getByLabelText("Categories")).toHaveValue("flat");
+    });
+    expect(screen.queryByText("Uncategorized")).not.toBeInTheDocument();
+  });
+
+  it("does not show category controls for general lists", async () => {
+    seedMockLists([generalList]);
+
+    const { user } = renderWithUser(<ListsView />);
+
+    await user.click(
+      await screen.findByRole("button", { name: /Movie Night/i }),
+    );
+
+    expect(screen.queryByLabelText("Categories")).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "Movie Night" }),
+    ).toBeInTheDocument();
+  });
+
+  it("adds, edits, checks, unchecks, and deletes an item", async () => {
+    seedMockLists([{ ...generalList, items: [] }]);
+
+    const { user } = renderWithUser(<ListsView />);
+
+    await user.click(
+      await screen.findByRole("button", { name: /Movie Night/i }),
+    );
+    await user.click(screen.getByRole("button", { name: "Add item" }));
+    await typeAndWait(user, screen.getByLabelText("Item text"), "Popcorn");
+    await user.click(screen.getByRole("button", { name: "Save item" }));
+
+    expect(await screen.findByText("Popcorn")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Edit" }));
+    await user.clear(screen.getByLabelText("Item text"));
+    await typeAndWait(user, screen.getByLabelText("Item text"), "Kettle corn");
+    await user.click(screen.getByRole("button", { name: "Save item" }));
+
+    expect(await screen.findByText("Kettle corn")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /^Kettle corn$/ }));
+    expect(screen.getByText("Kettle corn")).toHaveClass("line-through");
+
+    await user.click(screen.getByRole("button", { name: /^Kettle corn$/ }));
+    expect(screen.getByText("Kettle corn")).not.toHaveClass("line-through");
+
+    await user.click(screen.getByRole("button", { name: "Delete" }));
+
+    await waitFor(() => {
+      expect(screen.queryByText("Kettle corn")).not.toBeInTheDocument();
+    });
+  });
+
+  it("supports per-list completed override and clear completed", async () => {
+    seedMockLists([todoList]);
+    seedMockListPreferences({ showCompletedByDefault: true });
+
+    const { user } = renderWithUser(<ListsView />);
+
+    await user.click(
+      await screen.findByRole("button", { name: /Weekend Reset/i }),
+    );
+    expect(screen.getByText("Pay bills")).toHaveClass("line-through");
+
+    await user.selectOptions(screen.getByLabelText("Completed items"), "hide");
+
+    await waitFor(() => {
+      expect(screen.queryByText("Pay bills")).not.toBeInTheDocument();
+    });
+
+    await user.selectOptions(screen.getByLabelText("Completed items"), "show");
+    expect(await screen.findByText("Pay bills")).toBeInTheDocument();
+
+    await user.click(
+      screen.getByRole("button", { name: /remove all completed/i }),
+    );
+
+    await waitFor(() => {
+      expect(screen.queryByText("Pay bills")).not.toBeInTheDocument();
+    });
+  });
+
+  it("shows the empty-list state inside a list detail", async () => {
+    seedMockLists([{ ...generalList, items: [] }]);
+
+    const { user } = renderWithUser(<ListsView />);
+
+    await user.click(
+      await screen.findByRole("button", { name: /Movie Night/i }),
+    );
+
+    expect(screen.getByText("No items yet")).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Add item" }),
+    ).toBeInTheDocument();
   });
 });
