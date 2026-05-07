@@ -1,80 +1,22 @@
-import { ArrowLeft, Plus } from "lucide-react";
+import { Plus } from "lucide-react";
 import { useState } from "react";
-import { useList, useListPreferences, useLists } from "@/api";
-import type { ListKind } from "@/lib/types";
+import { useListPreferences, useLists } from "@/api";
 import { ListCard } from "./lists/list-card";
 import { ListCreateSheet } from "./lists/list-create-sheet";
+import { ListDetailView } from "./lists/list-detail-view";
 import { Button } from "./ui/button";
-
-const kindLabels: Record<ListKind, string> = {
-  grocery: "Grocery",
-  "to-do": "To-do",
-  general: "General",
-};
-
-function ListDetailShell({
-  listId,
-  onBack,
-}: {
-  listId: string;
-  onBack: () => void;
-}) {
-  const list = useList(listId);
-
-  if (list.isLoading) {
-    return (
-      <div className="flex-1 p-4 text-sm text-muted-foreground">
-        Loading list
-      </div>
-    );
-  }
-
-  if (!list.data?.data) {
-    return (
-      <div className="flex-1 p-4">
-        <Button type="button" variant="ghost" onClick={onBack}>
-          <ArrowLeft className="h-4 w-4" />
-          Back to Lists
-        </Button>
-        <p className="mt-6 text-sm text-muted-foreground">
-          This list could not be loaded.
-        </p>
-      </div>
-    );
-  }
-
-  const detail = list.data.data;
-
-  return (
-    <div className="flex-1 overflow-y-auto p-4 sm:p-6">
-      <div className="mx-auto max-w-2xl space-y-4">
-        <Button type="button" variant="ghost" onClick={onBack} className="px-0">
-          <ArrowLeft className="h-4 w-4" />
-          Back to Lists
-        </Button>
-        <div className="rounded-lg border border-border bg-card p-4 shadow-sm">
-          <p className="text-xs font-semibold uppercase text-muted-foreground">
-            {kindLabels[detail.kind]}
-          </p>
-          <h2 className="mt-1 text-[22px] font-semibold leading-7 text-foreground">
-            {detail.name}
-          </h2>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 export function ListsView() {
   const [selectedListId, setSelectedListId] = useState<string | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
   const lists = useLists();
-  useListPreferences();
+  const preferences = useListPreferences();
 
   if (selectedListId !== null) {
     return (
-      <ListDetailShell
+      <ListDetailView
         listId={selectedListId}
+        preferences={preferences.data?.data ?? { showCompletedByDefault: true }}
         onBack={() => setSelectedListId(null)}
       />
     );
