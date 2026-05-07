@@ -9,6 +9,11 @@ import type {
   CreateEventRequest,
   FamilyData,
   FamilyMember,
+  ListCategory,
+  ListDetail,
+  ListItem,
+  ListKind,
+  ListPreferences,
   LoginRequest,
   LoginResponse,
   RegisterRequest,
@@ -37,6 +42,75 @@ interface MockUser {
   familyId: string;
 }
 let mockUsers: MockUser[] = [];
+
+// In-memory storage for persisted family lists (reset between tests)
+let mockLists: ListDetail[] = [];
+let mockListPreferences: ListPreferences = { showCompletedByDefault: true };
+let mockIdCounter = 1000;
+const MOCK_TIMESTAMP = "2026-05-06T09:00:00";
+
+const seededCategories: Record<Exclude<ListKind, "general">, ListCategory[]> = {
+  grocery: [
+    {
+      id: "00000000-0000-4000-8000-000000000301",
+      kind: "grocery",
+      name: "Produce",
+      seeded: true,
+      sortOrder: 0,
+    },
+    {
+      id: "00000000-0000-4000-8000-000000000302",
+      kind: "grocery",
+      name: "Dairy",
+      seeded: true,
+      sortOrder: 1,
+    },
+    {
+      id: "00000000-0000-4000-8000-000000000303",
+      kind: "grocery",
+      name: "Pantry",
+      seeded: true,
+      sortOrder: 2,
+    },
+    {
+      id: "00000000-0000-4000-8000-000000000304",
+      kind: "grocery",
+      name: "Frozen",
+      seeded: true,
+      sortOrder: 3,
+    },
+    {
+      id: "00000000-0000-4000-8000-000000000305",
+      kind: "grocery",
+      name: "Household",
+      seeded: true,
+      sortOrder: 4,
+    },
+  ],
+  "to-do": [
+    {
+      id: "00000000-0000-4000-8000-000000000401",
+      kind: "to-do",
+      name: "Urgent",
+      seeded: true,
+      sortOrder: 0,
+    },
+    {
+      id: "00000000-0000-4000-8000-000000000402",
+      kind: "to-do",
+      name: "Soon",
+      seeded: true,
+      sortOrder: 1,
+    },
+    {
+      id: "00000000-0000-4000-8000-000000000403",
+      kind: "to-do",
+      name: "Later",
+      seeded: true,
+      sortOrder: 2,
+    },
+  ],
+};
 
 /**
  * Reset mock data between tests
@@ -109,6 +183,48 @@ export function getMockFamily(): FamilyData | null {
   return mockFamily;
 }
 
+/**
+ * Reset mock list data between tests.
+ */
+export function resetMockLists(): void {
+  mockLists = [];
+  mockListPreferences = { showCompletedByDefault: true };
+  mockIdCounter = 1000;
+}
+
+/**
+ * Seed mock list details for testing.
+ */
+export function seedMockLists(lists: ListDetail[]): void {
+  mockLists = lists.map((list) => ({ ...list, items: [...list.items] }));
+}
+
+/**
+ * Seed mock list preferences for testing.
+ */
+export function seedMockListPreferences(preferences: ListPreferences): void {
+  mockListPreferences = preferences;
+}
+
+function createMockId(): string {
+  mockIdCounter += 1;
+  return `00000000-0000-4000-8000-${String(mockIdCounter).padStart(12, "0")}`;
+}
+
+function categoriesForKind(kind: ListKind): ListCategory[] {
+  return kind === "general" ? [] : seededCategories[kind];
+}
+
+function toListSummary(list: ListDetail) {
+  return {
+    id: list.id,
+    name: list.name,
+    kind: list.kind,
+    totalItems: list.items.length,
+    completedItems: list.items.filter((item) => item.completed).length,
+  };
+}
+
 function createApiResponse<T>(data: T, message?: string): ApiResponse<T> {
   return message ? { data, message } : { data };
 }
@@ -142,6 +258,291 @@ export const API_BASE = "http://localhost:3000/api";
  * ```
  */
 export const handlers = [
+  // ============================================================================
+  // Lists API Handlers
+  // ============================================================================
+
+  // GET /lists/preferences - Family-wide completed item visibility default
+  http.get(`${API_BASE}/lists/preferences`, () => {
+    return HttpResponse.json(createApiResponse(mockListPreferences));
+  }),
+
+  // PATCH /lists/preferences - Update family-wide completed visibility default
+  http.patch(`${API_BASE}/lists/preferences`, async ({ request }) => {
+    const body = (await request.json()) as ListPreferences;
+    mockListPreferences = {
+      showCompletedByDefault: body.showCompletedByDefault,
+    };
+
+    return HttpResponse.json(
+      createApiResponse(
+        mockListPreferences,
+        "List preferences updated successfully",
+      ),
+    );
+  }),
+
+  // GET /lists - Hub summaries
+  http.get(`${API_BASE}/lists`, () => {
+    return HttpResponse.json(createApiResponse(mockLists.map(toListSummary)));
+  }),
+
+  // POST /lists - Create a family-owned list
+  http.post(`${API_BASE}/lists`, async ({ request }) => {
+    const body = (await request.json()) as {
+      name: string;
+      kind: ListKind;
+    };
+    const categories = categoriesForKind(body.kind);
+    const newList: ListDetail = {
+      id: createMockId(),
+      name: body.name.trim(),
+      kind: body.kind,
+      categoryDisplayMode: body.kind === "general" ? "flat" : "grouped",
+      showCompletedOverride: null,
+      categories,
+      items: [],
+      createdAt: MOCK_TIMESTAMP,
+      updatedAt: MOCK_TIMESTAMP,
+    };
+
+    mockLists = [newList, ...mockLists];
+
+    return HttpResponse.json(
+      createApiResponse(newList, "List created successfully"),
+      { status: 201 },
+    );
+  }),
+
+  // GET /lists/:id - Detail payload
+  http.get(`${API_BASE}/lists/:id`, ({ params }) => {
+    const list = mockLists.find((candidate) => candidate.id === params.id);
+    if (!list) {
+      return HttpResponse.json(
+        { message: `List with id "${params.id}" not found` },
+        { status: 404 },
+      );
+    }
+
+    return HttpResponse.json(createApiResponse(list));
+  }),
+
+  // PATCH /lists/:id - Update category display mode and completed override
+  http.patch(`${API_BASE}/lists/:id`, async ({ params, request }) => {
+    const index = mockLists.findIndex(
+      (candidate) => candidate.id === params.id,
+    );
+    if (index === -1) {
+      return HttpResponse.json(
+        { message: `List with id "${params.id}" not found` },
+        { status: 404 },
+      );
+    }
+
+    const body = (await request.json()) as {
+      categoryDisplayMode: "grouped" | "flat";
+      showCompletedOverride: boolean | null;
+    };
+    const existing = mockLists[index];
+
+    if (existing.kind === "general" && body.categoryDisplayMode === "grouped") {
+      return HttpResponse.json(
+        { message: "General lists cannot use grouped category mode." },
+        { status: 400 },
+      );
+    }
+
+    const updated: ListDetail = {
+      ...existing,
+      categoryDisplayMode: body.categoryDisplayMode,
+      showCompletedOverride: body.showCompletedOverride,
+      updatedAt: MOCK_TIMESTAMP,
+    };
+
+    mockLists = [
+      ...mockLists.slice(0, index),
+      updated,
+      ...mockLists.slice(index + 1),
+    ];
+
+    return HttpResponse.json(
+      createApiResponse(updated, "List updated successfully"),
+    );
+  }),
+
+  // POST /lists/:id/items - Create an item
+  http.post(`${API_BASE}/lists/:id/items`, async ({ params, request }) => {
+    const index = mockLists.findIndex(
+      (candidate) => candidate.id === params.id,
+    );
+    if (index === -1) {
+      return HttpResponse.json(
+        { message: `List with id "${params.id}" not found` },
+        { status: 404 },
+      );
+    }
+
+    const body = (await request.json()) as {
+      text: string;
+      categoryId?: string | null;
+    };
+    const list = mockLists[index];
+    const item: ListItem = {
+      id: createMockId(),
+      text: body.text.trim(),
+      completed: false,
+      completedAt: null,
+      categoryId: body.categoryId ?? null,
+      createdAt: MOCK_TIMESTAMP,
+      updatedAt: MOCK_TIMESTAMP,
+    };
+    const updated: ListDetail = {
+      ...list,
+      items: [...list.items, item],
+      updatedAt: MOCK_TIMESTAMP,
+    };
+
+    mockLists = [
+      ...mockLists.slice(0, index),
+      updated,
+      ...mockLists.slice(index + 1),
+    ];
+
+    return HttpResponse.json(
+      createApiResponse(item, "List item created successfully"),
+      { status: 201 },
+    );
+  }),
+
+  // PATCH /lists/:listId/items/:itemId - Update text/category/completed state
+  http.patch(
+    `${API_BASE}/lists/:listId/items/:itemId`,
+    async ({ params, request }) => {
+      const listIndex = mockLists.findIndex(
+        (candidate) => candidate.id === params.listId,
+      );
+      if (listIndex === -1) {
+        return HttpResponse.json(
+          { message: `List with id "${params.listId}" not found` },
+          { status: 404 },
+        );
+      }
+
+      const list = mockLists[listIndex];
+      const itemIndex = list.items.findIndex(
+        (candidate) => candidate.id === params.itemId,
+      );
+      if (itemIndex === -1) {
+        return HttpResponse.json(
+          { message: `List item with id "${params.itemId}" not found` },
+          { status: 404 },
+        );
+      }
+
+      const body = (await request.json()) as {
+        text: string;
+        completed: boolean;
+        categoryId?: string | null;
+      };
+      const existing = list.items[itemIndex];
+      const updatedItem: ListItem = {
+        ...existing,
+        text: body.text.trim(),
+        completed: body.completed,
+        completedAt: body.completed
+          ? (existing.completedAt ?? MOCK_TIMESTAMP)
+          : null,
+        categoryId: body.categoryId ?? null,
+        updatedAt: MOCK_TIMESTAMP,
+      };
+      const updatedList: ListDetail = {
+        ...list,
+        items: [
+          ...list.items.slice(0, itemIndex),
+          updatedItem,
+          ...list.items.slice(itemIndex + 1),
+        ],
+        updatedAt: MOCK_TIMESTAMP,
+      };
+
+      mockLists = [
+        ...mockLists.slice(0, listIndex),
+        updatedList,
+        ...mockLists.slice(listIndex + 1),
+      ];
+
+      return HttpResponse.json(
+        createApiResponse(updatedItem, "List item updated successfully"),
+      );
+    },
+  ),
+
+  // DELETE /lists/:listId/items/:itemId - Delete an item
+  http.delete(`${API_BASE}/lists/:listId/items/:itemId`, ({ params }) => {
+    const listIndex = mockLists.findIndex(
+      (candidate) => candidate.id === params.listId,
+    );
+    if (listIndex === -1) {
+      return HttpResponse.json(
+        { message: `List with id "${params.listId}" not found` },
+        { status: 404 },
+      );
+    }
+
+    const list = mockLists[listIndex];
+    const updatedList: ListDetail = {
+      ...list,
+      items: list.items.filter((item) => item.id !== params.itemId),
+      updatedAt: MOCK_TIMESTAMP,
+    };
+
+    mockLists = [
+      ...mockLists.slice(0, listIndex),
+      updatedList,
+      ...mockLists.slice(listIndex + 1),
+    ];
+
+    return new HttpResponse(null, { status: 204 });
+  }),
+
+  // POST /lists/:id/clear-completed - Remove completed items in bulk
+  http.post(`${API_BASE}/lists/:id/clear-completed`, ({ params }) => {
+    const index = mockLists.findIndex(
+      (candidate) => candidate.id === params.id,
+    );
+    if (index === -1) {
+      return HttpResponse.json(
+        { message: `List with id "${params.id}" not found` },
+        { status: 404 },
+      );
+    }
+
+    const list = mockLists[index];
+    const activeItems = list.items.filter((item) => !item.completed);
+    const updated: ListDetail = {
+      ...list,
+      items: activeItems,
+      updatedAt: MOCK_TIMESTAMP,
+    };
+
+    mockLists = [
+      ...mockLists.slice(0, index),
+      updated,
+      ...mockLists.slice(index + 1),
+    ];
+
+    return HttpResponse.json(
+      createApiResponse(
+        { removedCount: list.items.length - activeItems.length },
+        "Completed items removed successfully",
+      ),
+    );
+  }),
+
+  // ============================================================================
+  // Calendar API Handlers
+  // ============================================================================
+
   // GET /calendar/events - List events with optional filters
   http.get(`${API_BASE}/calendar/events`, ({ request }) => {
     const url = new URL(request.url);
