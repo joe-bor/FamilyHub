@@ -19,6 +19,8 @@ interface ListItemSheetProps {
   onOpenChange: (open: boolean) => void;
 }
 
+const listItemFormId = "list-item-form";
+
 export function ListItemSheet({
   open,
   mode,
@@ -85,10 +87,10 @@ export function ListItemSheet({
       title={mode === "edit" ? "Edit Item" : "Add Item"}
       headerRight={
         <Button
-          type="button"
+          type="submit"
+          form={listItemFormId}
           variant="ghost"
           size="sm"
-          onClick={form.handleSubmit(submit)}
           disabled={isPending}
           className="px-1 text-primary hover:text-primary"
         >
@@ -96,7 +98,11 @@ export function ListItemSheet({
         </Button>
       }
     >
-      <form className="space-y-5">
+      <form
+        id={listItemFormId}
+        className="space-y-5"
+        onSubmit={form.handleSubmit(submit)}
+      >
         <div className="space-y-2">
           <Label htmlFor="item-text">Item text</Label>
           <Input id="item-text" autoComplete="off" {...form.register("text")} />

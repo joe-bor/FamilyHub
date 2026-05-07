@@ -38,6 +38,8 @@ const kindOptions = [
   },
 ] as const;
 
+const listCreateFormId = "list-create-form";
+
 export function ListCreateSheet({
   open,
   onOpenChange,
@@ -63,10 +65,10 @@ export function ListCreateSheet({
       title="New List"
       headerRight={
         <Button
-          type="button"
+          type="submit"
+          form={listCreateFormId}
           variant="ghost"
           size="sm"
-          onClick={form.handleSubmit((values) => createList.mutate(values))}
           disabled={createList.isPending}
           className="px-1 text-primary hover:text-primary"
         >
@@ -74,7 +76,14 @@ export function ListCreateSheet({
         </Button>
       }
     >
-      <form className="space-y-6">
+      <form
+        id={listCreateFormId}
+        className="space-y-6"
+        onSubmit={form.handleSubmit((values) => createList.mutate(values))}
+      >
+        <button type="submit" className="sr-only" tabIndex={-1} aria-hidden>
+          Create list
+        </button>
         <div className="space-y-2">
           <Label htmlFor="list-name">List name</Label>
           <Input id="list-name" autoComplete="off" {...form.register("name")} />
