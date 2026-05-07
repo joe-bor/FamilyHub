@@ -4,4 +4,5 @@ export * from "./calendar";
 export * from "./chores";
 export * from "./family";
 export * from "./google-calendar";
+export * from "./lists";
 export * from "./meals";

@@ -19,6 +19,5 @@ export {
 } from "./calendar-store";
 // Family Store - Hydration only (data selectors moved to @/api)
 export { useFamilyStore, useHasHydrated } from "./family-store";
-export { type List, type ListItem, useListsStore } from "./lists-store";
 export { useMealsStore } from "./meals-store";
 export { type Photo, usePhotosStore } from "./photos-store";
