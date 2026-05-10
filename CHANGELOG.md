@@ -1,5 +1,55 @@
 # Changelog
 
+## [0.3.9](https://github.com/joe-bor/FamilyHub/compare/family-hub-v0.3.8...family-hub-v0.3.9) (2026-05-10)
+
+
+### Features
+
+* add mobile home dashboard ([68ca7c1](https://github.com/joe-bor/FamilyHub/commit/68ca7c1e848c2d2da0daa2d6c3cb91fe73eaa0f0))
+* add persistent mobile bottom nav shell ([432a7c1](https://github.com/joe-bor/FamilyHub/commit/432a7c191ef4ac46eaeada9619695b823dedf4f1))
+* **chores:** add assignee lane board ([f393cc7](https://github.com/joe-bor/FamilyHub/commit/f393cc75948019e4167d2b2078c6f61dc47291a7))
+* **chores:** add frontend chore data hooks ([ce77823](https://github.com/joe-bor/FamilyHub/commit/ce77823ac0a28041a0fcb17bd18ec3aea1191803))
+* **chores:** add mobile chore create flow ([40d77e3](https://github.com/joe-bor/FamilyHub/commit/40d77e379b105bdd799b33d8cdaa38fff1f0a25c))
+* **chores:** add mobile chores e2e coverage ([b220399](https://github.com/joe-bor/FamilyHub/commit/b220399355025d22942f392a3e8530f239ee36b4))
+* **lists:** add frontend lists data hooks ([9445194](https://github.com/joe-bor/FamilyHub/commit/9445194c3f104d756ebf10838c0b079a53051566))
+* **lists:** add list detail interactions ([c1b76d7](https://github.com/joe-bor/FamilyHub/commit/c1b76d740704b3003b15e7a79d71ebba59652964))
+* **lists:** add lists hub and create flow ([b162614](https://github.com/joe-bor/FamilyHub/commit/b1626141ea1fb63a575558da495e4fcdf52769b8))
+* **ui:** align placeholder module surfaces ([2ca813d](https://github.com/joe-bor/FamilyHub/commit/2ca813da5afa1913b26329e612d85e4d6d3a4ddd))
+* **ui:** polish mobile calendar surfaces ([7aeec38](https://github.com/joe-bor/FamilyHub/commit/7aeec388677fe21955fff19baa4db141fa331ac4))
+* **ui:** refine home dashboard visual rhythm ([174e12d](https://github.com/joe-bor/FamilyHub/commit/174e12dcf70ae84be52caccc57031bb899d94a3e))
+* **ui:** refine mobile shell chrome ([b00cc4f](https://github.com/joe-bor/FamilyHub/commit/b00cc4f273073bb43117bd8978effd5461dee41a))
+* **ui:** tighten shared visual primitives ([ebaa714](https://github.com/joe-bor/FamilyHub/commit/ebaa71454fab2471880d3ea6c05d7821ca6aac76))
+
+
+### Bug Fixes
+
+* **calendar:** preserve mobile event tap clearance ([8569dbb](https://github.com/joe-bor/FamilyHub/commit/8569dbbcae5607c6816928025c647e9974ecf3b2))
+* **chores:** keep completed lanes and form input stable ([40f080a](https://github.com/joe-bor/FamilyHub/commit/40f080a55ca2fcc06c1e243a95d100f839e0b3cb))
+* **chores:** restore active lanes and optimistic create ([84f043d](https://github.com/joe-bor/FamilyHub/commit/84f043d3660d3ad78b84e4fb52256a93abbd8c01))
+* **ci:** sort biome imports ([a7d6ac7](https://github.com/joe-bor/FamilyHub/commit/a7d6ac75da39780236c9e9d4c3bb45cbd92994e1))
+* **lists:** block clear completed during item updates ([c553203](https://github.com/joe-bor/FamilyHub/commit/c553203ac8ae9d9a1b9a4ba973d099fa3cf5b78d))
+* **lists:** handle load failures and form submit ([09b6ffc](https://github.com/joe-bor/FamilyHub/commit/09b6ffc8264e9cf2f6106353ee76965b004b59ef))
+* **lists:** keep detail usable without preferences ([80b7476](https://github.com/joe-bor/FamilyHub/commit/80b74769e32dc386cb383583feb0e86a2bc5a04f))
+* **lists:** optimistically add list items ([33871fd](https://github.com/joe-bor/FamilyHub/commit/33871fd8aa80930b2f5725858262dff6d27f22be))
+* resolve dashboard review findings and e2e regressions ([2bf59e6](https://github.com/joe-bor/FamilyHub/commit/2bf59e6caf1c58b6404b4e7a70bb2808047414d9))
+* **test:** stabilize mobile calendar readiness ([869e2ac](https://github.com/joe-bor/FamilyHub/commit/869e2ac8dccc05eaae3b558eb5c20e46f8f58ea6))
+
+
+### Documentation
+
+* **ui:** add visual identity screenshot evidence ([e9345f8](https://github.com/joe-bor/FamilyHub/commit/e9345f864d58c9e92590a59e0dd42a6392bd748d))
+
+
+### Tests
+
+* add mobile bottom nav e2e coverage ([ff27d93](https://github.com/joe-bor/FamilyHub/commit/ff27d93d2162e92a26475fe0e9b8b79f8724b473))
+* align member chip opacity expectation ([2362b04](https://github.com/joe-bor/FamilyHub/commit/2362b0413f1cac148c52e8b2ef503cf6ce4e5991))
+* **e2e:** scope onboarding dashboard assertions ([eedd6b7](https://github.com/joe-bor/FamilyHub/commit/eedd6b708a24981837d0d51049350812878a650a))
+* harden calendar navigation e2e dialog waits ([e047745](https://github.com/joe-bor/FamilyHub/commit/e0477451d1c4983d1a3432f4e38db2eae1b3981e))
+* **lists:** add mobile lists e2e coverage ([9105913](https://github.com/joe-bor/FamilyHub/commit/9105913c1688982beeca23e12234a5f2552a6e85))
+* stabilize mobile bottom nav e2e ([2948140](https://github.com/joe-bor/FamilyHub/commit/2948140990960f5ad6b9847d529b4de0288fe277))
+* stabilize recurring event e2e flows ([57f79a7](https://github.com/joe-bor/FamilyHub/commit/57f79a7c18aa41f7f3c3ff1e156dca5d74303a99))
+
 ## [0.3.8](https://github.com/joe-bor/FamilyHub/compare/family-hub-v0.3.7...family-hub-v0.3.8) (2026-04-25)
 
 
