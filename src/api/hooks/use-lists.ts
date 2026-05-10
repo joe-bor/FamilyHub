@@ -32,6 +32,29 @@ function updateDetailItems(
   };
 }
 
+function replaceCreatedItem(
+  items: ListItem[],
+  temporaryId: string | undefined,
+  createdItem: ListItem,
+): ListItem[] {
+  const next: ListItem[] = [];
+  let inserted = false;
+
+  for (const item of items) {
+    if (item.id === temporaryId || item.id === createdItem.id) {
+      if (!inserted) {
+        next.push(createdItem);
+        inserted = true;
+      }
+      continue;
+    }
+
+    next.push(item);
+  }
+
+  return inserted ? next : [...next, createdItem];
+}
+
 export function useLists() {
   return useQuery({
     queryKey: listsKeys.hub(),
@@ -117,11 +140,42 @@ export function useCreateListItem(listId: string) {
   return useMutation({
     mutationFn: (request: CreateListItemRequest) =>
       listsService.createItem(listId, request),
-    onSuccess: (response) => {
+    onMutate: async (request) => {
+      await queryClient.cancelQueries({ queryKey: listsKeys.detail(listId) });
+      const previous = queryClient.getQueryData<ListDetailApiResponse>(
+        listsKeys.detail(listId),
+      );
+      const temporaryId = `optimistic-list-item-${crypto.randomUUID()}`;
+      const optimisticItem: ListItem = {
+        id: temporaryId,
+        text: request.text.trim(),
+        completed: false,
+        completedAt: null,
+        categoryId: request.categoryId ?? null,
+        createdAt: "pending",
+        updatedAt: "pending",
+      };
+
+      queryClient.setQueryData<ListDetailApiResponse>(
+        listsKeys.detail(listId),
+        (current) =>
+          updateDetailItems(current, (items) => [...items, optimisticItem]),
+      );
+
+      return { previous, temporaryId };
+    },
+    onError: (_error, _request, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(listsKeys.detail(listId), context.previous);
+      }
+    },
+    onSuccess: (response, _request, context) => {
       queryClient.setQueryData<ListDetailApiResponse>(
         listsKeys.detail(listId),
         (previous) =>
-          updateDetailItems(previous, (items) => [...items, response.data]),
+          updateDetailItems(previous, (items) =>
+            replaceCreatedItem(items, context?.temporaryId, response.data),
+          ),
       );
       queryClient.invalidateQueries({ queryKey: listsKeys.hub() });
     },

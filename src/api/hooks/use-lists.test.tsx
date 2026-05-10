@@ -1,5 +1,6 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { renderHook, waitFor } from "@testing-library/react";
+import { HttpResponse, http } from "msw";
 import type { ReactNode } from "react";
 import {
   afterAll,
@@ -10,8 +11,14 @@ import {
   expect,
   it,
 } from "vitest";
-import type { ApiResponse, ListDetail, ListPreferences } from "@/lib/types";
+import type {
+  ApiResponse,
+  ListDetail,
+  ListItem,
+  ListPreferences,
+} from "@/lib/types";
 import {
+  API_BASE,
   resetMockLists,
   seedMockListPreferences,
   seedMockLists,
@@ -50,6 +57,14 @@ const groceryList: ListDetail = {
   createdAt: "2026-05-06T09:00:00",
   updatedAt: "2026-05-06T09:00:00",
 };
+
+function createDeferred() {
+  let resolve!: () => void;
+  const promise = new Promise<void>((innerResolve) => {
+    resolve = innerResolve;
+  });
+  return { promise, resolve };
+}
 
 describe("useLists", () => {
   let queryClient: QueryClient;
@@ -300,6 +315,101 @@ describe("useLists", () => {
     deleteItem.current.mutate(secondItemId);
 
     await waitFor(() => {
+      expect(
+        queryClient.getQueryData<ApiResponse<ListDetail>>(
+          listsKeys.detail(groceryList.id),
+        )?.data.items,
+      ).toEqual([]);
+    });
+  });
+
+  it("optimistically inserts a created item and replaces it with the server item", async () => {
+    seedMockLists([groceryList]);
+    queryClient.setQueryData(listsKeys.detail(groceryList.id), {
+      data: groceryList,
+    } satisfies ApiResponse<ListDetail>);
+    const createCanFinish = createDeferred();
+    const serverItem: ListItem = {
+      id: "00000000-0000-4000-8000-000000009001",
+      text: "Milk",
+      completed: false,
+      completedAt: null,
+      categoryId: null,
+      createdAt: "2026-05-06T09:30:00",
+      updatedAt: "2026-05-06T09:30:00",
+    };
+    server.use(
+      http.post(`${API_BASE}/lists/:id/items`, async () => {
+        await createCanFinish.promise;
+        return HttpResponse.json(
+          { data: serverItem, message: "List item created successfully" },
+          { status: 201 },
+        );
+      }),
+    );
+
+    const { result } = renderHook(() => useCreateListItem(groceryList.id), {
+      wrapper: createWrapper(),
+    });
+
+    result.current.mutate({ text: "Milk", categoryId: null });
+
+    await waitFor(() => {
+      const items =
+        queryClient.getQueryData<ApiResponse<ListDetail>>(
+          listsKeys.detail(groceryList.id),
+        )?.data.items ?? [];
+      expect(items).toHaveLength(1);
+      expect(items[0]).toMatchObject({
+        text: "Milk",
+        completed: false,
+        categoryId: null,
+      });
+      expect(items[0].id).not.toBe(serverItem.id);
+    });
+
+    createCanFinish.resolve();
+
+    await waitFor(() => {
+      expect(
+        queryClient.getQueryData<ApiResponse<ListDetail>>(
+          listsKeys.detail(groceryList.id),
+        )?.data.items,
+      ).toEqual([serverItem]);
+    });
+  });
+
+  it("rolls back an optimistic created item when the server rejects it", async () => {
+    seedMockLists([groceryList]);
+    queryClient.setQueryData(listsKeys.detail(groceryList.id), {
+      data: groceryList,
+    } satisfies ApiResponse<ListDetail>);
+    const createCanFinish = createDeferred();
+    server.use(
+      http.post(`${API_BASE}/lists/:id/items`, async () => {
+        await createCanFinish.promise;
+        return HttpResponse.json({ message: "Server error" }, { status: 500 });
+      }),
+    );
+
+    const { result } = renderHook(() => useCreateListItem(groceryList.id), {
+      wrapper: createWrapper(),
+    });
+
+    result.current.mutate({ text: "Milk", categoryId: null });
+
+    await waitFor(() => {
+      expect(
+        queryClient.getQueryData<ApiResponse<ListDetail>>(
+          listsKeys.detail(groceryList.id),
+        )?.data.items,
+      ).toHaveLength(1);
+    });
+
+    createCanFinish.resolve();
+
+    await waitFor(() => {
+      expect(result.current.isError).toBe(true);
       expect(
         queryClient.getQueryData<ApiResponse<ListDetail>>(
           listsKeys.detail(groceryList.id),
