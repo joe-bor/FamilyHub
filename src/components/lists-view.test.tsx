@@ -1,4 +1,4 @@
-import { HttpResponse, http } from "msw";
+import { delay, HttpResponse, http } from "msw";
 import type { ListDetail } from "@/lib/types";
 import {
   API_BASE,
@@ -244,7 +244,32 @@ describe("ListsView hub", () => {
     ).toBeInTheDocument();
   });
 
-  it("does not render list detail with a fabricated completed preference on preference failure", async () => {
+  it("renders list detail and core item actions while preferences are loading", async () => {
+    seedMockLists([todoList]);
+    server.use(
+      http.get(`${API_BASE}/lists/preferences`, async () => {
+        await delay("infinite");
+      }),
+    );
+
+    const { user } = renderWithUser(<ListsView />);
+
+    await user.click(
+      await screen.findByRole("button", { name: /Weekend Reset/i }),
+    );
+
+    expect(
+      await screen.findByRole("heading", { name: "Weekend Reset" }),
+    ).toBeInTheDocument();
+    expect(screen.getByText("Pay bills")).toBeInTheDocument();
+    expect(screen.getByLabelText("Completed items")).toBeDisabled();
+    expect(screen.getByLabelText("Show completed by default")).toBeDisabled();
+
+    await user.click(screen.getByRole("button", { name: /^Call dentist$/ }));
+    expect(screen.getByText("Call dentist")).toHaveClass("line-through");
+  });
+
+  it("renders list detail and core item actions when preferences fail", async () => {
     seedMockLists([todoList]);
     server.use(
       http.get(`${API_BASE}/lists/preferences`, () =>
@@ -259,9 +284,20 @@ describe("ListsView hub", () => {
     );
 
     expect(
-      await screen.findByText("List preferences could not be loaded"),
+      await screen.findByRole("heading", { name: "Weekend Reset" }),
     ).toBeInTheDocument();
-    expect(screen.queryByText("Pay bills")).not.toBeInTheDocument();
+    expect(screen.getByText("Pay bills")).toBeInTheDocument();
+    expect(screen.getByLabelText("Completed items")).toBeDisabled();
+    expect(screen.getByLabelText("Show completed by default")).toBeDisabled();
+    expect(
+      screen.queryByText("List preferences could not be loaded"),
+    ).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Add item" }));
+    await typeAndWait(user, screen.getByLabelText("Item text"), "Trash bags");
+    await user.click(screen.getByRole("button", { name: "Save item" }));
+
+    expect(await screen.findByText("Trash bags")).toBeInTheDocument();
   });
 
   it("adds, edits, checks, unchecks, and deletes an item", async () => {

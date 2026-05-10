@@ -27,13 +27,15 @@ const kindLabels = {
 
 interface ListDetailViewProps {
   listId: string;
-  preferences: ListPreferences;
+  preferences: ListPreferences | null;
+  preferencesStatus: "ready" | "loading" | "error" | "unavailable";
   onBack: () => void;
 }
 
 export function ListDetailView({
   listId,
   preferences,
+  preferencesStatus,
   onBack,
 }: ListDetailViewProps) {
   const listQuery = useList(listId);
@@ -70,8 +72,12 @@ export function ListDetailView({
   }
 
   const list = listQuery.data.data;
+  const hasPreferences = preferences !== null;
+  const familyShowCompletedDefault =
+    preferences?.showCompletedByDefault ?? true;
+  const completedControlsDisabled = !hasPreferences;
   const resolvedShowCompleted =
-    list.showCompletedOverride ?? preferences.showCompletedByDefault;
+    list.showCompletedOverride ?? familyShowCompletedDefault;
   const sections = buildListSections({
     list,
     showCompleted: resolvedShowCompleted,
@@ -86,6 +92,10 @@ export function ListDetailView({
       : list.showCompletedOverride
         ? "show"
         : "hide";
+  const completedFallbackMessage =
+    preferencesStatus === "loading"
+      ? "Family completed default is loading. Completed items are shown until it loads."
+      : "Family completed default is unavailable. Completed items are shown until it loads.";
   const clearCompletedDisabled =
     !list.items.some((item) => item.completed) ||
     updateItem.isPending ||
@@ -145,6 +155,7 @@ export function ListDetailView({
               <select
                 id="completed-items"
                 value={completedOverrideValue}
+                disabled={completedControlsDisabled}
                 onChange={(event) =>
                   updateList.mutate({
                     categoryDisplayMode: list.categoryDisplayMode,
@@ -158,11 +169,21 @@ export function ListDetailView({
               >
                 <option value="family-default">
                   Family default (
-                  {preferences.showCompletedByDefault ? "show" : "hide"})
+                  {hasPreferences
+                    ? familyShowCompletedDefault
+                      ? "show"
+                      : "hide"
+                    : "show for now"}
+                  )
                 </option>
                 <option value="show">Always show</option>
                 <option value="hide">Hide completed</option>
               </select>
+              {completedControlsDisabled && (
+                <p className="text-xs leading-4 text-muted-foreground">
+                  {completedFallbackMessage}
+                </p>
+              )}
             </div>
           </div>
 
@@ -174,7 +195,8 @@ export function ListDetailView({
               <input
                 id="family-completed-default"
                 type="checkbox"
-                checked={preferences.showCompletedByDefault}
+                checked={familyShowCompletedDefault}
+                disabled={completedControlsDisabled}
                 onChange={(event) =>
                   updatePreferences.mutate({
                     showCompletedByDefault: event.target.checked,
