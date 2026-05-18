@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.10](https://github.com/joe-bor/FamilyHub/compare/family-hub-v0.3.9...family-hub-v0.3.10) (2026-05-18)
+
+
+### Bug Fixes
+
+* force-ignore frontend worktrees in biome ([0cf42ea](https://github.com/joe-bor/FamilyHub/commit/0cf42ea5abcba9f299cdacb6e94be8e8ed134ead))
+
 ## [0.3.9](https://github.com/joe-bor/FamilyHub/compare/family-hub-v0.3.8...family-hub-v0.3.9) (2026-05-10)
 
 
