@@ -1,6 +1,12 @@
 import { AlertCircle, Plus } from "lucide-react";
 import { useState } from "react";
-import { useChoresBoard } from "@/api";
+import {
+  useChoresBoard,
+  useCompleteChoreForCurrentPeriod,
+  useCreateChoreTemplate,
+  useUncompleteChoreForCurrentPeriod,
+  useUpdateChoreTemplate,
+} from "@/api";
 import { ChoreFormSheet } from "@/components/chores/chore-form-sheet";
 import { ChoreScopeColumn } from "@/components/chores/chores-scope-column";
 import {
@@ -9,8 +15,9 @@ import {
 } from "@/components/chores/chores-scope-switcher";
 import { Button } from "@/components/ui/button";
 import { useIsMobile } from "@/hooks";
-import type { ChoresBoard } from "@/lib/types";
+import type { ChoreBoardItem, ChoreScopeBoard, ChoresBoard } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import type { ChoreFormData } from "@/lib/validations";
 
 function hasAnyRoutines(board: ChoresBoard): boolean {
   return [board.today, board.thisWeek, board.thisMonth].some(
@@ -30,6 +37,12 @@ export function ChoresView() {
     useState<ChoreScopeKey>("today");
   const [isCreateOpen, setCreateOpen] = useState(false);
   const { data, isError, isLoading } = useChoresBoard();
+  const createTemplate = useCreateChoreTemplate({
+    onSuccess: () => setCreateOpen(false),
+  });
+  const updateTemplate = useUpdateChoreTemplate();
+  const completeCurrentPeriod = useCompleteChoreForCurrentPeriod();
+  const uncompleteCurrentPeriod = useUncompleteChoreForCurrentPeriod();
   const board = data?.data;
   const hasRoutines = board ? hasAnyRoutines(board) : false;
   const visibleScopes = board
@@ -37,6 +50,45 @@ export function ChoresView() {
       ? [selectedScope(board, selectedScopeKey)]
       : [board.today, board.thisWeek, board.thisMonth]
     : [];
+  const activeFrom = board?.today.periodStartDate;
+
+  const handleCreate = (values: ChoreFormData) => {
+    if (!activeFrom) return;
+
+    createTemplate.mutate({
+      title: values.title,
+      assignedToMemberId: values.assignedToMemberId,
+      cadence: values.cadence,
+      activeFrom,
+    });
+  };
+
+  const handleArchive = (_scope: ChoreScopeBoard, chore: ChoreBoardItem) => {
+    updateTemplate.mutate({
+      id: chore.templateId,
+      request: { archived: true },
+    });
+  };
+
+  const handleComplete = (scope: ChoreScopeBoard, chore: ChoreBoardItem) => {
+    completeCurrentPeriod.mutate({
+      templateId: chore.templateId,
+      request: {
+        scope: scope.scope,
+        periodStartDate: scope.periodStartDate,
+      },
+    });
+  };
+
+  const handleUncomplete = (scope: ChoreScopeBoard, chore: ChoreBoardItem) => {
+    uncompleteCurrentPeriod.mutate({
+      templateId: chore.templateId,
+      request: {
+        scope: scope.scope,
+        periodStartDate: scope.periodStartDate,
+      },
+    });
+  };
 
   return (
     <>
@@ -91,7 +143,13 @@ export function ChoresView() {
           {!isLoading && !isError && board && hasRoutines && (
             <div className={cn("grid gap-4", !isMobile && "lg:grid-cols-3")}>
               {visibleScopes.map((scope) => (
-                <ChoreScopeColumn key={scope.scope} scope={scope} />
+                <ChoreScopeColumn
+                  key={scope.scope}
+                  scope={scope}
+                  onArchive={handleArchive}
+                  onComplete={handleComplete}
+                  onUncomplete={handleUncomplete}
+                />
               ))}
             </div>
           )}
@@ -101,8 +159,8 @@ export function ChoresView() {
       <ChoreFormSheet
         isOpen={isCreateOpen}
         onClose={() => setCreateOpen(false)}
-        isPending={false}
-        onSubmit={() => setCreateOpen(false)}
+        isPending={createTemplate.isPending}
+        onSubmit={handleCreate}
       />
     </>
   );

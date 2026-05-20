@@ -1,15 +1,13 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import { X } from "lucide-react";
 import { useEffect, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { useFamilyMembers } from "@/api";
 import { Button } from "@/components/ui/button";
-import { DatePicker } from "@/components/ui/date-picker";
 import { FormError } from "@/components/ui/form-error";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { MemberSelector } from "@/components/ui/member-selector";
-import { formatLocalDate, parseLocalDate } from "@/lib/time-utils";
+import type { ChoreCadence } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import {
   type ChoreFormData,
@@ -35,15 +33,16 @@ export function ChoreForm({
   const familyMembers = useFamilyMembers();
   const defaultTitle = defaultValues?.title;
   const defaultAssignedToMemberId = defaultValues?.assignedToMemberId;
-  const defaultDueDate = defaultValues?.dueDate;
+  const defaultCadence = defaultValues?.cadence;
 
   const initialValues = useMemo(
     (): Partial<ChoreFormInput> => ({
       title: defaultTitle ?? "",
-      assignedToMemberId: defaultAssignedToMemberId ?? "",
-      dueDate: defaultDueDate,
+      assignedToMemberId:
+        defaultAssignedToMemberId ?? familyMembers[0]?.id ?? "",
+      cadence: defaultCadence ?? "DAILY",
     }),
-    [defaultTitle, defaultAssignedToMemberId, defaultDueDate],
+    [defaultTitle, defaultAssignedToMemberId, defaultCadence, familyMembers],
   );
 
   const {
@@ -63,13 +62,18 @@ export function ChoreForm({
   }, [initialValues, reset]);
 
   const assignedToMemberId = watch("assignedToMemberId") ?? "";
-  const dueDateValue = watch("dueDate");
-  const dueDateAsDate = dueDateValue ? parseLocalDate(dueDateValue) : undefined;
+  const cadence = watch("cadence") ?? "DAILY";
 
   const handleFormSubmit = (data: ChoreFormData) => {
     if (isPending) return;
     onSubmit(data);
   };
+
+  const cadenceOptions: Array<{ value: ChoreCadence; label: string }> = [
+    { value: "DAILY", label: "Daily" },
+    { value: "WEEKLY", label: "Weekly" },
+    { value: "MONTHLY", label: "Monthly" },
+  ];
 
   return (
     <form
@@ -106,37 +110,27 @@ export function ChoreForm({
       </div>
 
       <div className="space-y-2">
-        <Label>Due Date</Label>
-        <div className="flex gap-2">
-          <DatePicker
-            value={dueDateAsDate}
-            onChange={(date) =>
-              setValue("dueDate", date ? formatLocalDate(date) : undefined, {
-                shouldDirty: true,
-                shouldValidate: true,
-              })
-            }
-            placeholder="No due date"
-            error={!!errors.dueDate}
-          />
-          {dueDateValue && (
+        <Label>Repeats</Label>
+        <div className="grid grid-cols-3 gap-2">
+          {cadenceOptions.map((option) => (
             <Button
+              key={option.value}
               type="button"
-              variant="outline"
-              size="icon"
-              aria-label="Clear due date"
+              variant={cadence === option.value ? "default" : "outline"}
+              aria-pressed={cadence === option.value}
               onClick={() =>
-                setValue("dueDate", undefined, {
+                setValue("cadence", option.value, {
                   shouldDirty: true,
                   shouldValidate: true,
                 })
               }
+              className="min-w-0"
             >
-              <X className="h-4 w-4" />
+              {option.label}
             </Button>
-          )}
+          ))}
         </div>
-        <FormError message={errors.dueDate?.message} />
+        <FormError message={errors.cadence?.message} />
       </div>
 
       <div className="flex gap-3 pt-3">

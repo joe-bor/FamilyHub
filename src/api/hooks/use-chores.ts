@@ -4,7 +4,11 @@ import type { ApiException } from "@/api/client";
 import { choreService } from "@/api/services";
 import type {
   ApiResponse,
+  ChoreAssigneeGroup as ChoreAssigneeGroupData,
+  ChoreBoardItem,
   ChoreCurrentPeriodState,
+  ChoreScope,
+  ChoreScopeBoard,
   ChoresBoard,
   ChoreTemplate,
   CreateChoreTemplateRequest,
@@ -16,6 +20,103 @@ export const choreKeys = {
   all: ["chores"] as const,
   board: () => [...choreKeys.all, "board"] as const,
 };
+
+type BoardScopeKey = "today" | "thisWeek" | "thisMonth";
+
+function boardKeyForScope(scope: ChoreScope): BoardScopeKey {
+  if (scope === "TODAY") return "today";
+  if (scope === "THIS_WEEK") return "thisWeek";
+  return "thisMonth";
+}
+
+function recalculateAssigneeGroup(
+  group: ChoreAssigneeGroupData,
+): ChoreAssigneeGroupData {
+  const total = group.chores.length;
+  const completed = group.chores.filter((chore) => chore.completed).length;
+
+  return {
+    ...group,
+    summary: {
+      total,
+      completed,
+      remaining: total - completed,
+    },
+  };
+}
+
+function recalculateScope(scope: ChoreScopeBoard): ChoreScopeBoard {
+  const assignees = scope.assignees
+    .map(recalculateAssigneeGroup)
+    .filter((group) => group.summary.total > 0);
+  const total = assignees.reduce((sum, group) => sum + group.summary.total, 0);
+  const completed = assignees.reduce(
+    (sum, group) => sum + group.summary.completed,
+    0,
+  );
+
+  return {
+    ...scope,
+    assignees,
+    summary: {
+      total,
+      completed,
+      remaining: total - completed,
+    },
+  };
+}
+
+function replaceChoreInScope(
+  scope: ChoreScopeBoard,
+  updatedChore: ChoreBoardItem,
+): ChoreScopeBoard {
+  return recalculateScope({
+    ...scope,
+    assignees: scope.assignees.map((group) => ({
+      ...group,
+      chores: group.chores.map((chore) =>
+        chore.templateId === updatedChore.templateId ? updatedChore : chore,
+      ),
+    })),
+  });
+}
+
+function removeTemplateFromScope(
+  scope: ChoreScopeBoard,
+  templateId: string,
+): ChoreScopeBoard {
+  return recalculateScope({
+    ...scope,
+    assignees: scope.assignees.map((group) => ({
+      ...group,
+      chores: group.chores.filter((chore) => chore.templateId !== templateId),
+    })),
+  });
+}
+
+function applyCurrentPeriodState(
+  board: ChoresBoard,
+  state: ChoreCurrentPeriodState,
+): ChoresBoard {
+  const scopeKey = boardKeyForScope(state.scope);
+
+  return {
+    ...board,
+    [scopeKey]: replaceChoreInScope(board[scopeKey], state.item),
+  };
+}
+
+function removeTemplateFromBoard(
+  board: ChoresBoard,
+  templateId: string,
+): ChoresBoard {
+  return {
+    ...board,
+    today: removeTemplateFromScope(board.today, templateId),
+    thisWeek: removeTemplateFromScope(board.thisWeek, templateId),
+    thisMonth: removeTemplateFromScope(board.thisMonth, templateId),
+  };
+}
 
 export function useChoresBoard(
   options?: Omit<
@@ -73,7 +174,24 @@ export function useUpdateChoreTemplate(
       request: UpdateChoreTemplateRequest;
     }) => choreService.updateTemplate(id, request),
     onSuccess: (response) => {
-      queryClient.invalidateQueries({ queryKey: choreKeys.board() });
+      if (response.data.archived) {
+        queryClient.setQueryData<ApiResponse<ChoresBoard>>(
+          choreKeys.board(),
+          (current) =>
+            current
+              ? {
+                  ...current,
+                  data: removeTemplateFromBoard(current.data, response.data.id),
+                }
+              : current,
+        );
+        queryClient.invalidateQueries({
+          queryKey: choreKeys.board(),
+          refetchType: "none",
+        });
+      } else {
+        queryClient.invalidateQueries({ queryKey: choreKeys.board() });
+      }
       callbacks?.onSuccess?.(response);
     },
     onError: (error: ApiException) => {
@@ -101,7 +219,20 @@ export function useCompleteChoreForCurrentPeriod(
       request: UpdateCurrentPeriodCompletionRequest;
     }) => choreService.completeCurrentPeriod(templateId, request),
     onSuccess: (response) => {
-      queryClient.invalidateQueries({ queryKey: choreKeys.board() });
+      queryClient.setQueryData<ApiResponse<ChoresBoard>>(
+        choreKeys.board(),
+        (current) =>
+          current
+            ? {
+                ...current,
+                data: applyCurrentPeriodState(current.data, response.data),
+              }
+            : current,
+      );
+      queryClient.invalidateQueries({
+        queryKey: choreKeys.board(),
+        refetchType: "none",
+      });
       callbacks?.onSuccess?.(response);
     },
     onError: (error: ApiException) => {
@@ -124,7 +255,20 @@ export function useUncompleteChoreForCurrentPeriod(
       request: UpdateCurrentPeriodCompletionRequest;
     }) => choreService.uncompleteCurrentPeriod(templateId, request),
     onSuccess: (response) => {
-      queryClient.invalidateQueries({ queryKey: choreKeys.board() });
+      queryClient.setQueryData<ApiResponse<ChoresBoard>>(
+        choreKeys.board(),
+        (current) =>
+          current
+            ? {
+                ...current,
+                data: applyCurrentPeriodState(current.data, response.data),
+              }
+            : current,
+      );
+      queryClient.invalidateQueries({
+        queryKey: choreKeys.board(),
+        refetchType: "none",
+      });
       callbacks?.onSuccess?.(response);
     },
     onError: (error: ApiException) => {

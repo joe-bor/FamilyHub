@@ -1,11 +1,25 @@
+import { HttpResponse, http } from "msw";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { ChoresBoard } from "@/lib/types";
-import { seedMockChoresBoard, setupMswServer } from "@/test/mocks/server";
+import type {
+  ChoresBoard,
+  CreateChoreTemplateRequest,
+  UpdateChoreTemplateRequest,
+  UpdateCurrentPeriodCompletionRequest,
+} from "@/lib/types";
+import {
+  API_BASE,
+  seedMockChoresBoard,
+  server,
+  setupMswServer,
+} from "@/test/mocks/server";
 import {
   render,
   renderWithUser,
   screen,
   seedFamilyStore,
+  typeAndWait,
+  waitFor,
+  waitForMemberSelected,
 } from "@/test/test-utils";
 import { ChoresView } from "./chores-view";
 
@@ -201,5 +215,172 @@ describe("ChoresView", () => {
     expect(screen.getByTestId("chore-row-fridge-id")).toHaveClass(
       "bg-muted/40",
     );
+  });
+
+  it("creates a weekly recurring routine with activeFrom from the board", async () => {
+    let capturedCreateBody: CreateChoreTemplateRequest | null = null;
+    server.use(
+      http.post(`${API_BASE}/chores/templates`, async ({ request }) => {
+        capturedCreateBody =
+          (await request.json()) as CreateChoreTemplateRequest;
+        return HttpResponse.json(
+          {
+            data: {
+              id: "trash-id",
+              title: "Take out trash",
+              assignedToMemberId: "leo",
+              cadence: "WEEKLY",
+              activeFrom: "2026-05-17",
+              archived: false,
+              createdAt: "2026-05-17T09:00:00Z",
+              updatedAt: "2026-05-17T09:00:00Z",
+            },
+          },
+          { status: 201 },
+        );
+      }),
+    );
+    seedMockChoresBoard(emptyChoresBoard());
+    const { user } = renderWithUser(<ChoresView />);
+
+    await user.click(
+      await screen.findByRole("button", { name: /add recurring chore/i }),
+    );
+    await waitForMemberSelected("Leo");
+    await typeAndWait(
+      user,
+      screen.getByLabelText(/chore name/i),
+      "Take out trash",
+    );
+    await user.click(screen.getByRole("button", { name: "Weekly" }));
+    await user.click(screen.getByRole("button", { name: /save chore/i }));
+
+    await waitFor(() => {
+      expect(capturedCreateBody).toEqual({
+        title: "Take out trash",
+        assignedToMemberId: "leo",
+        cadence: "WEEKLY",
+        activeFrom: "2026-05-17",
+      });
+    });
+  });
+
+  it("completes and uncompletes a routine for the current period", async () => {
+    let capturedCompletionBody: UpdateCurrentPeriodCompletionRequest | null =
+      null;
+    let capturedUncompletionBody: UpdateCurrentPeriodCompletionRequest | null =
+      null;
+    server.use(
+      http.put(
+        `${API_BASE}/chores/templates/brush-teeth-id/current-period-completion`,
+        async ({ request }) => {
+          capturedCompletionBody =
+            (await request.json()) as UpdateCurrentPeriodCompletionRequest;
+          return HttpResponse.json({
+            data: {
+              scope: "TODAY",
+              periodStartDate: "2026-05-17",
+              periodEndDate: "2026-05-17",
+              item: {
+                templateId: "brush-teeth-id",
+                title: "Brush teeth",
+                cadence: "DAILY",
+                assignedToMemberId: "leo",
+                completed: true,
+                completedAt: "2026-05-17T09:30:00Z",
+              },
+            },
+          });
+        },
+      ),
+      http.delete(
+        `${API_BASE}/chores/templates/brush-teeth-id/current-period-completion`,
+        async ({ request }) => {
+          capturedUncompletionBody =
+            (await request.json()) as UpdateCurrentPeriodCompletionRequest;
+          return HttpResponse.json({
+            data: {
+              scope: "TODAY",
+              periodStartDate: "2026-05-17",
+              periodEndDate: "2026-05-17",
+              item: {
+                templateId: "brush-teeth-id",
+                title: "Brush teeth",
+                cadence: "DAILY",
+                assignedToMemberId: "leo",
+                completed: false,
+                completedAt: null,
+              },
+            },
+          });
+        },
+      ),
+    );
+    seedMockChoresBoard(sampleChoresBoard());
+    const { user } = renderWithUser(<ChoresView />);
+
+    await user.click(
+      await screen.findByRole("button", {
+        name: /mark brush teeth complete/i,
+      }),
+    );
+
+    await waitFor(() => {
+      expect(capturedCompletionBody).toEqual({
+        scope: "TODAY",
+        periodStartDate: "2026-05-17",
+      });
+    });
+    await waitFor(() => {
+      expect(screen.getByTestId("chore-row-brush-teeth-id")).toHaveClass(
+        "bg-muted/40",
+      );
+    });
+
+    await user.click(
+      screen.getByRole("button", { name: /mark brush teeth incomplete/i }),
+    );
+
+    await waitFor(() => {
+      expect(capturedUncompletionBody).toEqual({
+        scope: "TODAY",
+        periodStartDate: "2026-05-17",
+      });
+    });
+  });
+
+  it("archives a recurring routine from the row action", async () => {
+    let capturedUpdateBody: UpdateChoreTemplateRequest | null = null;
+    server.use(
+      http.patch(
+        `${API_BASE}/chores/templates/brush-teeth-id`,
+        async ({ request }) => {
+          capturedUpdateBody =
+            (await request.json()) as UpdateChoreTemplateRequest;
+          return HttpResponse.json({
+            data: {
+              id: "brush-teeth-id",
+              title: "Brush teeth",
+              assignedToMemberId: "leo",
+              cadence: "DAILY",
+              activeFrom: "2026-05-17",
+              archived: true,
+              createdAt: "2026-05-17T08:00:00Z",
+              updatedAt: "2026-05-17T09:05:00Z",
+            },
+          });
+        },
+      ),
+    );
+    seedMockChoresBoard(sampleChoresBoard());
+    const { user } = renderWithUser(<ChoresView />);
+
+    await user.click(
+      await screen.findByRole("button", { name: /archive brush teeth/i }),
+    );
+
+    await waitFor(() => {
+      expect(capturedUpdateBody).toEqual({ archived: true });
+    });
   });
 });

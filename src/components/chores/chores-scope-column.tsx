@@ -1,8 +1,11 @@
-import type { ChoreScopeBoard } from "@/lib/types";
+import type { ChoreBoardItem, ChoreScopeBoard } from "@/lib/types";
 import { ChoreAssigneeGroup } from "./chore-assignee-group";
 
 interface ChoreScopeColumnProps {
   scope: ChoreScopeBoard;
+  onArchive?: (scope: ChoreScopeBoard, chore: ChoreBoardItem) => void;
+  onComplete?: (scope: ChoreScopeBoard, chore: ChoreBoardItem) => void;
+  onUncomplete?: (scope: ChoreScopeBoard, chore: ChoreBoardItem) => void;
 }
 
 function scopeHeading(scope: ChoreScopeBoard["scope"]): string {
@@ -11,7 +14,12 @@ function scopeHeading(scope: ChoreScopeBoard["scope"]): string {
   return "This Month";
 }
 
-export function ChoreScopeColumn({ scope }: ChoreScopeColumnProps) {
+export function ChoreScopeColumn({
+  scope,
+  onArchive,
+  onComplete,
+  onUncomplete,
+}: ChoreScopeColumnProps) {
   const heading = scopeHeading(scope.scope);
   const isFullyComplete =
     scope.summary.total > 0 && scope.summary.remaining === 0;
@@ -45,7 +53,13 @@ export function ChoreScopeColumn({ scope }: ChoreScopeColumnProps) {
             </p>
           )}
           {scope.assignees.map((group) => (
-            <ChoreAssigneeGroup key={group.member.id} group={group} />
+            <ChoreAssigneeGroup
+              key={group.member.id}
+              group={group}
+              onArchive={(chore) => onArchive?.(scope, chore)}
+              onComplete={(chore) => onComplete?.(scope, chore)}
+              onUncomplete={(chore) => onUncomplete?.(scope, chore)}
+            />
           ))}
         </div>
       )}
