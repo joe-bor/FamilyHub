@@ -6,7 +6,7 @@ const projects = [
   { name: "firefox", use: { ...devices["Desktop Firefox"] } },
   { name: "webkit", use: { ...devices["Desktop Safari"] } },
   {
-    name: "mobile-chrome",
+    name: "Mobile Chrome",
     use: {
       ...devices["iPhone 14"],
       // Extended action timeout for mobile - touch interactions can be slower
