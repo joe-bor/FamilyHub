@@ -177,8 +177,8 @@ export function createHttpClient(config: HttpClientConfig) {
         body: data,
       }),
 
-    delete: <T>(endpoint: string, config?: RequestConfig) =>
-      request<T>(endpoint, { ...config, method: "DELETE" }),
+    delete: <T>(endpoint: string, data?: unknown, config?: RequestConfig) =>
+      request<T>(endpoint, { ...config, method: "DELETE", body: data }),
   };
 }
 

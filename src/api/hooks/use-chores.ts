@@ -4,124 +4,64 @@ import type { ApiException } from "@/api/client";
 import { choreService } from "@/api/services";
 import type {
   ApiResponse,
-  Chore,
-  CreateChoreRequest,
-  UpdateChoreRequest,
+  ChoreCurrentPeriodState,
+  ChoresBoard,
+  ChoreTemplate,
+  CreateChoreTemplateRequest,
+  UpdateChoreTemplateRequest,
+  UpdateCurrentPeriodCompletionRequest,
 } from "@/lib/types";
 
 export const choreKeys = {
   all: ["chores"] as const,
-  list: () => [...choreKeys.all, "list"] as const,
+  board: () => [...choreKeys.all, "board"] as const,
 };
 
-export function useChores(
+export function useChoresBoard(
   options?: Omit<
-    UseQueryOptions<ApiResponse<Chore[]>, ApiException>,
+    UseQueryOptions<ApiResponse<ChoresBoard>, ApiException>,
     "queryKey" | "queryFn"
   >,
 ) {
   return useQuery({
-    queryKey: choreKeys.list(),
-    queryFn: choreService.getChores,
+    queryKey: choreKeys.board(),
+    queryFn: () => choreService.getBoard(),
     staleTime: 5 * 60 * 1000,
     ...options,
   });
 }
 
-interface CreateChoreCallbacks {
-  onSuccess?: (data: ApiResponse<Chore>) => void;
+interface CreateChoreTemplateCallbacks {
+  onSuccess?: (data: ApiResponse<ChoreTemplate>) => void;
   onError?: (error: ApiException) => void;
 }
 
-let optimisticChoreCounter = 0;
-
-function createOptimisticChore(request: CreateChoreRequest): Chore {
-  const now = new Date();
-  optimisticChoreCounter += 1;
-
-  return {
-    id: `temp-chore-${now.getTime()}-${optimisticChoreCounter}`,
-    title: request.title,
-    assignedToMemberId: request.assignedToMemberId,
-    dueDate: request.dueDate ?? null,
-    completed: false,
-    completedAt: null,
-    createdAt: now.toISOString(),
-    updatedAt: now.toISOString(),
-  };
-}
-
-export function useCreateChore(callbacks?: CreateChoreCallbacks) {
+export function useCreateChoreTemplate(
+  callbacks?: CreateChoreTemplateCallbacks,
+) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: choreService.createChore,
-    onMutate: async (request) => {
-      await queryClient.cancelQueries({ queryKey: choreKeys.list() });
-
-      const previousData = queryClient.getQueryData<ApiResponse<Chore[]>>(
-        choreKeys.list(),
-      );
-      const optimisticChore = createOptimisticChore(request);
-
-      queryClient.setQueryData<ApiResponse<Chore[]>>(choreKeys.list(), (old) =>
-        old
-          ? { ...old, data: [...old.data, optimisticChore] }
-          : { data: [optimisticChore] },
-      );
-
-      return { optimisticChoreId: optimisticChore.id, previousData };
-    },
-    onError: (error: ApiException, _request, context) => {
-      if (context?.previousData) {
-        queryClient.setQueryData(choreKeys.list(), context.previousData);
-      } else if (context?.optimisticChoreId) {
-        queryClient.setQueryData<ApiResponse<Chore[]>>(
-          choreKeys.list(),
-          (old) =>
-            old
-              ? {
-                  ...old,
-                  data: old.data.filter(
-                    (chore) => chore.id !== context.optimisticChoreId,
-                  ),
-                }
-              : old,
-        );
-      }
-      callbacks?.onError?.(error);
-    },
-    onSuccess: (response, _request, context) => {
-      queryClient.setQueryData<ApiResponse<Chore[]>>(choreKeys.list(), (old) =>
-        old
-          ? {
-              ...old,
-              data: old.data.some(
-                (chore) => chore.id === context?.optimisticChoreId,
-              )
-                ? old.data.map((chore) =>
-                    chore.id === context?.optimisticChoreId
-                      ? response.data
-                      : chore,
-                  )
-                : [...old.data, response.data],
-            }
-          : { data: [response.data] },
-      );
+    mutationFn: (request: CreateChoreTemplateRequest) =>
+      choreService.createTemplate(request),
+    onSuccess: (response) => {
+      queryClient.invalidateQueries({ queryKey: choreKeys.board() });
       callbacks?.onSuccess?.(response);
     },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: choreKeys.list() });
+    onError: (error: ApiException) => {
+      callbacks?.onError?.(error);
     },
   });
 }
 
-interface UpdateChoreCallbacks {
-  onSuccess?: (data: ApiResponse<Chore>) => void;
+interface UpdateChoreTemplateCallbacks {
+  onSuccess?: (data: ApiResponse<ChoreTemplate>) => void;
   onError?: (error: ApiException) => void;
 }
 
-export function useUpdateChore(callbacks?: UpdateChoreCallbacks) {
+export function useUpdateChoreTemplate(
+  callbacks?: UpdateChoreTemplateCallbacks,
+) {
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -130,98 +70,65 @@ export function useUpdateChore(callbacks?: UpdateChoreCallbacks) {
       request,
     }: {
       id: string;
-      request: UpdateChoreRequest;
-    }) => choreService.updateChore(id, request),
-    onMutate: async ({ id, request }) => {
-      await queryClient.cancelQueries({ queryKey: choreKeys.list() });
-
-      const previousData = queryClient.getQueryData<ApiResponse<Chore[]>>(
-        choreKeys.list(),
-      );
-
-      queryClient.setQueryData<ApiResponse<Chore[]>>(choreKeys.list(), (old) =>
-        old
-          ? {
-              ...old,
-              data: old.data.map((chore) =>
-                chore.id === id
-                  ? {
-                      ...chore,
-                      completed: request.completed,
-                      completedAt: request.completed ? chore.completedAt : null,
-                    }
-                  : chore,
-              ),
-            }
-          : old,
-      );
-
-      return { previousData };
-    },
-    onError: (error: ApiException, _variables, context) => {
-      if (context?.previousData) {
-        queryClient.setQueryData(choreKeys.list(), context.previousData);
-      }
-      callbacks?.onError?.(error);
-    },
+      request: UpdateChoreTemplateRequest;
+    }) => choreService.updateTemplate(id, request),
     onSuccess: (response) => {
-      queryClient.setQueryData<ApiResponse<Chore[]>>(choreKeys.list(), (old) =>
-        old
-          ? {
-              ...old,
-              data: old.data.map((chore) =>
-                chore.id === response.data.id ? response.data : chore,
-              ),
-            }
-          : old,
-      );
+      queryClient.invalidateQueries({ queryKey: choreKeys.board() });
       callbacks?.onSuccess?.(response);
     },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: choreKeys.list() });
+    onError: (error: ApiException) => {
+      callbacks?.onError?.(error);
     },
   });
 }
 
-interface DeleteChoreCallbacks {
-  onSuccess?: () => void;
+interface CurrentPeriodCompletionCallbacks {
+  onSuccess?: (data: ApiResponse<ChoreCurrentPeriodState>) => void;
   onError?: (error: ApiException) => void;
 }
 
-export function useDeleteChore(callbacks?: DeleteChoreCallbacks) {
+export function useCompleteChoreForCurrentPeriod(
+  callbacks?: CurrentPeriodCompletionCallbacks,
+) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: choreService.deleteChore,
-    onMutate: async (id) => {
-      await queryClient.cancelQueries({ queryKey: choreKeys.list() });
-
-      const previousData = queryClient.getQueryData<ApiResponse<Chore[]>>(
-        choreKeys.list(),
-      );
-
-      queryClient.setQueryData<ApiResponse<Chore[]>>(choreKeys.list(), (old) =>
-        old
-          ? {
-              ...old,
-              data: old.data.filter((chore) => chore.id !== id),
-            }
-          : old,
-      );
-
-      return { previousData };
+    mutationFn: ({
+      templateId,
+      request,
+    }: {
+      templateId: string;
+      request: UpdateCurrentPeriodCompletionRequest;
+    }) => choreService.completeCurrentPeriod(templateId, request),
+    onSuccess: (response) => {
+      queryClient.invalidateQueries({ queryKey: choreKeys.board() });
+      callbacks?.onSuccess?.(response);
     },
-    onError: (error: ApiException, _id, context) => {
-      if (context?.previousData) {
-        queryClient.setQueryData(choreKeys.list(), context.previousData);
-      }
+    onError: (error: ApiException) => {
       callbacks?.onError?.(error);
     },
-    onSuccess: () => {
-      callbacks?.onSuccess?.();
+  });
+}
+
+export function useUncompleteChoreForCurrentPeriod(
+  callbacks?: CurrentPeriodCompletionCallbacks,
+) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      templateId,
+      request,
+    }: {
+      templateId: string;
+      request: UpdateCurrentPeriodCompletionRequest;
+    }) => choreService.uncompleteCurrentPeriod(templateId, request),
+    onSuccess: (response) => {
+      queryClient.invalidateQueries({ queryKey: choreKeys.board() });
+      callbacks?.onSuccess?.(response);
     },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: choreKeys.list() });
+    onError: (error: ApiException) => {
+      callbacks?.onError?.(error);
     },
   });
 }

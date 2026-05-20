@@ -1,22 +1,24 @@
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { type QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { renderHook, waitFor } from "@testing-library/react";
 import { HttpResponse, http } from "msw";
 import type { ReactNode } from "react";
-import type { ApiResponse, Chore } from "@/lib/types";
+import type {
+  ChoresBoard,
+  UpdateChoreTemplateRequest,
+  UpdateCurrentPeriodCompletionRequest,
+} from "@/lib/types";
 import {
   API_BASE,
-  getMockChores,
-  seedMockChores,
+  seedMockChoresBoard,
   server,
   setupMswServer,
 } from "@/test/mocks/server";
 import { createTestQueryClient, seedFamilyStore } from "@/test/test-utils";
 import {
-  choreKeys,
-  useChores,
-  useCreateChore,
-  useDeleteChore,
-  useUpdateChore,
+  useChoresBoard,
+  useCompleteChoreForCurrentPeriod,
+  useUncompleteChoreForCurrentPeriod,
+  useUpdateChoreTemplate,
 } from "./use-chores";
 
 function createWrapper(queryClient: QueryClient) {
@@ -27,25 +29,45 @@ function createWrapper(queryClient: QueryClient) {
   };
 }
 
-function createOptimisticQueryClient() {
-  return new QueryClient({
-    defaultOptions: {
-      queries: { retry: false, gcTime: Infinity, staleTime: Infinity },
-      mutations: { retry: false },
-    },
-  });
-}
-
-function createMockChore(overrides: Partial<Chore> = {}): Chore {
+function sampleChoresBoard(): ChoresBoard {
   return {
-    id: overrides.id ?? "chore-1",
-    title: overrides.title ?? "Take out trash",
-    assignedToMemberId: overrides.assignedToMemberId ?? "member-1",
-    dueDate: overrides.dueDate ?? "2026-05-05",
-    completed: overrides.completed ?? false,
-    completedAt: overrides.completedAt ?? null,
-    createdAt: overrides.createdAt ?? "2026-05-05T09:00:00",
-    updatedAt: overrides.updatedAt ?? "2026-05-05T09:00:00",
+    timezone: "America/Los_Angeles",
+    today: {
+      scope: "TODAY",
+      periodStartDate: "2026-05-17",
+      periodEndDate: "2026-05-17",
+      summary: { total: 1, completed: 0, remaining: 1 },
+      assignees: [
+        {
+          member: { id: "member-1", name: "Leo", color: "coral" },
+          summary: { total: 1, completed: 0, remaining: 1 },
+          chores: [
+            {
+              templateId: "brush-teeth-id",
+              title: "Brush teeth",
+              cadence: "DAILY",
+              assignedToMemberId: "member-1",
+              completed: false,
+              completedAt: null,
+            },
+          ],
+        },
+      ],
+    },
+    thisWeek: {
+      scope: "THIS_WEEK",
+      periodStartDate: "2026-05-17",
+      periodEndDate: "2026-05-23",
+      summary: { total: 0, completed: 0, remaining: 0 },
+      assignees: [],
+    },
+    thisMonth: {
+      scope: "THIS_MONTH",
+      periodStartDate: "2026-05-01",
+      periodEndDate: "2026-05-31",
+      summary: { total: 0, completed: 0, remaining: 0 },
+      assignees: [],
+    },
   };
 }
 
@@ -60,203 +82,155 @@ describe("useChores hooks", () => {
     });
   });
 
-  it("returns chores from the released chores API", async () => {
-    seedMockChores([
-      createMockChore({
-        id: "chore-1",
-        title: "Take out trash",
-        assignedToMemberId: "member-1",
-      }),
-    ]);
+  it("fetches the recurring chores board from the released board endpoint", async () => {
+    seedMockChoresBoard(sampleChoresBoard());
 
     const queryClient = createTestQueryClient();
-    const { result } = renderHook(() => useChores(), {
+    const { result } = renderHook(() => useChoresBoard(), {
       wrapper: createWrapper(queryClient),
     });
 
     await waitFor(() => {
-      expect(result.current.data?.data).toEqual([
-        expect.objectContaining({
-          id: "chore-1",
-          title: "Take out trash",
-          assignedToMemberId: "member-1",
-          dueDate: "2026-05-05",
-          completed: false,
-        }),
-      ]);
+      expect(result.current.data?.data.today).toMatchObject({
+        scope: "TODAY",
+        periodStartDate: "2026-05-17",
+        summary: { total: 1, completed: 0, remaining: 1 },
+      });
     });
+    expect(result.current.data?.data.thisWeek.scope).toBe("THIS_WEEK");
+    expect(result.current.data?.data.thisMonth.scope).toBe("THIS_MONTH");
   });
 
-  it("creates a chore with title, assignee, and optional due date", async () => {
+  it("sends stale-safe completion and uncompletion payloads", async () => {
+    let capturedCompletionBody: UpdateCurrentPeriodCompletionRequest | null =
+      null;
+    let capturedUncompletionBody: UpdateCurrentPeriodCompletionRequest | null =
+      null;
     const queryClient = createTestQueryClient();
-    const { result } = renderHook(() => useCreateChore(), {
-      wrapper: createWrapper(queryClient),
-    });
-
-    result.current.mutate({
-      title: "Brush teeth",
-      assignedToMemberId: "member-1",
-      dueDate: null,
-    });
-
-    await waitFor(() => {
-      expect(result.current.isSuccess).toBe(true);
-    });
-
-    expect(result.current.data?.data).toEqual(
-      expect.objectContaining({
-        title: "Brush teeth",
-        assignedToMemberId: "member-1",
-        dueDate: null,
-        completed: false,
-        completedAt: null,
-      }),
-    );
-    expect(getMockChores()).toEqual([
-      expect.objectContaining({
-        title: "Brush teeth",
-        assignedToMemberId: "member-1",
-        dueDate: null,
-      }),
-    ]);
-  });
-
-  it("optimistically creates a chore before success and reconciles the server response", async () => {
-    const existing = createMockChore({
-      id: "existing-chore",
-      title: "Existing chore",
-    });
-    const serverChore = createMockChore({
-      id: "server-chore",
-      title: "Fold laundry",
-      assignedToMemberId: "member-1",
-      dueDate: null,
-      createdAt: "2026-05-05T10:00:00",
-      updatedAt: "2026-05-05T10:00:00",
-    });
-    let releaseCreate!: () => void;
-    const createCanFinish = new Promise<void>((resolve) => {
-      releaseCreate = resolve;
-    });
 
     server.use(
-      http.post(`${API_BASE}/chores`, async () => {
-        await createCanFinish;
-        seedMockChores([existing, serverChore]);
-        return HttpResponse.json(
-          { data: serverChore, message: "Chore created successfully" },
-          { status: 201 },
-        );
-      }),
+      http.put(
+        `${API_BASE}/chores/templates/brush-teeth-id/current-period-completion`,
+        async ({ request }) => {
+          capturedCompletionBody =
+            (await request.json()) as UpdateCurrentPeriodCompletionRequest;
+          return HttpResponse.json({
+            data: {
+              scope: "TODAY",
+              periodStartDate: "2026-05-17",
+              periodEndDate: "2026-05-17",
+              item: {
+                templateId: "brush-teeth-id",
+                title: "Brush teeth",
+                cadence: "DAILY",
+                assignedToMemberId: "member-1",
+                completed: true,
+                completedAt: "2026-05-17T09:15:00Z",
+              },
+            },
+          });
+        },
+      ),
+      http.delete(
+        `${API_BASE}/chores/templates/brush-teeth-id/current-period-completion`,
+        async ({ request }) => {
+          capturedUncompletionBody =
+            (await request.json()) as UpdateCurrentPeriodCompletionRequest;
+          return HttpResponse.json({
+            data: {
+              scope: "TODAY",
+              periodStartDate: "2026-05-17",
+              periodEndDate: "2026-05-17",
+              item: {
+                templateId: "brush-teeth-id",
+                title: "Brush teeth",
+                cadence: "DAILY",
+                assignedToMemberId: "member-1",
+                completed: false,
+                completedAt: null,
+              },
+            },
+          });
+        },
+      ),
     );
 
-    seedMockChores([existing]);
-    const queryClient = createOptimisticQueryClient();
-    queryClient.setQueryData<ApiResponse<Chore[]>>(choreKeys.list(), {
-      data: [existing],
+    const { result } = renderHook(
+      () => ({
+        complete: useCompleteChoreForCurrentPeriod(),
+        uncomplete: useUncompleteChoreForCurrentPeriod(),
+      }),
+      { wrapper: createWrapper(queryClient) },
+    );
+
+    result.current.complete.mutate({
+      templateId: "brush-teeth-id",
+      request: {
+        scope: "TODAY",
+        periodStartDate: "2026-05-17",
+      },
     });
 
-    const { result } = renderHook(() => useCreateChore(), {
+    await waitFor(() => {
+      expect(capturedCompletionBody).toEqual({
+        scope: "TODAY",
+        periodStartDate: "2026-05-17",
+      });
+    });
+
+    result.current.uncomplete.mutate({
+      templateId: "brush-teeth-id",
+      request: {
+        scope: "TODAY",
+        periodStartDate: "2026-05-17",
+      },
+    });
+
+    await waitFor(() => {
+      expect(capturedUncompletionBody).toEqual({
+        scope: "TODAY",
+        periodStartDate: "2026-05-17",
+      });
+    });
+  });
+
+  it("sends archive updates for recurring templates", async () => {
+    let capturedUpdateTemplateBody: UpdateChoreTemplateRequest | null = null;
+    const queryClient = createTestQueryClient();
+
+    server.use(
+      http.patch(
+        `${API_BASE}/chores/templates/brush-teeth-id`,
+        async ({ request }) => {
+          capturedUpdateTemplateBody =
+            (await request.json()) as UpdateChoreTemplateRequest;
+          return HttpResponse.json({
+            data: {
+              id: "brush-teeth-id",
+              title: "Brush teeth",
+              assignedToMemberId: "member-1",
+              cadence: "DAILY",
+              activeFrom: "2026-05-17",
+              archived: true,
+              createdAt: "2026-05-17T08:00:00Z",
+              updatedAt: "2026-05-17T09:00:00Z",
+            },
+          });
+        },
+      ),
+    );
+
+    const { result } = renderHook(() => useUpdateChoreTemplate(), {
       wrapper: createWrapper(queryClient),
     });
 
     result.current.mutate({
-      title: "Fold laundry",
-      assignedToMemberId: "member-1",
-      dueDate: null,
+      id: "brush-teeth-id",
+      request: { archived: true },
     });
 
     await waitFor(() => {
-      expect(
-        queryClient.getQueryData<ApiResponse<Chore[]>>(choreKeys.list())?.data,
-      ).toEqual([
-        existing,
-        expect.objectContaining({
-          id: expect.stringMatching(/^temp-chore-/),
-          title: "Fold laundry",
-          assignedToMemberId: "member-1",
-          dueDate: null,
-          completed: false,
-          completedAt: null,
-        }),
-      ]);
+      expect(capturedUpdateTemplateBody).toEqual({ archived: true });
     });
-    expect(result.current.isSuccess).toBe(false);
-
-    releaseCreate();
-
-    await waitFor(() => {
-      expect(result.current.isSuccess).toBe(true);
-    });
-    await waitFor(() => {
-      expect(
-        queryClient.getQueryData<ApiResponse<Chore[]>>(choreKeys.list())?.data,
-      ).toEqual([existing, serverChore]);
-    });
-  });
-
-  it("optimistically toggles a chore completion state", async () => {
-    const chore = createMockChore({ id: "chore-toggle", completed: false });
-    seedMockChores([chore]);
-    const queryClient = createOptimisticQueryClient();
-    queryClient.setQueryData<ApiResponse<Chore[]>>(choreKeys.list(), {
-      data: [chore],
-    });
-
-    const { result } = renderHook(() => useUpdateChore(), {
-      wrapper: createWrapper(queryClient),
-    });
-
-    result.current.mutate({
-      id: "chore-toggle",
-      request: { completed: true },
-    });
-
-    await waitFor(() => {
-      expect(
-        queryClient.getQueryData<ApiResponse<Chore[]>>(choreKeys.list())?.data,
-      ).toEqual([
-        expect.objectContaining({
-          id: "chore-toggle",
-          completed: true,
-        }),
-      ]);
-    });
-
-    await waitFor(() => {
-      expect(result.current.isSuccess).toBe(true);
-    });
-  });
-
-  it("optimistically removes a deleted chore", async () => {
-    const keep = createMockChore({ id: "chore-keep", title: "Keep this" });
-    const remove = createMockChore({
-      id: "chore-delete",
-      title: "Delete this",
-    });
-    seedMockChores([keep, remove]);
-    const queryClient = createOptimisticQueryClient();
-    queryClient.setQueryData<ApiResponse<Chore[]>>(choreKeys.list(), {
-      data: [keep, remove],
-    });
-
-    const { result } = renderHook(() => useDeleteChore(), {
-      wrapper: createWrapper(queryClient),
-    });
-
-    result.current.mutate("chore-delete");
-
-    await waitFor(() => {
-      expect(
-        queryClient.getQueryData<ApiResponse<Chore[]>>(choreKeys.list())?.data,
-      ).toEqual([expect.objectContaining({ id: "chore-keep" })]);
-    });
-
-    await waitFor(() => {
-      expect(result.current.isSuccess).toBe(true);
-    });
-    expect(getMockChores()).toEqual([
-      expect.objectContaining({ id: "chore-keep" }),
-    ]);
   });
 });

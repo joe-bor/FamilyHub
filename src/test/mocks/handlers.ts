@@ -4,8 +4,11 @@ import type {
   AddMemberRequest,
   ApiResponse,
   CalendarEventResponse,
-  Chore,
-  CreateChoreRequest,
+  ChoreBoardItem,
+  ChoreScopeBoard,
+  ChoresBoard,
+  ChoreTemplate,
+  CreateChoreTemplateRequest,
   CreateEventRequest,
   FamilyData,
   FamilyMember,
@@ -18,7 +21,8 @@ import type {
   LoginResponse,
   RegisterRequest,
   RegisterResponse,
-  UpdateChoreRequest,
+  UpdateChoreTemplateRequest,
+  UpdateCurrentPeriodCompletionRequest,
   UpdateEventRequest,
   UpdateFamilyRequest,
   UpdateMemberRequest,
@@ -29,8 +33,8 @@ import type {
 // Uses CalendarEventResponse (string dates) to match real API wire format
 let mockEvents: CalendarEventResponse[] = [];
 
-// In-memory storage for mock chores (reset between tests)
-let mockChores: Chore[] = [];
+// In-memory storage for mock chores board (reset between tests)
+let mockChoresBoard: ChoresBoard = createEmptyChoresBoard();
 
 // In-memory storage for mock family data (reset between tests)
 let mockFamily: FamilyData | null = null;
@@ -48,6 +52,33 @@ let mockLists: ListDetail[] = [];
 let mockListPreferences: ListPreferences = { showCompletedByDefault: true };
 let mockIdCounter = 1000;
 const MOCK_TIMESTAMP = "2026-05-06T09:00:00";
+
+function createEmptyChoresBoard(): ChoresBoard {
+  return {
+    timezone: "America/Los_Angeles",
+    today: {
+      scope: "TODAY",
+      periodStartDate: "2026-05-17",
+      periodEndDate: "2026-05-17",
+      summary: { total: 0, completed: 0, remaining: 0 },
+      assignees: [],
+    },
+    thisWeek: {
+      scope: "THIS_WEEK",
+      periodStartDate: "2026-05-17",
+      periodEndDate: "2026-05-23",
+      summary: { total: 0, completed: 0, remaining: 0 },
+      assignees: [],
+    },
+    thisMonth: {
+      scope: "THIS_MONTH",
+      periodStartDate: "2026-05-01",
+      periodEndDate: "2026-05-31",
+      summary: { total: 0, completed: 0, remaining: 0 },
+      assignees: [],
+    },
+  };
+}
 
 const seededCategories: Record<Exclude<ListKind, "general">, ListCategory[]> = {
   grocery: [
@@ -135,24 +166,24 @@ export function getMockEvents(): CalendarEventResponse[] {
 }
 
 /**
- * Reset mock chores between tests
+ * Reset mock chores board between tests.
  */
-export function resetMockChores(): void {
-  mockChores = [];
+export function resetMockChoresBoard(): void {
+  mockChoresBoard = createEmptyChoresBoard();
 }
 
 /**
- * Seed mock chores for testing.
+ * Seed mock chores board for testing.
  */
-export function seedMockChores(chores: Chore[]): void {
-  mockChores = [...chores];
+export function seedMockChoresBoard(board: ChoresBoard): void {
+  mockChoresBoard = structuredClone(board);
 }
 
 /**
- * Get current mock chores (for assertions)
+ * Get current mock chores board for assertions.
  */
-export function getMockChores(): Chore[] {
-  return [...mockChores];
+export function getMockChoresBoard(): ChoresBoard {
+  return structuredClone(mockChoresBoard);
 }
 
 /**
@@ -213,6 +244,116 @@ function createMockId(): string {
 
 function categoriesForKind(kind: ListKind): ListCategory[] {
   return kind === "general" ? [] : seededCategories[kind];
+}
+
+function recalculateScopeSummary(scope: ChoreScopeBoard): ChoreScopeBoard {
+  const assignees = scope.assignees.map((group) => {
+    const completed = group.chores.filter((chore) => chore.completed).length;
+    const total = group.chores.length;
+
+    return {
+      ...group,
+      summary: {
+        total,
+        completed,
+        remaining: total - completed,
+      },
+    };
+  });
+  const total = assignees.reduce((sum, group) => sum + group.summary.total, 0);
+  const completed = assignees.reduce(
+    (sum, group) => sum + group.summary.completed,
+    0,
+  );
+
+  return {
+    ...scope,
+    assignees,
+    summary: {
+      total,
+      completed,
+      remaining: total - completed,
+    },
+  };
+}
+
+function updateBoardItem(
+  templateId: string,
+  update: (item: ChoreBoardItem) => ChoreBoardItem,
+): ChoreBoardItem | null {
+  let updatedItem: ChoreBoardItem | null = null;
+
+  mockChoresBoard = {
+    ...mockChoresBoard,
+    today: recalculateScopeSummary({
+      ...mockChoresBoard.today,
+      assignees: mockChoresBoard.today.assignees.map((group) => ({
+        ...group,
+        chores: group.chores.map((item) => {
+          if (item.templateId !== templateId) {
+            return item;
+          }
+          updatedItem = update(item);
+          return updatedItem;
+        }),
+      })),
+    }),
+    thisWeek: recalculateScopeSummary({
+      ...mockChoresBoard.thisWeek,
+      assignees: mockChoresBoard.thisWeek.assignees.map((group) => ({
+        ...group,
+        chores: group.chores.map((item) => {
+          if (item.templateId !== templateId) {
+            return item;
+          }
+          updatedItem = update(item);
+          return updatedItem;
+        }),
+      })),
+    }),
+    thisMonth: recalculateScopeSummary({
+      ...mockChoresBoard.thisMonth,
+      assignees: mockChoresBoard.thisMonth.assignees.map((group) => ({
+        ...group,
+        chores: group.chores.map((item) => {
+          if (item.templateId !== templateId) {
+            return item;
+          }
+          updatedItem = update(item);
+          return updatedItem;
+        }),
+      })),
+    }),
+  };
+
+  return updatedItem;
+}
+
+function removeBoardItem(templateId: string): void {
+  mockChoresBoard = {
+    ...mockChoresBoard,
+    today: recalculateScopeSummary({
+      ...mockChoresBoard.today,
+      assignees: mockChoresBoard.today.assignees.map((group) => ({
+        ...group,
+        chores: group.chores.filter((item) => item.templateId !== templateId),
+      })),
+    }),
+    thisWeek: recalculateScopeSummary({
+      ...mockChoresBoard.thisWeek,
+      assignees: mockChoresBoard.thisWeek.assignees.map((group) => ({
+        ...group,
+        chores: group.chores.filter((item) => item.templateId !== templateId),
+      })),
+    }),
+    thisMonth: recalculateScopeSummary({
+      ...mockChoresBoard.thisMonth,
+      assignees: mockChoresBoard.thisMonth.assignees.map((group) => ({
+        ...group,
+        chores: group.chores.filter((item) => item.templateId !== templateId),
+      })),
+    }),
+  };
 }
 
 function toListSummary(list: ListDetail) {
@@ -679,84 +820,133 @@ export const handlers = [
   // Chores API Handlers
   // ============================================================================
 
-  // GET /chores - List chores
-  http.get(`${API_BASE}/chores`, () => {
-    return HttpResponse.json(createApiResponse(mockChores));
+  // GET /chores/board - Present-focused recurring routines board
+  http.get(`${API_BASE}/chores/board`, () => {
+    return HttpResponse.json(createApiResponse(mockChoresBoard));
   }),
 
-  // POST /chores - Create chore
-  http.post(`${API_BASE}/chores`, async ({ request }) => {
-    const body = (await request.json()) as CreateChoreRequest;
-    const now = "2026-05-05T09:00:00";
-    const newChore: Chore = {
-      id: `chore-${mockChores.length + 1}`,
+  // POST /chores/templates - Create recurring template
+  http.post(`${API_BASE}/chores/templates`, async ({ request }) => {
+    const body = (await request.json()) as CreateChoreTemplateRequest;
+    const now = "2026-05-17T09:00:00Z";
+    const template: ChoreTemplate = {
+      id: `template-${mockIdCounter + 1}`,
       title: body.title,
       assignedToMemberId: body.assignedToMemberId,
-      dueDate: body.dueDate ?? null,
-      completed: false,
-      completedAt: null,
+      cadence: body.cadence,
+      activeFrom: body.activeFrom,
+      archived: false,
       createdAt: now,
       updatedAt: now,
     };
 
-    mockChores = [...mockChores, newChore];
-
     return HttpResponse.json(
-      createApiResponse(newChore, "Chore created successfully"),
+      createApiResponse(template, "Chore template created successfully"),
       { status: 201 },
     );
   }),
 
-  // PATCH /chores/:id - Toggle chore completion
-  http.patch(`${API_BASE}/chores/:id`, async ({ params, request }) => {
-    const { id } = params;
-    const body = (await request.json()) as UpdateChoreRequest;
-    const index = mockChores.findIndex((chore) => chore.id === id);
+  // PATCH /chores/templates/:id - Update or archive recurring template
+  http.patch(
+    `${API_BASE}/chores/templates/:id`,
+    async ({ params, request }) => {
+      const { id } = params;
+      const body = (await request.json()) as UpdateChoreTemplateRequest;
 
-    if (index === -1) {
+      if (body.archived) {
+        removeBoardItem(id as string);
+      }
+
+      const template: ChoreTemplate = {
+        id: id as string,
+        title: body.title ?? "Updated chore",
+        assignedToMemberId: body.assignedToMemberId ?? "member-1",
+        cadence: body.cadence ?? "DAILY",
+        activeFrom: body.activeFrom ?? "2026-05-17",
+        archived: body.archived ?? false,
+        createdAt: "2026-05-17T08:00:00Z",
+        updatedAt: "2026-05-17T09:00:00Z",
+      };
+
       return HttpResponse.json(
-        { message: `Chore with id "${id}" not found` },
-        { status: 404 },
+        createApiResponse(template, "Chore template updated successfully"),
       );
-    }
+    },
+  ),
 
-    const existingChore = mockChores[index];
-    const updatedChore: Chore = {
-      ...existingChore,
-      completed: body.completed,
-      completedAt: body.completed
-        ? (existingChore.completedAt ?? "2026-05-05T10:00:00")
-        : null,
-      updatedAt: "2026-05-05T10:00:00",
-    };
+  // PUT /chores/templates/:id/current-period-completion
+  http.put(
+    `${API_BASE}/chores/templates/:id/current-period-completion`,
+    async ({ params, request }) => {
+      const { id } = params;
+      const body =
+        (await request.json()) as UpdateCurrentPeriodCompletionRequest;
+      const scope =
+        body.scope === "TODAY"
+          ? mockChoresBoard.today
+          : body.scope === "THIS_WEEK"
+            ? mockChoresBoard.thisWeek
+            : mockChoresBoard.thisMonth;
+      const item = updateBoardItem(id as string, (existing) => ({
+        ...existing,
+        completed: true,
+        completedAt: "2026-05-17T09:30:00Z",
+      }));
 
-    mockChores = [
-      ...mockChores.slice(0, index),
-      updatedChore,
-      ...mockChores.slice(index + 1),
-    ];
+      if (!item) {
+        return HttpResponse.json(
+          { message: `Chore template with id "${id}" not found` },
+          { status: 404 },
+        );
+      }
 
-    return HttpResponse.json(
-      createApiResponse(updatedChore, "Chore updated successfully"),
-    );
-  }),
-
-  // DELETE /chores/:id - Delete chore
-  http.delete(`${API_BASE}/chores/:id`, ({ params }) => {
-    const { id } = params;
-
-    const index = mockChores.findIndex((chore) => chore.id === id);
-    if (index === -1) {
       return HttpResponse.json(
-        { message: `Chore with id "${id}" not found` },
-        { status: 404 },
+        createApiResponse({
+          scope: body.scope,
+          periodStartDate: body.periodStartDate,
+          periodEndDate: scope.periodEndDate,
+          item,
+        }),
       );
-    }
+    },
+  ),
 
-    mockChores = mockChores.filter((chore) => chore.id !== id);
+  // DELETE /chores/templates/:id/current-period-completion
+  http.delete(
+    `${API_BASE}/chores/templates/:id/current-period-completion`,
+    async ({ params, request }) => {
+      const { id } = params;
+      const body =
+        (await request.json()) as UpdateCurrentPeriodCompletionRequest;
+      const scope =
+        body.scope === "TODAY"
+          ? mockChoresBoard.today
+          : body.scope === "THIS_WEEK"
+            ? mockChoresBoard.thisWeek
+            : mockChoresBoard.thisMonth;
+      const item = updateBoardItem(id as string, (existing) => ({
+        ...existing,
+        completed: false,
+        completedAt: null,
+      }));
 
-    return new HttpResponse(null, { status: 204 });
-  }),
+      if (!item) {
+        return HttpResponse.json(
+          { message: `Chore template with id "${id}" not found` },
+          { status: 404 },
+        );
+      }
+
+      return HttpResponse.json(
+        createApiResponse({
+          scope: body.scope,
+          periodStartDate: body.periodStartDate,
+          periodEndDate: scope.periodEndDate,
+          item,
+        }),
+      );
+    },
+  ),
 
   // ============================================================================
   // Family API Handlers
