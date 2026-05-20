@@ -1,13 +1,24 @@
-import type { ChoreAssigneeGroup as ChoreAssigneeGroupData } from "@/lib/types";
+import type {
+  ChoreAssigneeGroup as ChoreAssigneeGroupData,
+  ChoreBoardItem,
+} from "@/lib/types";
 import { colorMap } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { ChoreRow } from "./chore-row";
 
 interface ChoreAssigneeGroupProps {
   group: ChoreAssigneeGroupData;
+  onArchive?: (chore: ChoreBoardItem) => void;
+  onComplete?: (chore: ChoreBoardItem) => void;
+  onUncomplete?: (chore: ChoreBoardItem) => void;
 }
 
-export function ChoreAssigneeGroup({ group }: ChoreAssigneeGroupProps) {
+export function ChoreAssigneeGroup({
+  group,
+  onArchive,
+  onComplete,
+  onUncomplete,
+}: ChoreAssigneeGroupProps) {
   const colors = colorMap[group.member.color];
   const progressPercent =
     group.summary.total === 0
@@ -55,7 +66,13 @@ export function ChoreAssigneeGroup({ group }: ChoreAssigneeGroupProps) {
 
       <div className="space-y-2">
         {group.chores.map((chore) => (
-          <ChoreRow key={chore.templateId} chore={chore} />
+          <ChoreRow
+            key={chore.templateId}
+            chore={chore}
+            onArchive={() => onArchive?.(chore)}
+            onComplete={() => onComplete?.(chore)}
+            onUncomplete={() => onUncomplete?.(chore)}
+          />
         ))}
       </div>
     </section>
