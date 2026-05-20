@@ -24,12 +24,12 @@ describe("ChoreForm", () => {
     });
   });
 
-  it("submits title, assignee, and due date", async () => {
+  it("submits title, assignee, and cadence", async () => {
     const { user } = renderWithUser(
       <ChoreForm
         defaultValues={{
           assignedToMemberId: "member-1",
-          dueDate: "2026-05-05",
+          cadence: "WEEKLY",
         }}
         onSubmit={onSubmit}
         onCancel={onCancel}
@@ -42,6 +42,7 @@ describe("ChoreForm", () => {
       screen.getByLabelText(/chore name/i),
       "Take out trash",
     );
+    await user.click(screen.getByRole("button", { name: "Weekly" }));
     await user.click(screen.getByRole("button", { name: /save chore/i }));
 
     await waitFor(
@@ -49,7 +50,7 @@ describe("ChoreForm", () => {
         expect(onSubmit).toHaveBeenCalledWith({
           title: "Take out trash",
           assignedToMemberId: "member-1",
-          dueDate: "2026-05-05",
+          cadence: "WEEKLY",
         });
       },
       { timeout: TEST_TIMEOUTS.FORM_SUBMIT },
@@ -64,14 +65,13 @@ describe("ChoreForm", () => {
     await user.click(screen.getByRole("button", { name: /save chore/i }));
 
     expect(screen.getByText("Chore name is required")).toBeInTheDocument();
-    expect(screen.getByText("Assignee is required")).toBeInTheDocument();
     expect(onSubmit).not.toHaveBeenCalled();
   });
 
   it("preserves entered values when equivalent defaults rerender", async () => {
     const { user, rerender } = renderWithUser(
       <ChoreForm
-        defaultValues={{ assignedToMemberId: "member-1" }}
+        defaultValues={{ assignedToMemberId: "member-1", cadence: "DAILY" }}
         onSubmit={onSubmit}
         onCancel={onCancel}
       />,
@@ -86,7 +86,7 @@ describe("ChoreForm", () => {
 
     rerender(
       <ChoreForm
-        defaultValues={{ assignedToMemberId: "member-1" }}
+        defaultValues={{ assignedToMemberId: "member-1", cadence: "DAILY" }}
         onSubmit={onSubmit}
         onCancel={onCancel}
       />,

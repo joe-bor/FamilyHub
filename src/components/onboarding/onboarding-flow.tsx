@@ -107,6 +107,9 @@ export function OnboardingFlow() {
         password,
         familyName: draftName,
         members: draftMembers.map(({ name, color }) => ({ name, color })),
+        timezone:
+          Intl.DateTimeFormat().resolvedOptions().timeZone ||
+          "America/Los_Angeles",
       },
       {
         onSuccess: () => {

@@ -1,28 +1,55 @@
 import { httpClient } from "@/api/client";
 import type {
   ApiResponse,
-  Chore,
-  CreateChoreRequest,
-  UpdateChoreRequest,
+  ChoreCurrentPeriodState,
+  ChoresBoard,
+  ChoreTemplate,
+  CreateChoreTemplateRequest,
+  UpdateChoreTemplateRequest,
+  UpdateCurrentPeriodCompletionRequest,
 } from "@/lib/types";
 
 export const choreService = {
-  async getChores(): Promise<ApiResponse<Chore[]>> {
-    return httpClient.get<ApiResponse<Chore[]>>("/chores");
+  async getBoard(): Promise<ApiResponse<ChoresBoard>> {
+    return httpClient.get<ApiResponse<ChoresBoard>>("/chores/board");
   },
 
-  async createChore(request: CreateChoreRequest): Promise<ApiResponse<Chore>> {
-    return httpClient.post<ApiResponse<Chore>>("/chores", request);
+  async createTemplate(
+    request: CreateChoreTemplateRequest,
+  ): Promise<ApiResponse<ChoreTemplate>> {
+    return httpClient.post<ApiResponse<ChoreTemplate>>(
+      "/chores/templates",
+      request,
+    );
   },
 
-  async updateChore(
+  async updateTemplate(
     id: string,
-    request: UpdateChoreRequest,
-  ): Promise<ApiResponse<Chore>> {
-    return httpClient.patch<ApiResponse<Chore>>(`/chores/${id}`, request);
+    request: UpdateChoreTemplateRequest,
+  ): Promise<ApiResponse<ChoreTemplate>> {
+    return httpClient.patch<ApiResponse<ChoreTemplate>>(
+      `/chores/templates/${id}`,
+      request,
+    );
   },
 
-  async deleteChore(id: string): Promise<void> {
-    return httpClient.delete(`/chores/${id}`);
+  async completeCurrentPeriod(
+    id: string,
+    request: UpdateCurrentPeriodCompletionRequest,
+  ): Promise<ApiResponse<ChoreCurrentPeriodState>> {
+    return httpClient.put<ApiResponse<ChoreCurrentPeriodState>>(
+      `/chores/templates/${id}/current-period-completion`,
+      request,
+    );
+  },
+
+  async uncompleteCurrentPeriod(
+    id: string,
+    request: UpdateCurrentPeriodCompletionRequest,
+  ): Promise<ApiResponse<ChoreCurrentPeriodState>> {
+    return httpClient.delete<ApiResponse<ChoreCurrentPeriodState>>(
+      `/chores/templates/${id}/current-period-completion`,
+      request,
+    );
   },
 };

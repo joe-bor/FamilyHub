@@ -1,62 +1,114 @@
 import { AlertCircle, Plus } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import {
-  useChores,
-  useCreateChore,
-  useDeleteChore,
-  useFamilyMembers,
-  useUpdateChore,
+  useChoresBoard,
+  useCompleteChoreForCurrentPeriod,
+  useCreateChoreTemplate,
+  useUncompleteChoreForCurrentPeriod,
+  useUpdateChoreTemplate,
 } from "@/api";
 import { ChoreFormSheet } from "@/components/chores/chore-form-sheet";
-import { ChoreLane } from "@/components/chores/chore-lane";
+import { ChoreScopeColumn } from "@/components/chores/chores-scope-column";
+import {
+  type ChoreScopeKey,
+  ChoreScopeSwitcher,
+} from "@/components/chores/chores-scope-switcher";
 import { Button } from "@/components/ui/button";
-import { formatLocalDate } from "@/lib/time-utils";
-import type { Chore, FamilyMember } from "@/lib/types";
+import { useIsMobile } from "@/hooks";
+import type { ChoreBoardItem, ChoreScopeBoard, ChoresBoard } from "@/lib/types";
+import { cn } from "@/lib/utils";
+import type { ChoreFormData } from "@/lib/validations";
 
-interface ChoreLaneData {
-  member: FamilyMember;
-  chores: Chore[];
-  hasIncomplete: boolean;
-  hasAny: boolean;
+function hasAnyRoutines(board: ChoresBoard): boolean {
+  return [board.today, board.thisWeek, board.thisMonth].some(
+    (scope) => scope.summary.total > 0,
+  );
 }
 
-interface ChoreLaneResult {
-  mode: "active" | "all-caught-up" | "empty";
-  lanes: ChoreLaneData[];
+function selectedScope(board: ChoresBoard, scope: ChoreScopeKey) {
+  if (scope === "today") return board.today;
+  if (scope === "thisWeek") return board.thisWeek;
+  return board.thisMonth;
 }
 
 export function ChoresView() {
+  const isMobile = useIsMobile();
+  const [selectedScopeKey, setSelectedScopeKey] =
+    useState<ChoreScopeKey>("today");
   const [isCreateOpen, setCreateOpen] = useState(false);
-  const members = useFamilyMembers();
-  const { data, isError, isLoading } = useChores();
-  const createChore = useCreateChore();
-  const updateChore = useUpdateChore();
-  const deleteChore = useDeleteChore();
+  const { data, isError, isLoading } = useChoresBoard();
+  const createTemplate = useCreateChoreTemplate({
+    onSuccess: () => setCreateOpen(false),
+  });
+  const updateTemplate = useUpdateChoreTemplate();
+  const completeCurrentPeriod = useCompleteChoreForCurrentPeriod();
+  const uncompleteCurrentPeriod = useUncompleteChoreForCurrentPeriod();
+  const board = data?.data;
+  const hasRoutines = board ? hasAnyRoutines(board) : false;
+  const visibleScopes = board
+    ? isMobile
+      ? [selectedScope(board, selectedScopeKey)]
+      : [board.today, board.thisWeek, board.thisMonth]
+    : [];
+  const activeFrom = board?.today.periodStartDate;
 
-  const chores = useMemo(() => data?.data ?? [], [data]);
-  const today = formatLocalDate(new Date());
-  const board = useMemo(
-    () => buildChoreLanes({ chores, members, today }),
-    [chores, members, today],
-  );
-  const defaultAssigneeId = members[0]?.id;
-  const createDefaultValues = useMemo(
-    () =>
-      defaultAssigneeId ? { assignedToMemberId: defaultAssigneeId } : undefined,
-    [defaultAssigneeId],
-  );
+  const handleCreate = (values: ChoreFormData) => {
+    if (!activeFrom) return;
+
+    createTemplate.mutate({
+      title: values.title,
+      assignedToMemberId: values.assignedToMemberId,
+      cadence: values.cadence,
+      activeFrom,
+    });
+  };
+
+  const handleArchive = (_scope: ChoreScopeBoard, chore: ChoreBoardItem) => {
+    updateTemplate.mutate({
+      id: chore.templateId,
+      request: { archived: true },
+    });
+  };
+
+  const handleComplete = (scope: ChoreScopeBoard, chore: ChoreBoardItem) => {
+    completeCurrentPeriod.mutate({
+      templateId: chore.templateId,
+      request: {
+        scope: scope.scope,
+        periodStartDate: scope.periodStartDate,
+      },
+    });
+  };
+
+  const handleUncomplete = (scope: ChoreScopeBoard, chore: ChoreBoardItem) => {
+    uncompleteCurrentPeriod.mutate({
+      templateId: chore.templateId,
+      request: {
+        scope: scope.scope,
+        periodStartDate: scope.periodStartDate,
+      },
+    });
+  };
 
   return (
     <>
       <div className="flex-1 overflow-y-auto p-4 sm:p-6">
-        <div className="mx-auto max-w-3xl">
-          <div className="mb-6 flex items-center justify-between gap-3">
-            <h1 className="text-[24px] leading-8 font-semibold text-foreground">
-              Chores
-            </h1>
+        <div className="mx-auto max-w-6xl">
+          <div className="mb-6 flex items-start justify-between gap-3">
+            <div className="space-y-3">
+              <h1 className="text-[24px] leading-8 font-semibold text-foreground">
+                Chores
+              </h1>
+              {isMobile && (
+                <ChoreScopeSwitcher
+                  value={selectedScopeKey}
+                  onChange={setSelectedScopeKey}
+                />
+              )}
+            </div>
             <Button
               type="button"
-              aria-label="Add chore"
+              aria-label="Add recurring chore"
               size="icon"
               onClick={() => setCreateOpen(true)}
             >
@@ -77,51 +129,26 @@ export function ChoresView() {
             </div>
           )}
 
-          {!isLoading && !isError && board.mode === "empty" && (
-            <div className="py-20 text-center">
+          {!isLoading && !isError && board && !hasRoutines && (
+            <div className="rounded-lg border border-dashed border-border px-6 py-14 text-center">
               <h2 className="text-lg font-semibold text-foreground">
-                No chores yet
+                No recurring chores yet
               </h2>
               <p className="mx-auto mt-2 max-w-xs text-sm leading-6 text-muted-foreground">
-                Add the first chore to start the family board.
-              </p>
-              <Button
-                type="button"
-                className="mt-5"
-                onClick={() => setCreateOpen(true)}
-              >
-                <Plus className="h-4 w-4" />
-                Add chore
-              </Button>
-            </div>
-          )}
-
-          {!isLoading && !isError && board.mode === "all-caught-up" && (
-            <div className="mb-4 rounded-lg border border-border bg-card p-4 shadow-sm">
-              <h2 className="text-base font-semibold text-foreground">
-                All caught up
-              </h2>
-              <p className="mt-1 text-sm leading-6 text-muted-foreground">
-                Everything is done for now. Completed chores stay visible below.
+                Add a daily, weekly, or monthly routine to get started.
               </p>
             </div>
           )}
 
-          {!isLoading && !isError && board.lanes.length > 0 && (
-            <div className="space-y-4">
-              {board.lanes.map((lane) => (
-                <ChoreLane
-                  key={lane.member.id}
-                  member={lane.member}
-                  chores={lane.chores}
-                  today={today}
-                  onToggleComplete={(chore) =>
-                    updateChore.mutate({
-                      id: chore.id,
-                      request: { completed: !chore.completed },
-                    })
-                  }
-                  onDelete={(chore) => deleteChore.mutate(chore.id)}
+          {!isLoading && !isError && board && hasRoutines && (
+            <div className={cn("grid gap-4", !isMobile && "lg:grid-cols-3")}>
+              {visibleScopes.map((scope) => (
+                <ChoreScopeColumn
+                  key={scope.scope}
+                  scope={scope}
+                  onArchive={handleArchive}
+                  onComplete={handleComplete}
+                  onUncomplete={handleUncomplete}
                 />
               ))}
             </div>
@@ -132,74 +159,9 @@ export function ChoresView() {
       <ChoreFormSheet
         isOpen={isCreateOpen}
         onClose={() => setCreateOpen(false)}
-        isPending={createChore.isPending}
-        defaultValues={createDefaultValues}
-        onSubmit={(values) => {
-          setCreateOpen(false);
-          createChore.mutate({
-            title: values.title,
-            assignedToMemberId: values.assignedToMemberId,
-            dueDate: values.dueDate ?? null,
-          });
-        }}
+        isPending={createTemplate.isPending}
+        onSubmit={handleCreate}
       />
     </>
   );
-}
-
-export function buildChoreLanes({
-  chores,
-  members,
-  today,
-}: {
-  chores: Chore[];
-  members: FamilyMember[];
-  today: string;
-}): ChoreLaneResult {
-  const lanes = members.map((member) => {
-    const memberChores = chores.filter(
-      (chore) => chore.assignedToMemberId === member.id,
-    );
-    const incomplete = memberChores
-      .filter((chore) => !chore.completed)
-      .sort((a, b) => compareChoreUrgency(a, b, today));
-    const completed = memberChores.filter((chore) => chore.completed);
-
-    return {
-      member,
-      chores: [...incomplete, ...completed],
-      hasIncomplete: incomplete.length > 0,
-      hasAny: memberChores.length > 0,
-    };
-  });
-
-  const activeLanes = lanes.filter((lane) => lane.hasIncomplete);
-  if (activeLanes.length > 0) {
-    return { mode: "active", lanes: activeLanes };
-  }
-
-  const completedOnlyLanes = lanes.filter((lane) => lane.hasAny);
-  if (completedOnlyLanes.length > 0) {
-    return { mode: "all-caught-up", lanes: completedOnlyLanes };
-  }
-
-  return { mode: "empty", lanes: [] };
-}
-
-function compareChoreUrgency(a: Chore, b: Chore, today: string): number {
-  const rank = (chore: Chore) => {
-    if (!chore.dueDate) return 3;
-    if (chore.dueDate < today) return 0;
-    if (chore.dueDate === today) return 1;
-    return 2;
-  };
-
-  const rankDifference = rank(a) - rank(b);
-  if (rankDifference !== 0) return rankDifference;
-
-  if (a.dueDate && b.dueDate) {
-    return a.dueDate.localeCompare(b.dueDate);
-  }
-
-  return a.createdAt.localeCompare(b.createdAt);
 }

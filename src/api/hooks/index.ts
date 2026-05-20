@@ -22,10 +22,11 @@ export {
 
 export {
   choreKeys,
-  useChores,
-  useCreateChore,
-  useDeleteChore,
-  useUpdateChore,
+  useChoresBoard,
+  useCompleteChoreForCurrentPeriod,
+  useCreateChoreTemplate,
+  useUncompleteChoreForCurrentPeriod,
+  useUpdateChoreTemplate,
 } from "./use-chores";
 
 export {

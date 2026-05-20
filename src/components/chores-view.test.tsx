@@ -1,9 +1,14 @@
 import { HttpResponse, http } from "msw";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { Chore, CreateChoreRequest } from "@/lib/types";
+import type {
+  ChoresBoard,
+  CreateChoreTemplateRequest,
+  UpdateChoreTemplateRequest,
+  UpdateCurrentPeriodCompletionRequest,
+} from "@/lib/types";
 import {
   API_BASE,
-  seedMockChores,
+  seedMockChoresBoard,
   server,
   setupMswServer,
 } from "@/test/mocks/server";
@@ -18,19 +23,112 @@ import {
 } from "@/test/test-utils";
 import { ChoresView } from "./chores-view";
 
-function createMockChore(
-  overrides: Partial<Chore> &
-    Pick<Chore, "id" | "title" | "assignedToMemberId">,
-): Chore {
+const viewport = vi.hoisted(() => ({ isMobile: false }));
+
+vi.mock("@/hooks", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/hooks")>();
   return {
-    id: overrides.id,
-    title: overrides.title,
-    assignedToMemberId: overrides.assignedToMemberId,
-    dueDate: overrides.dueDate ?? null,
-    completed: overrides.completed ?? false,
-    completedAt: overrides.completedAt ?? null,
-    createdAt: overrides.createdAt ?? "2026-05-05T09:00:00",
-    updatedAt: overrides.updatedAt ?? "2026-05-05T09:00:00",
+    ...actual,
+    useIsMobile: () => viewport.isMobile,
+  };
+});
+
+function emptyChoresBoard(): ChoresBoard {
+  return {
+    timezone: "America/Los_Angeles",
+    today: {
+      scope: "TODAY",
+      periodStartDate: "2026-05-17",
+      periodEndDate: "2026-05-17",
+      summary: { total: 0, completed: 0, remaining: 0 },
+      assignees: [],
+    },
+    thisWeek: {
+      scope: "THIS_WEEK",
+      periodStartDate: "2026-05-17",
+      periodEndDate: "2026-05-23",
+      summary: { total: 0, completed: 0, remaining: 0 },
+      assignees: [],
+    },
+    thisMonth: {
+      scope: "THIS_MONTH",
+      periodStartDate: "2026-05-01",
+      periodEndDate: "2026-05-31",
+      summary: { total: 0, completed: 0, remaining: 0 },
+      assignees: [],
+    },
+  };
+}
+
+function sampleChoresBoard(): ChoresBoard {
+  return {
+    timezone: "America/Los_Angeles",
+    today: {
+      scope: "TODAY",
+      periodStartDate: "2026-05-17",
+      periodEndDate: "2026-05-17",
+      summary: { total: 1, completed: 0, remaining: 1 },
+      assignees: [
+        {
+          member: { id: "leo", name: "Leo", color: "coral" },
+          summary: { total: 1, completed: 0, remaining: 1 },
+          chores: [
+            {
+              templateId: "brush-teeth-id",
+              title: "Brush teeth",
+              cadence: "DAILY",
+              assignedToMemberId: "leo",
+              completed: false,
+              completedAt: null,
+            },
+          ],
+        },
+      ],
+    },
+    thisWeek: {
+      scope: "THIS_WEEK",
+      periodStartDate: "2026-05-17",
+      periodEndDate: "2026-05-23",
+      summary: { total: 1, completed: 0, remaining: 1 },
+      assignees: [
+        {
+          member: { id: "leo", name: "Leo", color: "coral" },
+          summary: { total: 1, completed: 0, remaining: 1 },
+          chores: [
+            {
+              templateId: "trash-id",
+              title: "Take out trash",
+              cadence: "WEEKLY",
+              assignedToMemberId: "leo",
+              completed: false,
+              completedAt: null,
+            },
+          ],
+        },
+      ],
+    },
+    thisMonth: {
+      scope: "THIS_MONTH",
+      periodStartDate: "2026-05-01",
+      periodEndDate: "2026-05-31",
+      summary: { total: 1, completed: 1, remaining: 0 },
+      assignees: [
+        {
+          member: { id: "maya", name: "Maya", color: "teal" },
+          summary: { total: 1, completed: 1, remaining: 0 },
+          chores: [
+            {
+              templateId: "fridge-id",
+              title: "Deep clean fridge",
+              cadence: "MONTHLY",
+              assignedToMemberId: "maya",
+              completed: true,
+              completedAt: "2026-05-10T09:00:00Z",
+            },
+          ],
+        },
+      ],
+    },
   };
 }
 
@@ -38,8 +136,7 @@ describe("ChoresView", () => {
   setupMswServer();
 
   beforeEach(() => {
-    vi.useFakeTimers({ toFake: ["Date"] });
-    vi.setSystemTime(new Date(2026, 4, 5, 9, 0, 0));
+    viewport.isMobile = false;
     seedFamilyStore({
       members: [
         { id: "leo", name: "Leo", color: "coral" },
@@ -48,169 +145,106 @@ describe("ChoresView", () => {
     });
   });
 
-  it("groups active chores by assignee and sorts incomplete chores by urgency", async () => {
-    seedMockChores([
-      createMockChore({
-        id: "future",
-        title: "Future",
-        assignedToMemberId: "leo",
-        dueDate: "2026-05-10",
-      }),
-      createMockChore({
-        id: "overdue",
-        title: "Overdue",
-        assignedToMemberId: "leo",
-        dueDate: "2026-05-01",
-      }),
-      createMockChore({
-        id: "today",
-        title: "Today",
-        assignedToMemberId: "leo",
-        dueDate: "2026-05-05",
-      }),
-      createMockChore({
-        id: "no-date",
-        title: "No date",
-        assignedToMemberId: "leo",
-      }),
-      createMockChore({
-        id: "done",
-        title: "Done",
-        assignedToMemberId: "leo",
-        completed: true,
-        completedAt: "2026-05-05T08:00:00",
-      }),
-    ]);
+  it("shows one selected scope at a time on mobile", async () => {
+    viewport.isMobile = true;
+    seedMockChoresBoard(sampleChoresBoard());
+
+    const { user } = renderWithUser(<ChoresView />);
+
+    expect(await screen.findByRole("button", { name: "Day" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    expect(await screen.findByRole("heading", { name: "Today" })).toBeVisible();
+    expect(
+      screen.queryByRole("heading", { name: "This Week" }),
+    ).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Week" }));
+
+    expect(screen.getByRole("heading", { name: "This Week" })).toBeVisible();
+    expect(
+      screen.queryByRole("heading", { name: "Today" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("shows today, this week, and this month columns on larger screens", async () => {
+    seedMockChoresBoard(sampleChoresBoard());
 
     render(<ChoresView />);
 
-    expect(await screen.findByRole("heading", { name: "Leo" })).toBeVisible();
-    expect(
-      screen.queryByRole("heading", { name: "Maya" }),
-    ).not.toBeInTheDocument();
-
-    const rows = await screen.findAllByTestId(/chore-row-/);
-    expect(rows.map((row) => row.textContent)).toEqual([
-      expect.stringContaining("Overdue"),
-      expect.stringContaining("Today"),
-      expect.stringContaining("Future"),
-      expect.stringContaining("No date"),
-      expect.stringContaining("Done"),
-    ]);
-    expect(rows.at(-1)).toHaveClass("bg-muted/40");
-    expect(
-      screen.getByRole("progressbar", { name: /leo progress/i }),
-    ).toHaveAttribute("aria-valuenow", "20");
+    expect(await screen.findByRole("heading", { name: "Today" })).toBeVisible();
+    expect(screen.getByRole("heading", { name: "This Week" })).toBeVisible();
+    expect(screen.getByRole("heading", { name: "This Month" })).toBeVisible();
   });
 
-  it("shows completed-only lanes in the all caught up state", async () => {
-    seedMockChores([
-      createMockChore({
-        id: "leo-done",
-        title: "Leo done",
-        assignedToMemberId: "leo",
-        completed: true,
-        completedAt: "2026-05-05T08:00:00",
-      }),
-      createMockChore({
-        id: "maya-done",
-        title: "Maya done",
-        assignedToMemberId: "maya",
-        completed: true,
-        completedAt: "2026-05-05T08:30:00",
-      }),
-    ]);
+  it("shows a family-level empty state when no recurring routines exist anywhere", async () => {
+    seedMockChoresBoard(emptyChoresBoard());
+
+    render(<ChoresView />);
+
+    expect(await screen.findByText("No recurring chores yet")).toBeVisible();
+  });
+
+  it("shows a scope empty state when one timeframe has no routines", async () => {
+    const board = sampleChoresBoard();
+    board.thisWeek = {
+      scope: "THIS_WEEK",
+      periodStartDate: "2026-05-17",
+      periodEndDate: "2026-05-23",
+      summary: { total: 0, completed: 0, remaining: 0 },
+      assignees: [],
+    };
+    seedMockChoresBoard(board);
+
+    render(<ChoresView />);
+
+    expect(
+      await screen.findByText("No routines in this timeframe"),
+    ).toBeVisible();
+    expect(screen.getByText("Brush teeth")).toBeVisible();
+  });
+
+  it("shows all caught up while keeping completed routines visible and secondary", async () => {
+    seedMockChoresBoard(sampleChoresBoard());
 
     render(<ChoresView />);
 
     expect(await screen.findByText("All caught up")).toBeVisible();
-    expect(screen.getByRole("heading", { name: "Leo" })).toBeVisible();
-    expect(screen.getByRole("heading", { name: "Maya" })).toBeVisible();
-    expect(screen.getByTestId("chore-row-leo-done")).toHaveClass("bg-muted/40");
-    expect(screen.getByTestId("chore-row-maya-done")).toHaveClass(
+    expect(screen.getByText("Deep clean fridge")).toBeVisible();
+    expect(screen.getByTestId("chore-row-fridge-id")).toHaveClass(
       "bg-muted/40",
     );
   });
 
-  it("hides completed-only lanes while active lanes still show their completed rows", async () => {
-    seedMockChores([
-      createMockChore({
-        id: "leo-done",
-        title: "Leo done",
-        assignedToMemberId: "leo",
-        completed: true,
-        completedAt: "2026-05-05T08:00:00",
-      }),
-      createMockChore({
-        id: "maya-active",
-        title: "Maya active",
-        assignedToMemberId: "maya",
-      }),
-      createMockChore({
-        id: "maya-done",
-        title: "Maya done",
-        assignedToMemberId: "maya",
-        completed: true,
-        completedAt: "2026-05-05T08:30:00",
-      }),
-    ]);
-
-    render(<ChoresView />);
-
-    expect(await screen.findByRole("heading", { name: "Maya" })).toBeVisible();
-    expect(
-      screen.queryByRole("heading", { name: "Leo" }),
-    ).not.toBeInTheDocument();
-    expect(screen.queryByTestId("chore-row-leo-done")).not.toBeInTheDocument();
-
-    const rows = await screen.findAllByTestId(/chore-row-/);
-    expect(rows.map((row) => row.textContent)).toEqual([
-      expect.stringContaining("Maya active"),
-      expect.stringContaining("Maya done"),
-    ]);
-    expect(screen.getByTestId("chore-row-maya-done")).toHaveClass(
-      "bg-muted/40",
-    );
-  });
-
-  it("closes the create sheet and shows the new chore before create succeeds", async () => {
-    let releaseCreate!: () => void;
-    let createResponded = false;
-    const createCanFinish = new Promise<void>((resolve) => {
-      releaseCreate = resolve;
-    });
-
+  it("creates a weekly recurring routine with activeFrom from the board", async () => {
+    let capturedCreateBody: CreateChoreTemplateRequest | null = null;
     server.use(
-      http.post(`${API_BASE}/chores`, async ({ request }) => {
-        const body = (await request.json()) as CreateChoreRequest;
-        await createCanFinish;
-        const newChore = createMockChore({
-          id: "server-created-chore",
-          title: body.title,
-          assignedToMemberId: body.assignedToMemberId,
-          dueDate: body.dueDate ?? null,
-          createdAt: "2026-05-05T10:00:00",
-          updatedAt: "2026-05-05T10:00:00",
-        });
-        seedMockChores([newChore]);
-        createResponded = true;
+      http.post(`${API_BASE}/chores/templates`, async ({ request }) => {
+        capturedCreateBody =
+          (await request.json()) as CreateChoreTemplateRequest;
         return HttpResponse.json(
-          { data: newChore, message: "Chore created successfully" },
+          {
+            data: {
+              id: "trash-id",
+              title: "Take out trash",
+              assignedToMemberId: "leo",
+              cadence: "WEEKLY",
+              activeFrom: "2026-05-17",
+              archived: false,
+              createdAt: "2026-05-17T09:00:00Z",
+              updatedAt: "2026-05-17T09:00:00Z",
+            },
+          },
           { status: 201 },
         );
       }),
     );
-    seedMockChores([]);
+    seedMockChoresBoard(emptyChoresBoard());
     const { user } = renderWithUser(<ChoresView />);
 
-    expect(await screen.findByText("No chores yet")).toBeVisible();
-    const addButtons = screen.getAllByRole("button", { name: /add chore/i });
-    await user.click(addButtons[addButtons.length - 1]);
-
-    expect(screen.getByRole("dialog", { name: "New Chore" })).toHaveClass(
-      "fixed",
-      "inset-0",
-      "z-50",
+    await user.click(
+      await screen.findByRole("button", { name: /add recurring chore/i }),
     );
     await waitForMemberSelected("Leo");
     await typeAndWait(
@@ -218,65 +252,135 @@ describe("ChoresView", () => {
       screen.getByLabelText(/chore name/i),
       "Take out trash",
     );
-
-    try {
-      await user.click(screen.getByRole("button", { name: /save chore/i }));
-
-      await waitFor(
-        () => {
-          expect(
-            screen.queryByRole("dialog", { name: "New Chore" }),
-          ).not.toBeInTheDocument();
-        },
-        { timeout: 500 },
-      );
-      expect(await screen.findByText("Take out trash")).toBeVisible();
-      expect(createResponded).toBe(false);
-    } finally {
-      releaseCreate();
-    }
+    await user.click(screen.getByRole("button", { name: "Weekly" }));
+    await user.click(screen.getByRole("button", { name: /save chore/i }));
 
     await waitFor(() => {
-      expect(createResponded).toBe(true);
+      expect(capturedCreateBody).toEqual({
+        title: "Take out trash",
+        assignedToMemberId: "leo",
+        cadence: "WEEKLY",
+        activeFrom: "2026-05-17",
+      });
     });
   });
 
-  it("supports complete, uncomplete, and delete", async () => {
-    seedMockChores([
-      createMockChore({
-        id: "trash",
-        title: "Take out trash",
-        assignedToMemberId: "leo",
-      }),
-    ]);
+  it("completes and uncompletes a routine for the current period", async () => {
+    let capturedCompletionBody: UpdateCurrentPeriodCompletionRequest | null =
+      null;
+    let capturedUncompletionBody: UpdateCurrentPeriodCompletionRequest | null =
+      null;
+    server.use(
+      http.put(
+        `${API_BASE}/chores/templates/brush-teeth-id/current-period-completion`,
+        async ({ request }) => {
+          capturedCompletionBody =
+            (await request.json()) as UpdateCurrentPeriodCompletionRequest;
+          return HttpResponse.json({
+            data: {
+              scope: "TODAY",
+              periodStartDate: "2026-05-17",
+              periodEndDate: "2026-05-17",
+              item: {
+                templateId: "brush-teeth-id",
+                title: "Brush teeth",
+                cadence: "DAILY",
+                assignedToMemberId: "leo",
+                completed: true,
+                completedAt: "2026-05-17T09:30:00Z",
+              },
+            },
+          });
+        },
+      ),
+      http.delete(
+        `${API_BASE}/chores/templates/brush-teeth-id/current-period-completion`,
+        async ({ request }) => {
+          capturedUncompletionBody =
+            (await request.json()) as UpdateCurrentPeriodCompletionRequest;
+          return HttpResponse.json({
+            data: {
+              scope: "TODAY",
+              periodStartDate: "2026-05-17",
+              periodEndDate: "2026-05-17",
+              item: {
+                templateId: "brush-teeth-id",
+                title: "Brush teeth",
+                cadence: "DAILY",
+                assignedToMemberId: "leo",
+                completed: false,
+                completedAt: null,
+              },
+            },
+          });
+        },
+      ),
+    );
+    seedMockChoresBoard(sampleChoresBoard());
     const { user } = renderWithUser(<ChoresView />);
 
-    expect(await screen.findByText("Take out trash")).toBeVisible();
-
     await user.click(
-      screen.getByRole("button", { name: /mark take out trash complete/i }),
-    );
-    expect(
       await screen.findByRole("button", {
-        name: /mark take out trash incomplete/i,
+        name: /mark brush teeth complete/i,
       }),
-    ).toBeVisible();
-
-    await user.click(
-      screen.getByRole("button", { name: /mark take out trash incomplete/i }),
-    );
-    expect(
-      await screen.findByRole("button", {
-        name: /mark take out trash complete/i,
-      }),
-    ).toBeVisible();
-
-    await user.click(
-      screen.getByRole("button", { name: /delete take out trash/i }),
     );
 
     await waitFor(() => {
-      expect(screen.queryByText("Take out trash")).not.toBeInTheDocument();
+      expect(capturedCompletionBody).toEqual({
+        scope: "TODAY",
+        periodStartDate: "2026-05-17",
+      });
+    });
+    await waitFor(() => {
+      expect(screen.getByTestId("chore-row-brush-teeth-id")).toHaveClass(
+        "bg-muted/40",
+      );
+    });
+
+    await user.click(
+      screen.getByRole("button", { name: /mark brush teeth incomplete/i }),
+    );
+
+    await waitFor(() => {
+      expect(capturedUncompletionBody).toEqual({
+        scope: "TODAY",
+        periodStartDate: "2026-05-17",
+      });
+    });
+  });
+
+  it("archives a recurring routine from the row action", async () => {
+    let capturedUpdateBody: UpdateChoreTemplateRequest | null = null;
+    server.use(
+      http.patch(
+        `${API_BASE}/chores/templates/brush-teeth-id`,
+        async ({ request }) => {
+          capturedUpdateBody =
+            (await request.json()) as UpdateChoreTemplateRequest;
+          return HttpResponse.json({
+            data: {
+              id: "brush-teeth-id",
+              title: "Brush teeth",
+              assignedToMemberId: "leo",
+              cadence: "DAILY",
+              activeFrom: "2026-05-17",
+              archived: true,
+              createdAt: "2026-05-17T08:00:00Z",
+              updatedAt: "2026-05-17T09:05:00Z",
+            },
+          });
+        },
+      ),
+    );
+    seedMockChoresBoard(sampleChoresBoard());
+    const { user } = renderWithUser(<ChoresView />);
+
+    await user.click(
+      await screen.findByRole("button", { name: /archive brush teeth/i }),
+    );
+
+    await waitFor(() => {
+      expect(capturedUpdateBody).toEqual({ archived: true });
     });
   });
 });
