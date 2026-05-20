@@ -7,6 +7,7 @@ const API_BASE = "http://127.0.0.1:8080/api";
 interface RegisterOptions {
   familyName: string;
   members: Array<{ name: string; color: FamilyColor }>;
+  timezone?: string;
 }
 
 interface RegistrationResult {
@@ -37,6 +38,7 @@ export async function registerFamily(
       password: "TestPassword123!",
       familyName: options.familyName,
       members: options.members,
+      timezone: options.timezone ?? "America/Los_Angeles",
     },
   });
 
