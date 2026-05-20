@@ -31,6 +31,7 @@ export interface RegisterRequest {
   password: string;
   familyName: string;
   members: Array<Omit<FamilyMember, "id">>;
+  timezone: string;
 }
 
 /**

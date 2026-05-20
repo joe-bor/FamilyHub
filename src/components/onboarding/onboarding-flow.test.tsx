@@ -7,7 +7,9 @@ import {
   describe,
   expect,
   it,
+  vi,
 } from "vitest";
+import type { RegisterRequest } from "@/lib/types";
 import {
   API_BASE,
   getMockFamily,
@@ -257,6 +259,64 @@ describe("OnboardingFlow", () => {
   });
 
   describe("Full Flow & Store Integration", () => {
+    it("sends browser timezone during onboarding registration", async () => {
+      let capturedRegisterBody: RegisterRequest | null = null;
+      server.use(
+        http.post(`${API_BASE}/auth/register`, async ({ request }) => {
+          capturedRegisterBody = (await request.json()) as RegisterRequest;
+          return HttpResponse.json({
+            data: {
+              token: "jwt-token",
+              family: {
+                id: "family-1",
+                name: "Smith Family",
+                members: [{ id: "leo", name: "Leo", color: "coral" }],
+                createdAt: "2026-05-17T09:00:00Z",
+              },
+            },
+          });
+        }),
+      );
+      const timezoneSpy = vi
+        .spyOn(Intl.DateTimeFormat.prototype, "resolvedOptions")
+        .mockReturnValue({
+          timeZone: "America/Chicago",
+        } as Intl.ResolvedDateTimeFormatOptions);
+
+      const { user } = renderWithUser(<OnboardingFlow />);
+      await user.click(screen.getByRole("button", { name: /get started/i }));
+      await user.type(screen.getByRole("textbox"), "Smith Family");
+      await user.click(screen.getByRole("button", { name: /continue/i }));
+      await user.click(
+        screen.getByRole("button", { name: /add family member/i }),
+      );
+      await user.type(screen.getByLabelText(/name/i), "Leo");
+      await user.click(
+        screen.getByRole("button", { name: /select coral color/i }),
+      );
+      await user.click(screen.getByRole("button", { name: /^add$/i }));
+      await waitFor(() => {
+        expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+      });
+      await user.click(screen.getByRole("button", { name: /continue/i }));
+      await user.type(screen.getByLabelText(/username/i), "smithfamily");
+      await user.type(screen.getByLabelText(/^password/i), "password123");
+      await user.type(
+        screen.getByLabelText(/confirm password/i),
+        "password123",
+      );
+      await user.click(screen.getByRole("button", { name: /complete setup/i }));
+
+      await waitFor(() => {
+        expect(capturedRegisterBody).toMatchObject({
+          familyName: "Smith Family",
+          timezone: "America/Chicago",
+        });
+      });
+
+      timezoneSpy.mockRestore();
+    });
+
     it("completes onboarding and persists to store", async () => {
       const { user } = renderWithUser(<OnboardingFlow />);
 
