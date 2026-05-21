@@ -22,6 +22,7 @@ export {
 
 export {
   choreKeys,
+  isStaleChorePeriodError,
   useChoresBoard,
   useCompleteChoreForCurrentPeriod,
   useCreateChoreTemplate,

@@ -24,6 +24,7 @@ import {
 import { ChoresView } from "./chores-view";
 
 const viewport = vi.hoisted(() => ({ isMobile: false }));
+const mockToast = vi.hoisted(() => vi.fn());
 
 vi.mock("@/hooks", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/hooks")>();
@@ -32,6 +33,12 @@ vi.mock("@/hooks", async (importOriginal) => {
     useIsMobile: () => viewport.isMobile,
   };
 });
+
+vi.mock("@/components/ui/toaster", () => ({
+  toast: (...args: unknown[]) => mockToast(...args),
+}));
+
+const STALE_PERIOD_MESSAGE = "Chore period is stale. Refresh and try again.";
 
 function emptyChoresBoard(): ChoresBoard {
   return {
@@ -137,12 +144,52 @@ describe("ChoresView", () => {
 
   beforeEach(() => {
     viewport.isMobile = false;
+    mockToast.mockClear();
     seedFamilyStore({
       members: [
         { id: "leo", name: "Leo", color: "coral" },
         { id: "maya", name: "Maya", color: "teal" },
       ],
     });
+  });
+
+  it("disables creating a recurring routine while the board is loading", () => {
+    server.use(
+      http.get(`${API_BASE}/chores/board`, () => new Promise(() => undefined)),
+    );
+
+    render(<ChoresView />);
+
+    expect(
+      screen.getByRole("button", { name: /add recurring chore/i }),
+    ).toBeDisabled();
+    expect(screen.getByText("Loading chores...")).toBeVisible();
+  });
+
+  it("keeps recurring routine creation unavailable when the board fails to load", async () => {
+    server.use(
+      http.get(`${API_BASE}/chores/board`, () =>
+        HttpResponse.json(
+          { message: "Could not load chores" },
+          { status: 500 },
+        ),
+      ),
+    );
+    const { user } = renderWithUser(<ChoresView />);
+
+    expect(
+      await screen.findByText("Could not load chores. Try again in a moment."),
+    ).toBeVisible();
+    const addButton = screen.getByRole("button", {
+      name: /add recurring chore/i,
+    });
+
+    expect(addButton).toBeDisabled();
+    await user.click(addButton);
+
+    expect(
+      screen.queryByRole("dialog", { name: "New Chore" }),
+    ).not.toBeInTheDocument();
   });
 
   it("shows one selected scope at a time on mobile", async () => {
@@ -346,6 +393,34 @@ describe("ChoresView", () => {
         scope: "TODAY",
         periodStartDate: "2026-05-17",
       });
+    });
+  });
+
+  it("shows a recovery message when a current-period completion is stale", async () => {
+    server.use(
+      http.put(
+        `${API_BASE}/chores/templates/brush-teeth-id/current-period-completion`,
+        () =>
+          HttpResponse.json({ message: STALE_PERIOD_MESSAGE }, { status: 400 }),
+      ),
+    );
+    seedMockChoresBoard(sampleChoresBoard());
+    const { user } = renderWithUser(<ChoresView />);
+
+    await user.click(
+      await screen.findByRole("button", {
+        name: /mark brush teeth complete/i,
+      }),
+    );
+
+    await waitFor(() => {
+      expect(mockToast).toHaveBeenCalledWith(
+        expect.objectContaining({
+          title: "Chores were out of date",
+          description: "Refreshing the board. Try that again.",
+          variant: "destructive",
+        }),
+      );
     });
   });
 
