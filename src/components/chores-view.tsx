@@ -1,6 +1,8 @@
 import { AlertCircle, Plus } from "lucide-react";
 import { useState } from "react";
 import {
+  type ApiException,
+  isStaleChorePeriodError,
   useChoresBoard,
   useCompleteChoreForCurrentPeriod,
   useCreateChoreTemplate,
@@ -14,6 +16,7 @@ import {
   ChoreScopeSwitcher,
 } from "@/components/chores/chores-scope-switcher";
 import { Button } from "@/components/ui/button";
+import { toast } from "@/components/ui/toaster";
 import { useIsMobile } from "@/hooks";
 import type { ChoreBoardItem, ChoreScopeBoard, ChoresBoard } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -31,6 +34,16 @@ function selectedScope(board: ChoresBoard, scope: ChoreScopeKey) {
   return board.thisMonth;
 }
 
+function showStalePeriodRecovery(error: ApiException) {
+  if (!isStaleChorePeriodError(error)) return;
+
+  toast({
+    title: "Chores were out of date",
+    description: "Refreshing the board. Try that again.",
+    variant: "destructive",
+  });
+}
+
 export function ChoresView() {
   const isMobile = useIsMobile();
   const [selectedScopeKey, setSelectedScopeKey] =
@@ -41,8 +54,12 @@ export function ChoresView() {
     onSuccess: () => setCreateOpen(false),
   });
   const updateTemplate = useUpdateChoreTemplate();
-  const completeCurrentPeriod = useCompleteChoreForCurrentPeriod();
-  const uncompleteCurrentPeriod = useUncompleteChoreForCurrentPeriod();
+  const completeCurrentPeriod = useCompleteChoreForCurrentPeriod({
+    onError: showStalePeriodRecovery,
+  });
+  const uncompleteCurrentPeriod = useUncompleteChoreForCurrentPeriod({
+    onError: showStalePeriodRecovery,
+  });
   const board = data?.data;
   const hasRoutines = board ? hasAnyRoutines(board) : false;
   const visibleScopes = board
@@ -51,6 +68,7 @@ export function ChoresView() {
       : [board.today, board.thisWeek, board.thisMonth]
     : [];
   const activeFrom = board?.today.periodStartDate;
+  const canCreate = Boolean(activeFrom) && !isLoading && !isError;
 
   const handleCreate = (values: ChoreFormData) => {
     if (!activeFrom) return;
@@ -110,6 +128,7 @@ export function ChoresView() {
               type="button"
               aria-label="Add recurring chore"
               size="icon"
+              disabled={!canCreate}
               onClick={() => setCreateOpen(true)}
             >
               <Plus className="h-5 w-5" />

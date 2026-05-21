@@ -17,6 +17,7 @@ export {
   familyKeys,
   getStoredToken,
   googleCalendarKeys,
+  isStaleChorePeriodError,
   listsKeys,
   readFamilyFromStorage,
   setStoredToken,
