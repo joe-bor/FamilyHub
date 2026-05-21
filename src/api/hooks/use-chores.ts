@@ -23,6 +23,13 @@ export const choreKeys = {
 
 type BoardScopeKey = "today" | "thisWeek" | "thisMonth";
 
+const STALE_CHORE_PERIOD_MESSAGE =
+  "Chore period is stale. Refresh and try again.";
+
+export function isStaleChorePeriodError(error: ApiException): boolean {
+  return error.status === 400 && error.message === STALE_CHORE_PERIOD_MESSAGE;
+}
+
 function boardKeyForScope(scope: ChoreScope): BoardScopeKey {
   if (scope === "TODAY") return "today";
   if (scope === "THIS_WEEK") return "thisWeek";
@@ -34,9 +41,12 @@ function recalculateAssigneeGroup(
 ): ChoreAssigneeGroupData {
   const total = group.chores.length;
   const completed = group.chores.filter((chore) => chore.completed).length;
+  const incompleteChores = group.chores.filter((chore) => !chore.completed);
+  const completedChores = group.chores.filter((chore) => chore.completed);
 
   return {
     ...group,
+    chores: [...incompleteChores, ...completedChores],
     summary: {
       total,
       completed,
@@ -236,6 +246,12 @@ export function useCompleteChoreForCurrentPeriod(
       callbacks?.onSuccess?.(response);
     },
     onError: (error: ApiException) => {
+      if (isStaleChorePeriodError(error)) {
+        queryClient.invalidateQueries({
+          queryKey: choreKeys.board(),
+          refetchType: "all",
+        });
+      }
       callbacks?.onError?.(error);
     },
   });
@@ -272,6 +288,12 @@ export function useUncompleteChoreForCurrentPeriod(
       callbacks?.onSuccess?.(response);
     },
     onError: (error: ApiException) => {
+      if (isStaleChorePeriodError(error)) {
+        queryClient.invalidateQueries({
+          queryKey: choreKeys.board(),
+          refetchType: "all",
+        });
+      }
       callbacks?.onError?.(error);
     },
   });
