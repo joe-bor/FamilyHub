@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.3.10](https://github.com/joe-bor/FamilyHub/compare/family-hub-v0.3.9...family-hub-v0.3.10) (2026-05-21)
+
+
+### Features
+
+* **chores:** add present-focused board UI ([ebc2b57](https://github.com/joe-bor/FamilyHub/commit/ebc2b57257d6497c3b878a359485a5ae3bb80e0a))
+* **chores:** reset frontend chores contract ([41c4710](https://github.com/joe-bor/FamilyHub/commit/41c47100ccb3c162ec5815cc9aba9825fb6da66c))
+* **chores:** wire recurring chore interactions ([a63996d](https://github.com/joe-bor/FamilyHub/commit/a63996d5f0e07055a49fca87611a847fbfa393dc))
+
+
+### Bug Fixes
+
+* **chores:** harden recurring board recovery ([f865195](https://github.com/joe-bor/FamilyHub/commit/f865195a7e53bd3d93aa7163b3c3fd72a1ab68d7))
+* **chores:** refresh board cache after period changes ([5cd7a25](https://github.com/joe-bor/FamilyHub/commit/5cd7a25675d764381a6ff81f102d8867af23df43))
+* force-ignore frontend worktrees in biome ([0cf42ea](https://github.com/joe-bor/FamilyHub/commit/0cf42ea5abcba9f299cdacb6e94be8e8ed134ead))
+
+
+### Tests
+
+* **chores:** cover mobile recurring chore flow ([83f2ae8](https://github.com/joe-bor/FamilyHub/commit/83f2ae8d51e8a45526f3f9fb459f698ebd7b3007))
+
 ## [0.3.9](https://github.com/joe-bor/FamilyHub/compare/family-hub-v0.3.8...family-hub-v0.3.9) (2026-05-10)
 
 
