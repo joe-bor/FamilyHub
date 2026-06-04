@@ -50,6 +50,11 @@ export function RecipeCreateSheet({
   };
 
   if (mode === "manual") {
+    const createErrorMessage =
+      createRecipe.error instanceof Error
+        ? createRecipe.error.message
+        : "Could not save recipe";
+
     return (
       <MobileSheet
         isOpen={isOpen}
@@ -58,6 +63,7 @@ export function RecipeCreateSheet({
       >
         <RecipeForm
           isPending={createRecipe.isPending}
+          errorMessage={createRecipe.isError ? createErrorMessage : null}
           onSubmit={(values) => createRecipe.mutate(toRecipeRequest(values))}
         />
       </MobileSheet>

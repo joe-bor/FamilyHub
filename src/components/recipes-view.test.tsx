@@ -272,6 +272,39 @@ describe("RecipesView", () => {
     ).not.toBeInTheDocument();
   });
 
+  it("shows a manual create error without selecting a partial recipe", async () => {
+    seedMockRecipes([]);
+    server.use(
+      http.post(`${API_BASE}/recipes`, () =>
+        HttpResponse.json(
+          { message: "Recipe title already exists" },
+          { status: 409 },
+        ),
+      ),
+    );
+
+    const { user } = renderWithUser(<RecipesView />);
+
+    await screen.findByText("No recipes yet");
+    await user.click(screen.getByRole("button", { name: "Add recipe" }));
+    await user.click(screen.getByRole("button", { name: "Create manually" }));
+    await typeAndWait(user, screen.getByLabelText("Title"), "Skillet Eggs");
+    await user.click(screen.getByRole("button", { name: "Save recipe" }));
+
+    expect(
+      await screen.findByText("Recipe title already exists"),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("dialog", { name: "Create Recipe" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Back to recipes" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("heading", { name: "Skillet Eggs" }),
+    ).not.toBeInTheDocument();
+  });
+
   it("preserves ordered manual ingredients, instructions, and tags when saving", async () => {
     seedMockRecipes([]);
 
