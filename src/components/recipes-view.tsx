@@ -1,4 +1,3 @@
-import { ArrowLeft, Plus } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useRecipes } from "@/api";
 import {
@@ -46,7 +45,6 @@ export function RecipesView() {
   const [searchValue, setSearchValue] = useState("");
   const [favoritesOnly, setFavoritesOnly] = useState(false);
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
-  const [selectedRecipeId, setSelectedRecipeId] = useState<string | null>(null);
 
   const recipes = data?.data ?? [];
   const searchQuery = normalizeValue(searchValue);
@@ -81,61 +79,14 @@ export function RecipesView() {
     return sortRecipes(visibleRecipes, favoritesOnly);
   }, [favoritesOnly, recipes, searchQuery, selectedTag]);
 
-  const selectedRecipe = useMemo(
-    () => recipes.find((recipe) => recipe.id === selectedRecipeId) ?? null,
-    [recipes, selectedRecipeId],
-  );
-
-  if (selectedRecipeId !== null) {
-    return (
-      <section className="flex-1 overflow-y-auto p-4 sm:p-6">
-        <div className="mx-auto flex max-w-2xl flex-col gap-4">
-          <div className="flex items-center justify-between gap-3">
-            <Button
-              type="button"
-              variant="ghost"
-              onClick={() => setSelectedRecipeId(null)}
-            >
-              <ArrowLeft className="h-4 w-4" />
-              Back to recipes
-            </Button>
-            <Button type="button" size="sm" disabled>
-              <Plus className="h-4 w-4" />
-              Add recipe
-            </Button>
-          </div>
-
-          <div className="rounded-lg border border-border bg-card p-5 shadow-xs">
-            <p className="text-sm font-medium text-muted-foreground">
-              Selected recipe: {selectedRecipeId}
-            </p>
-            <h1 className="mt-2 text-2xl font-semibold text-foreground">
-              {selectedRecipe?.title ?? "Recipe detail"}
-            </h1>
-            <p className="mt-2 text-sm leading-6 text-muted-foreground">
-              Recipe detail is coming in Task 5. This placeholder confirms card
-              navigation and selected-recipe mode.
-            </p>
-          </div>
-        </div>
-      </section>
-    );
-  }
-
   return (
     <section className="flex-1 overflow-y-auto p-4 sm:p-6">
       <div className="mx-auto flex max-w-3xl flex-col gap-4">
-        <div className="flex items-center justify-between gap-3">
-          <div>
-            <h1 className="text-2xl font-semibold text-foreground">Recipes</h1>
-            <p className="text-sm text-muted-foreground">
-              Save family favorites and discover what to cook next.
-            </p>
-          </div>
-          <Button type="button" className="shrink-0" disabled>
-            <Plus className="h-4 w-4" />
-            Add recipe
-          </Button>
+        <div>
+          <h1 className="text-2xl font-semibold text-foreground">Recipes</h1>
+          <p className="text-sm text-muted-foreground">
+            Save family favorites and discover what to cook next.
+          </p>
         </div>
 
         {isLoading ? (
@@ -218,10 +169,7 @@ export function RecipesView() {
               <div className="grid gap-3">
                 {filteredRecipes.map((recipe) => (
                   <div key={recipe.id} className={cn("min-w-0")}>
-                    <RecipeLibraryCard
-                      recipe={recipe}
-                      onSelect={setSelectedRecipeId}
-                    />
+                    <RecipeLibraryCard recipe={recipe} />
                   </div>
                 ))}
               </div>
