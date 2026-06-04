@@ -67,7 +67,7 @@ const MOCK_IMPORTED_RECIPE: RecipeDetail = {
   instructions: ["Simmer tomatoes and stock", "Blend with cream"],
   note: null,
   sourceUrl: "https://example.com/imported-tomato-soup",
-  tags: ["lunch"],
+  tags: ["lunch", "quick"],
   favorite: false,
   updatedAt: MOCK_RECIPE_TIMESTAMP,
 };
