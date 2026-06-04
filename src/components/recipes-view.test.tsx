@@ -89,9 +89,7 @@ describe("RecipesView", () => {
     expect(
       screen.getByText("Add your first recipe to get started."),
     ).toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: "Add recipe" }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Add recipe" })).toBeDisabled();
   });
 
   it("renders summary cards with image, title, tags, and favorite state", async () => {
@@ -194,6 +192,29 @@ describe("RecipesView", () => {
     expect(screen.queryByText("Imported Tomato Soup")).not.toBeInTheDocument();
   });
 
+  it("normalizes tag chips and filtering across casing and whitespace", async () => {
+    seedMockRecipes([
+      {
+        ...testRecipeDetail,
+        tags: [" Quick ", "Dinner"],
+      },
+      {
+        ...importedRecipeDetail,
+        tags: ["quick", "lunch"],
+      },
+    ]);
+
+    const { user } = renderWithUser(<RecipesView />);
+
+    await screen.findByText("Sheet Pan Salmon");
+
+    expect(screen.getAllByRole("button", { name: "quick" })).toHaveLength(1);
+    await user.click(screen.getByRole("button", { name: "quick" }));
+
+    expect(screen.getByText("Sheet Pan Salmon")).toBeInTheDocument();
+    expect(screen.getByText("Imported Tomato Soup")).toBeInTheDocument();
+  });
+
   it("opens a selected recipe placeholder mode when a card is tapped", async () => {
     seedMockRecipes(testRecipeDetails);
 
@@ -211,6 +232,7 @@ describe("RecipesView", () => {
     expect(
       screen.getByRole("button", { name: "Back to recipes" }),
     ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Add recipe" })).toBeDisabled();
 
     await user.click(screen.getByRole("button", { name: "Back to recipes" }));
 

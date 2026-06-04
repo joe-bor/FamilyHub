@@ -3,8 +3,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 
+export interface RecipeTagFilterOption {
+  label: string;
+  value: string;
+}
+
 interface RecipeFilterBarProps {
-  availableTags: string[];
+  availableTags: RecipeTagFilterOption[];
   favoritesOnly: boolean;
   onFavoritesOnlyChange: (favoritesOnly: boolean) => void;
   onSearchChange: (value: string) => void;
@@ -60,14 +65,16 @@ export function RecipeFilterBar({
 
         {availableTags.map((tag) => (
           <Button
-            key={tag}
+            key={tag.value}
             type="button"
-            variant={selectedTag === tag ? "secondary" : "outline"}
+            variant={selectedTag === tag.value ? "secondary" : "outline"}
             size="sm"
-            onClick={() => onTagChange(selectedTag === tag ? null : tag)}
+            onClick={() =>
+              onTagChange(selectedTag === tag.value ? null : tag.value)
+            }
             className="shrink-0"
           >
-            {tag}
+            {tag.label}
           </Button>
         ))}
       </div>

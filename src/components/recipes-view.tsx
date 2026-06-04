@@ -1,7 +1,10 @@
 import { ArrowLeft, Plus } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useRecipes } from "@/api";
-import { RecipeFilterBar } from "@/components/recipes/recipe-filter-bar";
+import {
+  RecipeFilterBar,
+  type RecipeTagFilterOption,
+} from "@/components/recipes/recipe-filter-bar";
 import { RecipeLibraryCard } from "@/components/recipes/recipe-library-card";
 import { Button } from "@/components/ui/button";
 import type { RecipeSummary } from "@/lib/types";
@@ -9,6 +12,10 @@ import { cn } from "@/lib/utils";
 
 function normalizeValue(value: string) {
   return value.trim().toLowerCase();
+}
+
+function displayTag(value: string) {
+  return normalizeValue(value);
 }
 
 function matchesSearch(recipe: RecipeSummary, query: string) {
@@ -45,16 +52,26 @@ export function RecipesView() {
   const searchQuery = normalizeValue(searchValue);
 
   const availableTags = useMemo(() => {
-    return [...new Set(recipes.flatMap((recipe) => recipe.tags))].sort((a, b) =>
-      a.localeCompare(b),
-    );
+    const tagMap = new Map<string, RecipeTagFilterOption>();
+
+    for (const tag of recipes.flatMap((recipe) => recipe.tags)) {
+      const normalizedTag = normalizeValue(tag);
+      if (!normalizedTag) continue;
+      tagMap.set(normalizedTag, {
+        label: displayTag(tag),
+        value: normalizedTag,
+      });
+    }
+
+    return [...tagMap.values()].sort((a, b) => a.label.localeCompare(b.label));
   }, [recipes]);
 
   const filteredRecipes = useMemo(() => {
     const visibleRecipes = recipes.filter((recipe) => {
       const matchesFavorites = !favoritesOnly || recipe.favorite;
       const matchesTag =
-        selectedTag === null || recipe.tags.includes(selectedTag);
+        selectedTag === null ||
+        recipe.tags.some((tag) => normalizeValue(tag) === selectedTag);
 
       return (
         matchesFavorites && matchesTag && matchesSearch(recipe, searchQuery)
@@ -82,7 +99,7 @@ export function RecipesView() {
               <ArrowLeft className="h-4 w-4" />
               Back to recipes
             </Button>
-            <Button type="button" size="sm">
+            <Button type="button" size="sm" disabled>
               <Plus className="h-4 w-4" />
               Add recipe
             </Button>
@@ -115,7 +132,7 @@ export function RecipesView() {
               Save family favorites and discover what to cook next.
             </p>
           </div>
-          <Button type="button" className="shrink-0">
+          <Button type="button" className="shrink-0" disabled>
             <Plus className="h-4 w-4" />
             Add recipe
           </Button>
