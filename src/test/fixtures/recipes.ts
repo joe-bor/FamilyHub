@@ -30,7 +30,26 @@ export const importedRecipeDetail: RecipeDetail = {
   instructions: ["Simmer tomatoes and stock", "Blend with cream"],
   note: null,
   sourceUrl: "https://example.com/imported-tomato-soup",
-  tags: ["lunch"],
+  tags: ["lunch", "quick"],
   favorite: false,
   updatedAt: "2026-06-04T09:00:00",
 };
+
+export const breakfastRecipeDetail: RecipeDetail = {
+  id: "00000000-0000-4000-8000-000000000503",
+  title: "Berry Yogurt Parfaits",
+  imageUrl: "https://example.com/parfaits.jpg",
+  ingredients: ["Greek yogurt", "Berries", "Granola"],
+  instructions: ["Layer yogurt, berries, and granola"],
+  note: null,
+  sourceUrl: null,
+  tags: ["breakfast", "make-ahead"],
+  favorite: true,
+  updatedAt: "2026-06-04T09:30:00",
+};
+
+export const testRecipeDetails: RecipeDetail[] = [
+  importedRecipeDetail,
+  breakfastRecipeDetail,
+  testRecipeDetail,
+];
