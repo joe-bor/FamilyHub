@@ -73,9 +73,14 @@ function ArrayFieldSection({
 interface RecipeFormProps {
   onSubmit: (data: RecipeFormData) => void;
   isPending?: boolean;
+  errorMessage?: string | null;
 }
 
-export function RecipeForm({ onSubmit, isPending = false }: RecipeFormProps) {
+export function RecipeForm({
+  onSubmit,
+  isPending = false,
+  errorMessage = null,
+}: RecipeFormProps) {
   const form = useForm<RecipeFormData>({
     resolver: zodResolver(recipeFormSchema),
     defaultValues: {
@@ -171,10 +176,13 @@ export function RecipeForm({ onSubmit, isPending = false }: RecipeFormProps) {
         }}
       />
 
-      <div className="flex justify-end">
-        <Button type="submit" disabled={isPending} className={cn("min-w-28")}>
-          Save recipe
-        </Button>
+      <div className="space-y-3">
+        <FormError message={errorMessage ?? undefined} />
+        <div className="flex justify-end">
+          <Button type="submit" disabled={isPending} className={cn("min-w-28")}>
+            Save recipe
+          </Button>
+        </div>
       </div>
     </form>
   );
