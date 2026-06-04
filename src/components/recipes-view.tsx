@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
-import { useRecipes } from "@/api";
+import { useRecipe, useRecipes } from "@/api";
+import { RecipeCreateSheet } from "@/components/recipes/recipe-create-sheet";
 import {
   RecipeFilterBar,
   type RecipeTagFilterOption,
@@ -42,12 +43,16 @@ function sortRecipes(recipes: RecipeSummary[], favoritesOnly: boolean) {
 export function RecipesView() {
   const { data, error, isLoading, isError, refetch, isRefetching } =
     useRecipes();
+  const [isCreateSheetOpen, setIsCreateSheetOpen] = useState(false);
+  const [selectedRecipeId, setSelectedRecipeId] = useState<string | null>(null);
   const [searchValue, setSearchValue] = useState("");
   const [favoritesOnly, setFavoritesOnly] = useState(false);
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
+  const selectedRecipe = useRecipe(selectedRecipeId);
 
   const recipes = data?.data ?? [];
   const searchQuery = normalizeValue(searchValue);
+  const selectedRecipeData = selectedRecipe.data?.data ?? null;
 
   const availableTags = useMemo(() => {
     const tagMap = new Map<string, RecipeTagFilterOption>();
@@ -82,14 +87,58 @@ export function RecipesView() {
   return (
     <section className="flex-1 overflow-y-auto p-4 sm:p-6">
       <div className="mx-auto flex max-w-3xl flex-col gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold text-foreground">Recipes</h1>
-          <p className="text-sm text-muted-foreground">
-            Save family favorites and discover what to cook next.
-          </p>
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <h1 className="text-2xl font-semibold text-foreground">Recipes</h1>
+            <p className="text-sm text-muted-foreground">
+              Save family favorites and discover what to cook next.
+            </p>
+          </div>
+          {selectedRecipeId === null ? (
+            <Button type="button" onClick={() => setIsCreateSheetOpen(true)}>
+              Add recipe
+            </Button>
+          ) : null}
         </div>
 
-        {isLoading ? (
+        {selectedRecipeId !== null ? (
+          selectedRecipeData ? (
+            <div className="space-y-4 rounded-lg border border-border bg-card p-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setSelectedRecipeId(null)}
+              >
+                Back to recipes
+              </Button>
+              <div className="space-y-1">
+                <h2 className="text-xl font-semibold text-foreground">
+                  {selectedRecipeData.title}
+                </h2>
+                {selectedRecipeData.sourceUrl ? (
+                  <p className="text-sm text-muted-foreground">
+                    {selectedRecipeData.sourceUrl}
+                  </p>
+                ) : null}
+              </div>
+            </div>
+          ) : selectedRecipe.isLoading ? (
+            <p className="text-sm font-medium text-muted-foreground">
+              Loading recipe...
+            </p>
+          ) : selectedRecipe.isError ? (
+            <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-4">
+              <h2 className="text-base font-semibold text-foreground">
+                Recipe could not be loaded
+              </h2>
+              <p className="mt-1 text-sm text-muted-foreground">
+                {selectedRecipe.error instanceof Error
+                  ? selectedRecipe.error.message
+                  : "Try again in a moment."}
+              </p>
+            </div>
+          ) : null
+        ) : isLoading ? (
           <div className="space-y-3">
             <p className="text-sm font-medium text-muted-foreground">
               Loading recipes...
@@ -109,9 +158,7 @@ export function RecipesView() {
               ))}
             </div>
           </div>
-        ) : null}
-
-        {isError ? (
+        ) : isError ? (
           <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-4">
             <h2 className="text-base font-semibold text-foreground">
               Recipes could not be loaded
@@ -133,9 +180,7 @@ export function RecipesView() {
               Retry
             </Button>
           </div>
-        ) : null}
-
-        {!isLoading && !isError ? (
+        ) : !isLoading && !isError ? (
           <>
             <RecipeFilterBar
               availableTags={availableTags}
@@ -176,6 +221,12 @@ export function RecipesView() {
             )}
           </>
         ) : null}
+
+        <RecipeCreateSheet
+          isOpen={isCreateSheetOpen}
+          onOpenChange={setIsCreateSheetOpen}
+          onCreated={setSelectedRecipeId}
+        />
       </div>
     </section>
   );
