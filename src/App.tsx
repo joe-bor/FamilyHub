@@ -25,6 +25,11 @@ const ChoresView = lazy(() =>
 const MealsView = lazy(() =>
   import("@/components/meals-view").then((m) => ({ default: m.MealsView })),
 );
+const RecipesView = lazy(() =>
+  import("@/components/recipes-view").then((m) => ({
+    default: m.RecipesView,
+  })),
+);
 const ListsView = lazy(() =>
   import("@/components/lists-view").then((m) => ({ default: m.ListsView })),
 );
@@ -66,6 +71,12 @@ function renderModule(activeModule: ModuleType | null) {
       return (
         <Suspense fallback={<ModuleLoader />}>
           <MealsView />
+        </Suspense>
+      );
+    case "recipes":
+      return (
+        <Suspense fallback={<ModuleLoader />}>
+          <RecipesView />
         </Suspense>
       );
     case "lists":

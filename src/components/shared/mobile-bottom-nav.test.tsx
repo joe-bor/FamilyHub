@@ -8,7 +8,7 @@ describe("MobileBottomNav", () => {
     useAppStore.setState({ activeModule: null, isSidebarOpen: false });
   });
 
-  it("renders all six tabs and marks Home active when activeModule is null", () => {
+  it("renders all seven destinations and marks Home active when activeModule is null", () => {
     render(<MobileBottomNav />);
 
     const nav = screen.getByRole("navigation", { name: /primary/i });
@@ -31,8 +31,22 @@ describe("MobileBottomNav", () => {
       screen.getByRole("button", { name: /^meals$/i }),
     ).toBeInTheDocument();
     expect(
+      screen.getByRole("button", { name: /^recipes$/i }),
+    ).toBeInTheDocument();
+    expect(
       screen.getByRole("button", { name: /^photos$/i }),
     ).toBeInTheDocument();
+  });
+
+  it("uses a horizontally flexible layout for seven readable destinations", () => {
+    render(<MobileBottomNav />);
+
+    const navItems = screen.getByRole("navigation", {
+      name: /primary/i,
+    }).firstElementChild;
+
+    expect(navItems).toHaveClass("overflow-x-auto");
+    expect(navItems).not.toHaveClass("grid-cols-7");
   });
 
   it("switches modules through the app store", async () => {

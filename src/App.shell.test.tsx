@@ -106,6 +106,17 @@ describe("App shell", () => {
     ).not.toBeInTheDocument();
   });
 
+  it("renders the Recipes module when recipes is active", async () => {
+    setViewportWidth(769);
+    useAppStore.setState({ activeModule: "recipes", isSidebarOpen: false });
+
+    render(<FamilyHub />);
+
+    expect(
+      await screen.findByRole("heading", { name: /^recipes$/i }),
+    ).toBeInTheDocument();
+  });
+
   it("does not render bottom nav on login screen", async () => {
     setViewportWidth(768);
     seedAuthStore({ isAuthenticated: false });
