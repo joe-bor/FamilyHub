@@ -31,6 +31,33 @@ describe("recipeFormSchema", () => {
     });
   });
 
+  it("requires recipe URLs to use http or https", () => {
+    expect(() =>
+      recipeFormSchema.parse({
+        title: "Pasta Night",
+        imageUrl: "ftp://example.com/photo.jpg",
+      }),
+    ).toThrow("Enter an http or https URL");
+
+    expect(() =>
+      recipeFormSchema.parse({
+        title: "Pasta Night",
+        sourceUrl: "mailto:cook@example.com",
+      }),
+    ).toThrow("Enter an http or https URL");
+
+    expect(
+      recipeFormSchema.parse({
+        title: "Pasta Night",
+        imageUrl: "https://example.com/photo.jpg",
+        sourceUrl: "http://example.com/recipe",
+      }),
+    ).toMatchObject({
+      imageUrl: "https://example.com/photo.jpg",
+      sourceUrl: "http://example.com/recipe",
+    });
+  });
+
   it("preserves ordered ingredients, instructions, and tags", () => {
     const formData = recipeFormSchema.parse({
       title: "Layered Salad",

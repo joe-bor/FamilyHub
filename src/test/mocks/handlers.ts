@@ -56,6 +56,7 @@ let mockLists: ListDetail[] = [];
 let mockListPreferences: ListPreferences = { showCompletedByDefault: true };
 let mockRecipes: RecipeDetail[] = [];
 let mockIdCounter = 1000;
+let mockRecipeIdCounter = 1000;
 const MOCK_TIMESTAMP = "2026-05-06T09:00:00";
 const MOCK_RECIPE_TIMESTAMP = "2026-06-04T09:00:00";
 const MOCK_IMPORTED_RECIPE: RecipeDetail = {
@@ -260,6 +261,7 @@ export function seedMockListPreferences(preferences: ListPreferences): void {
  */
 export function resetMockRecipes(): void {
   mockRecipes = [];
+  mockRecipeIdCounter = 1000;
 }
 
 /**
@@ -272,6 +274,46 @@ export function seedMockRecipes(recipes: RecipeDetail[]): void {
 function createMockId(): string {
   mockIdCounter += 1;
   return `00000000-0000-4000-8000-${String(mockIdCounter).padStart(12, "0")}`;
+}
+
+function createMockRecipeId(): string {
+  mockRecipeIdCounter += 1;
+  return `00000000-0000-4000-8000-${String(mockRecipeIdCounter).padStart(12, "0")}`;
+}
+
+function isPrivateIpv4(hostname: string): boolean {
+  const parts = hostname.split(".").map((part) => Number(part));
+  if (parts.length !== 4 || parts.some((part) => !Number.isInteger(part))) {
+    return false;
+  }
+
+  const [first, second] = parts;
+  return (
+    first === 10 ||
+    first === 127 ||
+    (first === 169 && second === 254) ||
+    (first === 172 && second >= 16 && second <= 31) ||
+    (first === 192 && second === 168)
+  );
+}
+
+function isBlockedRecipeImportUrl(value: string): boolean {
+  try {
+    const url = new URL(value);
+    const protocolAllowed =
+      url.protocol === "http:" || url.protocol === "https:";
+    if (!protocolAllowed) return true;
+
+    const hostname = url.hostname.toLowerCase();
+    return (
+      hostname === "localhost" ||
+      hostname === "::1" ||
+      hostname.endsWith(".localhost") ||
+      isPrivateIpv4(hostname)
+    );
+  } catch {
+    return true;
+  }
 }
 
 function categoriesForKind(kind: ListKind): ListCategory[] {
@@ -470,7 +512,7 @@ export const handlers = [
   http.post(`${API_BASE}/recipes`, async ({ request }) => {
     const body = (await request.json()) as CreateRecipeRequest;
     const recipe: RecipeDetail = {
-      id: createMockId(),
+      id: createMockRecipeId(),
       title: body.title.trim(),
       imageUrl: body.imageUrl ?? null,
       ingredients: body.ingredients ?? [],
@@ -533,7 +575,10 @@ export const handlers = [
   // POST /recipes/import - Import from URL and persist
   http.post(`${API_BASE}/recipes/import`, async ({ request }) => {
     const body = (await request.json()) as { url: string };
-    if (body.url === "https://example.com/import-error") {
+    if (
+      body.url === "https://example.com/import-error" ||
+      isBlockedRecipeImportUrl(body.url)
+    ) {
       return HttpResponse.json(
         { message: "Could not import recipe" },
         { status: 400 },
@@ -543,7 +588,7 @@ export const handlers = [
     const imported: RecipeDetail = {
       ...MOCK_IMPORTED_RECIPE,
       id: mockRecipes.some((recipe) => recipe.id === MOCK_IMPORTED_RECIPE.id)
-        ? createMockId()
+        ? createMockRecipeId()
         : MOCK_IMPORTED_RECIPE.id,
       sourceUrl: body.url,
     };

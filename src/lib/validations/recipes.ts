@@ -10,9 +10,15 @@ const optionalTextSchema = z
     return trimmed.length > 0 ? trimmed : null;
   });
 
-const optionalUrlSchema = optionalTextSchema.pipe(
-  z.string().url("Enter a valid URL").nullable(),
-);
+const httpUrlSchema = z
+  .string()
+  .url("Enter a valid URL")
+  .refine((value) => {
+    const protocol = new URL(value).protocol;
+    return protocol === "http:" || protocol === "https:";
+  }, "Enter an http or https URL");
+
+const optionalUrlSchema = optionalTextSchema.pipe(httpUrlSchema.nullable());
 
 function orderedTextArray(maxLength: number, message: string) {
   return z

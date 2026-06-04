@@ -175,4 +175,49 @@ describe("useRecipes", () => {
       expect(result.current.error?.message).toBe("Could not import recipe");
     });
   });
+
+  it("matches backend import URL guardrails in MSW", async () => {
+    const { result } = renderHook(() => useImportRecipe(), {
+      wrapper: createWrapper(),
+    });
+
+    result.current.mutate({ url: "ftp://example.com/recipe" });
+
+    await waitFor(() => {
+      expect(result.current.error?.message).toBe("Could not import recipe");
+    });
+
+    result.current.reset();
+    result.current.mutate({ url: "http://127.0.0.1/private" });
+
+    await waitFor(() => {
+      expect(result.current.error?.message).toBe("Could not import recipe");
+    });
+  });
+
+  it("resets recipe-generated ids independently from list mocks", async () => {
+    resetMockRecipes();
+
+    const { result } = renderHook(() => useCreateRecipe(), {
+      wrapper: createWrapper(),
+    });
+
+    result.current.mutate({ title: "First Recipe" });
+
+    await waitFor(() => {
+      expect(result.current.data?.data.id).toBe(
+        "00000000-0000-4000-8000-000000001001",
+      );
+    });
+
+    resetMockRecipes();
+    result.current.reset();
+    result.current.mutate({ title: "Second Recipe" });
+
+    await waitFor(() => {
+      expect(result.current.data?.data.id).toBe(
+        "00000000-0000-4000-8000-000000001001",
+      );
+    });
+  });
 });
