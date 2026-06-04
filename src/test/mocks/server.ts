@@ -9,12 +9,14 @@ import {
   resetMockEvents,
   resetMockFamily,
   resetMockLists,
+  resetMockRecipes,
   resetMockUsers,
   seedMockChoresBoard,
   seedMockEvents,
   seedMockFamily,
   seedMockListPreferences,
   seedMockLists,
+  seedMockRecipes,
 } from "./handlers";
 
 /**
@@ -63,6 +65,7 @@ export function setupMswServer() {
     resetMockEvents();
     resetMockFamily();
     resetMockLists();
+    resetMockRecipes();
     resetMockUsers();
   });
   afterAll(() => server.close());
@@ -78,10 +81,12 @@ export {
   resetMockEvents,
   resetMockFamily,
   resetMockLists,
+  resetMockRecipes,
   resetMockUsers,
   seedMockChoresBoard,
   seedMockEvents,
   seedMockFamily,
   seedMockListPreferences,
   seedMockLists,
+  seedMockRecipes,
 };

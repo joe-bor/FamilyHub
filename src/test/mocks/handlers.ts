@@ -10,6 +10,7 @@ import type {
   ChoreTemplate,
   CreateChoreTemplateRequest,
   CreateEventRequest,
+  CreateRecipeRequest,
   FamilyData,
   FamilyMember,
   ListCategory,
@@ -19,6 +20,8 @@ import type {
   ListPreferences,
   LoginRequest,
   LoginResponse,
+  RecipeDetail,
+  RecipeSummary,
   RegisterRequest,
   RegisterResponse,
   UpdateChoreTemplateRequest,
@@ -26,6 +29,7 @@ import type {
   UpdateEventRequest,
   UpdateFamilyRequest,
   UpdateMemberRequest,
+  UpdateRecipeRequest,
   UsernameCheckResponse,
 } from "@/lib/types";
 
@@ -50,8 +54,22 @@ let mockUsers: MockUser[] = [];
 // In-memory storage for persisted family lists (reset between tests)
 let mockLists: ListDetail[] = [];
 let mockListPreferences: ListPreferences = { showCompletedByDefault: true };
+let mockRecipes: RecipeDetail[] = [];
 let mockIdCounter = 1000;
 const MOCK_TIMESTAMP = "2026-05-06T09:00:00";
+const MOCK_RECIPE_TIMESTAMP = "2026-06-04T09:00:00";
+const MOCK_IMPORTED_RECIPE: RecipeDetail = {
+  id: "00000000-0000-4000-8000-000000000502",
+  title: "Imported Tomato Soup",
+  imageUrl: null,
+  ingredients: ["Tomatoes", "Stock", "Cream"],
+  instructions: ["Simmer tomatoes and stock", "Blend with cream"],
+  note: null,
+  sourceUrl: "https://example.com/imported-tomato-soup",
+  tags: ["lunch"],
+  favorite: false,
+  updatedAt: MOCK_RECIPE_TIMESTAMP,
+};
 
 function createEmptyChoresBoard(): ChoresBoard {
   return {
@@ -237,6 +255,20 @@ export function seedMockListPreferences(preferences: ListPreferences): void {
   mockListPreferences = preferences;
 }
 
+/**
+ * Reset mock recipe data between tests.
+ */
+export function resetMockRecipes(): void {
+  mockRecipes = [];
+}
+
+/**
+ * Seed mock recipe details for testing.
+ */
+export function seedMockRecipes(recipes: RecipeDetail[]): void {
+  mockRecipes = recipes.map((recipe) => structuredClone(recipe));
+}
+
 function createMockId(): string {
   mockIdCounter += 1;
   return `00000000-0000-4000-8000-${String(mockIdCounter).padStart(12, "0")}`;
@@ -366,6 +398,17 @@ function toListSummary(list: ListDetail) {
   };
 }
 
+function toRecipeSummary(recipe: RecipeDetail): RecipeSummary {
+  return {
+    id: recipe.id,
+    title: recipe.title,
+    imageUrl: recipe.imageUrl,
+    favorite: recipe.favorite,
+    tags: recipe.tags,
+    updatedAt: recipe.updatedAt,
+  };
+}
+
 function createApiResponse<T>(data: T, message?: string): ApiResponse<T> {
   return message ? { data, message } : { data };
 }
@@ -399,6 +442,120 @@ export const API_BASE = "http://localhost:3000/api";
  * ```
  */
 export const handlers = [
+  // ============================================================================
+  // Recipes API Handlers
+  // ============================================================================
+
+  // GET /recipes - Library summaries
+  http.get(`${API_BASE}/recipes`, () => {
+    return HttpResponse.json(
+      createApiResponse(mockRecipes.map(toRecipeSummary)),
+    );
+  }),
+
+  // GET /recipes/:id - Detail payload
+  http.get(`${API_BASE}/recipes/:id`, ({ params }) => {
+    const recipe = mockRecipes.find((candidate) => candidate.id === params.id);
+    if (!recipe) {
+      return HttpResponse.json(
+        { message: `Recipe with id "${params.id}" not found` },
+        { status: 404 },
+      );
+    }
+
+    return HttpResponse.json(createApiResponse(recipe));
+  }),
+
+  // POST /recipes - Create a saved recipe
+  http.post(`${API_BASE}/recipes`, async ({ request }) => {
+    const body = (await request.json()) as CreateRecipeRequest;
+    const recipe: RecipeDetail = {
+      id: createMockId(),
+      title: body.title.trim(),
+      imageUrl: body.imageUrl ?? null,
+      ingredients: body.ingredients ?? [],
+      instructions: body.instructions ?? [],
+      note: body.note ?? null,
+      sourceUrl: body.sourceUrl ?? null,
+      tags: body.tags ?? [],
+      favorite: body.favorite ?? false,
+      updatedAt: MOCK_RECIPE_TIMESTAMP,
+    };
+
+    mockRecipes = [recipe, ...mockRecipes];
+
+    return HttpResponse.json(
+      createApiResponse(recipe, "Recipe created successfully"),
+      { status: 201 },
+    );
+  }),
+
+  // PATCH /recipes/:id - Update a saved recipe
+  http.patch(`${API_BASE}/recipes/:id`, async ({ params, request }) => {
+    const index = mockRecipes.findIndex(
+      (candidate) => candidate.id === params.id,
+    );
+    if (index === -1) {
+      return HttpResponse.json(
+        { message: `Recipe with id "${params.id}" not found` },
+        { status: 404 },
+      );
+    }
+
+    const body = (await request.json()) as UpdateRecipeRequest;
+    const current = mockRecipes[index];
+    const updated: RecipeDetail = {
+      ...current,
+      ...body,
+      title: body.title?.trim() ?? current.title,
+      imageUrl: body.imageUrl === undefined ? current.imageUrl : body.imageUrl,
+      ingredients: body.ingredients ?? current.ingredients,
+      instructions: body.instructions ?? current.instructions,
+      note: body.note === undefined ? current.note : body.note,
+      sourceUrl:
+        body.sourceUrl === undefined ? current.sourceUrl : body.sourceUrl,
+      tags: body.tags ?? current.tags,
+      favorite: body.favorite ?? current.favorite,
+      updatedAt: MOCK_RECIPE_TIMESTAMP,
+    };
+
+    mockRecipes = [
+      ...mockRecipes.slice(0, index),
+      updated,
+      ...mockRecipes.slice(index + 1),
+    ];
+
+    return HttpResponse.json(
+      createApiResponse(updated, "Recipe updated successfully"),
+    );
+  }),
+
+  // POST /recipes/import - Import from URL and persist
+  http.post(`${API_BASE}/recipes/import`, async ({ request }) => {
+    const body = (await request.json()) as { url: string };
+    if (body.url === "https://example.com/import-error") {
+      return HttpResponse.json(
+        { message: "Could not import recipe" },
+        { status: 400 },
+      );
+    }
+
+    const imported: RecipeDetail = {
+      ...MOCK_IMPORTED_RECIPE,
+      id: mockRecipes.some((recipe) => recipe.id === MOCK_IMPORTED_RECIPE.id)
+        ? createMockId()
+        : MOCK_IMPORTED_RECIPE.id,
+      sourceUrl: body.url,
+    };
+
+    mockRecipes = [imported, ...mockRecipes];
+
+    return HttpResponse.json(
+      createApiResponse(imported, "Recipe imported successfully"),
+      { status: 201 },
+    );
+  }),
+
   // ============================================================================
   // Lists API Handlers
   // ============================================================================
