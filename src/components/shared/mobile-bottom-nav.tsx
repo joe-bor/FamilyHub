@@ -32,7 +32,7 @@ export function MobileBottomNav() {
       className="z-30 shrink-0 border-t border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/85"
     >
       <div
-        className="flex gap-1 overflow-x-auto px-2 pt-2"
+        className="grid grid-cols-7 gap-0.5 px-1 pt-2"
         style={{ paddingBottom: "max(0.5rem, env(safe-area-inset-bottom))" }}
       >
         {tabs.map((tab) => {
@@ -47,14 +47,14 @@ export function MobileBottomNav() {
               aria-label={tab.label}
               aria-current={isActive ? "page" : undefined}
               className={cn(
-                "flex min-h-14 min-w-16 shrink-0 flex-col items-center justify-center gap-1 rounded-xl px-1 py-2 text-[11px] leading-none font-semibold transition-colors",
+                "flex min-h-14 min-w-0 flex-col items-center justify-center gap-0.5 rounded-lg px-0.5 py-2 text-[10px] leading-none font-semibold transition-colors",
                 isActive
                   ? "bg-primary text-primary-foreground shadow-sm shadow-primary/20"
                   : "text-muted-foreground hover:bg-muted hover:text-foreground",
               )}
             >
-              <Icon className="h-5 w-5" />
-              <span className="truncate leading-[14px]">{tab.label}</span>
+              <Icon className="h-4 w-4" />
+              <span className="max-w-full truncate leading-3">{tab.label}</span>
             </button>
           );
         })}

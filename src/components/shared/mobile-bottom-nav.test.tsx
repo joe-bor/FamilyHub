@@ -38,15 +38,20 @@ describe("MobileBottomNav", () => {
     ).toBeInTheDocument();
   });
 
-  it("uses a horizontally flexible layout for seven readable destinations", () => {
+  it("keeps all seven destinations visible without horizontal scrolling", () => {
     render(<MobileBottomNav />);
 
     const navItems = screen.getByRole("navigation", {
       name: /primary/i,
     }).firstElementChild;
+    const buttons = screen.getAllByRole("button");
 
-    expect(navItems).toHaveClass("overflow-x-auto");
-    expect(navItems).not.toHaveClass("grid-cols-7");
+    expect(navItems).toHaveClass("grid", "grid-cols-7");
+    expect(navItems).not.toHaveClass("overflow-x-auto");
+    for (const button of buttons) {
+      expect(button).toHaveClass("min-w-0");
+      expect(button).not.toHaveClass("min-w-16");
+    }
   });
 
   it("switches modules through the app store", async () => {
