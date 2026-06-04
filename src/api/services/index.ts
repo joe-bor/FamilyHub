@@ -4,3 +4,4 @@ export { choreService } from "./chores.service";
 export { familyService } from "./family.service";
 export { googleCalendarService } from "./google-calendar.service";
 export { listsService } from "./lists.service";
+export { recipesService } from "./recipes.service";
