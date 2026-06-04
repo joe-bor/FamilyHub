@@ -1,6 +1,12 @@
 import { create } from "zustand";
 
-export type ModuleType = "calendar" | "lists" | "chores" | "meals" | "photos";
+export type ModuleType =
+  | "calendar"
+  | "lists"
+  | "chores"
+  | "meals"
+  | "recipes"
+  | "photos";
 
 interface AppState {
   // State

@@ -1,4 +1,5 @@
 import {
+  BookOpenText,
   Calendar,
   CheckSquare,
   ImageIcon,
@@ -16,6 +17,7 @@ const tabs = [
   { id: "lists" as ModuleType, label: "Lists", icon: ListTodo },
   { id: "chores" as ModuleType, label: "Chores", icon: CheckSquare },
   { id: "meals" as ModuleType, label: "Meals", icon: UtensilsCrossed },
+  { id: "recipes" as ModuleType, label: "Recipes", icon: BookOpenText },
   { id: "photos" as ModuleType, label: "Photos", icon: ImageIcon },
 ];
 

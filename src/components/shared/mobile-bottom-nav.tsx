@@ -1,4 +1,5 @@
 import {
+  BookOpenText,
   Calendar,
   CheckSquare,
   Home,
@@ -17,6 +18,7 @@ const tabs: Array<{ id: ModuleType | null; label: string; icon: LucideIcon }> =
     { id: "lists", label: "Lists", icon: ListTodo },
     { id: "chores", label: "Chores", icon: CheckSquare },
     { id: "meals", label: "Meals", icon: UtensilsCrossed },
+    { id: "recipes", label: "Recipes", icon: BookOpenText },
     { id: "photos", label: "Photos", icon: ImageIcon },
   ];
 
@@ -30,7 +32,7 @@ export function MobileBottomNav() {
       className="z-30 shrink-0 border-t border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/85"
     >
       <div
-        className="grid grid-cols-6 gap-1 px-2 pt-2"
+        className="flex gap-1 overflow-x-auto px-2 pt-2"
         style={{ paddingBottom: "max(0.5rem, env(safe-area-inset-bottom))" }}
       >
         {tabs.map((tab) => {
@@ -45,7 +47,7 @@ export function MobileBottomNav() {
               aria-label={tab.label}
               aria-current={isActive ? "page" : undefined}
               className={cn(
-                "flex min-h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-xl px-1 py-2 text-[11px] leading-none font-semibold transition-colors",
+                "flex min-h-14 min-w-16 shrink-0 flex-col items-center justify-center gap-1 rounded-xl px-1 py-2 text-[11px] leading-none font-semibold transition-colors",
                 isActive
                   ? "bg-primary text-primary-foreground shadow-sm shadow-primary/20"
                   : "text-muted-foreground hover:bg-muted hover:text-foreground",

@@ -13,4 +13,15 @@ describe("NavigationTabs", () => {
 
     expect(screen.getByRole("navigation")).toHaveClass("flex", "w-20");
   });
+
+  it("renders Meals and Recipes as top-level desktop modules", () => {
+    render(<NavigationTabs />);
+
+    expect(
+      screen.getByRole("button", { name: /^meals$/i }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /^recipes$/i }),
+    ).toBeInTheDocument();
+  });
 });
