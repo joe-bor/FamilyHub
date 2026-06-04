@@ -52,3 +52,7 @@ Notes:
 - The issue narrows the root plan to frontend Tasks 3-5, plus Recipes-owned review from Task 6.
 - Backend `v1.5.0` exposes `GET /api/recipes`, `GET /api/recipes/{id}`, `POST /api/recipes`, `PATCH /api/recipes/{id}`, and `POST /api/recipes/import`, wrapped in `ApiResponse`.
 - Backend `v1.5.0` recipe DTOs expose `title`, `imageUrl`, ordered `ingredients`, ordered `instructions`, `note`, `sourceUrl`, ordered `tags`, `favorite`, and `updatedAt`; `id` is returned on summary/detail responses.
+
+## Task 3 Scope Refinement
+
+Task 3 code review found that disabled `Add recipe` controls and selected-recipe placeholder navigation made the library slice look interactive before the real add/detail flows existed. The plan is refined so Task 3 remains discovery-only: cards render as browseable articles, Task 4 owns the functional `Add recipe` flow, and Task 5 owns card-to-detail navigation.

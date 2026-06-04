@@ -233,7 +233,8 @@ Add tests covering:
 - Search matches recipe title and tags.
 - Favorites filter shows favorites and keeps favorites first in search/picker-style results.
 - Tag filter stays lightweight and mobile-friendly.
-- Opening a card switches to detail mode by recipe id, while detail implementation can still be minimal until Task 5.
+- Library cards are visible browse results without unfinished detail navigation until Task 5.
+- No nonfunctional `Add recipe` control is rendered until the real add flow lands in Task 4.
 
 Run:
 
@@ -247,7 +248,7 @@ Expected: FAIL because library UI does not exist.
 
 Build a mobile-first library screen with:
 
-- Header: `Recipes` and `Add recipe` button.
+- Header: `Recipes` with discovery copy.
 - Search input.
 - Favorites toggle.
 - Tag filter chips derived from recipe summaries.
@@ -265,7 +266,7 @@ Run:
 env PATH=/Users/joe.bor/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin:$PATH npm test -- --run src/components/recipes-view.test.tsx
 ```
 
-Expected: PASS for library states, favorites, search, tags, and card-open behavior.
+Expected: PASS for library states, favorites, search, tags, normalized tag filtering, and no unfinished create/detail controls.
 
 Commit:
 
