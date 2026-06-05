@@ -9,6 +9,7 @@ import {
 } from "@/components/recipes/recipe-filter-bar";
 import { RecipeLibraryCard } from "@/components/recipes/recipe-library-card";
 import { Button } from "@/components/ui/button";
+import { formatRecipeTag } from "@/lib/recipe-tags";
 import { formatLocalDate, getWeekStartSunday } from "@/lib/time-utils";
 import type { RecipeSummary } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -18,15 +19,11 @@ function normalizeValue(value: string) {
   return value.trim().toLowerCase();
 }
 
-function displayTag(value: string) {
-  return normalizeValue(value);
-}
-
 function matchesSearch(recipe: RecipeSummary, query: string) {
   if (!query) return true;
 
   const normalizedTitle = normalizeValue(recipe.title);
-  const normalizedTags = recipe.tags.map(normalizeValue);
+  const normalizedTags = recipe.tags.map(formatRecipeTag);
 
   return (
     normalizedTitle.includes(query) ||
@@ -34,11 +31,39 @@ function matchesSearch(recipe: RecipeSummary, query: string) {
   );
 }
 
-function sortRecipes(recipes: RecipeSummary[], favoritesOnly: boolean) {
+function compareByRecency(left: RecipeSummary, right: RecipeSummary) {
+  // updatedAt is a zero-padded ISO timestamp, so a lexicographic compare is
+  // chronological; sort descending so most-recently-updated comes first.
+  return right.updatedAt.localeCompare(left.updatedAt);
+}
+
+function compareByFavorite(left: RecipeSummary, right: RecipeSummary) {
+  if (left.favorite === right.favorite) return 0;
+  return left.favorite ? -1 : 1;
+}
+
+/**
+ * Default library browse is ordered by recent activity (spec acceptance
+ * criterion). Favorites are only prioritized when searching, matching the
+ * spec's "favorites surface higher in pickers and search" rule.
+ */
+function sortRecipes(recipes: RecipeSummary[], isSearching: boolean) {
   return [...recipes].sort((left, right) => {
-    if (!favoritesOnly && left.favorite !== right.favorite) {
-      return left.favorite ? -1 : 1;
+    if (isSearching) {
+      const byFavorite = compareByFavorite(left, right);
+      if (byFavorite !== 0) return byFavorite;
+
+      const byRecency = compareByRecency(left, right);
+      if (byRecency !== 0) return byRecency;
+
+      return left.title.localeCompare(right.title);
     }
+
+    const byRecency = compareByRecency(left, right);
+    if (byRecency !== 0) return byRecency;
+
+    const byFavorite = compareByFavorite(left, right);
+    if (byFavorite !== 0) return byFavorite;
 
     return left.title.localeCompare(right.title);
   });
@@ -72,10 +97,10 @@ export function RecipesView() {
     const tagMap = new Map<string, RecipeTagFilterOption>();
 
     for (const tag of recipes.flatMap((recipe) => recipe.tags)) {
-      const normalizedTag = normalizeValue(tag);
+      const normalizedTag = formatRecipeTag(tag);
       if (!normalizedTag) continue;
       tagMap.set(normalizedTag, {
-        label: displayTag(tag),
+        label: normalizedTag,
         value: normalizedTag,
       });
     }
@@ -88,14 +113,14 @@ export function RecipesView() {
       const matchesFavorites = !favoritesOnly || recipe.favorite;
       const matchesTag =
         selectedTag === null ||
-        recipe.tags.some((tag) => normalizeValue(tag) === selectedTag);
+        recipe.tags.some((tag) => formatRecipeTag(tag) === selectedTag);
 
       return (
         matchesFavorites && matchesTag && matchesSearch(recipe, searchQuery)
       );
     });
 
-    return sortRecipes(visibleRecipes, favoritesOnly);
+    return sortRecipes(visibleRecipes, searchQuery.length > 0);
   }, [favoritesOnly, recipes, searchQuery, selectedTag]);
 
   useEffect(() => {

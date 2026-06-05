@@ -1,4 +1,5 @@
 import { Heart } from "lucide-react";
+import { formatRecipeTag } from "@/lib/recipe-tags";
 import type { RecipeSummary } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -40,7 +41,10 @@ export function RecipeLibraryCard({
         )}
         <div className="absolute right-3 top-3 rounded-full bg-background/90 p-2 shadow-sm">
           <Heart
-            aria-label={`Favorite recipe: ${recipe.title}`}
+            aria-hidden={!recipe.favorite}
+            aria-label={
+              recipe.favorite ? `${recipe.title} is a favorite` : undefined
+            }
             className={cn(
               "h-4 w-4",
               recipe.favorite
@@ -64,7 +68,7 @@ export function RecipeLibraryCard({
               key={`${index}-${tag}`}
               className="rounded-full bg-secondary px-2.5 py-1 text-xs font-medium text-secondary-foreground"
             >
-              {tag}
+              {formatRecipeTag(tag)}
             </span>
           ))}
         </div>

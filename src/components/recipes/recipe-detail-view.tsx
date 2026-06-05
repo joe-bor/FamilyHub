@@ -1,6 +1,7 @@
 import { ArrowLeft, Heart, Pencil } from "lucide-react";
 import type { ReactNode } from "react";
 import { Button } from "@/components/ui/button";
+import { formatRecipeTag } from "@/lib/recipe-tags";
 import type { RecipeDetail } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -55,12 +56,31 @@ export function RecipeDetailView({
           )}
         </div>
 
-        <div className="space-y-2">
+        <div className="space-y-3">
           <h2 className="text-2xl font-semibold text-foreground">
             {recipe.title}
           </h2>
-          {recipe.note ? (
-            <p className="text-sm text-muted-foreground">{recipe.note}</p>
+          {recipe.tags.length > 0 ? (
+            <div className="flex flex-wrap gap-2">
+              {recipe.tags.map((tag, index) => (
+                <span
+                  key={`${index}-${tag}`}
+                  className="rounded-full bg-secondary px-2.5 py-1 text-xs font-medium text-secondary-foreground"
+                >
+                  {formatRecipeTag(tag)}
+                </span>
+              ))}
+            </div>
+          ) : null}
+          {recipe.sourceUrl ? (
+            <a
+              href={recipe.sourceUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex text-sm font-medium text-primary underline-offset-4 hover:underline"
+            >
+              View source
+            </a>
           ) : null}
         </div>
 
@@ -94,28 +114,8 @@ export function RecipeDetailView({
           </DetailSection>
         ) : null}
 
-        {recipe.tags.length > 0 ? (
-          <div className="flex flex-wrap gap-2">
-            {recipe.tags.map((tag, index) => (
-              <span
-                key={`${index}-${tag}`}
-                className="rounded-full bg-secondary px-2.5 py-1 text-xs font-medium text-secondary-foreground"
-              >
-                {tag}
-              </span>
-            ))}
-          </div>
-        ) : null}
-
-        {recipe.sourceUrl ? (
-          <a
-            href={recipe.sourceUrl}
-            target="_blank"
-            rel="noreferrer"
-            className="inline-flex text-sm font-medium text-primary underline-offset-4 hover:underline"
-          >
-            View source
-          </a>
+        {recipe.note ? (
+          <p className="text-sm text-muted-foreground">{recipe.note}</p>
         ) : null}
 
         <div className="flex flex-wrap gap-2 border-t border-border pt-4">
@@ -146,7 +146,7 @@ export function RecipeDetailView({
                   : "text-current",
               )}
             />
-            {recipe.favorite ? "Favorite" : "Mark favorite"}
+            {recipe.favorite ? "Favorited" : "Favorite"}
           </Button>
         </div>
       </div>
