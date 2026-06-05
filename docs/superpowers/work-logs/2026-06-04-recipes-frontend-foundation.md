@@ -56,3 +56,51 @@ Notes:
 ## Task 3 Scope Refinement
 
 Task 3 code review found that disabled `Add recipe` controls and selected-recipe placeholder navigation made the library slice look interactive before the real add/detail flows existed. The plan is refined so Task 3 remains discovery-only: cards render as browseable articles, Task 4 owns the functional `Add recipe` flow, and Task 5 owns card-to-detail navigation.
+
+## Final Verification Notes
+
+Run from isolated worktree `/Users/joe.bor/code/family-hub/frontend/.worktrees/codex/recipes-frontend` with bundled Node after commit `d5cb0d1` on 2026-06-05:
+
+```bash
+env PATH=/Users/joe.bor/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin:$PATH npm test -- --run src/api/hooks/use-recipes.test.tsx src/lib/validations/recipes.test.ts src/components/recipes-view.test.tsx src/lib/time-utils.test.ts src/stores/app-store.test.ts src/components/shared/mobile-bottom-nav.test.tsx src/components/shared/navigation-tabs.test.tsx src/App.shell.test.tsx
+```
+
+Observed result: 8 test files passed, 153 tests passed.
+
+```bash
+env PATH=/Users/joe.bor/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin:$PATH npm run lint
+```
+
+Observed result: exit 0; existing Biome schema-version informational note only.
+
+```bash
+env PATH=/Users/joe.bor/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin:$PATH npm test -- --run
+```
+
+Observed result: 61 test files passed, 769 tests passed.
+
+```bash
+env PATH=/Users/joe.bor/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin:$PATH npm run build
+```
+
+Observed result: exit 0; existing bundle-size and Browserslist freshness warnings only.
+
+Backend release check:
+
+```bash
+gh api repos/joe-bor/family-hub-api/releases/latest --jq '{tag:.tag_name,name:.name,published:.published_at}'
+```
+
+Observed result: `family-hub-api` latest release is `v1.5.0`, published 2026-06-04T19:06:25Z.
+
+Real-backend recipe E2E status:
+
+- `docker info` could not reach the Docker daemon.
+- Focused Playwright runs could not complete locally because browser binaries were missing after the dev-server sandbox issue was bypassed.
+- `e2e/mobile-recipes.spec.ts` was added for the mobile recipe flow. Successful URL-import auto-save is covered by MSW-backed component and hook tests; real-backend recipe E2E should run once the local backend/browser environment is available on `family-hub-api v1.5.0` or newer.
+
+Code review status:
+
+- A `gpt-5.4` review found Important issues in recipe metadata editing, mobile nav readability, detail error recovery, and array validation messages.
+- Those findings were fixed in `d5cb0d1`.
+- A second final review attempt was unavailable because the subagent errored with the environment usage-limit message. The errored agent was closed.
