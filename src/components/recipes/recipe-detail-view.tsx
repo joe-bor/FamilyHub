@@ -36,11 +36,6 @@ export function RecipeDetailView({
 }: RecipeDetailViewProps) {
   return (
     <div className="space-y-4 rounded-lg border border-border bg-card p-4">
-      <Button type="button" variant="outline" onClick={onBack}>
-        <ArrowLeft className="h-4 w-4" />
-        Back to recipes
-      </Button>
-
       <div className="space-y-5">
         <div className="relative aspect-[4/3] overflow-hidden rounded-lg bg-muted">
           {recipe.imageUrl ? (
@@ -116,6 +111,10 @@ export function RecipeDetailView({
         ) : null}
 
         <div className="flex flex-wrap gap-2 border-t border-border pt-4">
+          <Button type="button" variant="outline" onClick={onBack}>
+            <ArrowLeft className="h-4 w-4" />
+            Back to recipes
+          </Button>
           <Button type="button" variant="outline" onClick={onEdit}>
             <Pencil className="h-4 w-4" />
             Edit recipe

@@ -141,6 +141,7 @@ describe("RecipesView", () => {
     const instructionsHeading = screen.getByRole("heading", {
       name: "Instructions",
     });
+    const backButton = screen.getByRole("button", { name: "Back to recipes" });
     const editButton = screen.getByRole("button", { name: "Edit recipe" });
 
     expect(screen.getByText("Salmon fillets")).toBeInTheDocument();
@@ -162,7 +163,11 @@ describe("RecipesView", () => {
         Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
     expect(
-      instructionsHeading.compareDocumentPosition(editButton) &
+      instructionsHeading.compareDocumentPosition(backButton) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(
+      backButton.compareDocumentPosition(editButton) &
         Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
 
