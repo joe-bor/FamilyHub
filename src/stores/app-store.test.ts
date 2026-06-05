@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { type ModuleType, useAppStore } from "./app-store";
+import { type MealType, type ModuleType, useAppStore } from "./app-store";
 
 describe("AppStore", () => {
   // Store reset handled globally by setup.ts afterEach via resetAllStores()
@@ -11,6 +11,11 @@ describe("AppStore", () => {
 
     it("initializes with isSidebarOpen = false", () => {
       expect(useAppStore.getState().isSidebarOpen).toBe(false);
+    });
+
+    it("initializes handoff drafts as null", () => {
+      expect(useAppStore.getState().mealPlacementDraft).toBe(null);
+      expect(useAppStore.getState().recipeCreationDraft).toBe(null);
     });
   });
 
@@ -125,6 +130,88 @@ describe("AppStore", () => {
 
       expect(useAppStore.getState().activeModule).toBe("chores");
       expect(useAppStore.getState().isSidebarOpen).toBe(true);
+    });
+  });
+
+  describe("recipe and meals handoff drafts", () => {
+    const mealTypes: MealType[] = ["breakfast", "lunch", "dinner"];
+
+    it.each(
+      mealTypes,
+    )("starts meal placement from a recipe with lowercase meal type sample '%s'", (mealType) => {
+      useAppStore.getState().startMealPlacementFromRecipe({
+        recipeId: "recipe-123",
+        requestedAtWeekStartDate: "2026-06-07",
+        source: {
+          kind: "meals-slot",
+          dayIndex: 2,
+          mealType,
+        },
+      });
+
+      expect(useAppStore.getState().activeModule).toBe("meals");
+      expect(useAppStore.getState().mealPlacementDraft).toEqual({
+        recipeId: "recipe-123",
+        requestedAtWeekStartDate: "2026-06-07",
+        source: {
+          kind: "meals-slot",
+          dayIndex: 2,
+          mealType,
+        },
+      });
+    });
+
+    it("consumes the meal placement draft and clears it", () => {
+      useAppStore.getState().startMealPlacementFromRecipe({
+        recipeId: "recipe-123",
+        requestedAtWeekStartDate: "2026-06-07",
+        source: { kind: "recipes-library" },
+      });
+
+      const consumed = useAppStore.getState().consumeMealPlacementDraft();
+
+      expect(consumed).toEqual({
+        recipeId: "recipe-123",
+        requestedAtWeekStartDate: "2026-06-07",
+        source: { kind: "recipes-library" },
+      });
+      expect(useAppStore.getState().mealPlacementDraft).toBe(null);
+    });
+
+    it("starts recipe creation from a meal slot and switches to recipes", () => {
+      useAppStore.getState().startRecipeCreationFromMealSlot({
+        requestedAtWeekStartDate: "2026-06-07",
+        dayIndex: 4,
+        mealType: "dinner",
+        typedTitle: "Taco bowls",
+      });
+
+      expect(useAppStore.getState().activeModule).toBe("recipes");
+      expect(useAppStore.getState().recipeCreationDraft).toEqual({
+        requestedAtWeekStartDate: "2026-06-07",
+        dayIndex: 4,
+        mealType: "dinner",
+        typedTitle: "Taco bowls",
+      });
+    });
+
+    it("consumes the recipe creation draft and clears it", () => {
+      useAppStore.getState().startRecipeCreationFromMealSlot({
+        requestedAtWeekStartDate: "2026-06-07",
+        dayIndex: 1,
+        mealType: "lunch",
+        typedTitle: "Chicken wraps",
+      });
+
+      const consumed = useAppStore.getState().consumeRecipeCreationDraft();
+
+      expect(consumed).toEqual({
+        requestedAtWeekStartDate: "2026-06-07",
+        dayIndex: 1,
+        mealType: "lunch",
+        typedTitle: "Chicken wraps",
+      });
+      expect(useAppStore.getState().recipeCreationDraft).toBe(null);
     });
   });
 });

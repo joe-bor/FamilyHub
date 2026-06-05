@@ -3,6 +3,7 @@ import { useCreateRecipe, useImportRecipe } from "@/api";
 import { Button } from "@/components/ui/button";
 import { MobileSheet } from "@/components/ui/mobile-sheet";
 import type { RecipeDetailApiResponse } from "@/lib/types";
+import type { RecipeFormData } from "@/lib/validations/recipes";
 import { RecipeForm, toRecipeRequest } from "./recipe-form";
 import { RecipeImportSheet } from "./recipe-import-sheet";
 
@@ -12,22 +13,32 @@ interface RecipeCreateSheetProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
   onCreated: (recipeId: string) => void;
+  defaultMode?: AddRecipeMode;
+  defaultValues?: Partial<RecipeFormData>;
 }
 
 export function RecipeCreateSheet({
   isOpen,
   onOpenChange,
   onCreated,
+  defaultMode = "choices",
+  defaultValues,
 }: RecipeCreateSheetProps) {
-  const [mode, setMode] = useState<AddRecipeMode>("choices");
+  const [mode, setMode] = useState<AddRecipeMode>(defaultMode);
   const [importError, setImportError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!isOpen) {
-      setMode("choices");
+      setMode(defaultMode);
       setImportError(null);
     }
-  }, [isOpen]);
+  }, [defaultMode, isOpen]);
+
+  useEffect(() => {
+    if (isOpen) {
+      setMode(defaultMode);
+    }
+  }, [defaultMode, isOpen]);
 
   const handleSuccess = (response: RecipeDetailApiResponse) => {
     onOpenChange(false);
@@ -62,6 +73,7 @@ export function RecipeCreateSheet({
         title="Create Recipe"
       >
         <RecipeForm
+          defaultValues={defaultValues}
           isPending={createRecipe.isPending}
           errorMessage={createRecipe.isError ? createErrorMessage : null}
           onSubmit={(values) => createRecipe.mutate(toRecipeRequest(values))}

@@ -4,6 +4,7 @@ import type {
   CreateRecipeRequest,
   ImportRecipeRequest,
 } from "@/lib/types/recipes";
+import { useAppStore } from "@/stores/app-store";
 import {
   importedRecipeDetail,
   testRecipeDetail,
@@ -23,6 +24,46 @@ describe("RecipesView", () => {
 
   beforeEach(() => {
     vi.restoreAllMocks();
+  });
+
+  it("adds a recipe to meals from detail and stores a library handoff draft", async () => {
+    const fixedNow = new Date(2026, 5, 10, 9, 15, 0);
+    const RealDate = Date;
+    class MockDate extends RealDate {
+      constructor(...args: ConstructorParameters<DateConstructor>) {
+        if (args.length === 0) {
+          super(fixedNow);
+          return;
+        }
+
+        super(...(args as ConstructorParameters<typeof RealDate>));
+      }
+
+      static now() {
+        return fixedNow.getTime();
+      }
+    }
+
+    vi.stubGlobal("Date", MockDate as DateConstructor);
+    seedMockRecipes([testRecipeDetail]);
+
+    const { user } = renderWithUser(<RecipesView />);
+
+    await user.click(
+      await screen.findByRole("button", {
+        name: `Open recipe: ${testRecipeDetail.title}`,
+      }),
+    );
+    await user.click(screen.getByRole("button", { name: "Add to Meals" }));
+
+    expect(useAppStore.getState().activeModule).toBe("meals");
+    expect(useAppStore.getState().mealPlacementDraft).toEqual({
+      recipeId: testRecipeDetail.id,
+      requestedAtWeekStartDate: "2026-06-07",
+      source: { kind: "recipes-library" },
+    });
+
+    vi.unstubAllGlobals();
   });
 
   it("shows a loading state while the recipe library is fetching", async () => {
@@ -361,6 +402,37 @@ describe("RecipesView", () => {
     expect(
       screen.queryByRole("dialog", { name: "Add Recipe" }),
     ).not.toBeInTheDocument();
+  });
+
+  it("opens manual create from a meals draft and returns to meals with a slot handoff after save", async () => {
+    seedMockRecipes([]);
+    useAppStore.getState().startRecipeCreationFromMealSlot({
+      requestedAtWeekStartDate: "2026-06-07",
+      dayIndex: 3,
+      mealType: "dinner",
+      typedTitle: "Skillet Eggs",
+    });
+
+    const { user } = renderWithUser(<RecipesView />);
+
+    expect(
+      await screen.findByRole("dialog", { name: "Create Recipe" }),
+    ).toBeInTheDocument();
+    expect(screen.getByLabelText("Title")).toHaveValue("Skillet Eggs");
+
+    await user.click(screen.getByRole("button", { name: "Save recipe" }));
+
+    expect(useAppStore.getState().activeModule).toBe("meals");
+    expect(useAppStore.getState().recipeCreationDraft).toBe(null);
+    expect(useAppStore.getState().mealPlacementDraft).toEqual({
+      recipeId: "00000000-0000-4000-8000-000000001001",
+      requestedAtWeekStartDate: "2026-06-07",
+      source: {
+        kind: "meals-slot",
+        dayIndex: 3,
+        mealType: "dinner",
+      },
+    });
   });
 
   it("shows a manual create error without selecting a partial recipe", async () => {

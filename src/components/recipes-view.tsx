@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRecipe, useRecipes, useUpdateRecipe } from "@/api";
 import { RecipeCreateSheet } from "@/components/recipes/recipe-create-sheet";
 import { RecipeDetailView } from "@/components/recipes/recipe-detail-view";
@@ -9,8 +9,10 @@ import {
 } from "@/components/recipes/recipe-filter-bar";
 import { RecipeLibraryCard } from "@/components/recipes/recipe-library-card";
 import { Button } from "@/components/ui/button";
+import { formatLocalDate, getWeekStartSunday } from "@/lib/time-utils";
 import type { RecipeSummary } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { useAppStore } from "@/stores";
 
 function normalizeValue(value: string) {
   return value.trim().toLowerCase();
@@ -45,12 +47,20 @@ function sortRecipes(recipes: RecipeSummary[], favoritesOnly: boolean) {
 export function RecipesView() {
   const { data, error, isLoading, isError, refetch, isRefetching } =
     useRecipes();
+  const recipeCreationDraft = useAppStore((state) => state.recipeCreationDraft);
+  const consumeRecipeCreationDraft = useAppStore(
+    (state) => state.consumeRecipeCreationDraft,
+  );
+  const startMealPlacementFromRecipe = useAppStore(
+    (state) => state.startMealPlacementFromRecipe,
+  );
   const [isCreateSheetOpen, setIsCreateSheetOpen] = useState(false);
   const [isEditSheetOpen, setIsEditSheetOpen] = useState(false);
   const [selectedRecipeId, setSelectedRecipeId] = useState<string | null>(null);
   const [searchValue, setSearchValue] = useState("");
   const [favoritesOnly, setFavoritesOnly] = useState(false);
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
+  const [hasOpenedRecipeDraft, setHasOpenedRecipeDraft] = useState(false);
   const selectedRecipe = useRecipe(selectedRecipeId);
 
   const recipes = data?.data ?? [];
@@ -88,6 +98,25 @@ export function RecipesView() {
     return sortRecipes(visibleRecipes, favoritesOnly);
   }, [favoritesOnly, recipes, searchQuery, selectedTag]);
 
+  useEffect(() => {
+    if (!recipeCreationDraft) {
+      setHasOpenedRecipeDraft(false);
+      return;
+    }
+
+    if (!hasOpenedRecipeDraft) {
+      setSelectedRecipeId(null);
+      setIsEditSheetOpen(false);
+      setIsCreateSheetOpen(true);
+      setHasOpenedRecipeDraft(true);
+    }
+  }, [hasOpenedRecipeDraft, recipeCreationDraft]);
+
+  const createSheetMode = recipeCreationDraft ? "manual" : "choices";
+  const createSheetDefaultValues = recipeCreationDraft
+    ? { title: recipeCreationDraft.typedTitle }
+    : undefined;
+
   return (
     <section className="flex-1 overflow-y-auto p-4 sm:p-6">
       <div className="mx-auto flex max-w-3xl flex-col gap-4">
@@ -110,6 +139,15 @@ export function RecipesView() {
             <RecipeDetailView
               recipe={selectedRecipeData}
               isUpdatingFavorite={updateSelectedRecipe.isPending}
+              onAddToMeals={() => {
+                startMealPlacementFromRecipe({
+                  recipeId: selectedRecipeData.id,
+                  requestedAtWeekStartDate: formatLocalDate(
+                    getWeekStartSunday(new Date()),
+                  ),
+                  source: { kind: "recipes-library" },
+                });
+              }}
               onBack={() => {
                 setIsEditSheetOpen(false);
                 setSelectedRecipeId(null);
@@ -225,9 +263,32 @@ export function RecipesView() {
         ) : null}
 
         <RecipeCreateSheet
+          defaultMode={createSheetMode}
+          defaultValues={createSheetDefaultValues}
           isOpen={isCreateSheetOpen}
           onOpenChange={setIsCreateSheetOpen}
-          onCreated={setSelectedRecipeId}
+          onCreated={(recipeId) => {
+            if (!recipeCreationDraft) {
+              setSelectedRecipeId(recipeId);
+              return;
+            }
+
+            const consumedDraft = consumeRecipeCreationDraft();
+            if (!consumedDraft) {
+              setSelectedRecipeId(recipeId);
+              return;
+            }
+
+            startMealPlacementFromRecipe({
+              recipeId,
+              requestedAtWeekStartDate: consumedDraft.requestedAtWeekStartDate,
+              source: {
+                kind: "meals-slot",
+                dayIndex: consumedDraft.dayIndex,
+                mealType: consumedDraft.mealType,
+              },
+            });
+          }}
         />
         {selectedRecipeData ? (
           <RecipeEditSheet

@@ -85,6 +85,8 @@ function resetAllStores(): void {
   useAppStore.setState({
     activeModule: "calendar",
     isSidebarOpen: false,
+    mealPlacementDraft: null,
+    recipeCreationDraft: null,
   });
 
   // Reset auth store

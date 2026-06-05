@@ -1,5 +1,11 @@
 // App Store
-export { type ModuleType, useAppStore } from "./app-store";
+export {
+  type MealPlacementDraft,
+  type MealType,
+  type ModuleType,
+  type RecipeCreationDraft,
+  useAppStore,
+} from "./app-store";
 // Auth Store - Hydration only (auth operations in @/api)
 export {
   useAuthHasHydrated,
