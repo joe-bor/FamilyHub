@@ -57,6 +57,7 @@ export const recipeFormSchema = z.object({
 });
 
 export type RecipeFormData = z.infer<typeof recipeFormSchema>;
+export type RecipeFormInput = z.input<typeof recipeFormSchema>;
 
 export function toRecipeRequest(formData: RecipeFormData): CreateRecipeRequest {
   return {

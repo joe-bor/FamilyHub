@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import {
   type RecipeFormData,
+  type RecipeFormInput,
   recipeFormSchema,
   toRecipeRequest,
 } from "@/lib/validations/recipes";
@@ -74,12 +75,12 @@ interface RecipeFormProps {
   onSubmit: (data: RecipeFormData) => void;
   isPending?: boolean;
   errorMessage?: string | null;
-  defaultValues?: Partial<RecipeFormData>;
+  defaultValues?: Partial<RecipeFormInput>;
 }
 
 function getDefaultValues(
-  defaultValues?: Partial<RecipeFormData>,
-): RecipeFormData {
+  defaultValues?: Partial<RecipeFormInput>,
+): RecipeFormInput {
   return {
     title: defaultValues?.title ?? "",
     imageUrl: defaultValues?.imageUrl ?? null,
@@ -98,7 +99,7 @@ export function RecipeForm({
   errorMessage = null,
   defaultValues,
 }: RecipeFormProps) {
-  const form = useForm<RecipeFormData>({
+  const form = useForm<RecipeFormInput, undefined, RecipeFormData>({
     resolver: zodResolver(recipeFormSchema),
     defaultValues: getDefaultValues(defaultValues),
   });
