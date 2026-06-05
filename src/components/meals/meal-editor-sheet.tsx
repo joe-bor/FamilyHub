@@ -81,6 +81,8 @@ export function MealEditorSheet({
     moveSlot.isPending ||
     duplicateSlot.isPending ||
     removeSlot.isPending;
+  const mutationError =
+    moveSlot.error ?? duplicateSlot.error ?? removeSlot.error ?? null;
 
   function baseMoveRequest(
     collisionMode: MealCollisionMode,
@@ -220,6 +222,14 @@ export function MealEditorSheet({
                 Remove meal
               </Button>
             </div>
+
+            {mutationError ? (
+              <p className="text-sm text-destructive" role="alert">
+                {mutationError instanceof Error
+                  ? mutationError.message
+                  : "Action failed. Try again."}
+              </p>
+            ) : null}
           </div>
         )}
       </MobileSheet>

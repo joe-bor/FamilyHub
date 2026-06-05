@@ -268,6 +268,14 @@ export function MealComposerSheet({
               </Button>
             </div>
 
+            {upsertSlot.isError ? (
+              <p className="text-sm text-destructive" role="alert">
+                {upsertSlot.error instanceof Error
+                  ? upsertSlot.error.message
+                  : "Failed to save meal. Try again."}
+              </p>
+            ) : null}
+
             <Button
               type="button"
               variant="ghost"

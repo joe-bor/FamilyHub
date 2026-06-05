@@ -66,6 +66,7 @@ export function useMealsBoard(weekStartDate: string) {
 
 export function useUpsertMealSlot(callbacks?: {
   onSuccess?: (data: MealSlotApiResponse) => void;
+  onError?: (error: Error) => void;
 }) {
   const queryClient = useQueryClient();
 
@@ -80,11 +81,17 @@ export function useUpsertMealSlot(callbacks?: {
       invalidateBoard(queryClient, request.weekStartDate);
       callbacks?.onSuccess?.(response);
     },
+    onError: (error) => {
+      callbacks?.onError?.(
+        error instanceof Error ? error : new Error(String(error)),
+      );
+    },
   });
 }
 
 export function useMoveMealSlot(callbacks?: {
   onSuccess?: (data: MealBoardApiResponse) => void;
+  onError?: (error: Error) => void;
 }) {
   const queryClient = useQueryClient();
 
@@ -97,11 +104,17 @@ export function useMoveMealSlot(callbacks?: {
       invalidateBoard(queryClient, request.destinationWeekStartDate);
       callbacks?.onSuccess?.(response);
     },
+    onError: (error) => {
+      callbacks?.onError?.(
+        error instanceof Error ? error : new Error(String(error)),
+      );
+    },
   });
 }
 
 export function useDuplicateMealSlot(callbacks?: {
   onSuccess?: (data: MealBoardApiResponse) => void;
+  onError?: (error: Error) => void;
 }) {
   const queryClient = useQueryClient();
 
@@ -114,11 +127,17 @@ export function useDuplicateMealSlot(callbacks?: {
       invalidateBoard(queryClient, request.destinationWeekStartDate);
       callbacks?.onSuccess?.(response);
     },
+    onError: (error) => {
+      callbacks?.onError?.(
+        error instanceof Error ? error : new Error(String(error)),
+      );
+    },
   });
 }
 
 export function useRemoveMealSlot(callbacks?: {
   onSuccess?: (data: MealBoardApiResponse) => void;
+  onError?: (error: Error) => void;
 }) {
   const queryClient = useQueryClient();
 
@@ -129,6 +148,11 @@ export function useRemoveMealSlot(callbacks?: {
       cacheBoard(queryClient, response);
       invalidateBoard(queryClient, request.weekStartDate);
       callbacks?.onSuccess?.(response);
+    },
+    onError: (error) => {
+      callbacks?.onError?.(
+        error instanceof Error ? error : new Error(String(error)),
+      );
     },
   });
 }
