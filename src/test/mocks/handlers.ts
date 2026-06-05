@@ -550,7 +550,19 @@ function findMealSlot(
   dayIndex: number,
   mealType: MealType,
 ): MealSlot {
-  return board.days[dayIndex].slots.find((slot) => slot.mealType === mealType)!;
+  const day = board.days[dayIndex];
+  if (!day) {
+    throw new Error(
+      `No day at index ${dayIndex} in board ${board.weekStartDate}`,
+    );
+  }
+  const slot = day.slots.find((s) => s.mealType === mealType);
+  if (!slot) {
+    throw new Error(
+      `No ${mealType} slot on day ${dayIndex} in board ${board.weekStartDate}`,
+    );
+  }
+  return slot;
 }
 
 function setMealSlot(board: MealBoard, updatedSlot: MealSlot): void {
