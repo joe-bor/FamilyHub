@@ -1,3 +1,4 @@
+import { formatLocalDate, parseLocalDate } from "@/lib/time-utils";
 import type { MealBoard, MealSlot } from "@/lib/types";
 import { testRecipeDetail } from "./recipes";
 
@@ -6,17 +7,25 @@ export const testWeekStartDate = "2026-06-07";
 export function createEmptyMealsBoard(
   weekStartDate = testWeekStartDate,
 ): MealBoard {
+  const start = parseLocalDate(weekStartDate);
   return {
     weekStartDate,
-    days: Array.from({ length: 7 }, (_, dayIndex) => ({
-      date: `2026-06-${String(7 + dayIndex).padStart(2, "0")}`,
-      dayIndex,
-      slots: [
-        createEmptyMealSlot(weekStartDate, dayIndex, "breakfast"),
-        createEmptyMealSlot(weekStartDate, dayIndex, "lunch"),
-        createEmptyMealSlot(weekStartDate, dayIndex, "dinner"),
-      ],
-    })),
+    days: Array.from({ length: 7 }, (_, dayIndex) => {
+      const d = new Date(
+        start.getFullYear(),
+        start.getMonth(),
+        start.getDate() + dayIndex,
+      );
+      return {
+        date: formatLocalDate(d),
+        dayIndex,
+        slots: [
+          createEmptyMealSlot(weekStartDate, dayIndex, "breakfast"),
+          createEmptyMealSlot(weekStartDate, dayIndex, "lunch"),
+          createEmptyMealSlot(weekStartDate, dayIndex, "dinner"),
+        ],
+      };
+    }),
   };
 }
 
