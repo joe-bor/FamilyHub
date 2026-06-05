@@ -254,6 +254,46 @@ describe("RecipesView", () => {
     ).not.toBeInTheDocument();
   });
 
+  it("lets users recover when recipe detail loading fails", async () => {
+    seedMockRecipes([testRecipeDetail]);
+    const getDetail = vi.fn(() =>
+      HttpResponse.json({ message: "Detail request failed" }, { status: 500 }),
+    );
+    server.use(
+      http.get(`${API_BASE}/recipes/${testRecipeDetail.id}`, getDetail),
+    );
+
+    const { user } = renderWithUser(<RecipesView />);
+
+    await user.click(
+      await screen.findByRole("button", {
+        name: `Open recipe: ${testRecipeDetail.title}`,
+      }),
+    );
+
+    expect(
+      await screen.findByText("Recipe could not be loaded"),
+    ).toBeInTheDocument();
+    expect(screen.getByText("Detail request failed")).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Back to recipes" }),
+    ).toBeVisible();
+    expect(screen.getByRole("button", { name: "Retry" })).toBeVisible();
+
+    server.use(
+      http.get(`${API_BASE}/recipes/${testRecipeDetail.id}`, () =>
+        HttpResponse.json({ data: testRecipeDetail }),
+      ),
+    );
+
+    await user.click(screen.getByRole("button", { name: "Retry" }));
+
+    expect(
+      await screen.findByRole("heading", { name: testRecipeDetail.title }),
+    ).toBeInTheDocument();
+    expect(getDetail).toHaveBeenCalledTimes(1);
+  });
+
   it("matches recipes by title and tags when searching", async () => {
     seedMockRecipes(testRecipeDetails);
 
@@ -504,8 +544,11 @@ describe("RecipesView", () => {
 
       expect(body).toMatchObject({
         title: "Layered Salad",
+        imageUrl: "https://example.com/layered-salad.jpg",
         ingredients: ["lettuce", "dressing", "seeds"],
         instructions: ["wash", "stack", "serve"],
+        note: "Best chilled before dinner",
+        sourceUrl: "https://example.com/layered-salad",
         tags: ["make-ahead", "side", "summer"],
       });
 
@@ -513,11 +556,11 @@ describe("RecipesView", () => {
         data: {
           id: "00000000-0000-4000-8000-000000000599",
           title: body.title,
-          imageUrl: null,
+          imageUrl: body.imageUrl ?? null,
           ingredients: body.ingredients ?? [],
           instructions: body.instructions ?? [],
-          note: null,
-          sourceUrl: null,
+          note: body.note ?? null,
+          sourceUrl: body.sourceUrl ?? null,
           tags: body.tags ?? [],
           favorite: false,
           updatedAt: "2026-06-04T10:00:00",
@@ -534,6 +577,21 @@ describe("RecipesView", () => {
     await user.click(screen.getByRole("button", { name: "Create manually" }));
 
     await typeAndWait(user, screen.getByLabelText("Title"), "Layered Salad");
+    await typeAndWait(
+      user,
+      screen.getByLabelText("Image URL"),
+      "https://example.com/layered-salad.jpg",
+    );
+    await typeAndWait(
+      user,
+      screen.getByLabelText("Note"),
+      "Best chilled before dinner",
+    );
+    await typeAndWait(
+      user,
+      screen.getByLabelText("Source URL"),
+      "https://example.com/layered-salad",
+    );
     await typeAndWait(user, screen.getByLabelText("Ingredient 1"), " lettuce ");
     await typeAndWait(
       user,
@@ -558,7 +616,45 @@ describe("RecipesView", () => {
     expect(
       await screen.findByRole("heading", { name: "Layered Salad" }),
     ).toBeInTheDocument();
+    expect(screen.getByText("Best chilled before dinner")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "View source" })).toHaveAttribute(
+      "href",
+      "https://example.com/layered-salad",
+    );
     expect(createRecipe).toHaveBeenCalledTimes(1);
+  });
+
+  it("shows validation messages for long ingredients, instructions, and tags", async () => {
+    seedMockRecipes([]);
+
+    const { user } = renderWithUser(<RecipesView />);
+
+    await screen.findByText("No recipes yet");
+    await user.click(screen.getByRole("button", { name: "Add recipe" }));
+    await user.click(screen.getByRole("button", { name: "Create manually" }));
+    await typeAndWait(user, screen.getByLabelText("Title"), "Big Recipe");
+    await typeAndWait(
+      user,
+      screen.getByLabelText("Ingredient 1"),
+      "a".repeat(501),
+    );
+    await typeAndWait(
+      user,
+      screen.getByLabelText("Instruction 1"),
+      "b".repeat(1001),
+    );
+    await typeAndWait(user, screen.getByLabelText("Tag 1"), "c".repeat(61));
+    await user.click(screen.getByRole("button", { name: "Save recipe" }));
+
+    expect(
+      await screen.findByText("Ingredient must be 500 characters or less"),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText("Instruction must be 1000 characters or less"),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText("Tag must be 60 characters or less"),
+    ).toBeInTheDocument();
   });
 
   it("imports a recipe from url through the add flow and lands on its saved detail", async () => {
@@ -681,7 +777,7 @@ describe("RecipesView", () => {
 
       expect(body).toEqual({
         title: "Sheet Pan Salmon with Dill",
-        imageUrl: testRecipeDetail.imageUrl,
+        imageUrl: "https://example.com/salmon-dill.jpg",
         ingredients: [
           "Salmon fillets",
           "Asparagus",
@@ -693,8 +789,8 @@ describe("RecipesView", () => {
           "Roast salmon and asparagus together",
           "Finish with dill",
         ],
-        note: testRecipeDetail.note,
-        sourceUrl: testRecipeDetail.sourceUrl,
+        note: "Add extra dill before serving",
+        sourceUrl: "https://example.com/salmon-dill",
         tags: ["dinner", "quick", "sheet-pan"],
         favorite: testRecipeDetail.favorite,
       });
@@ -703,6 +799,7 @@ describe("RecipesView", () => {
         data: {
           ...testRecipeDetail,
           title: "Sheet Pan Salmon with Dill",
+          imageUrl: "https://example.com/salmon-dill.jpg",
           ingredients: [
             "Salmon fillets",
             "Asparagus",
@@ -714,6 +811,8 @@ describe("RecipesView", () => {
             "Roast salmon and asparagus together",
             "Finish with dill",
           ],
+          note: "Add extra dill before serving",
+          sourceUrl: "https://example.com/salmon-dill",
           tags: ["dinner", "quick", "sheet-pan"],
         },
       });
@@ -735,6 +834,13 @@ describe("RecipesView", () => {
       screen.getByRole("dialog", { name: "Edit Recipe" }),
     ).toBeInTheDocument();
     expect(screen.getByLabelText("Title")).toHaveValue(testRecipeDetail.title);
+    expect(screen.getByLabelText("Image URL")).toHaveValue(
+      testRecipeDetail.imageUrl,
+    );
+    expect(screen.getByLabelText("Note")).toHaveValue(testRecipeDetail.note);
+    expect(screen.getByLabelText("Source URL")).toHaveValue(
+      testRecipeDetail.sourceUrl,
+    );
     expect(screen.getByLabelText("Ingredient 1")).toHaveValue(
       testRecipeDetail.ingredients[0],
     );
@@ -750,6 +856,24 @@ describe("RecipesView", () => {
       user,
       screen.getByLabelText("Title"),
       "Sheet Pan Salmon with Dill",
+    );
+    await user.clear(screen.getByLabelText("Image URL"));
+    await typeAndWait(
+      user,
+      screen.getByLabelText("Image URL"),
+      "https://example.com/salmon-dill.jpg",
+    );
+    await user.clear(screen.getByLabelText("Note"));
+    await typeAndWait(
+      user,
+      screen.getByLabelText("Note"),
+      "Add extra dill before serving",
+    );
+    await user.clear(screen.getByLabelText("Source URL"));
+    await typeAndWait(
+      user,
+      screen.getByLabelText("Source URL"),
+      "https://example.com/salmon-dill",
     );
     await user.clear(screen.getByLabelText("Ingredient 3"));
     await typeAndWait(
@@ -790,6 +914,13 @@ describe("RecipesView", () => {
     ).not.toBeInTheDocument();
     expect(screen.getByText("Fresh dill")).toBeInTheDocument();
     expect(screen.getByText("Finish with dill")).toBeInTheDocument();
+    expect(
+      screen.getByText("Add extra dill before serving"),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "View source" })).toHaveAttribute(
+      "href",
+      "https://example.com/salmon-dill",
+    );
     expect(screen.getByText("sheet-pan")).toBeInTheDocument();
   });
 });

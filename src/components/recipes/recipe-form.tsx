@@ -1,5 +1,6 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Plus } from "lucide-react";
+import type { FieldError } from "react-hook-form";
 import { useForm, useWatch } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { FormError } from "@/components/ui/form-error";
@@ -26,14 +27,28 @@ function ensureMinimumLines(values: string[] | undefined) {
   return normalized;
 }
 
+function textInputDefault(value: string | null | undefined) {
+  return value ?? "";
+}
+
+function getArrayErrorMessage(
+  errors: Partial<Record<number, FieldError>> | undefined,
+  index: number,
+) {
+  const message = errors?.[index]?.message;
+  return typeof message === "string" ? message : undefined;
+}
+
 function ArrayFieldSection({
   legend,
   values,
+  errorMessages,
   onChange,
   onAdd,
 }: {
   legend: string;
   values: string[];
+  errorMessages?: Array<string | undefined>;
   onChange: (index: number, value: string) => void;
   onAdd: () => void;
 }) {
@@ -59,12 +74,15 @@ function ArrayFieldSection({
 
       <div className="space-y-2">
         {values.map((value, index) => (
-          <Input
-            key={`${singular}-${index}`}
-            aria-label={`${singular} ${index + 1}`}
-            value={value}
-            onChange={(event) => onChange(index, event.target.value)}
-          />
+          <div key={`${singular}-${index}`} className="space-y-1">
+            <Input
+              aria-label={`${singular} ${index + 1}`}
+              aria-invalid={Boolean(errorMessages?.[index])}
+              value={value}
+              onChange={(event) => onChange(index, event.target.value)}
+            />
+            <FormError message={errorMessages?.[index]} />
+          </div>
         ))}
       </div>
     </fieldset>
@@ -83,9 +101,9 @@ function getDefaultValues(
 ): RecipeFormInput {
   return {
     title: defaultValues?.title ?? "",
-    imageUrl: defaultValues?.imageUrl ?? null,
-    note: defaultValues?.note ?? null,
-    sourceUrl: defaultValues?.sourceUrl ?? null,
+    imageUrl: textInputDefault(defaultValues?.imageUrl),
+    note: textInputDefault(defaultValues?.note),
+    sourceUrl: textInputDefault(defaultValues?.sourceUrl),
     ingredients: ensureMinimumLines(defaultValues?.ingredients),
     instructions: ensureMinimumLines(defaultValues?.instructions),
     tags: ensureMinimumLines(defaultValues?.tags),
@@ -122,6 +140,15 @@ export function RecipeForm({
       name: "tags",
     }),
   );
+  const ingredientErrors = form.formState.errors.ingredients as
+    | Partial<Record<number, FieldError>>
+    | undefined;
+  const instructionErrors = form.formState.errors.instructions as
+    | Partial<Record<number, FieldError>>
+    | undefined;
+  const tagErrors = form.formState.errors.tags as
+    | Partial<Record<number, FieldError>>
+    | undefined;
 
   return (
     <form
@@ -143,9 +170,49 @@ export function RecipeForm({
         <FormError message={form.formState.errors.title?.message} />
       </div>
 
+      <div className="space-y-2">
+        <Label htmlFor="recipe-image-url">Image URL</Label>
+        <Input
+          id="recipe-image-url"
+          type="url"
+          autoComplete="off"
+          placeholder="https://example.com/recipe.jpg"
+          {...form.register("imageUrl")}
+        />
+        <FormError message={form.formState.errors.imageUrl?.message} />
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="recipe-note">Note</Label>
+        <textarea
+          id="recipe-note"
+          className={cn(
+            "border-input placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground dark:bg-input/30 min-h-24 w-full min-w-0 rounded-lg border bg-transparent px-3 py-2 text-[15px] leading-5 shadow-xs transition-[color,box-shadow] outline-none disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm",
+            "focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40",
+          )}
+          {...form.register("note")}
+        />
+        <FormError message={form.formState.errors.note?.message} />
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="recipe-source-url">Source URL</Label>
+        <Input
+          id="recipe-source-url"
+          type="url"
+          autoComplete="off"
+          placeholder="https://example.com/recipe"
+          {...form.register("sourceUrl")}
+        />
+        <FormError message={form.formState.errors.sourceUrl?.message} />
+      </div>
+
       <ArrayFieldSection
         legend="Ingredients"
         values={ingredients}
+        errorMessages={ingredients.map((_, index) =>
+          getArrayErrorMessage(ingredientErrors, index),
+        )}
         onChange={(index, value) => {
           const next = [...ingredients];
           next[index] = value;
@@ -161,6 +228,9 @@ export function RecipeForm({
       <ArrayFieldSection
         legend="Instructions"
         values={instructions}
+        errorMessages={instructions.map((_, index) =>
+          getArrayErrorMessage(instructionErrors, index),
+        )}
         onChange={(index, value) => {
           const next = [...instructions];
           next[index] = value;
@@ -176,6 +246,9 @@ export function RecipeForm({
       <ArrayFieldSection
         legend="Tags"
         values={tags}
+        errorMessages={tags.map((_, index) =>
+          getArrayErrorMessage(tagErrors, index),
+        )}
         onChange={(index, value) => {
           const next = [...tags];
           next[index] = value;

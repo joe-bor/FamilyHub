@@ -12,11 +12,11 @@ interface RecipeEditSheetProps {
 function toUpdateRequest(recipe: RecipeDetail, request: UpdateRecipeRequest) {
   return {
     title: request.title,
-    imageUrl: recipe.imageUrl,
+    imageUrl: request.imageUrl,
     ingredients: request.ingredients,
     instructions: request.instructions,
-    note: recipe.note,
-    sourceUrl: recipe.sourceUrl,
+    note: request.note,
+    sourceUrl: request.sourceUrl,
     tags: request.tags,
     favorite: recipe.favorite,
   };
@@ -43,6 +43,9 @@ export function RecipeEditSheet({
         key={recipe.id}
         defaultValues={{
           title: recipe.title,
+          imageUrl: recipe.imageUrl,
+          note: recipe.note,
+          sourceUrl: recipe.sourceUrl,
           ingredients: recipe.ingredients,
           instructions: recipe.instructions,
           tags: recipe.tags,
