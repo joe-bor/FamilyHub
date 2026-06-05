@@ -38,7 +38,7 @@ describe("MobileBottomNav", () => {
     ).toBeInTheDocument();
   });
 
-  it("keeps all seven destinations visible without horizontal scrolling", () => {
+  it("keeps all seven destinations readable in a horizontally scrollable row", () => {
     render(<MobileBottomNav />);
 
     const navItems = screen.getByRole("navigation", {
@@ -46,11 +46,11 @@ describe("MobileBottomNav", () => {
     }).firstElementChild;
     const buttons = screen.getAllByRole("button");
 
-    expect(navItems).toHaveClass("grid", "grid-cols-7");
-    expect(navItems).not.toHaveClass("overflow-x-auto");
+    expect(navItems).toHaveClass("flex", "overflow-x-auto");
+    expect(navItems).not.toHaveClass("grid-cols-7");
     for (const button of buttons) {
-      expect(button).toHaveClass("min-w-0");
-      expect(button).not.toHaveClass("min-w-16");
+      expect(button).toHaveClass("min-w-16");
+      expect(button).not.toHaveClass("min-w-0");
     }
   });
 

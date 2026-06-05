@@ -173,6 +173,25 @@ export function RecipesView() {
                   ? selectedRecipe.error.message
                   : "Try again in a moment."}
               </p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setSelectedRecipeId(null)}
+                >
+                  Back to recipes
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={selectedRecipe.isRefetching}
+                  onClick={() => {
+                    void selectedRecipe.refetch();
+                  }}
+                >
+                  Retry
+                </Button>
+              </div>
             </div>
           ) : null
         ) : isLoading ? (
