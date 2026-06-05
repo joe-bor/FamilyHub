@@ -50,9 +50,10 @@ export function MealsView() {
 
   useEffect(() => {
     if (!placementDraft || placementDraft.source.kind !== "meals-slot") return;
-    const day = board.data?.data.days[placementDraft.source.dayIndex];
+    const source = placementDraft.source;
+    const day = board.data?.data.days[source.dayIndex];
     const slot = day?.slots.find(
-      (candidate) => candidate.mealType === placementDraft.source.mealType,
+      (candidate) => candidate.mealType === source.mealType,
     );
     if (!slot) return;
 

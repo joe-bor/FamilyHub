@@ -105,12 +105,13 @@ export function MealComposerSheet({
 
   if (!slot) return null;
 
-  const title = `Plan ${formatMealType(slot.mealType)}`;
+  const activeSlot = slot;
+  const title = `Plan ${formatMealType(activeSlot.mealType)}`;
   const trimmedMealName = mealName.trim();
-  const seededRecipeId = slot.seededRecipeId ?? null;
+  const seededRecipeId = activeSlot.seededRecipeId ?? null;
 
   function submitRequest(request: UpsertMealSlotRequest) {
-    if (slot?.primary && request.collisionMode === null) {
+    if (activeSlot.primary && request.collisionMode === null) {
       setCollisionRequest(request);
       return;
     }
@@ -123,9 +124,9 @@ export function MealComposerSheet({
     collisionMode: MealCollisionMode | null = null,
   ): UpsertMealSlotRequest {
     return {
-      weekStartDate: slot.weekStartDate,
-      dayIndex: slot.dayIndex,
-      mealType: slot.mealType,
+      weekStartDate: activeSlot.weekStartDate,
+      dayIndex: activeSlot.dayIndex,
+      mealType: activeSlot.mealType,
       primary: {
         sourceType: "recipe",
         recipeId,
@@ -152,9 +153,9 @@ export function MealComposerSheet({
     if (!trimmedMealName) return;
 
     submitRequest({
-      weekStartDate: slot.weekStartDate,
-      dayIndex: slot.dayIndex,
-      mealType: slot.mealType,
+      weekStartDate: activeSlot.weekStartDate,
+      dayIndex: activeSlot.dayIndex,
+      mealType: activeSlot.mealType,
       primary: {
         sourceType: "quick",
         recipeId: null,
@@ -172,9 +173,9 @@ export function MealComposerSheet({
     if (!trimmedMealName) return;
 
     startRecipeCreationFromMealSlot({
-      requestedAtWeekStartDate: slot.weekStartDate,
-      dayIndex: slot.dayIndex,
-      mealType: slot.mealType,
+      requestedAtWeekStartDate: activeSlot.weekStartDate,
+      dayIndex: activeSlot.dayIndex,
+      mealType: activeSlot.mealType,
       typedTitle: trimmedMealName,
     });
     onOpenChange(false);

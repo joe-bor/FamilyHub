@@ -75,7 +75,10 @@ export function MealEditorSheet({
 
   if (!slot || !board || !slot.primary) return null;
 
-  const destinationSlot = findDestinationSlot(board, slot);
+  const activeSlot = slot;
+  const activeBoard = board;
+  const activePrimary = slot.primary;
+  const destinationSlot = findDestinationSlot(activeBoard, activeSlot);
   const actionDisabled =
     readOnly ||
     moveSlot.isPending ||
@@ -86,12 +89,12 @@ export function MealEditorSheet({
     collisionMode: MealCollisionMode,
   ): MoveMealSlotRequest {
     return {
-      sourceWeekStartDate: slot.weekStartDate,
-      sourceDayIndex: slot.dayIndex,
-      sourceMealType: slot.mealType,
-      destinationWeekStartDate: slot.weekStartDate,
-      destinationDayIndex: nextDayIndex(slot.dayIndex),
-      destinationMealType: slot.mealType,
+      sourceWeekStartDate: activeSlot.weekStartDate,
+      sourceDayIndex: activeSlot.dayIndex,
+      sourceMealType: activeSlot.mealType,
+      destinationWeekStartDate: activeSlot.weekStartDate,
+      destinationDayIndex: nextDayIndex(activeSlot.dayIndex),
+      destinationMealType: activeSlot.mealType,
       collisionMode,
     };
   }
@@ -133,7 +136,7 @@ export function MealEditorSheet({
       <MobileSheet
         isOpen={isOpen}
         onClose={() => onOpenChange(false)}
-        title={`${formatMealType(slot.mealType)} Plan`}
+        title={`${formatMealType(activeSlot.mealType)} Plan`}
       >
         {showRecipe ? (
           recipe.data?.data ? (
@@ -158,16 +161,16 @@ export function MealEditorSheet({
                 Primary
               </p>
               <h2 className="mt-1 text-xl font-semibold text-foreground">
-                {slot.primary.title}
+                {activePrimary.title}
               </h2>
-              {slot.primary.note ? (
+              {activePrimary.note ? (
                 <p className="mt-2 text-sm text-muted-foreground">
-                  {slot.primary.note}
+                  {activePrimary.note}
                 </p>
               ) : null}
-              {slot.extras.length > 0 ? (
+              {activeSlot.extras.length > 0 ? (
                 <div className="mt-3 flex flex-wrap gap-1">
-                  {slot.extras.map((extra) => (
+                  {activeSlot.extras.map((extra) => (
                     <span
                       key={extra.id}
                       className="rounded-full bg-secondary px-2 py-1 text-xs font-medium text-secondary-foreground"
@@ -211,9 +214,9 @@ export function MealEditorSheet({
                 disabled={actionDisabled}
                 onClick={() =>
                   removeSlot.mutate({
-                    weekStartDate: slot.weekStartDate,
-                    dayIndex: slot.dayIndex,
-                    mealType: slot.mealType,
+                    weekStartDate: activeSlot.weekStartDate,
+                    dayIndex: activeSlot.dayIndex,
+                    mealType: activeSlot.mealType,
                   })
                 }
               >
