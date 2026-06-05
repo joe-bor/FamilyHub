@@ -301,6 +301,13 @@ export function seedMockMealsBoard(board: MealBoard): void {
   mockMealsBoards[board.weekStartDate] = structuredClone(board);
 }
 
+/**
+ * Read one mock meals board for assertions.
+ */
+export function getMockMealsBoard(weekStartDate: string): MealBoard {
+  return structuredClone(getMealsBoard(weekStartDate));
+}
+
 function createMockId(): string {
   mockIdCounter += 1;
   return `00000000-0000-4000-8000-${String(mockIdCounter).padStart(12, "0")}`;

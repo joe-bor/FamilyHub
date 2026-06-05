@@ -74,12 +74,3 @@ export interface RemoveMealSlotRequest {
 
 export type MealBoardApiResponse = ApiResponse<MealBoard>;
 export type MealSlotApiResponse = ApiResponse<MealSlot>;
-
-export interface MealPlan {
-  id: string;
-  date: Date;
-  breakfast?: string;
-  lunch?: string;
-  dinner?: string;
-  notes?: string;
-}
