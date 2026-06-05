@@ -4,16 +4,26 @@ import { cn } from "@/lib/utils";
 
 interface RecipeLibraryCardProps {
   recipe: RecipeSummary;
+  onSelect?: (recipeId: string) => void;
 }
 
-export function RecipeLibraryCard({ recipe }: RecipeLibraryCardProps) {
+export function RecipeLibraryCard({
+  recipe,
+  onSelect,
+}: RecipeLibraryCardProps) {
   return (
     <article
       aria-label={`Recipe card: ${recipe.title}`}
       className={cn(
-        "flex w-full flex-col overflow-hidden rounded-lg border border-border bg-card text-left shadow-xs transition-colors",
+        "relative flex w-full flex-col overflow-hidden rounded-lg border border-border bg-card text-left shadow-xs transition-colors",
       )}
     >
+      <button
+        type="button"
+        aria-label={`Open recipe: ${recipe.title}`}
+        className="absolute inset-0 z-10 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+        onClick={() => onSelect?.(recipe.id)}
+      />
       <div className="relative aspect-[4/3] w-full overflow-hidden bg-muted">
         {recipe.imageUrl ? (
           <img

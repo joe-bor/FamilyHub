@@ -122,6 +122,92 @@ describe("RecipesView", () => {
     ).toBeInTheDocument();
   });
 
+  it("opens recipe detail from the library with cook-first content order and returns back", async () => {
+    seedMockRecipes([testRecipeDetail, importedRecipeDetail]);
+
+    const { user } = renderWithUser(<RecipesView />);
+
+    await user.click(
+      await screen.findByRole("button", {
+        name: `Open recipe: ${testRecipeDetail.title}`,
+      }),
+    );
+
+    const image = screen.getByRole("img", { name: testRecipeDetail.title });
+    const title = screen.getByRole("heading", { name: testRecipeDetail.title });
+    const ingredientsHeading = screen.getByRole("heading", {
+      name: "Ingredients",
+    });
+    const instructionsHeading = screen.getByRole("heading", {
+      name: "Instructions",
+    });
+    const editButton = screen.getByRole("button", { name: "Edit recipe" });
+
+    expect(screen.getByText("Salmon fillets")).toBeInTheDocument();
+    expect(screen.getByText("Heat oven to 425F")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "View source" })).toHaveAttribute(
+      "href",
+      testRecipeDetail.sourceUrl,
+    );
+
+    expect(
+      image.compareDocumentPosition(title) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(
+      title.compareDocumentPosition(ingredientsHeading) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(
+      ingredientsHeading.compareDocumentPosition(instructionsHeading) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(
+      instructionsHeading.compareDocumentPosition(editButton) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+
+    await user.click(screen.getByRole("button", { name: "Back to recipes" }));
+
+    expect(
+      await screen.findByRole("button", {
+        name: `Open recipe: ${testRecipeDetail.title}`,
+      }),
+    ).toBeInTheDocument();
+  });
+
+  it("renders recipe detail gracefully when optional image and cook steps are missing", async () => {
+    seedMockRecipes([
+      {
+        ...importedRecipeDetail,
+        ingredients: [],
+        instructions: [],
+        sourceUrl: null,
+      },
+    ]);
+
+    const { user } = renderWithUser(<RecipesView />);
+
+    await user.click(
+      await screen.findByRole("button", {
+        name: `Open recipe: ${importedRecipeDetail.title}`,
+      }),
+    );
+
+    expect(
+      screen.getByRole("heading", { name: importedRecipeDetail.title }),
+    ).toBeInTheDocument();
+    expect(screen.getByText("No photo", { selector: "span" })).toBeVisible();
+    expect(
+      screen.queryByRole("heading", { name: "Ingredients" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("heading", { name: "Instructions" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("link", { name: "View source" }),
+    ).not.toBeInTheDocument();
+  });
+
   it("matches recipes by title and tags when searching", async () => {
     seedMockRecipes(testRecipeDetails);
 
@@ -440,5 +526,165 @@ describe("RecipesView", () => {
     expect(
       screen.queryByRole("heading", { name: importedRecipeDetail.title }),
     ).not.toBeInTheDocument();
+  });
+
+  it("toggles favorite from detail and updates the visible saved state", async () => {
+    seedMockRecipes([importedRecipeDetail]);
+    const updateRecipe = vi.fn(async ({ request }) => {
+      const body = await request.json();
+
+      expect(body).toEqual({ favorite: true });
+
+      return HttpResponse.json({
+        data: {
+          ...importedRecipeDetail,
+          favorite: true,
+        },
+      });
+    });
+    server.use(
+      http.patch(
+        `${API_BASE}/recipes/${importedRecipeDetail.id}`,
+        updateRecipe,
+      ),
+    );
+
+    const { user } = renderWithUser(<RecipesView />);
+
+    await user.click(
+      await screen.findByRole("button", {
+        name: `Open recipe: ${importedRecipeDetail.title}`,
+      }),
+    );
+
+    const favoriteButton = screen.getByRole("button", {
+      name: `Favorite recipe: ${importedRecipeDetail.title}`,
+    });
+    expect(favoriteButton).toHaveAttribute("aria-pressed", "false");
+
+    await user.click(favoriteButton);
+
+    expect(await screen.findByText("Favorite")).toBeInTheDocument();
+    expect(updateRecipe).toHaveBeenCalledTimes(1);
+    expect(favoriteButton).toHaveAttribute("aria-pressed", "true");
+  });
+
+  it("opens edit with existing values and saves ordered fields back to the recipe", async () => {
+    seedMockRecipes([testRecipeDetail]);
+    const updateRecipe = vi.fn(async ({ request }) => {
+      const body = await request.json();
+
+      expect(body).toEqual({
+        title: "Sheet Pan Salmon with Dill",
+        imageUrl: testRecipeDetail.imageUrl,
+        ingredients: [
+          "Salmon fillets",
+          "Asparagus",
+          "Lemon slices",
+          "Fresh dill",
+        ],
+        instructions: [
+          "Heat oven to 425F",
+          "Roast salmon and asparagus together",
+          "Finish with dill",
+        ],
+        note: testRecipeDetail.note,
+        sourceUrl: testRecipeDetail.sourceUrl,
+        tags: ["dinner", "quick", "sheet-pan"],
+        favorite: testRecipeDetail.favorite,
+      });
+
+      return HttpResponse.json({
+        data: {
+          ...testRecipeDetail,
+          title: "Sheet Pan Salmon with Dill",
+          ingredients: [
+            "Salmon fillets",
+            "Asparagus",
+            "Lemon slices",
+            "Fresh dill",
+          ],
+          instructions: [
+            "Heat oven to 425F",
+            "Roast salmon and asparagus together",
+            "Finish with dill",
+          ],
+          tags: ["dinner", "quick", "sheet-pan"],
+        },
+      });
+    });
+    server.use(
+      http.patch(`${API_BASE}/recipes/${testRecipeDetail.id}`, updateRecipe),
+    );
+
+    const { user } = renderWithUser(<RecipesView />);
+
+    await user.click(
+      await screen.findByRole("button", {
+        name: `Open recipe: ${testRecipeDetail.title}`,
+      }),
+    );
+    await user.click(screen.getByRole("button", { name: "Edit recipe" }));
+
+    expect(
+      screen.getByRole("dialog", { name: "Edit Recipe" }),
+    ).toBeInTheDocument();
+    expect(screen.getByLabelText("Title")).toHaveValue(testRecipeDetail.title);
+    expect(screen.getByLabelText("Ingredient 1")).toHaveValue(
+      testRecipeDetail.ingredients[0],
+    );
+    expect(screen.getByLabelText("Instruction 2")).toHaveValue(
+      testRecipeDetail.instructions[1],
+    );
+    expect(screen.getByLabelText("Tag 2")).toHaveValue(
+      testRecipeDetail.tags[1],
+    );
+
+    await user.clear(screen.getByLabelText("Title"));
+    await typeAndWait(
+      user,
+      screen.getByLabelText("Title"),
+      "Sheet Pan Salmon with Dill",
+    );
+    await user.clear(screen.getByLabelText("Ingredient 3"));
+    await typeAndWait(
+      user,
+      screen.getByLabelText("Ingredient 3"),
+      "Lemon slices",
+    );
+    await user.click(screen.getByRole("button", { name: "Add ingredient" }));
+    await typeAndWait(
+      user,
+      screen.getByLabelText("Ingredient 4"),
+      "Fresh dill",
+    );
+    await user.clear(screen.getByLabelText("Instruction 2"));
+    await typeAndWait(
+      user,
+      screen.getByLabelText("Instruction 2"),
+      "Roast salmon and asparagus together",
+    );
+    await user.click(screen.getByRole("button", { name: "Add instruction" }));
+    await typeAndWait(
+      user,
+      screen.getByLabelText("Instruction 3"),
+      "Finish with dill",
+    );
+    await user.click(screen.getByRole("button", { name: "Add tag" }));
+    await typeAndWait(user, screen.getByLabelText("Tag 3"), "sheet-pan");
+    await user.click(screen.getByRole("button", { name: "Save recipe" }));
+
+    expect(
+      await screen.findByRole("heading", {
+        name: "Sheet Pan Salmon with Dill",
+      }),
+    ).toBeInTheDocument();
+    expect(updateRecipe).toHaveBeenCalledTimes(1);
+    expect(
+      screen.queryByRole("dialog", { name: "Edit Recipe" }),
+    ).not.toBeInTheDocument();
+    expect(screen.getByText("Fresh dill")).toBeInTheDocument();
+    expect(screen.getByText("Finish with dill")).toBeInTheDocument();
+    expect(screen.getByText("sheet-pan")).toBeInTheDocument();
   });
 });

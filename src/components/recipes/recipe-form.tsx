@@ -74,22 +74,33 @@ interface RecipeFormProps {
   onSubmit: (data: RecipeFormData) => void;
   isPending?: boolean;
   errorMessage?: string | null;
+  defaultValues?: Partial<RecipeFormData>;
+}
+
+function getDefaultValues(
+  defaultValues?: Partial<RecipeFormData>,
+): RecipeFormData {
+  return {
+    title: defaultValues?.title ?? "",
+    imageUrl: defaultValues?.imageUrl ?? null,
+    note: defaultValues?.note ?? null,
+    sourceUrl: defaultValues?.sourceUrl ?? null,
+    ingredients: ensureMinimumLines(defaultValues?.ingredients),
+    instructions: ensureMinimumLines(defaultValues?.instructions),
+    tags: ensureMinimumLines(defaultValues?.tags),
+    favorite: defaultValues?.favorite ?? false,
+  };
 }
 
 export function RecipeForm({
   onSubmit,
   isPending = false,
   errorMessage = null,
+  defaultValues,
 }: RecipeFormProps) {
   const form = useForm<RecipeFormData>({
     resolver: zodResolver(recipeFormSchema),
-    defaultValues: {
-      title: "",
-      ingredients: ensureMinimumLines(undefined),
-      instructions: ensureMinimumLines(undefined),
-      tags: ensureMinimumLines(undefined),
-      favorite: false,
-    },
+    defaultValues: getDefaultValues(defaultValues),
   });
 
   const ingredients = ensureMinimumLines(
