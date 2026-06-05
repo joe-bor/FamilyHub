@@ -33,6 +33,12 @@ export const mealsService = {
   },
 
   removeSlot(request: RemoveMealSlotRequest): Promise<MealBoardApiResponse> {
-    return httpClient.delete<MealBoardApiResponse>("/meals/slots", request);
+    return httpClient.delete<MealBoardApiResponse>("/meals/slots", undefined, {
+      params: {
+        weekStartDate: request.weekStartDate,
+        dayIndex: request.dayIndex,
+        mealType: request.mealType,
+      },
+    });
   },
 };

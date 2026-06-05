@@ -33,7 +33,6 @@ import type {
   RecipeSummary,
   RegisterRequest,
   RegisterResponse,
-  RemoveMealSlotRequest,
   UpdateChoreTemplateRequest,
   UpdateCurrentPeriodCompletionRequest,
   UpdateEventRequest,
@@ -829,10 +828,22 @@ export const handlers = [
   }),
 
   // DELETE /meals/slots - Remove one planned slot
-  http.delete(`${API_BASE}/meals/slots`, async ({ request }) => {
-    const body = (await request.json()) as RemoveMealSlotRequest;
-    const board = getMealsBoard(body.weekStartDate);
-    const slot = findMealSlot(board, body.dayIndex, body.mealType);
+  http.delete(`${API_BASE}/meals/slots`, ({ request }) => {
+    const url = new URL(request.url);
+    const weekStartDate = url.searchParams.get("weekStartDate");
+    const dayIndexStr = url.searchParams.get("dayIndex");
+    const mealType = url.searchParams.get("mealType") as MealType | null;
+
+    if (!weekStartDate || !dayIndexStr || !mealType) {
+      return HttpResponse.json(
+        { message: "weekStartDate, dayIndex, and mealType are required" },
+        { status: 400 },
+      );
+    }
+
+    const dayIndex = parseInt(dayIndexStr, 10);
+    const board = getMealsBoard(weekStartDate);
+    const slot = findMealSlot(board, dayIndex, mealType);
     setMealSlot(board, clearMealSlot(slot));
 
     return HttpResponse.json(
