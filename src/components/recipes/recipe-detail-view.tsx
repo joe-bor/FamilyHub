@@ -23,6 +23,7 @@ interface RecipeDetailViewProps {
   recipe: RecipeDetail;
   isUpdatingFavorite?: boolean;
   onBack: () => void;
+  onAddToMeals: () => void;
   onEdit: () => void;
   onToggleFavorite: () => void;
 }
@@ -31,6 +32,7 @@ export function RecipeDetailView({
   recipe,
   isUpdatingFavorite = false,
   onBack,
+  onAddToMeals,
   onEdit,
   onToggleFavorite,
 }: RecipeDetailViewProps) {
@@ -118,6 +120,9 @@ export function RecipeDetailView({
           <Button type="button" variant="outline" onClick={onEdit}>
             <Pencil className="h-4 w-4" />
             Edit recipe
+          </Button>
+          <Button type="button" variant="outline" onClick={onAddToMeals}>
+            Add to Meals
           </Button>
           <Button
             type="button"

@@ -110,6 +110,18 @@ export function parseLocalDate(dateStr: string): Date {
 }
 
 /**
+ * Get the local Sunday that starts the week containing the provided date.
+ */
+export function getWeekStartSunday(date: Date): Date {
+  const localDate = startOfDay(date);
+  return new Date(
+    localDate.getFullYear(),
+    localDate.getMonth(),
+    localDate.getDate() - localDate.getDay(),
+  );
+}
+
+/**
  * Check if an event falls on a given date.
  * Handles both single-day events (exact date match) and multi-day events (date range).
  * Normalizes all dates to midnight to avoid time-of-day comparison bugs.

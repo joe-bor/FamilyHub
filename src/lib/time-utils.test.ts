@@ -11,6 +11,7 @@ import {
   getEventKey,
   getSmartDefaultTimes,
   getTimeInMinutes,
+  getWeekStartSunday,
   isEventOnDate,
   parseLocalDate,
   parseTime,
@@ -488,6 +489,20 @@ describe("time-utils", () => {
       expect(leapDay.getFullYear()).toBe(2024);
       expect(leapDay.getMonth()).toBe(1); // February
       expect(leapDay.getDate()).toBe(29);
+    });
+  });
+
+  describe("getWeekStartSunday", () => {
+    it("returns the previous sunday for a weekday using local dates", () => {
+      expect(formatLocalDate(getWeekStartSunday(new Date(2026, 5, 10)))).toBe(
+        "2026-06-07",
+      );
+    });
+
+    it("returns the same local date when given a sunday", () => {
+      expect(
+        formatLocalDate(getWeekStartSunday(new Date(2026, 5, 7, 18, 45, 0))),
+      ).toBe("2026-06-07");
     });
   });
 
