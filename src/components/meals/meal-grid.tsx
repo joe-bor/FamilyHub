@@ -1,6 +1,7 @@
 import { parseLocalDate } from "@/lib/time-utils";
 import type { MealBoard, MealSlot } from "@/lib/types";
 import { MealSlotCard } from "./meal-slot-card";
+import { formatMealType } from "./meal-type-utils";
 
 function dayName(date: string) {
   return parseLocalDate(date).toLocaleDateString("en-US", {
@@ -9,10 +10,6 @@ function dayName(date: string) {
 }
 
 const MEAL_ROWS: Array<MealSlot["mealType"]> = ["breakfast", "lunch", "dinner"];
-
-function formatMealType(mealType: MealSlot["mealType"]) {
-  return mealType.charAt(0).toUpperCase() + mealType.slice(1);
-}
 
 interface MealGridProps {
   board: MealBoard;

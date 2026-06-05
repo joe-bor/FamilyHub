@@ -23,6 +23,7 @@ import type {
   MealSlot,
   MoveMealSlotRequest,
 } from "@/lib/types";
+import { formatMealType } from "./meal-type-utils";
 
 type PendingCollision =
   | { kind: "move"; request: MoveMealSlotRequest }
@@ -34,10 +35,6 @@ interface MealEditorSheetProps {
   board: MealBoard | null;
   readOnly: boolean;
   onOpenChange: (open: boolean) => void;
-}
-
-function formatMealType(mealType: MealSlot["mealType"]) {
-  return mealType.charAt(0).toUpperCase() + mealType.slice(1);
 }
 
 function nextDayIndex(dayIndex: number) {

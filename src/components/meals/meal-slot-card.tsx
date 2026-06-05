@@ -1,10 +1,7 @@
 import { Plus } from "lucide-react";
 import type { MealSlot } from "@/lib/types";
 import { cn } from "@/lib/utils";
-
-function formatMealType(mealType: MealSlot["mealType"]) {
-  return mealType.charAt(0).toUpperCase() + mealType.slice(1);
-}
+import { formatMealType } from "./meal-type-utils";
 
 interface MealSlotCardProps {
   slot: MealSlot;

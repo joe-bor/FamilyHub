@@ -17,6 +17,7 @@ import type {
   UpsertMealSlotRequest,
 } from "@/lib/types";
 import { useAppStore } from "@/stores";
+import { formatMealType } from "./meal-type-utils";
 import { RecipeMatchList } from "./recipe-match-list";
 
 export type MealSlotSelection = MealSlot & {
@@ -28,10 +29,6 @@ interface MealComposerSheetProps {
   slot: MealSlotSelection | null;
   readOnly?: boolean;
   onOpenChange: (open: boolean) => void;
-}
-
-function formatMealType(mealType: MealSlot["mealType"]) {
-  return mealType.charAt(0).toUpperCase() + mealType.slice(1);
 }
 
 function normalize(value: string) {
