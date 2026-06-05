@@ -435,6 +435,34 @@ describe("RecipesView", () => {
     });
   });
 
+  it("cancels a meals draft create without leaving stale handoff state", async () => {
+    seedMockRecipes([]);
+    useAppStore.getState().startRecipeCreationFromMealSlot({
+      requestedAtWeekStartDate: "2026-06-07",
+      dayIndex: 2,
+      mealType: "lunch",
+      typedTitle: "Soup idea",
+    });
+
+    const { user } = renderWithUser(<RecipesView />);
+
+    expect(
+      await screen.findByRole("dialog", { name: "Create Recipe" }),
+    ).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Cancel" }));
+
+    expect(useAppStore.getState().recipeCreationDraft).toBe(null);
+    expect(useAppStore.getState().mealPlacementDraft).toBe(null);
+    expect(useAppStore.getState().activeModule).toBe("recipes");
+    expect(
+      screen.queryByRole("dialog", { name: "Create Recipe" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("dialog", { name: "Add Recipe" }),
+    ).not.toBeInTheDocument();
+  });
+
   it("shows a manual create error without selecting a partial recipe", async () => {
     seedMockRecipes([]);
     server.use(

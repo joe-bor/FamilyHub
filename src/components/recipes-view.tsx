@@ -266,6 +266,15 @@ export function RecipesView() {
           defaultMode={createSheetMode}
           defaultValues={createSheetDefaultValues}
           isOpen={isCreateSheetOpen}
+          onCancelManual={
+            recipeCreationDraft
+              ? () => {
+                  consumeRecipeCreationDraft();
+                  setIsCreateSheetOpen(false);
+                  setHasOpenedRecipeDraft(false);
+                }
+              : undefined
+          }
           onOpenChange={setIsCreateSheetOpen}
           onCreated={(recipeId) => {
             if (!recipeCreationDraft) {
