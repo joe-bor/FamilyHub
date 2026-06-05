@@ -12,6 +12,7 @@ export {
 } from "./lists";
 export {
   type RecipeFormData,
+  type RecipeFormInput,
   recipeFormSchema,
   toRecipeRequest,
 } from "./recipes";

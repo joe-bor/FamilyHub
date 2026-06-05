@@ -43,7 +43,7 @@ interface AppState {
   toggleSidebar: () => void;
 }
 
-export const useAppStore = create<AppState>((set) => ({
+export const useAppStore = create<AppState>((set, get) => ({
   // Initial state - null shows home dashboard on mobile, desktop redirects to calendar
   activeModule: null,
   isSidebarOpen: false,
@@ -55,14 +55,14 @@ export const useAppStore = create<AppState>((set) => ({
   startMealPlacementFromRecipe: (draft) =>
     set({ mealPlacementDraft: draft, activeModule: "meals" }),
   consumeMealPlacementDraft: () => {
-    const draft = useAppStore.getState().mealPlacementDraft;
+    const draft = get().mealPlacementDraft;
     set({ mealPlacementDraft: null });
     return draft;
   },
   startRecipeCreationFromMealSlot: (draft) =>
     set({ recipeCreationDraft: draft, activeModule: "recipes" }),
   consumeRecipeCreationDraft: () => {
-    const draft = useAppStore.getState().recipeCreationDraft;
+    const draft = get().recipeCreationDraft;
     set({ recipeCreationDraft: null });
     return draft;
   },
