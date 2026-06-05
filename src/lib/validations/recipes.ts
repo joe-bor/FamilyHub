@@ -10,25 +10,34 @@ const optionalTextSchema = z
     return trimmed.length > 0 ? trimmed : null;
   });
 
+function isHttpOrHttpsUrl(value: string) {
+  try {
+    const protocol = new URL(value).protocol;
+    return protocol === "http:" || protocol === "https:";
+  } catch {
+    return false;
+  }
+}
+
 const httpUrlSchema = z
   .string()
   .url("Enter a valid URL")
-  .refine((value) => {
-    const protocol = new URL(value).protocol;
-    return protocol === "http:" || protocol === "https:";
-  }, "Enter an http or https URL");
+  .refine(isHttpOrHttpsUrl, "Enter an http or https URL");
 
 const optionalUrlSchema = optionalTextSchema.pipe(httpUrlSchema.nullable());
 
-function orderedTextArray(maxLength: number, message: string) {
-  return z
+function orderedTextArray(maxLength?: number, message?: string) {
+  const schema = z
     .array(z.string())
     .optional()
     .default([])
     .transform((values) =>
       values.map((value) => value.trim()).filter((value) => value.length > 0),
-    )
-    .pipe(z.array(z.string().max(maxLength, message)));
+    );
+
+  return maxLength === undefined
+    ? schema
+    : schema.pipe(z.array(z.string().max(maxLength, message)));
 }
 
 export const recipeFormSchema = z.object({
@@ -48,10 +57,7 @@ export const recipeFormSchema = z.object({
     500,
     "Ingredient must be 500 characters or less",
   ),
-  instructions: orderedTextArray(
-    1000,
-    "Instruction must be 1000 characters or less",
-  ),
+  instructions: orderedTextArray(),
   tags: orderedTextArray(60, "Tag must be 60 characters or less"),
   favorite: z.boolean().optional().default(false),
 });

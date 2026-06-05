@@ -254,6 +254,40 @@ describe("RecipesView", () => {
     ).not.toBeInTheDocument();
   });
 
+  it("renders duplicate ordered recipe lines without duplicate React key warnings", async () => {
+    const consoleError = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => undefined);
+    seedMockRecipes([
+      {
+        ...testRecipeDetail,
+        ingredients: ["Salt", "Salt"],
+        instructions: ["Mix", "Mix"],
+        tags: ["quick", "quick"],
+      },
+    ]);
+
+    const { user } = renderWithUser(<RecipesView />);
+
+    await user.click(
+      await screen.findByRole("button", {
+        name: `Open recipe: ${testRecipeDetail.title}`,
+      }),
+    );
+
+    expect(screen.getAllByText("Salt")).toHaveLength(2);
+    expect(screen.getAllByText("Mix")).toHaveLength(2);
+    expect(
+      consoleError.mock.calls.some((call) =>
+        call.some(
+          (arg) =>
+            typeof arg === "string" &&
+            arg.includes("Encountered two children with the same key"),
+        ),
+      ),
+    ).toBe(false);
+  });
+
   it("lets users recover when recipe detail loading fails", async () => {
     seedMockRecipes([testRecipeDetail]);
     const getDetail = vi.fn(() =>
@@ -624,7 +658,7 @@ describe("RecipesView", () => {
     expect(createRecipe).toHaveBeenCalledTimes(1);
   });
 
-  it("shows validation messages for long ingredients, instructions, and tags", async () => {
+  it("shows validation messages for long ingredients and tags", async () => {
     seedMockRecipes([]);
 
     const { user } = renderWithUser(<RecipesView />);
@@ -638,19 +672,11 @@ describe("RecipesView", () => {
       screen.getByLabelText("Ingredient 1"),
       "a".repeat(501),
     );
-    await typeAndWait(
-      user,
-      screen.getByLabelText("Instruction 1"),
-      "b".repeat(1001),
-    );
     await typeAndWait(user, screen.getByLabelText("Tag 1"), "c".repeat(61));
     await user.click(screen.getByRole("button", { name: "Save recipe" }));
 
     expect(
       await screen.findByText("Ingredient must be 500 characters or less"),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText("Instruction must be 1000 characters or less"),
     ).toBeInTheDocument();
     expect(
       screen.getByText("Tag must be 60 characters or less"),

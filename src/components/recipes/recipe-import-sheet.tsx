@@ -7,16 +7,22 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { MobileSheet } from "@/components/ui/mobile-sheet";
 
+function isHttpOrHttpsUrl(value: string) {
+  try {
+    const protocol = new URL(value).protocol;
+    return protocol === "http:" || protocol === "https:";
+  } catch {
+    return false;
+  }
+}
+
 const recipeImportSchema = z.object({
   url: z
     .string()
     .trim()
     .min(1, "Recipe URL is required")
     .url("Enter a valid URL")
-    .refine((value) => {
-      const protocol = new URL(value).protocol;
-      return protocol === "http:" || protocol === "https:";
-    }, "Enter an http or https URL"),
+    .refine(isHttpOrHttpsUrl, "Enter an http or https URL"),
 });
 
 type RecipeImportFormData = z.infer<typeof recipeImportSchema>;
@@ -45,6 +51,7 @@ export function RecipeImportSheet({
     <MobileSheet isOpen={isOpen} onClose={onBack} title="Import Recipe">
       <form
         className="space-y-6"
+        noValidate
         onSubmit={form.handleSubmit((values) => onSubmit(values.url))}
       >
         <button type="submit" className="sr-only" tabIndex={-1} aria-hidden>
@@ -55,9 +62,11 @@ export function RecipeImportSheet({
           <Label htmlFor="recipe-import-url">Recipe URL</Label>
           <Input
             id="recipe-import-url"
-            type="url"
+            type="text"
+            inputMode="url"
             autoComplete="off"
             placeholder="https://example.com/recipe"
+            aria-invalid={Boolean(form.formState.errors.url)}
             {...form.register("url")}
           />
           <FormError message={form.formState.errors.url?.message} />

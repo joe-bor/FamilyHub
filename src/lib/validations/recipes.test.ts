@@ -35,6 +35,13 @@ describe("recipeFormSchema", () => {
     expect(() =>
       recipeFormSchema.parse({
         title: "Pasta Night",
+        imageUrl: "not-a-url",
+      }),
+    ).toThrow("Enter a valid URL");
+
+    expect(() =>
+      recipeFormSchema.parse({
+        title: "Pasta Night",
         imageUrl: "ftp://example.com/photo.jpg",
       }),
     ).toThrow("Enter an http or https URL");
@@ -73,5 +80,16 @@ describe("recipeFormSchema", () => {
       tags: ["make-ahead", "side", "summer"],
       favorite: true,
     });
+  });
+
+  it("allows long instructions because the released backend has no instruction length limit", () => {
+    const longInstruction = "b".repeat(1500);
+
+    const formData = recipeFormSchema.parse({
+      title: "Detailed Prep",
+      instructions: [longInstruction],
+    });
+
+    expect(toRecipeRequest(formData).instructions).toEqual([longInstruction]);
   });
 });

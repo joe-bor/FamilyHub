@@ -67,8 +67,11 @@ export function RecipeDetailView({
         {recipe.ingredients.length > 0 ? (
           <DetailSection title="Ingredients">
             <ul className="space-y-2 text-sm text-foreground">
-              {recipe.ingredients.map((ingredient) => (
-                <li key={ingredient} className="list-inside list-disc">
+              {recipe.ingredients.map((ingredient, index) => (
+                <li
+                  key={`${index}-${ingredient}`}
+                  className="list-inside list-disc"
+                >
                   {ingredient}
                 </li>
               ))}
@@ -79,8 +82,11 @@ export function RecipeDetailView({
         {recipe.instructions.length > 0 ? (
           <DetailSection title="Instructions">
             <ol className="space-y-2 text-sm text-foreground">
-              {recipe.instructions.map((instruction) => (
-                <li key={instruction} className="list-inside list-decimal">
+              {recipe.instructions.map((instruction, index) => (
+                <li
+                  key={`${index}-${instruction}`}
+                  className="list-inside list-decimal"
+                >
                   {instruction}
                 </li>
               ))}
@@ -90,9 +96,9 @@ export function RecipeDetailView({
 
         {recipe.tags.length > 0 ? (
           <div className="flex flex-wrap gap-2">
-            {recipe.tags.map((tag) => (
+            {recipe.tags.map((tag, index) => (
               <span
-                key={tag}
+                key={`${index}-${tag}`}
                 className="rounded-full bg-secondary px-2.5 py-1 text-xs font-medium text-secondary-foreground"
               >
                 {tag}

@@ -154,6 +154,7 @@ export function RecipeForm({
     <form
       id={RECIPE_FORM_ID}
       className="space-y-6"
+      noValidate
       onSubmit={form.handleSubmit((values) => onSubmit(values))}
     >
       <button type="submit" className="sr-only" tabIndex={-1} aria-hidden>
@@ -174,9 +175,11 @@ export function RecipeForm({
         <Label htmlFor="recipe-image-url">Image URL</Label>
         <Input
           id="recipe-image-url"
-          type="url"
+          type="text"
+          inputMode="url"
           autoComplete="off"
           placeholder="https://example.com/recipe.jpg"
+          aria-invalid={Boolean(form.formState.errors.imageUrl)}
           {...form.register("imageUrl")}
         />
         <FormError message={form.formState.errors.imageUrl?.message} />
@@ -199,9 +202,11 @@ export function RecipeForm({
         <Label htmlFor="recipe-source-url">Source URL</Label>
         <Input
           id="recipe-source-url"
-          type="url"
+          type="text"
+          inputMode="url"
           autoComplete="off"
           placeholder="https://example.com/recipe"
+          aria-invalid={Boolean(form.formState.errors.sourceUrl)}
           {...form.register("sourceUrl")}
         />
         <FormError message={form.formState.errors.sourceUrl?.message} />
