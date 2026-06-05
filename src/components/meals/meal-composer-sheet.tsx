@@ -85,11 +85,19 @@ export function MealComposerSheet({
   const allRecipes = recipes.data?.data ?? [];
   const query = normalize(mealName);
   const favoriteRecipes = useMemo(
-    () => allRecipes.filter((recipe) => recipe.favorite).slice(0, 4),
+    () =>
+      allRecipes
+        .filter((recipe) => recipe.favorite)
+        .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
+        .slice(0, 4),
     [allRecipes],
   );
   const recentRecipes = useMemo(
-    () => allRecipes.filter((recipe) => !recipe.favorite).slice(0, 4),
+    () =>
+      allRecipes
+        .filter((recipe) => !recipe.favorite)
+        .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
+        .slice(0, 4),
     [allRecipes],
   );
   const matchingRecipes = useMemo(

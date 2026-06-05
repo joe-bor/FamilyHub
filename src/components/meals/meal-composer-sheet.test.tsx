@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { MealSlot } from "@/lib/types";
+import type { MealSlot, RecipeDetail } from "@/lib/types";
 import { useAppStore } from "@/stores/app-store";
 import {
   createEmptyMealSlot,
@@ -167,5 +167,36 @@ describe("MealComposerSheet", () => {
     );
 
     expect(useAppStore.getState().activeModule).toBe("recipes");
+  });
+
+  it("shows recent recipes sorted newest-first when there is no query", async () => {
+    const olderRecipe: RecipeDetail = {
+      ...importedRecipeDetail,
+      id: "00000000-0000-4000-8000-000000000510",
+      title: "Older Non-Favorite",
+      updatedAt: "2026-05-01T09:00:00",
+      favorite: false,
+    };
+    const newerRecipe: RecipeDetail = {
+      ...importedRecipeDetail,
+      id: "00000000-0000-4000-8000-000000000511",
+      title: "Newer Non-Favorite",
+      updatedAt: "2026-06-03T09:00:00",
+      favorite: false,
+    };
+    seedMockRecipes([olderRecipe, newerRecipe]);
+
+    const lunchSlot = createEmptyMealSlot(testWeekStartDate, 0, "lunch");
+    renderComposer(lunchSlot);
+
+    await screen.findByText("Recent recipes");
+
+    const buttons = screen.getAllByRole("button", { name: /select recipe:/i });
+    const labels = buttons.map((b) => b.getAttribute("aria-label") ?? "");
+    const newerIdx = labels.findIndex((l) => l.includes("Newer Non-Favorite"));
+    const olderIdx = labels.findIndex((l) => l.includes("Older Non-Favorite"));
+    expect(newerIdx).toBeGreaterThanOrEqual(0);
+    expect(olderIdx).toBeGreaterThanOrEqual(0);
+    expect(newerIdx).toBeLessThan(olderIdx);
   });
 });
