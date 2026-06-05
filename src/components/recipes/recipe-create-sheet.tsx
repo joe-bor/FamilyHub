@@ -15,6 +15,7 @@ interface RecipeCreateSheetProps {
   onCreated: (recipeId: string) => void;
   defaultMode?: AddRecipeMode;
   defaultValues?: Partial<RecipeFormData>;
+  onCancelManual?: () => void;
 }
 
 export function RecipeCreateSheet({
@@ -23,6 +24,7 @@ export function RecipeCreateSheet({
   onCreated,
   defaultMode = "choices",
   defaultValues,
+  onCancelManual,
 }: RecipeCreateSheetProps) {
   const [mode, setMode] = useState<AddRecipeMode>(defaultMode);
   const [importError, setImportError] = useState<string | null>(null);
@@ -60,6 +62,15 @@ export function RecipeCreateSheet({
     setImportError(null);
   };
 
+  const closeManual = () => {
+    if (onCancelManual) {
+      onCancelManual();
+      return;
+    }
+
+    goBackToChoices();
+  };
+
   if (mode === "manual") {
     const createErrorMessage =
       createRecipe.error instanceof Error
@@ -67,11 +78,7 @@ export function RecipeCreateSheet({
         : "Could not save recipe";
 
     return (
-      <MobileSheet
-        isOpen={isOpen}
-        onClose={goBackToChoices}
-        title="Create Recipe"
-      >
+      <MobileSheet isOpen={isOpen} onClose={closeManual} title="Create Recipe">
         <RecipeForm
           defaultValues={defaultValues}
           isPending={createRecipe.isPending}
