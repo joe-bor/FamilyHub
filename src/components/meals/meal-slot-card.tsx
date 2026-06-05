@@ -1,4 +1,5 @@
 import { Plus } from "lucide-react";
+import { useState } from "react";
 import type { MealSlot } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { formatMealType } from "./meal-type-utils";
@@ -16,6 +17,7 @@ export function MealSlotCard({
   pendingRecipeId = null,
   onSelectSlot,
 }: MealSlotCardProps) {
+  const [imgFailed, setImgFailed] = useState(false);
   const label = formatMealType(slot.mealType);
 
   if (slot.primary) {
@@ -31,11 +33,12 @@ export function MealSlotCard({
         onClick={() => onSelectSlot(slot)}
       >
         <div className="flex items-start gap-3">
-          {slot.primary.imageUrl ? (
+          {slot.primary.imageUrl && !imgFailed ? (
             <img
               src={slot.primary.imageUrl}
               alt=""
               className="h-14 w-14 rounded-md object-cover"
+              onError={() => setImgFailed(true)}
             />
           ) : (
             <div className="flex h-14 w-14 items-center justify-center rounded-md bg-muted text-xs font-semibold text-muted-foreground">
