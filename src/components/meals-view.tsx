@@ -14,6 +14,7 @@ import {
   getWeekStartSunday,
   isPastWeek,
 } from "@/lib/time-utils";
+import type { MealBoard } from "@/lib/types";
 import type { MealPlacementDraft } from "@/stores";
 import { useAppStore } from "@/stores";
 
@@ -27,6 +28,7 @@ export function MealsView() {
   const [editingSlot, setEditingSlot] = useState<MealSlotSelection | null>(
     null,
   );
+  const [editingBoard, setEditingBoard] = useState<MealBoard | null>(null);
   const [placementDraft, setPlacementDraft] =
     useState<MealPlacementDraft | null>(null);
   const board = useMealsBoard(visibleWeekStartDate);
@@ -81,6 +83,7 @@ export function MealsView() {
   function selectSlot(slot: MealSlotSelection) {
     if (slot.primary && !pendingRecipeId) {
       setEditingSlot(slot);
+      setEditingBoard(board.data?.data ?? null);
       return;
     }
 
@@ -107,6 +110,7 @@ export function MealsView() {
             setVisibleWeekStartDate(weekStartDate);
             setSelectedSlot(null);
             setEditingSlot(null);
+            setEditingBoard(null);
             setPlacementDraft(null);
           }}
         />
@@ -174,11 +178,12 @@ export function MealsView() {
       <MealEditorSheet
         isOpen={editingSlot !== null}
         slot={editingSlot}
-        board={board.data?.data ?? null}
+        board={editingBoard}
         readOnly={readOnly}
         onOpenChange={(open) => {
           if (!open) {
             setEditingSlot(null);
+            setEditingBoard(null);
           }
         }}
       />
