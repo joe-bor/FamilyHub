@@ -1,9 +1,10 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { formatLocalDate, getWeekStartSunday } from "@/lib/time-utils";
 import { useAppStore } from "@/stores/app-store";
 import {
   createEmptyMealsBoard,
   createOccupiedMealsBoard,
+  createRecipeBackedMealsBoard,
   testWeekStartDate,
 } from "@/test/fixtures/meals";
 import { testRecipeDetail } from "@/test/fixtures/recipes";
@@ -14,7 +15,18 @@ import {
   setupMswServer,
 } from "@/test/mocks/server";
 import { renderWithUser, screen, waitFor } from "@/test/test-utils";
+import { MealEditorSheet } from "./meals/meal-editor-sheet";
 import { MealsView } from "./meals-view";
+
+const viewport = vi.hoisted(() => ({ isMobile: true }));
+
+vi.mock("@/hooks", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/hooks")>();
+  return {
+    ...actual,
+    useIsMobile: () => viewport.isMobile,
+  };
+});
 
 function mockCurrentWeek() {
   const fixedNow = new Date(2026, 5, 10, 9, 15, 0);
@@ -42,7 +54,12 @@ describe("MealsView", () => {
 
   beforeEach(() => {
     vi.restoreAllMocks();
+    viewport.isMobile = true;
     mockCurrentWeek();
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
   });
 
   it("shows add affordances for empty breakfast, lunch, and dinner slots", async () => {
@@ -175,5 +192,136 @@ describe("MealsView", () => {
       await screen.findByRole("button", { name: /open dinner: pasta/i }),
     ).toBeInTheDocument();
     expect(screen.getByText("Salad")).toBeInTheDocument();
+  });
+
+  it("renders a weekly meals grid on larger screens", async () => {
+    viewport.isMobile = false;
+    seedMockMealsBoard(createEmptyMealsBoard());
+
+    renderWithUser(<MealsView />);
+
+    expect(
+      await screen.findByRole("table", { name: "Weekly meals" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("rowheader", { name: "Breakfast" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("columnheader", { name: "Sunday" }),
+    ).toBeInTheDocument();
+  });
+
+  it("prompts when moving into an occupied slot and move clears the source", async () => {
+    const board = createOccupiedMealsBoard();
+    seedMockMealsBoard(board);
+    const { user } = renderWithUser(
+      <MealEditorSheet
+        isOpen
+        slot={board.days[1].slots[2]}
+        board={board}
+        readOnly={false}
+        onOpenChange={vi.fn()}
+      />,
+    );
+
+    await user.click(screen.getByRole("button", { name: "Move meal" }));
+
+    expect(
+      await screen.findByText("That slot already has a meal"),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Replace primary" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Add as extra" }),
+    ).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Replace primary" }));
+
+    await waitFor(() => {
+      const updatedBoard = getMockMealsBoard(testWeekStartDate);
+      expect(updatedBoard.days[1].slots[2].primary).toBe(null);
+      expect(updatedBoard.days[2].slots[2].primary?.title).toBe("Pasta");
+    });
+  });
+
+  it("duplicates explicitly and can add the duplicate as an extra on collision", async () => {
+    const board = createOccupiedMealsBoard();
+    seedMockMealsBoard(board);
+    const { user } = renderWithUser(
+      <MealEditorSheet
+        isOpen
+        slot={board.days[1].slots[2]}
+        board={board}
+        readOnly={false}
+        onOpenChange={vi.fn()}
+      />,
+    );
+
+    await user.click(screen.getByRole("button", { name: "Duplicate meal" }));
+    expect(
+      await screen.findByText("That slot already has a meal"),
+    ).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Add as extra" }));
+
+    await waitFor(() => {
+      const updatedBoard = getMockMealsBoard(testWeekStartDate);
+      expect(updatedBoard.days[1].slots[2].primary?.title).toBe("Pasta");
+      expect(updatedBoard.days[2].slots[2].primary?.title).toBe("Soup");
+      expect(
+        updatedBoard.days[2].slots[2].extras.map((extra) => extra.title),
+      ).toEqual(["Pasta", "Salad"]);
+    });
+  });
+
+  it("removes a planned meal from the editor", async () => {
+    const board = createOccupiedMealsBoard();
+    seedMockMealsBoard(board);
+    const { user } = renderWithUser(
+      <MealEditorSheet
+        isOpen
+        slot={board.days[1].slots[2]}
+        board={board}
+        readOnly={false}
+        onOpenChange={vi.fn()}
+      />,
+    );
+
+    await user.click(screen.getByRole("button", { name: "Remove meal" }));
+
+    await waitFor(() => {
+      expect(
+        getMockMealsBoard(testWeekStartDate).days[1].slots[2].primary,
+      ).toBe(null);
+    });
+  });
+
+  it("opens the live recipe detail from a recipe-backed planned meal", async () => {
+    const board = createRecipeBackedMealsBoard();
+    seedMockMealsBoard(board);
+    seedMockRecipes([testRecipeDetail]);
+    const { user } = renderWithUser(
+      <MealEditorSheet
+        isOpen
+        slot={board.days[1].slots[2]}
+        board={board}
+        readOnly={false}
+        onOpenChange={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByText("Snapshot Salmon")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "View recipe" }));
+
+    expect(
+      await screen.findByRole("heading", { name: testRecipeDetail.title }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "Ingredients" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "Instructions" }),
+    ).toBeInTheDocument();
   });
 });

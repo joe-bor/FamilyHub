@@ -5,7 +5,10 @@ import {
   type MealSlotSelection,
 } from "@/components/meals/meal-composer-sheet";
 import { MealDayCard } from "@/components/meals/meal-day-card";
+import { MealEditorSheet } from "@/components/meals/meal-editor-sheet";
+import { MealGrid } from "@/components/meals/meal-grid";
 import { WeekHeader } from "@/components/meals/week-header";
+import { useIsMobile } from "@/hooks";
 import {
   formatLocalDate,
   getWeekStartSunday,
@@ -21,6 +24,9 @@ export function MealsView() {
   const [selectedSlot, setSelectedSlot] = useState<MealSlotSelection | null>(
     null,
   );
+  const [editingSlot, setEditingSlot] = useState<MealSlotSelection | null>(
+    null,
+  );
   const [placementDraft, setPlacementDraft] =
     useState<MealPlacementDraft | null>(null);
   const board = useMealsBoard(visibleWeekStartDate);
@@ -32,6 +38,7 @@ export function MealsView() {
     (state) => state.consumeMealPlacementDraft,
   );
   const readOnly = isPastWeek(visibleWeekStartDate);
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     if (!pendingPlacementDraft) return;
@@ -71,6 +78,11 @@ export function MealsView() {
       : null;
 
   function selectSlot(slot: MealSlotSelection) {
+    if (slot.primary && !pendingRecipeId) {
+      setEditingSlot(slot);
+      return;
+    }
+
     setSelectedSlot(
       pendingRecipeId
         ? {
@@ -93,6 +105,7 @@ export function MealsView() {
           onWeekChange={(weekStartDate) => {
             setVisibleWeekStartDate(weekStartDate);
             setSelectedSlot(null);
+            setEditingSlot(null);
             setPlacementDraft(null);
           }}
         />
@@ -122,7 +135,7 @@ export function MealsView() {
           </div>
         ) : null}
 
-        {board.data?.data ? (
+        {board.data?.data && isMobile ? (
           <div className="space-y-4">
             {board.data.data.days.map((day) => (
               <MealDayCard
@@ -135,6 +148,15 @@ export function MealsView() {
             ))}
           </div>
         ) : null}
+
+        {board.data?.data && !isMobile ? (
+          <MealGrid
+            board={board.data.data}
+            readOnly={readOnly}
+            pendingRecipeId={pendingRecipeId}
+            onSelectSlot={selectSlot}
+          />
+        ) : null}
       </div>
 
       <MealComposerSheet
@@ -144,6 +166,18 @@ export function MealsView() {
         onOpenChange={(open) => {
           if (!open) {
             setSelectedSlot(null);
+          }
+        }}
+      />
+
+      <MealEditorSheet
+        isOpen={editingSlot !== null}
+        slot={editingSlot}
+        board={board.data?.data ?? null}
+        readOnly={readOnly}
+        onOpenChange={(open) => {
+          if (!open) {
+            setEditingSlot(null);
           }
         }}
       />

@@ -102,7 +102,7 @@ describe("MealComposerSheet", () => {
   });
 
   it("creates a quick meal with optional image URL and note", async () => {
-    const dinnerSlot = createEmptyMealSlot(testWeekStartDate, 2, "dinner");
+    const dinnerSlot = createEmptyMealSlot(testWeekStartDate, 3, "dinner");
     const onOpenChange = vi.fn();
     const { user } = renderComposer(dinnerSlot, onOpenChange);
 
