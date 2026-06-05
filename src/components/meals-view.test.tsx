@@ -324,4 +324,50 @@ describe("MealsView", () => {
       screen.getByRole("heading", { name: "Instructions" }),
     ).toBeInTheDocument();
   });
+
+  it("moves a Saturday meal to Sunday of the following week rather than Sunday of the same week", async () => {
+    const saturdayBoard = createEmptyMealsBoard();
+    saturdayBoard.days[6].slots[2] = {
+      id: "slot-saturday-dinner",
+      weekStartDate: testWeekStartDate,
+      dayIndex: 6,
+      mealType: "dinner",
+      primary: {
+        id: "entry-saturday",
+        role: "primary",
+        sourceType: "quick",
+        recipeId: null,
+        title: "Saturday Pasta",
+        imageUrl: null,
+        note: null,
+      },
+      extras: [],
+      note: null,
+    };
+    seedMockMealsBoard(saturdayBoard);
+    const nextWeekStartDate = "2026-06-14";
+    seedMockMealsBoard(createEmptyMealsBoard(nextWeekStartDate));
+
+    const { user } = renderWithUser(
+      <MealEditorSheet
+        isOpen
+        slot={saturdayBoard.days[6].slots[2]}
+        board={saturdayBoard}
+        readOnly={false}
+        onOpenChange={vi.fn()}
+      />,
+    );
+
+    await user.click(screen.getByRole("button", { name: "Move meal" }));
+
+    await waitFor(() => {
+      const nextWeekBoard = getMockMealsBoard(nextWeekStartDate);
+      expect(nextWeekBoard.days[0].slots[2].primary?.title).toBe(
+        "Saturday Pasta",
+      );
+      expect(
+        getMockMealsBoard(testWeekStartDate).days[6].slots[2].primary,
+      ).toBe(null);
+    });
+  });
 });

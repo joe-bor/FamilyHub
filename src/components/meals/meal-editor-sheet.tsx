@@ -16,6 +16,11 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { MobileSheet } from "@/components/ui/mobile-sheet";
+import {
+  addWeeksLocal,
+  formatLocalDate,
+  parseLocalDate,
+} from "@/lib/time-utils";
 import type {
   DuplicateMealSlotRequest,
   MealBoard,
@@ -37,13 +42,28 @@ interface MealEditorSheetProps {
   onOpenChange: (open: boolean) => void;
 }
 
-function nextDayIndex(dayIndex: number) {
-  return dayIndex === 6 ? 0 : dayIndex + 1;
+function getDestination(slot: MealSlot): {
+  dayIndex: number;
+  weekStartDate: string;
+} {
+  if (slot.dayIndex === 6) {
+    return {
+      dayIndex: 0,
+      weekStartDate: formatLocalDate(
+        addWeeksLocal(parseLocalDate(slot.weekStartDate), 1),
+      ),
+    };
+  }
+  return { dayIndex: slot.dayIndex + 1, weekStartDate: slot.weekStartDate };
 }
 
-function findDestinationSlot(board: MealBoard, slot: MealSlot) {
-  const destinationDayIndex = nextDayIndex(slot.dayIndex);
-  return board.days[destinationDayIndex].slots.find(
+function findDestinationSlot(
+  board: MealBoard,
+  slot: MealSlot,
+): MealSlot | undefined {
+  const dest = getDestination(slot);
+  if (dest.weekStartDate !== board.weekStartDate) return undefined;
+  return board.days[dest.dayIndex]?.slots.find(
     (candidate) => candidate.mealType === slot.mealType,
   );
 }
@@ -87,12 +107,13 @@ export function MealEditorSheet({
   function baseMoveRequest(
     collisionMode: MealCollisionMode,
   ): MoveMealSlotRequest {
+    const dest = getDestination(activeSlot);
     return {
       sourceWeekStartDate: activeSlot.weekStartDate,
       sourceDayIndex: activeSlot.dayIndex,
       sourceMealType: activeSlot.mealType,
-      destinationWeekStartDate: activeSlot.weekStartDate,
-      destinationDayIndex: nextDayIndex(activeSlot.dayIndex),
+      destinationWeekStartDate: dest.weekStartDate,
+      destinationDayIndex: dest.dayIndex,
       destinationMealType: activeSlot.mealType,
       collisionMode,
     };
