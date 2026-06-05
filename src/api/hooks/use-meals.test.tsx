@@ -13,6 +13,7 @@ import {
 import type { ApiResponse, MealBoard } from "@/lib/types";
 import { testRecipeDetail } from "@/test/fixtures/recipes";
 import {
+  getMockMealsBoard,
   resetMockMeals,
   seedMockMealsBoard,
   seedMockRecipes,
@@ -317,6 +318,174 @@ describe("useMeals", () => {
     expect(
       queryClient.getQueryState(mealsKeys.board("2026-06-07"))?.isInvalidated,
     ).toBe(true);
+  });
+
+  it("moves a Saturday meal to Sunday of the following week", async () => {
+    const saturdayBoard: MealBoard = structuredClone(emptyBoard);
+    saturdayBoard.days[6].slots[2] = {
+      id: "slot-saturday-dinner",
+      weekStartDate: "2026-06-07",
+      dayIndex: 6,
+      mealType: "dinner",
+      primary: {
+        id: "entry-saturday",
+        role: "primary",
+        sourceType: "quick",
+        recipeId: null,
+        title: "Saturday Pasta",
+        imageUrl: null,
+        note: null,
+      },
+      extras: [],
+      note: null,
+    };
+    const nextWeekBoard: MealBoard = {
+      weekStartDate: "2026-06-14",
+      days: Array.from({ length: 7 }, (_, dayIndex) => ({
+        date: `2026-06-${String(14 + dayIndex).padStart(2, "0")}`,
+        dayIndex,
+        slots: [
+          {
+            id: null,
+            weekStartDate: "2026-06-14",
+            dayIndex,
+            mealType: "breakfast",
+            primary: null,
+            extras: [],
+            note: null,
+          },
+          {
+            id: null,
+            weekStartDate: "2026-06-14",
+            dayIndex,
+            mealType: "lunch",
+            primary: null,
+            extras: [],
+            note: null,
+          },
+          {
+            id: null,
+            weekStartDate: "2026-06-14",
+            dayIndex,
+            mealType: "dinner",
+            primary: null,
+            extras: [],
+            note: null,
+          },
+        ],
+      })),
+    };
+    seedMockMealsBoard(saturdayBoard);
+    seedMockMealsBoard(nextWeekBoard);
+
+    const { result } = renderHook(() => useMoveMealSlot(), {
+      wrapper: createWrapper(),
+    });
+
+    result.current.mutate({
+      sourceWeekStartDate: "2026-06-07",
+      sourceDayIndex: 6,
+      sourceMealType: "dinner",
+      destinationWeekStartDate: "2026-06-14",
+      destinationDayIndex: 0,
+      destinationMealType: "dinner",
+      collisionMode: "replace_primary",
+    });
+
+    await waitFor(() => {
+      expect(result.current.isSuccess).toBe(true);
+    });
+
+    expect(
+      getMockMealsBoard("2026-06-14").days[0].slots[2].primary?.title,
+    ).toBe("Saturday Pasta");
+    expect(getMockMealsBoard("2026-06-07").days[6].slots[2].primary).toBe(null);
+    expect(result.current.data?.data.weekStartDate).toBe("2026-06-14");
+  });
+
+  it("duplicates a Saturday meal into Sunday of the following week", async () => {
+    const saturdayBoard: MealBoard = structuredClone(emptyBoard);
+    saturdayBoard.days[6].slots[2] = {
+      id: "slot-saturday-dinner",
+      weekStartDate: "2026-06-07",
+      dayIndex: 6,
+      mealType: "dinner",
+      primary: {
+        id: "entry-saturday",
+        role: "primary",
+        sourceType: "quick",
+        recipeId: null,
+        title: "Saturday Steak",
+        imageUrl: null,
+        note: null,
+      },
+      extras: [],
+      note: null,
+    };
+    const nextWeekBoard: MealBoard = {
+      weekStartDate: "2026-06-14",
+      days: Array.from({ length: 7 }, (_, dayIndex) => ({
+        date: `2026-06-${String(14 + dayIndex).padStart(2, "0")}`,
+        dayIndex,
+        slots: [
+          {
+            id: null,
+            weekStartDate: "2026-06-14",
+            dayIndex,
+            mealType: "breakfast",
+            primary: null,
+            extras: [],
+            note: null,
+          },
+          {
+            id: null,
+            weekStartDate: "2026-06-14",
+            dayIndex,
+            mealType: "lunch",
+            primary: null,
+            extras: [],
+            note: null,
+          },
+          {
+            id: null,
+            weekStartDate: "2026-06-14",
+            dayIndex,
+            mealType: "dinner",
+            primary: null,
+            extras: [],
+            note: null,
+          },
+        ],
+      })),
+    };
+    seedMockMealsBoard(saturdayBoard);
+    seedMockMealsBoard(nextWeekBoard);
+
+    const { result } = renderHook(() => useDuplicateMealSlot(), {
+      wrapper: createWrapper(),
+    });
+
+    result.current.mutate({
+      sourceWeekStartDate: "2026-06-07",
+      sourceDayIndex: 6,
+      sourceMealType: "dinner",
+      destinationWeekStartDate: "2026-06-14",
+      destinationDayIndex: 0,
+      destinationMealType: "dinner",
+      collisionMode: "replace_primary",
+    });
+
+    await waitFor(() => {
+      expect(result.current.isSuccess).toBe(true);
+    });
+
+    expect(
+      getMockMealsBoard("2026-06-14").days[0].slots[2].primary?.title,
+    ).toBe("Saturday Steak");
+    expect(
+      getMockMealsBoard("2026-06-07").days[6].slots[2].primary?.title,
+    ).toBe("Saturday Steak");
+    expect(result.current.data?.data.weekStartDate).toBe("2026-06-14");
   });
 
   it("keeps optimistic cache assertions alive for meal mutations", async () => {
