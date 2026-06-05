@@ -261,7 +261,7 @@ export function MealEditorSheet({
           if (!open) setPendingCollision(null);
         }}
       >
-        <DialogContent aria-describedby={undefined}>
+        <DialogContent>
           <DialogHeader>
             <DialogTitle>That slot already has a meal</DialogTitle>
             <DialogDescription>

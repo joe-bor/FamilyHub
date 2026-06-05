@@ -54,6 +54,7 @@ describe("MealsView", () => {
 
   beforeEach(() => {
     vi.restoreAllMocks();
+    vi.unstubAllGlobals();
     viewport.isMobile = true;
     mockCurrentWeek();
   });
