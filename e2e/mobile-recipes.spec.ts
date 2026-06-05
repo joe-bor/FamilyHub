@@ -7,6 +7,9 @@ import {
 } from "./helpers/test-helpers";
 
 test.describe("Mobile Recipes", () => {
+  const IMPORTABLE_RECIPE_URL =
+    "https://www.loveandlemons.com/pancakes-recipe/";
+
   test.beforeEach(async ({ page, isMobile }) => {
     test.skip(!isMobile, "Mobile-only tests");
 
@@ -14,10 +17,12 @@ test.describe("Mobile Recipes", () => {
     await clearStorage(page);
   });
 
-  test("creates a recipe, favorites it, filters the library, and keeps URL import in the add flow", async ({
+  test("creates a recipe, favorites it, filters the library, and imports from URL inside the add flow", async ({
     page,
     request,
   }) => {
+    test.setTimeout(60000);
+
     const registration = await registerFamily(request, {
       familyName: "Recipes E2E Family",
       members: [{ name: "Sam", color: "teal" }],
@@ -95,5 +100,16 @@ test.describe("Mobile Recipes", () => {
     await importDialog.getByLabel("Recipe URL").fill("not-a-url");
     await importDialog.getByRole("button", { name: "Import recipe" }).click();
     await expect(importDialog.getByText("Enter a valid URL")).toBeVisible();
+
+    await importDialog.getByLabel("Recipe URL").fill(IMPORTABLE_RECIPE_URL);
+    await importDialog.getByRole("button", { name: "Import recipe" }).click();
+
+    await expect(importDialog).toBeHidden({ timeout: 30000 });
+    await expect(
+      page.getByRole("heading", { name: /pancakes/i }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: "Back to recipes" }),
+    ).toBeVisible();
   });
 });

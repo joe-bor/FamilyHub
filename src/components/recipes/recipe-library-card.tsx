@@ -59,9 +59,9 @@ export function RecipeLibraryCard({
         </div>
 
         <div className="flex flex-wrap gap-2">
-          {recipe.tags.map((tag) => (
+          {recipe.tags.map((tag, index) => (
             <span
-              key={tag}
+              key={`${index}-${tag}`}
               className="rounded-full bg-secondary px-2.5 py-1 text-xs font-medium text-secondary-foreground"
             >
               {tag}
