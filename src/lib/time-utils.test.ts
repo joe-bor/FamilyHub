@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  addWeeksLocal,
   CALENDAR_END_HOUR,
   CALENDAR_START_HOUR,
   compareEventsAllDayFirst,
@@ -13,6 +14,7 @@ import {
   getTimeInMinutes,
   getWeekStartSunday,
   isEventOnDate,
+  isPastWeek,
   parseLocalDate,
   parseTime,
 } from "./time-utils";
@@ -503,6 +505,27 @@ describe("time-utils", () => {
       expect(
         formatLocalDate(getWeekStartSunday(new Date(2026, 5, 7, 18, 45, 0))),
       ).toBe("2026-06-07");
+    });
+  });
+
+  describe("addWeeksLocal", () => {
+    it("navigates weeks without using UTC string conversion", () => {
+      expect(
+        formatLocalDate(addWeeksLocal(parseLocalDate("2026-06-07"), 1)),
+      ).toBe("2026-06-14");
+      expect(
+        formatLocalDate(addWeeksLocal(parseLocalDate("2026-06-07"), -1)),
+      ).toBe("2026-05-31");
+    });
+  });
+
+  describe("isPastWeek", () => {
+    it("treats weeks before the current Sunday as past", () => {
+      const now = new Date(2026, 5, 15, 12, 0, 0);
+
+      expect(isPastWeek("2026-06-07", now)).toBe(true);
+      expect(isPastWeek("2026-06-14", now)).toBe(false);
+      expect(isPastWeek("2026-06-21", now)).toBe(false);
     });
   });
 

@@ -122,6 +122,30 @@ export function getWeekStartSunday(date: Date): Date {
 }
 
 /**
+ * Add whole weeks while preserving local calendar dates.
+ */
+export function addWeeksLocal(date: Date, amount: number): Date {
+  const localDate = startOfDay(date);
+  return new Date(
+    localDate.getFullYear(),
+    localDate.getMonth(),
+    localDate.getDate() + amount * 7,
+  );
+}
+
+/**
+ * Check whether a Sunday week start is before the week containing now.
+ */
+export function isPastWeek(
+  weekStartDate: string,
+  now: Date = new Date(),
+): boolean {
+  return (
+    parseLocalDate(weekStartDate).getTime() < getWeekStartSunday(now).getTime()
+  );
+}
+
+/**
  * Check if an event falls on a given date.
  * Handles both single-day events (exact date match) and multi-day events (date range).
  * Normalizes all dates to midnight to avoid time-of-day comparison bugs.

@@ -9,6 +9,7 @@ import {
   resetMockEvents,
   resetMockFamily,
   resetMockLists,
+  resetMockMeals,
   resetMockRecipes,
   resetMockUsers,
   seedMockChoresBoard,
@@ -16,6 +17,7 @@ import {
   seedMockFamily,
   seedMockListPreferences,
   seedMockLists,
+  seedMockMealsBoard,
   seedMockRecipes,
 } from "./handlers";
 
@@ -65,6 +67,7 @@ export function setupMswServer() {
     resetMockEvents();
     resetMockFamily();
     resetMockLists();
+    resetMockMeals();
     resetMockRecipes();
     resetMockUsers();
   });
@@ -81,6 +84,7 @@ export {
   resetMockEvents,
   resetMockFamily,
   resetMockLists,
+  resetMockMeals,
   resetMockRecipes,
   resetMockUsers,
   seedMockChoresBoard,
@@ -88,5 +92,6 @@ export {
   seedMockFamily,
   seedMockListPreferences,
   seedMockLists,
+  seedMockMealsBoard,
   seedMockRecipes,
 };
