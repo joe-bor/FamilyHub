@@ -1,6 +1,8 @@
 import { useMemo, useState } from "react";
-import { useRecipe, useRecipes } from "@/api";
+import { useRecipe, useRecipes, useUpdateRecipe } from "@/api";
 import { RecipeCreateSheet } from "@/components/recipes/recipe-create-sheet";
+import { RecipeDetailView } from "@/components/recipes/recipe-detail-view";
+import { RecipeEditSheet } from "@/components/recipes/recipe-edit-sheet";
 import {
   RecipeFilterBar,
   type RecipeTagFilterOption,
@@ -44,6 +46,7 @@ export function RecipesView() {
   const { data, error, isLoading, isError, refetch, isRefetching } =
     useRecipes();
   const [isCreateSheetOpen, setIsCreateSheetOpen] = useState(false);
+  const [isEditSheetOpen, setIsEditSheetOpen] = useState(false);
   const [selectedRecipeId, setSelectedRecipeId] = useState<string | null>(null);
   const [searchValue, setSearchValue] = useState("");
   const [favoritesOnly, setFavoritesOnly] = useState(false);
@@ -53,6 +56,7 @@ export function RecipesView() {
   const recipes = data?.data ?? [];
   const searchQuery = normalizeValue(searchValue);
   const selectedRecipeData = selectedRecipe.data?.data ?? null;
+  const updateSelectedRecipe = useUpdateRecipe(selectedRecipeId ?? "none");
 
   const availableTags = useMemo(() => {
     const tagMap = new Map<string, RecipeTagFilterOption>();
@@ -103,25 +107,20 @@ export function RecipesView() {
 
         {selectedRecipeId !== null ? (
           selectedRecipeData ? (
-            <div className="space-y-4 rounded-lg border border-border bg-card p-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setSelectedRecipeId(null)}
-              >
-                Back to recipes
-              </Button>
-              <div className="space-y-1">
-                <h2 className="text-xl font-semibold text-foreground">
-                  {selectedRecipeData.title}
-                </h2>
-                {selectedRecipeData.sourceUrl ? (
-                  <p className="text-sm text-muted-foreground">
-                    {selectedRecipeData.sourceUrl}
-                  </p>
-                ) : null}
-              </div>
-            </div>
+            <RecipeDetailView
+              recipe={selectedRecipeData}
+              isUpdatingFavorite={updateSelectedRecipe.isPending}
+              onBack={() => {
+                setIsEditSheetOpen(false);
+                setSelectedRecipeId(null);
+              }}
+              onEdit={() => setIsEditSheetOpen(true)}
+              onToggleFavorite={() => {
+                updateSelectedRecipe.mutate({
+                  favorite: !selectedRecipeData.favorite,
+                });
+              }}
+            />
           ) : selectedRecipe.isLoading ? (
             <p className="text-sm font-medium text-muted-foreground">
               Loading recipe...
@@ -214,7 +213,10 @@ export function RecipesView() {
               <div className="grid gap-3">
                 {filteredRecipes.map((recipe) => (
                   <div key={recipe.id} className={cn("min-w-0")}>
-                    <RecipeLibraryCard recipe={recipe} />
+                    <RecipeLibraryCard
+                      recipe={recipe}
+                      onSelect={(recipeId) => setSelectedRecipeId(recipeId)}
+                    />
                   </div>
                 ))}
               </div>
@@ -227,6 +229,13 @@ export function RecipesView() {
           onOpenChange={setIsCreateSheetOpen}
           onCreated={setSelectedRecipeId}
         />
+        {selectedRecipeData ? (
+          <RecipeEditSheet
+            recipe={selectedRecipeData}
+            isOpen={isEditSheetOpen}
+            onOpenChange={setIsEditSheetOpen}
+          />
+        ) : null}
       </div>
     </section>
   );
