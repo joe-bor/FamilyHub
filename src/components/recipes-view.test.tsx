@@ -156,7 +156,7 @@ describe("RecipesView", () => {
     expect(screen.getAllByText("dinner").length).toBeGreaterThan(0);
     expect(screen.getAllByText("quick").length).toBeGreaterThan(0);
     expect(
-      screen.getByLabelText(`Favorite recipe: ${testRecipeDetail.title}`),
+      screen.getByLabelText(`${testRecipeDetail.title} is a favorite`),
     ).toBeInTheDocument();
     expect(
       screen.getByText("No photo", { selector: "span" }),
@@ -391,6 +391,52 @@ describe("RecipesView", () => {
     expect(getTitles()).toEqual([
       "Recipe card: Sheet Pan Salmon",
       "Recipe card: Imported Tomato Soup",
+    ]);
+  });
+
+  it("orders the library by most recent activity by default, favorites-first only when searching", async () => {
+    const olderFavorite = {
+      ...testRecipeDetail,
+      id: "00000000-0000-4000-8000-000000000901",
+      title: "Older Favorite",
+      favorite: true,
+      tags: ["weeknight"],
+      updatedAt: "2026-06-01T08:00:00",
+    };
+    const newerPlain = {
+      ...testRecipeDetail,
+      id: "00000000-0000-4000-8000-000000000902",
+      title: "Newer Plain",
+      favorite: false,
+      tags: ["weeknight"],
+      updatedAt: "2026-06-05T08:00:00",
+    };
+    seedMockRecipes([olderFavorite, newerPlain]);
+
+    const { user } = renderWithUser(<RecipesView />);
+
+    const getTitles = () =>
+      screen
+        .getAllByRole("article", { name: /recipe card:/i })
+        .map((card) => card.getAttribute("aria-label"));
+
+    await screen.findByText("Newer Plain");
+
+    // Default browse is recency-first even though the older recipe is favorited.
+    expect(getTitles()).toEqual([
+      "Recipe card: Newer Plain",
+      "Recipe card: Older Favorite",
+    ]);
+
+    await user.type(
+      screen.getByRole("searchbox", { name: "Search recipes" }),
+      "weeknight",
+    );
+
+    // Searching surfaces favorites first.
+    expect(getTitles()).toEqual([
+      "Recipe card: Older Favorite",
+      "Recipe card: Newer Plain",
     ]);
   });
 
@@ -791,7 +837,7 @@ describe("RecipesView", () => {
 
     await user.click(favoriteButton);
 
-    expect(await screen.findByText("Favorite")).toBeInTheDocument();
+    expect(await screen.findByText("Favorited")).toBeInTheDocument();
     expect(updateRecipe).toHaveBeenCalledTimes(1);
     expect(favoriteButton).toHaveAttribute("aria-pressed", "true");
   });

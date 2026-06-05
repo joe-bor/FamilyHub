@@ -27,17 +27,30 @@ const httpUrlSchema = z
 const optionalUrlSchema = optionalTextSchema.pipe(httpUrlSchema.nullable());
 
 function orderedTextArray(maxLength?: number, message?: string) {
-  const schema = z
-    .array(z.string())
-    .optional()
-    .default([])
-    .transform((values) =>
-      values.map((value) => value.trim()).filter((value) => value.length > 0),
-    );
+  const base = z.array(z.string()).optional().default([]);
 
-  return maxLength === undefined
-    ? schema
-    : schema.pipe(z.array(z.string().max(maxLength, message)));
+  // Validate length on the RAW array so a too-long entry reports its error on
+  // the field the user actually typed into. Trimming/filtering blank rows runs
+  // afterward, which would otherwise re-index errors onto the wrong field when
+  // a blank row precedes an invalid one.
+  const validated =
+    maxLength === undefined
+      ? base
+      : base.superRefine((values, ctx) => {
+          values.forEach((value, index) => {
+            if (value.trim().length > maxLength) {
+              ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                message,
+                path: [index],
+              });
+            }
+          });
+        });
+
+  return validated.transform((values) =>
+    values.map((value) => value.trim()).filter((value) => value.length > 0),
+  );
 }
 
 export const recipeFormSchema = z.object({

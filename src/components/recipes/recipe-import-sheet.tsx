@@ -31,7 +31,7 @@ interface RecipeImportSheetProps {
   isOpen: boolean;
   isPending?: boolean;
   errorMessage?: string | null;
-  onBack: () => void;
+  onClose: () => void;
   onSubmit: (url: string) => void;
 }
 
@@ -39,7 +39,7 @@ export function RecipeImportSheet({
   isOpen,
   isPending = false,
   errorMessage = null,
-  onBack,
+  onClose,
   onSubmit,
 }: RecipeImportSheetProps) {
   const form = useForm<RecipeImportFormData>({
@@ -48,7 +48,7 @@ export function RecipeImportSheet({
   });
 
   return (
-    <MobileSheet isOpen={isOpen} onClose={onBack} title="Import Recipe">
+    <MobileSheet isOpen={isOpen} onClose={onClose} title="Import Recipe">
       <form
         className="space-y-6"
         noValidate

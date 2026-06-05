@@ -18,6 +18,8 @@ function toUpdateRequest(recipe: RecipeDetail, request: UpdateRecipeRequest) {
     note: request.note,
     sourceUrl: request.sourceUrl,
     tags: request.tags,
+    // The edit form has no favorite control — favorite is toggled from recipe
+    // detail. Persist the saved recipe's favorite so editing never clears it.
     favorite: recipe.favorite,
   };
 }

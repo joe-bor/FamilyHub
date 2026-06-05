@@ -3,7 +3,7 @@ import { useCreateRecipe, useImportRecipe } from "@/api";
 import { Button } from "@/components/ui/button";
 import { MobileSheet } from "@/components/ui/mobile-sheet";
 import type { RecipeDetailApiResponse } from "@/lib/types";
-import type { RecipeFormData } from "@/lib/validations/recipes";
+import type { RecipeFormInput } from "@/lib/validations/recipes";
 import { RecipeForm, toRecipeRequest } from "./recipe-form";
 import { RecipeImportSheet } from "./recipe-import-sheet";
 
@@ -14,7 +14,7 @@ interface RecipeCreateSheetProps {
   onOpenChange: (open: boolean) => void;
   onCreated: (recipeId: string) => void;
   defaultMode?: AddRecipeMode;
-  defaultValues?: Partial<RecipeFormData>;
+  defaultValues?: Partial<RecipeFormInput>;
   onCancelManual?: () => void;
 }
 
@@ -57,9 +57,8 @@ export function RecipeCreateSheet({
     },
   });
 
-  const goBackToChoices = () => {
-    setMode("choices");
-    setImportError(null);
+  const closeAddFlow = () => {
+    onOpenChange(false);
   };
 
   const closeManual = () => {
@@ -68,7 +67,9 @@ export function RecipeCreateSheet({
       return;
     }
 
-    goBackToChoices();
+    // "Cancel" dismisses the whole add flow to match its label, rather than
+    // quietly stepping back to the choices screen.
+    closeAddFlow();
   };
 
   if (mode === "manual") {
@@ -95,7 +96,7 @@ export function RecipeCreateSheet({
         isOpen={isOpen}
         isPending={importRecipe.isPending}
         errorMessage={importError}
-        onBack={goBackToChoices}
+        onClose={closeAddFlow}
         onSubmit={(url) => {
           setImportError(null);
           importRecipe.mutate(

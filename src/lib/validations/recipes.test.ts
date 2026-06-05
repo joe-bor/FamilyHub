@@ -92,4 +92,30 @@ describe("recipeFormSchema", () => {
 
     expect(toRecipeRequest(formData).instructions).toEqual([longInstruction]);
   });
+
+  it("reports an over-length array error on the original field index, even with a blank row before it", () => {
+    const result = recipeFormSchema.safeParse({
+      title: "Big Recipe",
+      ingredients: ["", "a".repeat(501)],
+      tags: ["", "c".repeat(61)],
+    });
+
+    expect(result.success).toBe(false);
+    if (result.success) return;
+
+    const ingredientIssue = result.error.issues.find(
+      (issue) => issue.path[0] === "ingredients",
+    );
+    const tagIssue = result.error.issues.find(
+      (issue) => issue.path[0] === "tags",
+    );
+
+    // Index 1 is the field the user actually typed the too-long value into.
+    expect(ingredientIssue?.path).toEqual(["ingredients", 1]);
+    expect(ingredientIssue?.message).toBe(
+      "Ingredient must be 500 characters or less",
+    );
+    expect(tagIssue?.path).toEqual(["tags", 1]);
+    expect(tagIssue?.message).toBe("Tag must be 60 characters or less");
+  });
 });
