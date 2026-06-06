@@ -39,6 +39,8 @@ interface MealEditorSheetProps {
   slot: MealSlot | null;
   board: MealBoard | null;
   readOnly: boolean;
+  onReplace?: (slot: MealSlot) => void;
+  onAddExtra?: (slot: MealSlot) => void;
   onOpenChange: (open: boolean) => void;
 }
 
@@ -73,6 +75,8 @@ export function MealEditorSheet({
   slot,
   board,
   readOnly,
+  onReplace,
+  onAddExtra,
   onOpenChange,
 }: MealEditorSheetProps) {
   const [pendingCollision, setPendingCollision] =
@@ -203,6 +207,22 @@ export function MealEditorSheet({
             </div>
 
             <div className="grid gap-2 sm:grid-cols-2">
+              <Button
+                type="button"
+                variant="outline"
+                disabled={actionDisabled}
+                onClick={() => onReplace?.(activeSlot)}
+              >
+                Replace meal
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                disabled={actionDisabled}
+                onClick={() => onAddExtra?.(activeSlot)}
+              >
+                Add extra or side
+              </Button>
               <Button
                 type="button"
                 variant="outline"

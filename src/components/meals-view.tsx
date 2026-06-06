@@ -100,6 +100,18 @@ export function MealsView() {
     }
   }
 
+  function replaceFromEditor(slot: MealSlotSelection) {
+    setEditingSlot(null);
+    setEditingBoard(null);
+    setSelectedSlot({ ...slot, intent: "primary" });
+  }
+
+  function addExtraFromEditor(slot: MealSlotSelection) {
+    setEditingSlot(null);
+    setEditingBoard(null);
+    setSelectedSlot({ ...slot, intent: "extra" });
+  }
+
   return (
     <section className="flex-1 overflow-y-auto p-4 sm:p-6">
       <div className="mx-auto flex max-w-5xl flex-col gap-4">
@@ -179,6 +191,8 @@ export function MealsView() {
         slot={editingSlot}
         board={editingBoard}
         readOnly={readOnly}
+        onReplace={replaceFromEditor}
+        onAddExtra={addExtraFromEditor}
         onOpenChange={(open) => {
           if (!open) {
             setEditingSlot(null);

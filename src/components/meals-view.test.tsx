@@ -342,6 +342,50 @@ describe("MealsView", () => {
     });
   });
 
+  it("invokes replace and add-extra callbacks from the editor", async () => {
+    const board = createOccupiedMealsBoard();
+    seedMockMealsBoard(board);
+    const onReplace = vi.fn();
+    const onAddExtra = vi.fn();
+    const { user } = renderWithUser(
+      <MealEditorSheet
+        isOpen
+        slot={board.days[1].slots[2]}
+        board={board}
+        readOnly={false}
+        onReplace={onReplace}
+        onAddExtra={onAddExtra}
+        onOpenChange={vi.fn()}
+      />,
+    );
+
+    await user.click(screen.getByRole("button", { name: "Replace meal" }));
+    expect(onReplace).toHaveBeenCalledTimes(1);
+
+    await user.click(screen.getByRole("button", { name: "Add extra or side" }));
+    expect(onAddExtra).toHaveBeenCalledTimes(1);
+  });
+
+  it("opens the composer to replace an occupied slot", async () => {
+    seedMockMealsBoard(createOccupiedMealsBoard());
+    const { user } = renderWithUser(<MealsView />);
+
+    await user.click(
+      await screen.findByRole("button", { name: /open dinner: pasta/i }),
+    );
+    await user.click(screen.getByRole("button", { name: "Replace meal" }));
+
+    await user.type(screen.getByLabelText("Meal name"), "Tacos");
+    await user.click(screen.getByRole("button", { name: "Create quick meal" }));
+    await user.click(screen.getByRole("button", { name: "Replace primary" }));
+
+    await waitFor(() => {
+      expect(
+        getMockMealsBoard(testWeekStartDate).days[1].slots[2].primary?.title,
+      ).toBe("Tacos");
+    });
+  });
+
   it("opens the live recipe detail from a recipe-backed planned meal", async () => {
     const board = createRecipeBackedMealsBoard();
     seedMockMealsBoard(board);
