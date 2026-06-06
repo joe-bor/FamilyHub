@@ -1,5 +1,5 @@
 import { HttpResponse, http } from "msw";
-import { parseLocalDate } from "@/lib/time-utils";
+import { formatLocalDate, parseLocalDate } from "@/lib/time-utils";
 import type {
   AddMemberRequest,
   ApiResponse,
@@ -11,6 +11,7 @@ import type {
   CreateChoreTemplateRequest,
   CreateEventRequest,
   CreateRecipeRequest,
+  DuplicateMealSlotRequest,
   FamilyData,
   FamilyMember,
   ListCategory,
@@ -20,6 +21,14 @@ import type {
   ListPreferences,
   LoginRequest,
   LoginResponse,
+  MealBoard,
+  MealCollisionMode,
+  MealDay,
+  MealEntryRequest,
+  MealSlot,
+  MealSlotEntry,
+  MealType,
+  MoveMealSlotRequest,
   RecipeDetail,
   RecipeSummary,
   RegisterRequest,
@@ -30,6 +39,7 @@ import type {
   UpdateFamilyRequest,
   UpdateMemberRequest,
   UpdateRecipeRequest,
+  UpsertMealSlotRequest,
   UsernameCheckResponse,
 } from "@/lib/types";
 
@@ -55,8 +65,11 @@ let mockUsers: MockUser[] = [];
 let mockLists: ListDetail[] = [];
 let mockListPreferences: ListPreferences = { showCompletedByDefault: true };
 let mockRecipes: RecipeDetail[] = [];
+let mockMealsBoards: Record<string, MealBoard> = {};
 let mockIdCounter = 1000;
 let mockRecipeIdCounter = 1000;
+let mockMealSlotIdCounter = 1000;
+let mockMealEntryIdCounter = 1000;
 const MOCK_TIMESTAMP = "2026-05-06T09:00:00";
 const MOCK_RECIPE_TIMESTAMP = "2026-06-04T09:00:00";
 const MOCK_IMPORTED_RECIPE: RecipeDetail = {
@@ -271,6 +284,29 @@ export function seedMockRecipes(recipes: RecipeDetail[]): void {
   mockRecipes = recipes.map((recipe) => structuredClone(recipe));
 }
 
+/**
+ * Reset mock meals data between tests.
+ */
+export function resetMockMeals(): void {
+  mockMealsBoards = {};
+  mockMealSlotIdCounter = 1000;
+  mockMealEntryIdCounter = 1000;
+}
+
+/**
+ * Seed one mock meals board for testing.
+ */
+export function seedMockMealsBoard(board: MealBoard): void {
+  mockMealsBoards[board.weekStartDate] = structuredClone(board);
+}
+
+/**
+ * Read one mock meals board for assertions.
+ */
+export function getMockMealsBoard(weekStartDate: string): MealBoard {
+  return structuredClone(getMealsBoard(weekStartDate));
+}
+
 function createMockId(): string {
   mockIdCounter += 1;
   return `00000000-0000-4000-8000-${String(mockIdCounter).padStart(12, "0")}`;
@@ -279,6 +315,16 @@ function createMockId(): string {
 function createMockRecipeId(): string {
   mockRecipeIdCounter += 1;
   return `00000000-0000-4000-8000-${String(mockRecipeIdCounter).padStart(12, "0")}`;
+}
+
+function createMockMealSlotId(): string {
+  mockMealSlotIdCounter += 1;
+  return `00000000-0000-4000-8000-${String(mockMealSlotIdCounter).padStart(12, "0")}`;
+}
+
+function createMockMealEntryId(): string {
+  mockMealEntryIdCounter += 1;
+  return `00000000-0000-4000-8000-${String(mockMealEntryIdCounter).padStart(12, "0")}`;
 }
 
 function isPrivateIpv4(hostname: string): boolean {
@@ -451,6 +497,194 @@ function toRecipeSummary(recipe: RecipeDetail): RecipeSummary {
   };
 }
 
+const MEAL_TYPES: MealType[] = ["breakfast", "lunch", "dinner"];
+
+function createEmptyMealSlot(
+  weekStartDate: string,
+  dayIndex: number,
+  mealType: MealType,
+): MealSlot {
+  return {
+    id: null,
+    weekStartDate,
+    dayIndex,
+    mealType,
+    primary: null,
+    extras: [],
+    note: null,
+  };
+}
+
+function createEmptyMealDay(weekStartDate: string, dayIndex: number): MealDay {
+  const date = parseLocalDate(weekStartDate);
+  date.setDate(date.getDate() + dayIndex);
+
+  return {
+    date: formatLocalDate(date),
+    dayIndex,
+    slots: MEAL_TYPES.map((mealType) =>
+      createEmptyMealSlot(weekStartDate, dayIndex, mealType),
+    ),
+  };
+}
+
+function createEmptyMealsBoard(weekStartDate: string): MealBoard {
+  return {
+    weekStartDate,
+    days: Array.from({ length: 7 }, (_, dayIndex) =>
+      createEmptyMealDay(weekStartDate, dayIndex),
+    ),
+  };
+}
+
+function getMealsBoard(weekStartDate: string): MealBoard {
+  if (!mockMealsBoards[weekStartDate]) {
+    mockMealsBoards[weekStartDate] = createEmptyMealsBoard(weekStartDate);
+  }
+
+  return mockMealsBoards[weekStartDate];
+}
+
+function findMealSlot(
+  board: MealBoard,
+  dayIndex: number,
+  mealType: MealType,
+): MealSlot {
+  const day = board.days[dayIndex];
+  if (!day) {
+    throw new Error(
+      `No day at index ${dayIndex} in board ${board.weekStartDate}`,
+    );
+  }
+  const slot = day.slots.find((s) => s.mealType === mealType);
+  if (!slot) {
+    throw new Error(
+      `No ${mealType} slot on day ${dayIndex} in board ${board.weekStartDate}`,
+    );
+  }
+  return slot;
+}
+
+function setMealSlot(board: MealBoard, updatedSlot: MealSlot): void {
+  const day = board.days[updatedSlot.dayIndex];
+  day.slots = day.slots.map((slot) =>
+    slot.mealType === updatedSlot.mealType ? updatedSlot : slot,
+  );
+}
+
+function cloneMealEntry(entry: MealSlotEntry, role: MealSlotEntry["role"]) {
+  return {
+    ...structuredClone(entry),
+    id: createMockMealEntryId(),
+    role,
+  };
+}
+
+function snapshotMealEntry(
+  request: MealEntryRequest,
+  role: MealSlotEntry["role"],
+): MealSlotEntry | HttpResponse {
+  if (request.sourceType === "recipe") {
+    const recipe = mockRecipes.find(
+      (candidate) => candidate.id === request.recipeId,
+    );
+    if (!recipe) {
+      return HttpResponse.json(
+        { message: `Recipe with id "${request.recipeId}" not found` },
+        { status: 404 },
+      );
+    }
+
+    return {
+      id: createMockMealEntryId(),
+      role,
+      sourceType: "recipe",
+      recipeId: recipe.id,
+      title: recipe.title,
+      imageUrl: recipe.imageUrl,
+      note: recipe.note,
+    };
+  }
+
+  const title = request.title?.trim() ?? "";
+  if (!title) {
+    return HttpResponse.json(
+      { message: "Quick meal title is required" },
+      { status: 400 },
+    );
+  }
+
+  return {
+    id: createMockMealEntryId(),
+    role,
+    sourceType: "quick",
+    recipeId: null,
+    title,
+    imageUrl: request.imageUrl ?? null,
+    note: request.note ?? null,
+  };
+}
+
+function clearMealSlot(slot: MealSlot): MealSlot {
+  return {
+    ...slot,
+    primary: null,
+    extras: [],
+    note: null,
+  };
+}
+
+function resolveMealSlotPlacement(
+  slot: MealSlot,
+  primary: MealSlotEntry,
+  extras: MealSlotEntry[],
+  note: string | null,
+  collisionMode: MealCollisionMode | null,
+): MealSlot | HttpResponse {
+  const id = slot.id ?? createMockMealSlotId();
+
+  if (slot.primary && collisionMode === null) {
+    return HttpResponse.json(
+      { message: "Meal slot already has a primary meal" },
+      { status: 409 },
+    );
+  }
+
+  if (slot.primary && collisionMode === "add_as_extra") {
+    return {
+      ...slot,
+      id,
+      extras: [...slot.extras, { ...primary, role: "extra" }, ...extras],
+      note,
+    };
+  }
+
+  return {
+    ...slot,
+    id,
+    primary: { ...primary, role: "primary" },
+    extras,
+    note,
+  };
+}
+
+function snapshotRequestedEntries(
+  primaryRequest: MealEntryRequest,
+  extraRequests: MealEntryRequest[] = [],
+): { primary: MealSlotEntry; extras: MealSlotEntry[] } | HttpResponse {
+  const primary = snapshotMealEntry(primaryRequest, "primary");
+  if (primary instanceof HttpResponse) return primary;
+
+  const extras: MealSlotEntry[] = [];
+  for (const extraRequest of extraRequests) {
+    const extra = snapshotMealEntry(extraRequest, "extra");
+    if (extra instanceof HttpResponse) return extra;
+    extras.push(extra);
+  }
+
+  return { primary, extras };
+}
+
 function createApiResponse<T>(data: T, message?: string): ApiResponse<T> {
   return message ? { data, message } : { data };
 }
@@ -484,6 +718,151 @@ export const API_BASE = "http://localhost:3000/api";
  * ```
  */
 export const handlers = [
+  // ============================================================================
+  // Meals API Handlers
+  // ============================================================================
+
+  // GET /meals/board - Week board
+  http.get(`${API_BASE}/meals/board`, ({ request }) => {
+    const url = new URL(request.url);
+    const weekStartDate = url.searchParams.get("weekStartDate");
+    if (!weekStartDate) {
+      return HttpResponse.json(
+        { message: "weekStartDate is required" },
+        { status: 400 },
+      );
+    }
+
+    return HttpResponse.json(createApiResponse(getMealsBoard(weekStartDate)));
+  }),
+
+  // PUT /meals/slots - Create or update one slot
+  http.put(`${API_BASE}/meals/slots`, async ({ request }) => {
+    const body = (await request.json()) as UpsertMealSlotRequest;
+    const board = getMealsBoard(body.weekStartDate);
+    const slot = findMealSlot(board, body.dayIndex, body.mealType);
+    const entries = snapshotRequestedEntries(body.primary, body.extras);
+    if (entries instanceof HttpResponse) return entries;
+
+    const updatedSlot = resolveMealSlotPlacement(
+      slot,
+      entries.primary,
+      entries.extras,
+      body.note ?? null,
+      body.collisionMode,
+    );
+    if (updatedSlot instanceof HttpResponse) return updatedSlot;
+
+    setMealSlot(board, updatedSlot);
+
+    return HttpResponse.json(
+      createApiResponse(updatedSlot, "Meal slot updated successfully"),
+    );
+  }),
+
+  // POST /meals/slots/move - Move a planned meal block
+  http.post(`${API_BASE}/meals/slots/move`, async ({ request }) => {
+    const body = (await request.json()) as MoveMealSlotRequest;
+    const sourceBoard = getMealsBoard(body.sourceWeekStartDate);
+    const destinationBoard = getMealsBoard(body.destinationWeekStartDate);
+    const sourceSlot = findMealSlot(
+      sourceBoard,
+      body.sourceDayIndex,
+      body.sourceMealType,
+    );
+    const destinationSlot = findMealSlot(
+      destinationBoard,
+      body.destinationDayIndex,
+      body.destinationMealType,
+    );
+
+    if (!sourceSlot.primary) {
+      return HttpResponse.json(
+        { message: "Source meal slot is empty" },
+        { status: 404 },
+      );
+    }
+
+    const updatedDestination = resolveMealSlotPlacement(
+      destinationSlot,
+      cloneMealEntry(sourceSlot.primary, "primary"),
+      sourceSlot.extras.map((extra) => cloneMealEntry(extra, "extra")),
+      sourceSlot.note,
+      body.collisionMode,
+    );
+    if (updatedDestination instanceof HttpResponse) return updatedDestination;
+
+    setMealSlot(destinationBoard, updatedDestination);
+    setMealSlot(sourceBoard, clearMealSlot(sourceSlot));
+
+    return HttpResponse.json(
+      createApiResponse(destinationBoard, "Meal slot moved successfully"),
+    );
+  }),
+
+  // POST /meals/slots/duplicate - Duplicate a planned meal block
+  http.post(`${API_BASE}/meals/slots/duplicate`, async ({ request }) => {
+    const body = (await request.json()) as DuplicateMealSlotRequest;
+    const sourceBoard = getMealsBoard(body.sourceWeekStartDate);
+    const destinationBoard = getMealsBoard(body.destinationWeekStartDate);
+    const sourceSlot = findMealSlot(
+      sourceBoard,
+      body.sourceDayIndex,
+      body.sourceMealType,
+    );
+    const destinationSlot = findMealSlot(
+      destinationBoard,
+      body.destinationDayIndex,
+      body.destinationMealType,
+    );
+
+    if (!sourceSlot.primary) {
+      return HttpResponse.json(
+        { message: "Source meal slot is empty" },
+        { status: 404 },
+      );
+    }
+
+    const updatedDestination = resolveMealSlotPlacement(
+      destinationSlot,
+      cloneMealEntry(sourceSlot.primary, "primary"),
+      sourceSlot.extras.map((extra) => cloneMealEntry(extra, "extra")),
+      sourceSlot.note,
+      body.collisionMode,
+    );
+    if (updatedDestination instanceof HttpResponse) return updatedDestination;
+
+    setMealSlot(destinationBoard, updatedDestination);
+
+    return HttpResponse.json(
+      createApiResponse(destinationBoard, "Meal slot duplicated successfully"),
+    );
+  }),
+
+  // DELETE /meals/slots - Remove one planned slot
+  http.delete(`${API_BASE}/meals/slots`, ({ request }) => {
+    const url = new URL(request.url);
+    const weekStartDate = url.searchParams.get("weekStartDate");
+    const dayIndexStr = url.searchParams.get("dayIndex");
+    const mealType = url.searchParams.get("mealType") as MealType | null;
+
+    if (!weekStartDate || !dayIndexStr || !mealType) {
+      return HttpResponse.json(
+        { message: "weekStartDate, dayIndex, and mealType are required" },
+        { status: 400 },
+      );
+    }
+
+    const dayIndex = parseInt(dayIndexStr, 10);
+    const board = getMealsBoard(weekStartDate);
+    const slot = findMealSlot(board, dayIndex, mealType);
+    setMealSlot(board, clearMealSlot(slot));
+
+    return HttpResponse.json(
+      createApiResponse(board, "Meal slot removed successfully"),
+    );
+  }),
+
   // ============================================================================
   // Recipes API Handlers
   // ============================================================================

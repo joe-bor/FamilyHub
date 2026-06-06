@@ -19,6 +19,7 @@ export {
   googleCalendarKeys,
   isStaleChorePeriodError,
   listsKeys,
+  mealsKeys,
   readFamilyFromStorage,
   recipesKeys,
   setStoredToken,
@@ -40,6 +41,7 @@ export {
   useDeleteInstance,
   useDeleteListItem,
   useDisconnectGoogle,
+  useDuplicateMealSlot,
   useFamily,
   useFamilyData,
   useFamilyLoading,
@@ -55,9 +57,12 @@ export {
   useLists,
   useLogin,
   useLogout,
+  useMealsBoard,
+  useMoveMealSlot,
   useRecipe,
   useRecipes,
   useRegister,
+  useRemoveMealSlot,
   useRemoveMember,
   useSetupComplete,
   useSyncGoogleCalendar,
@@ -73,6 +78,7 @@ export {
   useUpdateListPreferences,
   useUpdateMember,
   useUpdateRecipe,
+  useUpsertMealSlot,
 } from "./hooks";
 // Services
 export {
@@ -82,5 +88,6 @@ export {
   familyService,
   googleCalendarService,
   listsService,
+  mealsService,
   recipesService,
 } from "./services";

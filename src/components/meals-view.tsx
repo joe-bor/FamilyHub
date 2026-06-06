@@ -1,137 +1,205 @@
-import { ChevronLeft, ChevronRight, Coffee, Moon, Sun } from "lucide-react";
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { generateSampleMeals } from "@/lib/calendar-data";
-import type { MealPlan } from "@/lib/types";
-import { cn } from "@/lib/utils";
+import { useEffect, useMemo, useState } from "react";
+import { useMealsBoard, useRecipes } from "@/api";
+import {
+  MealComposerSheet,
+  type MealSlotSelection,
+} from "@/components/meals/meal-composer-sheet";
+import { MealDayCard } from "@/components/meals/meal-day-card";
+import { MealEditorSheet } from "@/components/meals/meal-editor-sheet";
+import { MealGrid } from "@/components/meals/meal-grid";
+import { WeekHeader } from "@/components/meals/week-header";
+import { useMediaQuery } from "@/hooks";
+import {
+  formatLocalDate,
+  getWeekStartSunday,
+  isPastWeek,
+} from "@/lib/time-utils";
+import type { MealBoard } from "@/lib/types";
+import type { MealPlacementDraft } from "@/stores";
+import { useAppStore } from "@/stores";
 
 export function MealsView() {
-  const [meals] = useState<MealPlan[]>(generateSampleMeals());
-  const [selectedDay, setSelectedDay] = useState(0);
+  const [visibleWeekStartDate, setVisibleWeekStartDate] = useState(() =>
+    formatLocalDate(getWeekStartSunday(new Date())),
+  );
+  const [selectedSlot, setSelectedSlot] = useState<MealSlotSelection | null>(
+    null,
+  );
+  const [editingSlot, setEditingSlot] = useState<MealSlotSelection | null>(
+    null,
+  );
+  const [editingBoard, setEditingBoard] = useState<MealBoard | null>(null);
+  const [placementDraft, setPlacementDraft] =
+    useState<MealPlacementDraft | null>(null);
+  const board = useMealsBoard(visibleWeekStartDate);
+  const recipes = useRecipes();
+  const pendingPlacementDraft = useAppStore(
+    (state) => state.mealPlacementDraft,
+  );
+  const consumeMealPlacementDraft = useAppStore(
+    (state) => state.consumeMealPlacementDraft,
+  );
+  const readOnly = isPastWeek(visibleWeekStartDate);
+  const showGrid = useMediaQuery("(min-width: 1024px)");
 
-  const formatDayName = (date: Date) => {
-    return date.toLocaleDateString("en-US", { weekday: "short" });
-  };
+  useEffect(() => {
+    if (!pendingPlacementDraft) return;
 
-  const formatDayNumber = (date: Date) => {
-    return date.getDate();
-  };
+    setVisibleWeekStartDate(pendingPlacementDraft.requestedAtWeekStartDate);
+    setPlacementDraft(pendingPlacementDraft);
+    consumeMealPlacementDraft();
+  }, [consumeMealPlacementDraft, pendingPlacementDraft]);
 
-  const today = new Date();
+  useEffect(() => {
+    if (!placementDraft || placementDraft.source.kind !== "meals-slot") return;
+    const source = placementDraft.source;
+    const day = board.data?.data.days[source.dayIndex];
+    const slot = day?.slots.find(
+      (candidate) => candidate.mealType === source.mealType,
+    );
+    if (!slot) return;
 
-  const isToday = (date: Date) => {
-    return date.toDateString() === today.toDateString();
-  };
+    setSelectedSlot({
+      ...slot,
+      seededRecipeId: placementDraft.recipeId,
+    });
+    setPlacementDraft(null);
+  }, [board.data?.data.days, placementDraft]);
+
+  const placementRecipe = useMemo(() => {
+    if (!placementDraft) return null;
+    return (
+      recipes.data?.data.find(
+        (recipe) => recipe.id === placementDraft.recipeId,
+      ) ?? null
+    );
+  }, [placementDraft, recipes.data?.data]);
+
+  const pendingRecipeId =
+    placementDraft?.source.kind === "recipes-library"
+      ? placementDraft.recipeId
+      : null;
+
+  function selectSlot(slot: MealSlotSelection) {
+    if (slot.primary && !pendingRecipeId) {
+      setEditingSlot(slot);
+      setEditingBoard(board.data?.data ?? null);
+      return;
+    }
+
+    setSelectedSlot(
+      pendingRecipeId
+        ? {
+            ...slot,
+            seededRecipeId: pendingRecipeId,
+          }
+        : slot,
+    );
+    if (pendingRecipeId) {
+      setPlacementDraft(null);
+    }
+  }
+
+  function replaceFromEditor(slot: MealSlotSelection) {
+    setEditingSlot(null);
+    setEditingBoard(null);
+    setSelectedSlot({ ...slot, intent: "primary" });
+  }
+
+  function addExtraFromEditor(slot: MealSlotSelection) {
+    setEditingSlot(null);
+    setEditingBoard(null);
+    setSelectedSlot({ ...slot, intent: "extra" });
+  }
 
   return (
-    <div className="flex-1 overflow-y-auto p-4 sm:p-6">
-      <div className="max-w-3xl mx-auto">
-        {/* Week selector */}
-        <div className="mb-6 flex items-center justify-between gap-3">
-          <h2 className="text-[24px] leading-8 font-semibold text-foreground">
-            Meal Planning
-          </h2>
-          <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon-sm">
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-            <span className="text-sm leading-5 font-medium text-muted-foreground">
-              This Week
-            </span>
-            <Button variant="ghost" size="icon-sm">
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
+    <section className="flex-1 overflow-y-auto p-4 sm:p-6">
+      <div className="mx-auto flex max-w-5xl flex-col gap-4">
+        <WeekHeader
+          weekStartDate={visibleWeekStartDate}
+          readOnly={readOnly}
+          onWeekChange={(weekStartDate) => {
+            setVisibleWeekStartDate(weekStartDate);
+            setSelectedSlot(null);
+            setEditingSlot(null);
+            setEditingBoard(null);
+          }}
+        />
 
-        {/* Day tabs */}
-        <div className="mb-6 flex gap-2 overflow-x-auto pb-2">
-          {meals.map((meal, index) => (
-            <button
-              key={meal.id}
-              onClick={() => setSelectedDay(index)}
-              className={cn(
-                "flex min-w-[68px] flex-col items-center rounded-xl px-4 py-3 transition-all",
-                selectedDay === index
-                  ? "bg-primary text-primary-foreground"
-                  : isToday(meal.date)
-                    ? "bg-primary/10 text-primary"
-                    : "bg-card text-muted-foreground hover:bg-muted",
-              )}
-            >
-              <span className="text-xs font-semibold">
-                {formatDayName(meal.date)}
-              </span>
-              <span className="mt-1 text-lg font-semibold">
-                {formatDayNumber(meal.date)}
-              </span>
-            </button>
-          ))}
-        </div>
-
-        {/* Meals for selected day */}
-        <div className="space-y-4">
-          {/* Breakfast */}
-          <div className="rounded-2xl bg-card p-4 shadow-sm">
-            <div className="mb-3 flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-yellow-100">
-                <Coffee className="h-5 w-5 text-yellow-600" />
-              </div>
-              <div>
-                <h3 className="text-base leading-6 font-semibold text-foreground">
-                  Breakfast
-                </h3>
-                <p className="text-xs text-muted-foreground">Morning meal</p>
-              </div>
-            </div>
-            <div className="rounded-xl bg-yellow-50 p-4">
-              <p className="text-[15px] leading-5 font-medium text-foreground">
-                {meals[selectedDay]?.breakfast || "No meal planned"}
-              </p>
-            </div>
+        {placementRecipe ? (
+          <div className="rounded-lg border border-primary/30 bg-primary/5 p-3 text-sm font-medium text-primary">
+            Choose a meal slot for {placementRecipe.title}
           </div>
+        ) : null}
 
-          {/* Lunch */}
-          <div className="rounded-2xl bg-card p-4 shadow-sm">
-            <div className="mb-3 flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-orange-100">
-                <Sun className="h-5 w-5 text-orange-600" />
-              </div>
-              <div>
-                <h3 className="text-base leading-6 font-semibold text-foreground">
-                  Lunch
-                </h3>
-                <p className="text-xs text-muted-foreground">Midday meal</p>
-              </div>
-            </div>
-            <div className="rounded-xl bg-orange-50 p-4">
-              <p className="text-[15px] leading-5 font-medium text-foreground">
-                {meals[selectedDay]?.lunch || "No meal planned"}
-              </p>
-            </div>
-          </div>
+        {board.isLoading ? (
+          <p className="text-sm font-medium text-muted-foreground">
+            Loading meals...
+          </p>
+        ) : null}
 
-          {/* Dinner */}
-          <div className="rounded-2xl bg-card p-4 shadow-sm">
-            <div className="mb-3 flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-indigo-100">
-                <Moon className="h-5 w-5 text-indigo-600" />
-              </div>
-              <div>
-                <h3 className="text-base leading-6 font-semibold text-foreground">
-                  Dinner
-                </h3>
-                <p className="text-xs text-muted-foreground">Evening meal</p>
-              </div>
-            </div>
-            <div className="rounded-xl bg-indigo-50 p-4">
-              <p className="text-[15px] leading-5 font-medium text-foreground">
-                {meals[selectedDay]?.dinner || "No meal planned"}
-              </p>
-            </div>
+        {board.isError ? (
+          <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-4">
+            <h2 className="text-base font-semibold text-foreground">
+              Meals could not be loaded
+            </h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              {board.error instanceof Error
+                ? board.error.message
+                : "Try again in a moment."}
+            </p>
           </div>
-        </div>
+        ) : null}
+
+        {board.data?.data && !showGrid ? (
+          <div className="space-y-4">
+            {board.data.data.days.map((day) => (
+              <MealDayCard
+                key={day.date}
+                day={day}
+                readOnly={readOnly}
+                pendingRecipeId={pendingRecipeId}
+                onSelectSlot={selectSlot}
+              />
+            ))}
+          </div>
+        ) : null}
+
+        {board.data?.data && showGrid ? (
+          <MealGrid
+            board={board.data.data}
+            readOnly={readOnly}
+            pendingRecipeId={pendingRecipeId}
+            onSelectSlot={selectSlot}
+          />
+        ) : null}
       </div>
-    </div>
+
+      <MealComposerSheet
+        isOpen={selectedSlot !== null}
+        slot={selectedSlot}
+        readOnly={readOnly}
+        onOpenChange={(open) => {
+          if (!open) {
+            setSelectedSlot(null);
+          }
+        }}
+      />
+
+      <MealEditorSheet
+        isOpen={editingSlot !== null}
+        slot={editingSlot}
+        board={editingBoard}
+        readOnly={readOnly}
+        onReplace={replaceFromEditor}
+        onAddExtra={addExtraFromEditor}
+        onOpenChange={(open) => {
+          if (!open) {
+            setEditingSlot(null);
+            setEditingBoard(null);
+          }
+        }}
+      />
+    </section>
   );
 }

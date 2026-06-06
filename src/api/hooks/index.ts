@@ -74,6 +74,15 @@ export {
 } from "./use-lists";
 
 export {
+  mealsKeys,
+  useDuplicateMealSlot,
+  useMealsBoard,
+  useMoveMealSlot,
+  useRemoveMealSlot,
+  useUpsertMealSlot,
+} from "./use-meals";
+
+export {
   recipesKeys,
   useCreateRecipe,
   useImportRecipe,
