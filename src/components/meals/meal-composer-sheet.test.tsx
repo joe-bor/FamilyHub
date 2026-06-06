@@ -142,6 +142,27 @@ describe("MealComposerSheet", () => {
     expect(screen.getByRole("button", { name: "Cancel" })).toBeInTheDocument();
   });
 
+  it("adds a quick meal as an extra without a collision prompt in extra intent", async () => {
+    const occupiedDinner = {
+      ...createOccupiedMealsBoard().days[1].slots[2],
+      intent: "extra" as const,
+    };
+    const onOpenChange = vi.fn();
+    const { user } = renderComposer(occupiedDinner, onOpenChange);
+
+    expect(screen.getByText("Add a side")).toBeInTheDocument();
+
+    await user.type(screen.getByLabelText("Meal name"), "Garlic Bread");
+    await user.click(screen.getByRole("button", { name: "Add side" }));
+
+    await waitFor(() => {
+      expect(onOpenChange).toHaveBeenCalledWith(false);
+    });
+    expect(
+      screen.queryByText("That slot already has a meal"),
+    ).not.toBeInTheDocument();
+  });
+
   it("places a selected saved recipe into an empty slot", async () => {
     const lunchSlot = createEmptyMealSlot(testWeekStartDate, 3, "lunch");
     const onOpenChange = vi.fn();

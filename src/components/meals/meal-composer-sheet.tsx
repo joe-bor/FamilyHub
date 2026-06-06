@@ -22,6 +22,7 @@ import { RecipeMatchList } from "./recipe-match-list";
 
 export type MealSlotSelection = MealSlot & {
   seededRecipeId?: string | null;
+  intent?: "primary" | "extra";
 };
 
 interface MealComposerSheetProps {
@@ -111,11 +112,18 @@ export function MealComposerSheet({
   if (!slot) return null;
 
   const activeSlot = slot;
-  const title = `Plan ${formatMealType(activeSlot.mealType)}`;
+  const isExtraIntent = activeSlot.intent === "extra";
+  const title = isExtraIntent
+    ? "Add a side"
+    : `Plan ${formatMealType(activeSlot.mealType)}`;
   const trimmedMealName = mealName.trim();
   const seededRecipeId = activeSlot.seededRecipeId ?? null;
 
   function submitRequest(request: UpsertMealSlotRequest) {
+    if (isExtraIntent) {
+      upsertSlot.mutate({ ...request, collisionMode: "add_as_extra" });
+      return;
+    }
     if (activeSlot.primary && request.collisionMode === null) {
       setCollisionRequest(request);
       return;
@@ -212,7 +220,7 @@ export function MealComposerSheet({
                 disabled={upsertSlot.isPending}
                 onClick={handleSeededRecipe}
               >
-                Add recipe to slot
+                {isExtraIntent ? "Add recipe as side" : "Add recipe to slot"}
               </Button>
             ) : null}
 
@@ -256,7 +264,7 @@ export function MealComposerSheet({
                 disabled={!trimmedMealName || upsertSlot.isPending}
                 onClick={handleCreateQuickMeal}
               >
-                Create quick meal
+                {isExtraIntent ? "Add side" : "Create quick meal"}
               </Button>
               <Button
                 type="button"
