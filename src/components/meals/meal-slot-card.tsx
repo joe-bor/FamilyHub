@@ -57,6 +57,11 @@ export function MealSlotCard({
                 {slot.primary.note}
               </p>
             ) : null}
+            {slot.note ? (
+              <p className="mt-1 line-clamp-2 text-xs italic text-muted-foreground">
+                {slot.note}
+              </p>
+            ) : null}
           </div>
         </div>
         {slot.extras.length > 0 ? (

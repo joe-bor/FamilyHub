@@ -342,6 +342,30 @@ describe("MealsView", () => {
     });
   });
 
+  it("edits the slot note from the editor", async () => {
+    const board = createOccupiedMealsBoard();
+    seedMockMealsBoard(board);
+    const { user } = renderWithUser(
+      <MealEditorSheet
+        isOpen
+        slot={board.days[1].slots[2]}
+        board={board}
+        readOnly={false}
+        onOpenChange={vi.fn()}
+      />,
+    );
+
+    await user.click(screen.getByRole("button", { name: "Add meal note" }));
+    await user.type(screen.getByLabelText("Meal note"), "Family favorite");
+    await user.click(screen.getByRole("button", { name: "Save note" }));
+
+    await waitFor(() => {
+      expect(getMockMealsBoard(testWeekStartDate).days[1].slots[2].note).toBe(
+        "Family favorite",
+      );
+    });
+  });
+
   it("removes an extra from the editor", async () => {
     const board = createOccupiedMealsBoard();
     seedMockMealsBoard(board);

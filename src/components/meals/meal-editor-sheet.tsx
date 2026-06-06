@@ -122,8 +122,12 @@ export function MealEditorSheet({
   const [workingExtras, setWorkingExtras] = useState<MealSlotEntry[]>(
     slot?.extras ?? [],
   );
+  const [isEditingNote, setIsEditingNote] = useState(false);
+  const [noteDraft, setNoteDraft] = useState(slot?.note ?? "");
   useEffect(() => {
     setWorkingExtras(slot?.extras ?? []);
+    setNoteDraft(slot?.note ?? "");
+    setIsEditingNote(false);
   }, [slot]);
   const upsertSlot = useUpsertMealSlot({
     onError: () => setWorkingExtras(slot?.extras ?? []),
@@ -168,6 +172,12 @@ export function MealEditorSheet({
     const nextExtras = workingExtras.filter((extra) => extra.id !== extraId);
     setWorkingExtras(nextExtras);
     saveComposition(nextExtras, activeSlot.note);
+  }
+
+  function handleSaveNote() {
+    const nextNote = noteDraft.trim() || null;
+    setIsEditingNote(false);
+    saveComposition(workingExtras, nextNote);
   }
 
   function baseMoveRequest(
@@ -277,6 +287,65 @@ export function MealEditorSheet({
                   ))}
                 </div>
               ) : null}
+              {readOnly ? (
+                activeSlot.note ? (
+                  <p className="mt-3 text-sm text-muted-foreground">
+                    {activeSlot.note}
+                  </p>
+                ) : null
+              ) : isEditingNote ? (
+                <div className="mt-3 space-y-2">
+                  <label className="block space-y-1">
+                    <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                      Meal note
+                    </span>
+                    <textarea
+                      aria-label="Meal note"
+                      value={noteDraft}
+                      onChange={(event) => setNoteDraft(event.target.value)}
+                      className="min-h-16 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
+                    />
+                  </label>
+                  <div className="flex gap-2">
+                    <Button
+                      type="button"
+                      size="sm"
+                      disabled={actionDisabled}
+                      onClick={handleSaveNote}
+                    >
+                      Save note
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => {
+                        setNoteDraft(activeSlot.note ?? "");
+                        setIsEditingNote(false);
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div className="mt-3">
+                  {activeSlot.note ? (
+                    <p className="text-sm text-muted-foreground">
+                      {activeSlot.note}
+                    </p>
+                  ) : null}
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="ghost"
+                    className="mt-1 px-0"
+                    onClick={() => setIsEditingNote(true)}
+                  >
+                    {activeSlot.note ? "Edit meal note" : "Add meal note"}
+                  </Button>
+                </div>
+              )}
             </div>
 
             <div className="grid gap-2 sm:grid-cols-2">
