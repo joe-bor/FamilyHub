@@ -379,6 +379,101 @@ describe("useLists", () => {
     });
   });
 
+  it("preserves a created item when a concurrent list-setting PATCH resolves last", async () => {
+    seedMockLists([groceryList]);
+    queryClient.setQueryData(listsKeys.detail(groceryList.id), {
+      data: groceryList,
+    } satisfies ApiResponse<ListDetail>);
+
+    const createCanFinish = createDeferred();
+    const patchCanFinish = createDeferred();
+    const serverItem: ListItem = {
+      id: "00000000-0000-4000-8000-000000009002",
+      text: "Milk",
+      completed: false,
+      completedAt: null,
+      categoryId: null,
+      createdAt: "2026-05-06T09:30:00",
+      updatedAt: "2026-05-06T09:30:00",
+    };
+
+    server.use(
+      // Hold the create response open so it is in flight when the PATCH fires.
+      http.post(`${API_BASE}/lists/:id/items`, async () => {
+        await createCanFinish.promise;
+        return HttpResponse.json(
+          { data: serverItem, message: "List item created successfully" },
+          { status: 201 },
+        );
+      }),
+      // The list-level PATCH returns a STALE detail (no items) — simulating the
+      // server handling the setting change before the in-flight create landed.
+      http.patch(`${API_BASE}/lists/:id`, async () => {
+        await patchCanFinish.promise;
+        return HttpResponse.json({
+          data: {
+            ...groceryList,
+            categoryDisplayMode: "flat",
+            showCompletedOverride: null,
+            items: [],
+          },
+          message: "List updated successfully",
+        } satisfies ApiResponse<ListDetail>);
+      }),
+    );
+
+    const { result: createItem } = renderHook(
+      () => useCreateListItem(groceryList.id),
+      { wrapper: createWrapper() },
+    );
+    const { result: updateList } = renderHook(
+      () => useUpdateList(groceryList.id),
+      { wrapper: createWrapper() },
+    );
+
+    // 1) Start creating an item — the optimistic item enters the cache.
+    createItem.current.mutate({ text: "Milk", categoryId: null });
+    await waitFor(() => {
+      expect(
+        queryClient.getQueryData<ApiResponse<ListDetail>>(
+          listsKeys.detail(groceryList.id),
+        )?.data.items,
+      ).toHaveLength(1);
+    });
+
+    // 2) While the create is still in flight, change a list-level setting.
+    updateList.current.mutate({
+      categoryDisplayMode: "flat",
+      showCompletedOverride: null,
+    });
+
+    // 3) Let the create finish first: the real server item replaces the optimistic one.
+    createCanFinish.resolve();
+    await waitFor(() => {
+      expect(createItem.current.isSuccess).toBe(true);
+      expect(
+        queryClient
+          .getQueryData<ApiResponse<ListDetail>>(
+            listsKeys.detail(groceryList.id),
+          )
+          ?.data.items.map((item) => item.id),
+      ).toEqual([serverItem.id]);
+    });
+
+    // 4) Now the list-setting PATCH resolves last with its stale, item-less body.
+    patchCanFinish.resolve();
+    await waitFor(() => {
+      expect(updateList.current.isSuccess).toBe(true);
+    });
+
+    // The PATCH only changes list-level settings; it must not drop the item.
+    const detail = queryClient.getQueryData<ApiResponse<ListDetail>>(
+      listsKeys.detail(groceryList.id),
+    );
+    expect(detail?.data.categoryDisplayMode).toBe("flat");
+    expect(detail?.data.items.map((item) => item.id)).toEqual([serverItem.id]);
+  });
+
   it("rolls back an optimistic created item when the server rejects it", async () => {
     seedMockLists([groceryList]);
     queryClient.setQueryData(listsKeys.detail(groceryList.id), {
