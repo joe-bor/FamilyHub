@@ -128,7 +128,21 @@ export function useUpdateList(id: string) {
       }
     },
     onSuccess: (response) => {
-      queryClient.setQueryData(listsKeys.detail(id), response);
+      // The list-level PATCH never changes items, but its response carries the
+      // server's item set at handling time — which can be stale if an item
+      // mutation (create/update) was still in flight. Keep the cache's current
+      // items and take the rest of the list fields from the response so a
+      // concurrent item mutation is not clobbered.
+      queryClient.setQueryData<ListDetailApiResponse>(
+        listsKeys.detail(id),
+        (current) =>
+          current
+            ? {
+                ...response,
+                data: { ...response.data, items: current.data.items },
+              }
+            : response,
+      );
       queryClient.invalidateQueries({ queryKey: listsKeys.hub() });
     },
   });
