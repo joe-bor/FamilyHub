@@ -342,6 +342,33 @@ describe("MealsView", () => {
     });
   });
 
+  it("removes an extra from the editor", async () => {
+    const board = createOccupiedMealsBoard();
+    seedMockMealsBoard(board);
+    const { user } = renderWithUser(
+      <MealEditorSheet
+        isOpen
+        slot={board.days[1].slots[2]}
+        board={board}
+        readOnly={false}
+        onOpenChange={vi.fn()}
+      />,
+    );
+
+    await user.click(
+      screen.getByRole("button", { name: "Remove extra: Salad" }),
+    );
+
+    await waitFor(() => {
+      expect(
+        getMockMealsBoard(testWeekStartDate).days[1].slots[2].extras,
+      ).toHaveLength(0);
+    });
+    expect(
+      getMockMealsBoard(testWeekStartDate).days[1].slots[2].primary?.title,
+    ).toBe("Pasta");
+  });
+
   it("invokes replace and add-extra callbacks from the editor", async () => {
     const board = createOccupiedMealsBoard();
     seedMockMealsBoard(board);

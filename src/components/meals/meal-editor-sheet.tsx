@@ -1,9 +1,11 @@
-import { useState } from "react";
+import { X } from "lucide-react";
+import { useEffect, useState } from "react";
 import {
   useDuplicateMealSlot,
   useMoveMealSlot,
   useRecipe,
   useRemoveMealSlot,
+  useUpsertMealSlot,
 } from "@/api";
 import { RecipeDetailView } from "@/components/recipes/recipe-detail-view";
 import { Button } from "@/components/ui/button";
@@ -25,10 +27,34 @@ import type {
   DuplicateMealSlotRequest,
   MealBoard,
   MealCollisionMode,
+  MealEntryRequest,
   MealSlot,
+  MealSlotEntry,
   MoveMealSlotRequest,
+  UpsertMealSlotRequest,
 } from "@/lib/types";
 import { formatMealType } from "./meal-type-utils";
+
+function entryToRequest(entry: MealSlotEntry): MealEntryRequest {
+  if (entry.sourceType === "recipe" && entry.recipeId) {
+    return {
+      sourceType: "recipe",
+      recipeId: entry.recipeId,
+      title: null,
+      imageUrl: null,
+      note: null,
+    };
+  }
+  // quick entries, or recipe entries whose source was deleted: preserve the
+  // stored snapshot as a quick entry so re-saving never drops content.
+  return {
+    sourceType: "quick",
+    recipeId: null,
+    title: entry.title,
+    imageUrl: entry.imageUrl,
+    note: entry.note,
+  };
+}
 
 type PendingCollision =
   | { kind: "move"; request: MoveMealSlotRequest }
@@ -93,6 +119,15 @@ export function MealEditorSheet({
   const removeSlot = useRemoveMealSlot({
     onSuccess: () => onOpenChange(false),
   });
+  const [workingExtras, setWorkingExtras] = useState<MealSlotEntry[]>(
+    slot?.extras ?? [],
+  );
+  useEffect(() => {
+    setWorkingExtras(slot?.extras ?? []);
+  }, [slot]);
+  const upsertSlot = useUpsertMealSlot({
+    onError: () => setWorkingExtras(slot?.extras ?? []),
+  });
 
   if (!slot || !board || !slot.primary) return null;
 
@@ -104,9 +139,36 @@ export function MealEditorSheet({
     readOnly ||
     moveSlot.isPending ||
     duplicateSlot.isPending ||
-    removeSlot.isPending;
+    removeSlot.isPending ||
+    upsertSlot.isPending;
   const mutationError =
-    moveSlot.error ?? duplicateSlot.error ?? removeSlot.error ?? null;
+    moveSlot.error ??
+    duplicateSlot.error ??
+    removeSlot.error ??
+    upsertSlot.error ??
+    null;
+
+  function saveComposition(
+    nextExtras: MealSlotEntry[],
+    nextNote: string | null,
+  ) {
+    const request: UpsertMealSlotRequest = {
+      weekStartDate: activeSlot.weekStartDate,
+      dayIndex: activeSlot.dayIndex,
+      mealType: activeSlot.mealType,
+      primary: entryToRequest(activePrimary),
+      extras: nextExtras.map(entryToRequest),
+      note: nextNote,
+      collisionMode: "replace_primary",
+    };
+    upsertSlot.mutate(request);
+  }
+
+  function handleRemoveExtra(extraId: string) {
+    const nextExtras = workingExtras.filter((extra) => extra.id !== extraId);
+    setWorkingExtras(nextExtras);
+    saveComposition(nextExtras, activeSlot.note);
+  }
 
   function baseMoveRequest(
     collisionMode: MealCollisionMode,
@@ -192,14 +254,25 @@ export function MealEditorSheet({
                   {activePrimary.note}
                 </p>
               ) : null}
-              {activeSlot.extras.length > 0 ? (
+              {workingExtras.length > 0 ? (
                 <div className="mt-3 flex flex-wrap gap-1">
-                  {activeSlot.extras.map((extra) => (
+                  {workingExtras.map((extra) => (
                     <span
                       key={extra.id}
-                      className="rounded-full bg-secondary px-2 py-1 text-xs font-medium text-secondary-foreground"
+                      className="inline-flex items-center gap-1 rounded-full bg-secondary px-2 py-1 text-xs font-medium text-secondary-foreground"
                     >
                       {extra.title}
+                      {!readOnly ? (
+                        <button
+                          type="button"
+                          aria-label={`Remove extra: ${extra.title}`}
+                          className="rounded-full p-0.5 hover:bg-secondary-foreground/10"
+                          disabled={actionDisabled}
+                          onClick={() => handleRemoveExtra(extra.id)}
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      ) : null}
                     </span>
                   ))}
                 </div>
