@@ -143,6 +143,37 @@ describe("MealsView", () => {
     });
   });
 
+  it("keeps the recipe placement draft when navigating to another week", async () => {
+    seedMockMealsBoard(createEmptyMealsBoard());
+    seedMockMealsBoard(createEmptyMealsBoard("2026-06-14"));
+    seedMockRecipes([testRecipeDetail]);
+    useAppStore.getState().startMealPlacementFromRecipe({
+      recipeId: testRecipeDetail.id,
+      requestedAtWeekStartDate: testWeekStartDate,
+      source: { kind: "recipes-library" },
+    });
+
+    const { user } = renderWithUser(<MealsView />);
+
+    expect(
+      await screen.findByText(
+        `Choose a meal slot for ${testRecipeDetail.title}`,
+      ),
+    ).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Next week" }));
+
+    expect(await screen.findByText("Jun 14 - Jun 20")).toBeInTheDocument();
+    expect(
+      screen.getByText(`Choose a meal slot for ${testRecipeDetail.title}`),
+    ).toBeInTheDocument();
+    expect(
+      (
+        await screen.findAllByRole("button", { name: /add recipe to dinner/i })
+      )[0],
+    ).toBeInTheDocument();
+  });
+
   it("makes past weeks review-only through normal board interactions", async () => {
     seedMockMealsBoard(createEmptyMealsBoard("2026-05-31"));
     const { user } = renderWithUser(<MealsView />);

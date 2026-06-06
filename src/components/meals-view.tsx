@@ -111,7 +111,6 @@ export function MealsView() {
             setSelectedSlot(null);
             setEditingSlot(null);
             setEditingBoard(null);
-            setPlacementDraft(null);
           }}
         />
 
