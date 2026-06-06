@@ -21,7 +21,7 @@ test.describe("Mobile Meals", () => {
     test.setTimeout(60000);
 
     const registration = await registerFamily(request, {
-      familyName: "Meals E2E Family",
+      familyName: "Weekly Planner Crew",
       members: [{ name: "Sam", color: "teal" }],
     });
 
@@ -33,7 +33,7 @@ test.describe("Mobile Meals", () => {
     await safeClick(nav.getByRole("button", { name: "Meals" }));
 
     await expect(
-      page.getByRole("heading", { name: "Meals", level: 1 }),
+      page.getByRole("heading", { name: "Meals", level: 1, exact: true }),
     ).toBeVisible();
     await safeClick(
       page.getByRole("button", { name: "Add dinner meal" }).first(),
@@ -53,7 +53,7 @@ test.describe("Mobile Meals", () => {
 
     await safeClick(nav.getByRole("button", { name: "Recipes" }));
     await expect(
-      page.getByRole("heading", { name: "Recipes", level: 1 }),
+      page.getByRole("heading", { name: "Recipes", level: 1, exact: true }),
     ).toBeVisible();
 
     await page.getByRole("button", { name: "Add recipe" }).click();
@@ -84,7 +84,7 @@ test.describe("Mobile Meals", () => {
 
     await page.getByRole("button", { name: "Add to Meals" }).click();
     await expect(
-      page.getByRole("heading", { name: "Meals", level: 1 }),
+      page.getByRole("heading", { name: "Meals", level: 1, exact: true }),
     ).toBeVisible();
     await expect(
       page.getByText("Choose a meal slot for Sunday Pancakes"),
