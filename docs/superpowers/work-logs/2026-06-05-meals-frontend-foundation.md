@@ -54,3 +54,26 @@ No contract drift found before Meals implementation.
 1. Task 3: Meals contract, hooks, validation, mocks, week utilities, placeholder-store removal.
 2. Task 4: Mobile board, composer, quick meals, recipe suggestions, recipe placement draft consumption.
 3. Task 5: Large-screen grid, slot editor, move/duplicate/remove, collisions, live recipe detail navigation, mobile E2E.
+
+## PR #187 Spec-Drift Review Fixes (2026-06-05)
+
+Plan: `docs/superpowers/plans/2026-06-05-meals-spec-drift-fixes.md`. Fixed the valid findings; rejected three with evidence.
+
+Fixed:
+
+- **B1 — Replace meal.** Editor `Replace meal` action reopens the composer for the occupied slot (existing collision prompt handles primary replacement).
+- **B2 — Manage extras or sides.** `Add extra or side` opens the composer in extra-intent mode (forces `add_as_extra`, no prompt); each extra chip gets a remove (×) that re-saves the slot composition.
+- **B3 / N2 — Tablet blank gap + redundant guard.** New `useMediaQuery` hook drives a single `lg` (1024px) switch: day-cards below, grid at/above. Removed the grid's `hidden lg:block` CSS guard. `useIsMobile` (768) is untouched and still shared app-wide.
+- **M2 — Placement draft survives week navigation.** `onWeekChange` no longer clears `placementDraft`, so "Add to Meals → switch weeks → pick a slot" works.
+- **M3 / L2 — Move/duplicate destination.** New `MealMovePicker` (day + meal-type selects, default next-day/same-type) replaces the silent next-day hardcode; supports cross-day and cross-meal-type within the visible week. Collision detection now reads the in-board destination directly.
+- **L1 — Meal note.** Editor edits the slot-level `note`; the board card surfaces it.
+
+Rejected with evidence:
+
+- **M1 (invalid).** `meal_slot_entry.recipe_id` is `ON DELETE SET NULL` and `MealMapper.toEntryDto` returns `recipeId: null` once a recipe is deleted; the editor already gates `View recipe` on `recipeId`. Snapshot title/image persist. Behavior already correct.
+- **M4 (invalid).** `MealSlotResponse.java` includes `weekStartDate` and `dayIndex`; `MealMapper.toSlotDto` populates them. The fields are echoed exactly as the optimistic cache and request builders expect.
+- **N1 (invalid).** `formatMealType` was already extracted to `meal-type-utils.ts`; all four files import it.
+
+Known v1 constraint: `upsertSlot` re-snapshots recipe-backed entries from the live recipe, so editor "save composition" actions (remove extra, edit note) refresh those snapshots if the source recipe changed since placement. Deleted-recipe entries are re-sent as `quick` to preserve their snapshot. Granular per-entry edit endpoints are out of scope.
+
+Verification: `npm run lint`, `npm run build`, `npm test -- --run` → 818 tests across 65 files pass.
