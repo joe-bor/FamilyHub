@@ -25,7 +25,7 @@ export function MealGrid({
   onSelectSlot,
 }: MealGridProps) {
   return (
-    <div className="hidden overflow-x-auto lg:block">
+    <div className="overflow-x-auto">
       <table
         aria-label="Weekly meals"
         className="min-w-[960px] table-fixed overflow-hidden rounded-lg border border-border"

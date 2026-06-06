@@ -18,13 +18,13 @@ import { renderWithUser, screen, waitFor } from "@/test/test-utils";
 import { MealEditorSheet } from "./meals/meal-editor-sheet";
 import { MealsView } from "./meals-view";
 
-const viewport = vi.hoisted(() => ({ isMobile: true }));
+const viewport = vi.hoisted(() => ({ showGrid: false }));
 
 vi.mock("@/hooks", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/hooks")>();
   return {
     ...actual,
-    useIsMobile: () => viewport.isMobile,
+    useMediaQuery: () => viewport.showGrid,
   };
 });
 
@@ -55,7 +55,7 @@ describe("MealsView", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
     vi.unstubAllGlobals();
-    viewport.isMobile = true;
+    viewport.showGrid = false;
     mockCurrentWeek();
   });
 
@@ -226,8 +226,21 @@ describe("MealsView", () => {
     expect(screen.getByText("Salad")).toBeInTheDocument();
   });
 
+  it("renders day cards (not a hidden grid) below the lg breakpoint", async () => {
+    seedMockMealsBoard(createEmptyMealsBoard());
+
+    renderWithUser(<MealsView />);
+
+    expect(
+      await screen.findAllByRole("button", { name: /add dinner/i }),
+    ).toHaveLength(7);
+    expect(
+      screen.queryByRole("table", { name: "Weekly meals" }),
+    ).not.toBeInTheDocument();
+  });
+
   it("renders a weekly meals grid on larger screens", async () => {
-    viewport.isMobile = false;
+    viewport.showGrid = true;
     seedMockMealsBoard(createEmptyMealsBoard());
 
     renderWithUser(<MealsView />);

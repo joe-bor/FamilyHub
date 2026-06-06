@@ -8,7 +8,7 @@ import { MealDayCard } from "@/components/meals/meal-day-card";
 import { MealEditorSheet } from "@/components/meals/meal-editor-sheet";
 import { MealGrid } from "@/components/meals/meal-grid";
 import { WeekHeader } from "@/components/meals/week-header";
-import { useIsMobile } from "@/hooks";
+import { useMediaQuery } from "@/hooks";
 import {
   formatLocalDate,
   getWeekStartSunday,
@@ -40,7 +40,7 @@ export function MealsView() {
     (state) => state.consumeMealPlacementDraft,
   );
   const readOnly = isPastWeek(visibleWeekStartDate);
-  const isMobile = useIsMobile();
+  const showGrid = useMediaQuery("(min-width: 1024px)");
 
   useEffect(() => {
     if (!pendingPlacementDraft) return;
@@ -139,7 +139,7 @@ export function MealsView() {
           </div>
         ) : null}
 
-        {board.data?.data && isMobile ? (
+        {board.data?.data && !showGrid ? (
           <div className="space-y-4">
             {board.data.data.days.map((day) => (
               <MealDayCard
@@ -153,7 +153,7 @@ export function MealsView() {
           </div>
         ) : null}
 
-        {board.data?.data && !isMobile ? (
+        {board.data?.data && showGrid ? (
           <MealGrid
             board={board.data.data}
             readOnly={readOnly}
