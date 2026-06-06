@@ -18,11 +18,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { MobileSheet } from "@/components/ui/mobile-sheet";
-import {
-  addWeeksLocal,
-  formatLocalDate,
-  parseLocalDate,
-} from "@/lib/time-utils";
 import type {
   DuplicateMealSlotRequest,
   MealBoard,
@@ -33,6 +28,7 @@ import type {
   MoveMealSlotRequest,
   UpsertMealSlotRequest,
 } from "@/lib/types";
+import { MealMovePicker } from "./meal-move-picker";
 import { formatMealType } from "./meal-type-utils";
 
 function entryToRequest(entry: MealSlotEntry): MealEntryRequest {
@@ -70,32 +66,6 @@ interface MealEditorSheetProps {
   onOpenChange: (open: boolean) => void;
 }
 
-function getDestination(slot: MealSlot): {
-  dayIndex: number;
-  weekStartDate: string;
-} {
-  if (slot.dayIndex === 6) {
-    return {
-      dayIndex: 0,
-      weekStartDate: formatLocalDate(
-        addWeeksLocal(parseLocalDate(slot.weekStartDate), 1),
-      ),
-    };
-  }
-  return { dayIndex: slot.dayIndex + 1, weekStartDate: slot.weekStartDate };
-}
-
-function findDestinationSlot(
-  board: MealBoard,
-  slot: MealSlot,
-): MealSlot | undefined {
-  const dest = getDestination(slot);
-  if (dest.weekStartDate !== board.weekStartDate) return undefined;
-  return board.days[dest.dayIndex]?.slots.find(
-    (candidate) => candidate.mealType === slot.mealType,
-  );
-}
-
 export function MealEditorSheet({
   isOpen,
   slot,
@@ -107,6 +77,9 @@ export function MealEditorSheet({
 }: MealEditorSheetProps) {
   const [pendingCollision, setPendingCollision] =
     useState<PendingCollision | null>(null);
+  const [mover, setMover] = useState<{ kind: "move" | "duplicate" } | null>(
+    null,
+  );
   const [showRecipe, setShowRecipe] = useState(false);
   const recipeId = slot?.primary?.recipeId ?? null;
   const recipe = useRecipe(showRecipe ? recipeId : null);
@@ -138,7 +111,6 @@ export function MealEditorSheet({
   const activeSlot = slot;
   const activeBoard = board;
   const activePrimary = slot.primary;
-  const destinationSlot = findDestinationSlot(activeBoard, activeSlot);
   const actionDisabled =
     readOnly ||
     moveSlot.isPending ||
@@ -180,39 +152,37 @@ export function MealEditorSheet({
     saveComposition(workingExtras, nextNote);
   }
 
-  function baseMoveRequest(
-    collisionMode: MealCollisionMode,
-  ): MoveMealSlotRequest {
-    const dest = getDestination(activeSlot);
-    return {
+  function confirmMoveTarget(target: {
+    dayIndex: number;
+    mealType: MealSlot["mealType"];
+  }) {
+    if (!mover) return;
+    const kind = mover.kind;
+    setMover(null);
+
+    const request: MoveMealSlotRequest = {
       sourceWeekStartDate: activeSlot.weekStartDate,
       sourceDayIndex: activeSlot.dayIndex,
       sourceMealType: activeSlot.mealType,
-      destinationWeekStartDate: dest.weekStartDate,
-      destinationDayIndex: dest.dayIndex,
-      destinationMealType: activeSlot.mealType,
-      collisionMode,
+      destinationWeekStartDate: activeBoard.weekStartDate,
+      destinationDayIndex: target.dayIndex,
+      destinationMealType: target.mealType,
+      collisionMode: "replace_primary",
     };
-  }
 
-  function handleMove() {
-    const request = baseMoveRequest("replace_primary");
+    const destinationSlot = activeBoard.days[target.dayIndex]?.slots.find(
+      (candidate) => candidate.mealType === target.mealType,
+    );
     if (destinationSlot?.primary) {
-      setPendingCollision({ kind: "move", request });
+      setPendingCollision({ kind, request });
       return;
     }
 
-    moveSlot.mutate(request);
-  }
-
-  function handleDuplicate() {
-    const request = baseMoveRequest("replace_primary");
-    if (destinationSlot?.primary) {
-      setPendingCollision({ kind: "duplicate", request });
-      return;
+    if (kind === "move") {
+      moveSlot.mutate(request);
+    } else {
+      duplicateSlot.mutate(request);
     }
-
-    duplicateSlot.mutate(request);
   }
 
   function resolveCollision(collisionMode: MealCollisionMode) {
@@ -369,7 +339,7 @@ export function MealEditorSheet({
                 type="button"
                 variant="outline"
                 disabled={actionDisabled}
-                onClick={handleMove}
+                onClick={() => setMover({ kind: "move" })}
               >
                 Move meal
               </Button>
@@ -377,7 +347,7 @@ export function MealEditorSheet({
                 type="button"
                 variant="outline"
                 disabled={actionDisabled}
-                onClick={handleDuplicate}
+                onClick={() => setMover({ kind: "duplicate" })}
               >
                 Duplicate meal
               </Button>
@@ -455,6 +425,21 @@ export function MealEditorSheet({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <MealMovePicker
+        open={mover !== null}
+        title={mover?.kind === "duplicate" ? "Duplicate to" : "Move to"}
+        confirmLabel={
+          mover?.kind === "duplicate" ? "Duplicate here" : "Move here"
+        }
+        board={activeBoard}
+        source={{
+          dayIndex: activeSlot.dayIndex,
+          mealType: activeSlot.mealType,
+        }}
+        onConfirm={confirmMoveTarget}
+        onCancel={() => setMover(null)}
+      />
     </>
   );
 }

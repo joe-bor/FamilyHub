@@ -270,6 +270,7 @@ describe("MealsView", () => {
     );
 
     await user.click(screen.getByRole("button", { name: "Move meal" }));
+    await user.click(screen.getByRole("button", { name: "Move here" }));
 
     expect(
       await screen.findByText("That slot already has a meal"),
@@ -304,6 +305,7 @@ describe("MealsView", () => {
     );
 
     await user.click(screen.getByRole("button", { name: "Duplicate meal" }));
+    await user.click(screen.getByRole("button", { name: "Duplicate here" }));
     expect(
       await screen.findByText("That slot already has a meal"),
     ).toBeInTheDocument();
@@ -465,49 +467,31 @@ describe("MealsView", () => {
     ).toBeInTheDocument();
   });
 
-  it("moves a Saturday meal to Sunday of the following week rather than Sunday of the same week", async () => {
-    const saturdayBoard = createEmptyMealsBoard();
-    saturdayBoard.days[6].slots[2] = {
-      id: "slot-saturday-dinner",
-      weekStartDate: testWeekStartDate,
-      dayIndex: 6,
-      mealType: "dinner",
-      primary: {
-        id: "entry-saturday",
-        role: "primary",
-        sourceType: "quick",
-        recipeId: null,
-        title: "Saturday Pasta",
-        imageUrl: null,
-        note: null,
-      },
-      extras: [],
-      note: null,
-    };
-    seedMockMealsBoard(saturdayBoard);
-    const nextWeekStartDate = "2026-06-14";
-    seedMockMealsBoard(createEmptyMealsBoard(nextWeekStartDate));
-
+  it("moves a planned meal to a chosen day and meal type", async () => {
+    const board = createOccupiedMealsBoard(); // Monday dinner: Pasta + Salad
+    seedMockMealsBoard(board);
     const { user } = renderWithUser(
       <MealEditorSheet
         isOpen
-        slot={saturdayBoard.days[6].slots[2]}
-        board={saturdayBoard}
+        slot={board.days[1].slots[2]}
+        board={board}
         readOnly={false}
         onOpenChange={vi.fn()}
       />,
     );
 
     await user.click(screen.getByRole("button", { name: "Move meal" }));
+    await user.selectOptions(screen.getByLabelText("Day"), "4"); // Thursday
+    await user.selectOptions(screen.getByLabelText("Meal"), "lunch");
+    await user.click(screen.getByRole("button", { name: "Move here" }));
 
     await waitFor(() => {
-      const nextWeekBoard = getMockMealsBoard(nextWeekStartDate);
-      expect(nextWeekBoard.days[0].slots[2].primary?.title).toBe(
-        "Saturday Pasta",
-      );
+      const updated = getMockMealsBoard(testWeekStartDate);
+      expect(updated.days[1].slots[2].primary).toBe(null);
+      expect(updated.days[4].slots[1].primary?.title).toBe("Pasta");
       expect(
-        getMockMealsBoard(testWeekStartDate).days[6].slots[2].primary,
-      ).toBe(null);
+        updated.days[4].slots[1].extras.map((extra) => extra.title),
+      ).toEqual(["Salad"]);
     });
   });
 });
