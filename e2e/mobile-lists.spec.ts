@@ -41,33 +41,16 @@ test.describe("Mobile Lists", () => {
     await page
       .getByRole("combobox", { name: "Category" })
       .selectOption({ label: "Produce" });
-    // Wait for the create to be confirmed server-side before triggering the
-    // next list mutation; otherwise the category-mode update below can refetch
-    // an item-less list and clobber the just-added item.
-    const createItemResponse = page.waitForResponse(
-      (response) =>
-        /\/lists\/[^/]+\/items$/.test(new URL(response.url()).pathname) &&
-        response.request().method() === "POST",
-    );
     await page.getByRole("button", { name: "Save item" }).click();
-    await createItemResponse;
 
     await expect(page.getByRole("heading", { name: "Produce" })).toBeVisible();
     await expect(page.getByText("Bananas")).toBeVisible();
 
-    // Wait for the list-level update to settle so its response cannot overwrite
-    // the subsequent item-completion toggle.
-    const updateListResponse = page.waitForResponse((response) => {
-      const { pathname } = new URL(response.url());
-      return (
-        /\/lists\/[^/]+$/.test(pathname) &&
-        !pathname.endsWith("/preferences") &&
-        response.request().method() === "PATCH"
-      );
-    });
+    // Switch the category mode immediately — the item create may still be in
+    // flight, so the list-level PATCH response must not clobber the new item.
     await page.getByLabel("Categories").selectOption("flat");
-    await updateListResponse;
     await expect(page.getByRole("heading", { name: "Produce" })).toBeHidden();
+    await expect(page.getByText("Bananas")).toBeVisible();
 
     await page.getByRole("button", { name: /^Bananas$/ }).click();
     await expect(page.getByText("Bananas")).toHaveCSS(
