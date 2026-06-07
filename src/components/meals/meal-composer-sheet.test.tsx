@@ -3,6 +3,7 @@ import type { MealSlot, RecipeDetail } from "@/lib/types";
 import { useAppStore } from "@/stores/app-store";
 import {
   createEmptyMealSlot,
+  createEmptyMealsBoard,
   createOccupiedMealsBoard,
   testWeekStartDate,
 } from "@/test/fixtures/meals";
@@ -12,6 +13,7 @@ import {
   testRecipeDetail,
 } from "@/test/fixtures/recipes";
 import {
+  getMockMealsBoard,
   seedMockMealsBoard,
   seedMockRecipes,
   setupMswServer,
@@ -179,15 +181,80 @@ describe("MealComposerSheet", () => {
     });
   });
 
-  it("offers entry into the full recipe library", async () => {
-    const lunchSlot = createEmptyMealSlot(testWeekStartDate, 3, "lunch");
-    const { user } = renderComposer(lunchSlot);
+  it("shows all recipes in-composer without switching module or closing", async () => {
+    // Seed 9 non-favorite recipes; default "Recent recipes" shows only 4, so the
+    // oldest 5 are hidden until "Show all recipes" is clicked.
+    const nineRecipes: RecipeDetail[] = Array.from({ length: 9 }, (_, i) => ({
+      ...importedRecipeDetail,
+      id: `00000000-0000-4000-8000-0000000006${String(i + 1).padStart(2, "0")}`,
+      title: `Library Recipe ${i + 1}`,
+      // Newer recipes have higher numbers (recipe 9 is newest, recipe 1 is oldest)
+      updatedAt: `2026-01-${String(i + 1).padStart(2, "0")}T09:00:00`,
+      favorite: false,
+    }));
+    // recipe 1 has updatedAt 2026-01-01 → oldest → NOT shown in the default top-4
+    const hiddenRecipe = nineRecipes[0]; // "Library Recipe 1" — oldest
 
+    const emptyBoard = createEmptyMealsBoard();
+    seedMockMealsBoard(emptyBoard);
+    seedMockRecipes(nineRecipes);
+
+    // dayIndex 2 = Wednesday, mealType breakfast → slotIndex 0
+    const breakfastSlot = createEmptyMealSlot(
+      testWeekStartDate,
+      2,
+      "breakfast",
+    );
+    const onOpenChange = vi.fn();
+    const { user } = renderComposer(breakfastSlot, onOpenChange);
+
+    // Wait for recipes to load
+    await screen.findByText("Recent recipes");
+
+    // The hidden recipe (oldest) should NOT be visible in the default view
+    expect(
+      screen.queryByRole("button", {
+        name: /select recipe: library recipe 1/i,
+      }),
+    ).not.toBeInTheDocument();
+
+    // The visible recipe (newest) should be in the default view
+    expect(
+      screen.getByRole("button", {
+        name: /select recipe: library recipe 9/i,
+      }),
+    ).toBeInTheDocument();
+
+    // Click "Show all recipes"
+    await user.click(screen.getByRole("button", { name: "Show all recipes" }));
+
+    // All 9 recipes should now be present
+    for (let i = 1; i <= 9; i++) {
+      expect(
+        screen.getByRole("button", {
+          name: new RegExp(`select recipe: library recipe ${i}`, "i"),
+        }),
+      ).toBeInTheDocument();
+    }
+
+    // Select the previously-hidden recipe
     await user.click(
-      screen.getByRole("button", { name: "Browse recipe library" }),
+      screen.getByRole("button", {
+        name: /select recipe: library recipe 1/i,
+      }),
     );
 
-    expect(useAppStore.getState().activeModule).toBe("recipes");
+    // The correct slot should have received the recipe
+    await waitFor(() => {
+      const board = getMockMealsBoard(testWeekStartDate);
+      // dayIndex 2, breakfast = slotIndex 0
+      expect(board.days[2].slots[0].primary?.recipeId).toBe(hiddenRecipe.id);
+    });
+
+    // The module should NOT have changed — still "calendar" (the test-reset default, NOT "recipes")
+    expect(useAppStore.getState().activeModule).toBe("calendar");
+    // The composer should have closed (upsert success fires onOpenChange(false))
+    expect(onOpenChange).toHaveBeenCalledWith(false);
   });
 
   it("shows recent recipes sorted newest-first when there is no query", async () => {
