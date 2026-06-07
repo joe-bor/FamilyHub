@@ -28,15 +28,15 @@
 | ID | Finding | Source | Sev | Evidence | Task |
 |----|---------|--------|-----|----------|------|
 | C1 | Meal editor reads a **frozen** slot/board snapshot: a saved note isn't reflected (read view shows stale `activeSlot.note`), sequential edits (save note → remove extra) can overwrite with stale data, and move/duplicate collision checks run against the stale board | Claude (T1+T4) + Codex (stale slot prop) | **High** | `meals-view.tsx:84-88` freezes `editingBoard`; editor reads it at `meal-editor-sheet.tsx:303` (note) and `:173` (collision) | T1 |
-| C11 | `useUpsertMealSlot` writes the cache via `replaceSlotInBoard` then immediately invalidates the same key — the write is dead and can't reflect collision side-effects on other slots | Claude (T5) | Low | `use-meals.ts:77-81` | T1b |
+| C11 | `useUpsertMealSlot` writes a partial slot into the board cache and then invalidates the same key. That write is not automatically wrong — it can provide immediate UI while refetch catches up — but it can be misleading after collision/extra side-effects and must be audited after the live-editor fix | Claude (T5), severity adjusted during verification | Low cleanup | `use-meals.ts:77-81` | T1b |
 | C2 | Past **occupied** meal slots can't be opened for review (button `disabled={readOnly}`), so notes/extras/recipe of past meals are not reviewable — spec requires past weeks browsable for review | Codex (past reviewability) | **High** | `meal-slot-card.tsx:32`; spec "Past weeks" L429-431 | T2 |
 | C3 | In the editor's embedded `RecipeDetailView`, Edit / Favorite / Add-to-Meals are wired to `() => undefined` — live-looking buttons that do nothing | Claude (S2) + Codex (no-op embedded actions) | Med | `meal-editor-sheet.tsx:212-214`; `recipe-detail-view.tsx:126-150` renders them unconditionally | T3 |
 | C4 | Composer "Browse recipe library" only switches modules and drops the active slot/week, so it isn't a real full-library picker for the slot being planned | Codex (orchestrator) | Med | `meal-composer-sheet.tsx:287-297`; spec "entry point into the full recipe library" L230 | T4 |
 | C5 | Meals-origin "Create recipe from this" forces manual mode, so URL import is unreachable from the meals handoff | Codex (C-P2) | Med | `recipes-view.tsx:140` `recipeCreationDraft ? "manual" : "choices"` | T5 |
-| C6 | Composer hand-builds payloads and bypasses the **tested** Zod schemas in `lib/validations/meals.ts` (which are otherwise dead); an invalid image URL / over-long title is sent raw; a typed note is silently dropped on recipe placement | Claude (T2+S5) + Codex (C-T3) | Med | `meal-composer-sheet.tsx:135-183`; schemas only imported by `lib/validations/index.ts` | T6 |
+| C6 | Composer hand-builds payloads and bypasses the **tested** Zod schemas in `lib/validations/meals.ts` (which are otherwise dead); an invalid image URL / over-long title is sent raw; a typed note is silently dropped on recipe placement instead of becoming the slot-level meal note | Claude (T2+S5) + Codex (C-T3), note target clarified during verification | Med | `meal-composer-sheet.tsx:135-183`; schemas only imported by `lib/validations/index.ts` | T6 |
 | C7 | Broken image URLs render the browser broken-image glyph (no `onError` fallback) in recipe library card, recipe detail, and recipe match list — only `meal-slot-card` has the fallback | Claude (T3) | Low | `recipe-library-card.tsx:30`, `recipe-detail-view.tsx:45`, `recipe-match-list.tsx:30` vs `meal-slot-card.tsx:36-41` | T7 |
 | C8 | Meals board error state has no Retry, unlike Recipes | Codex (C-T5) | Low | `meals-view.tsx:141-152` (no retry) vs `recipes-view.tsx:252-262` | T8 |
-| C9 | Recipe form array fields (ingredients/instructions) have Add but no per-row Remove | Codex (C-P4) | Low | `recipe-form.tsx:42-89` (`onAdd` only) | T9 |
+| C9 | Recipe form array fields (ingredients, instructions, and tags) have Add but no per-row Remove | Codex (C-P4), scope clarified during verification | Low | `recipe-form.tsx:42-89` (`onAdd` only) | T9 |
 | C10 | Recipes empty state has invite copy but no "Add your first recipe" button | Claude (S4) | Low | `recipes-view.tsx:276-284` | T10 |
 | C12 | README module-status table + version line are stale, and it links to the deleted `docs/ROADMAP.md` | Codex (C-P5) | Low | `README.md:55-65` (Meals "🎨 UI ready", broken ROADMAP link) | T11 |
 
@@ -44,7 +44,7 @@
 
 - **D1 — Multi-column recipe grid on large screens** (Claude S3): spec says larger screens "*can*" expand — permissive, not required. Leave single-column; revisit in a future UI polish pass.
 - **D2 — Cross-week move/duplicate unreachable from UI** (Claude T7): intentional per `2026-06-05-meals-spec-drift-fixes.md` (M3 chose an explicit within-week picker). Hook-level cross-week tests are defensive; keep them. No action.
-- **D3 — Recipe array remove min-line behavior**: keep the existing `DEFAULT_LINE_COUNT = 2` minimum; T9 must not let the user delete below a sensible floor (see task contract).
+- **D3 — Recipe array visual floor**: preserve the current `DEFAULT_LINE_COUNT = 2` visual affordance for blank entry fields. Row removal may reduce the underlying submitted array to empty, because name-only recipes are valid; the form should still render two blank rows after an array becomes empty.
 
 ---
 
@@ -88,19 +88,27 @@
 - [ ] **Step 4:** `npm test -- --run src/components/meals-view.test.tsx src/components/meals` → all green, including the existing `opens the live recipe detail from a recipe-backed planned meal` test (`meals-view.test.tsx:442`) which encodes the editor-first flow and MUST still pass.
 - [ ] **Step 5: Commit** — `fix(meals): drive the meal editor from live board data so saves and collisions are accurate`
 
-### Task 1b — C11: drop the dead cache write in `useUpsertMealSlot`
+### Task 1b — C11: audit the `useUpsertMealSlot` cache write
 
 **Files:** `src/api/hooks/use-meals.ts`, `src/api/hooks/use-meals.test.tsx`
 
-**Problem:** `onSuccess` does `setQueryData(replaceSlotInBoard(...))` then `invalidateBoard(...)` on the same key (`use-meals.ts:77-81`); the write is immediately superseded by the refetch and can't reflect collision side-effects on other slots.
+**Problem:** `onSuccess` does `setQueryData(replaceSlotInBoard(...))` then `invalidateBoard(...)` on the same key (`use-meals.ts:77-81`). This is not automatically dead: it can give immediate UI feedback while TanStack Query refetches. The risk is that it is a partial hand-merge of one returned slot, so it cannot represent server-side effects outside that slot and may hide bugs in tests if the UI depends on the manual write instead of the server board.
 
-**Contract:** `useUpsertMealSlot` keeps the board correct by invalidation only. Remove `replaceSlotInBoard` and its now-unused helper if nothing else references it (grep first; `MealSlot` import may become unused).
+**Contract:** Decide from tests, not preference:
+- Keep the cache write if it is needed for immediate UX and does not conflict with the live-editor behavior from Task 1.
+- Remove it only if invalidation/refetch alone leaves the visible board and editor correct without a stale gap.
+- If it stays, tests must make clear that the server refetch remains the authority; do not add assertions that only pass because `replaceSlotInBoard` hand-merged one slot.
+- If it is removed, delete `replaceSlotInBoard` and unused imports after grepping for references.
 
-- [ ] **Step 1:** Update/extend `use-meals.test.tsx` to assert that after an upsert the board query is invalidated (refetch happens) and the cache ends up matching the server response — not a hand-merged slot.
-- [ ] **Step 2:** Run → confirm the dead-write assumption isn't load-bearing (adjust test if needed), see it fail where appropriate.
-- [ ] **Step 3:** Remove the `setQueryData`/`replaceSlotInBoard` write; delete `replaceSlotInBoard` if unreferenced; clean unused imports.
+- [ ] **Step 1:** Add/adjust `use-meals.test.tsx` coverage for an upsert into an occupied slot with `collisionMode: "add_as_extra"`: assert the query is invalidated and, after the MSW refetch resolves, the board cache matches the server board (primary plus appended extra). Use a `QueryClient` with `gcTime: Infinity`.
+- [ ] **Step 2:** Run the test against current code. If it already passes, this is cleanup-only; do not force a production code change just to make a test fail.
+- [ ] **Step 3:** Choose the minimal implementation:
+  - If invalidation/refetch alone keeps the UI correct after Task 1, remove `setQueryData` and delete `replaceSlotInBoard`.
+  - If immediate cache update is still useful, keep the write and update comments/tests so it is documented as a temporary display hint, not the source of truth.
 - [ ] **Step 4:** `npm test -- --run src/api/hooks/use-meals.test.tsx src/components/meals` green.
-- [ ] **Step 5: Commit** — `refactor(meals): rely on board invalidation in upsert instead of a dead cache write`
+- [ ] **Step 5: Commit** — use the commit message matching the outcome:
+  - `refactor(meals): rely on board refetch after meal upserts`
+  - or `test(meals): document upsert cache invalidation behavior`
 
 ### Task 2 — C2: make past occupied meals openable for read-only review
 
@@ -125,7 +133,11 @@
 
 ### Task 3 — C3: hide no-op actions in the meal-context recipe detail (editor-first flow kept)
 
-**Files:** `src/components/recipes/recipe-detail-view.tsx`, `src/components/meals/meal-editor-sheet.tsx`, `recipe-detail-view`/`meal-editor-sheet` tests.
+**Files:**
+- Modify: `src/components/recipes/recipe-detail-view.tsx`
+- Modify: `src/components/meals/meal-editor-sheet.tsx`
+- Create if absent: `src/components/recipes/recipe-detail-view.test.tsx`
+- Modify integration coverage: `src/components/meals-view.test.tsx`
 
 **Problem:** `RecipeDetailView` always renders Edit / Add to Meals / Favorite (`recipe-detail-view.tsx:126-150`); the meal editor passes `() => undefined` for all three (`meal-editor-sheet.tsx:212-214`), producing dead buttons. Decision: editor-first flow stays, so within a planned meal the recipe view is **review-only** (Back + View source + content). Recipe editing/favoriting/add-to-meals belong to the Recipes module, not the meal block editor.
 
@@ -134,11 +146,11 @@
 - In `meal-editor-sheet.tsx`, stop passing the three no-op handlers; pass only `recipe` + `onBack`. No dead buttons appear in the meal-context detail.
 
 - [ ] **Step 1: Failing tests**:
-  - In `recipe-detail-view` test: when rendered without `onEdit`/`onAddToMeals`/`onToggleFavorite`, those buttons are absent; with them, present (keeps library behavior).
-  - In `meal-editor-sheet` test: from a recipe-backed meal, "View recipe" shows the detail with NO "Edit recipe" / "Add to Meals" / "Favorite" buttons, but Back and recipe content present. (The existing `meals-view.test.tsx:442` editor-first test must still pass.)
+  - In `recipe-detail-view.test.tsx`: when rendered without `onEdit`/`onAddToMeals`/`onToggleFavorite`, those buttons are absent; with them, present (keeps library behavior).
+  - In `meals-view.test.tsx`: from a recipe-backed meal, "View recipe" shows the detail with NO "Edit recipe" / "Add to Meals" / "Favorite" buttons, but Back and recipe content present. (The existing `meals-view.test.tsx:442` editor-first test must still pass.)
 - [ ] **Step 2:** Run → FAIL.
 - [ ] **Step 3:** Make handlers optional + conditional render; update meal editor usage.
-- [ ] **Step 4:** `npm test -- --run src/components/recipes src/components/meals src/components/meals-view.test.tsx src/components/recipes-view.test.tsx` green.
+- [ ] **Step 4:** `npm test -- --run src/components/recipes/recipe-detail-view.test.tsx src/components/meals-view.test.tsx src/components/recipes-view.test.tsx` green.
 - [ ] **Step 5: Commit** — `fix(meals): make in-editor recipe view review-only instead of showing dead actions`
 
 ### Task 4 — C4: preserve slot/week context for the composer's full-library entry
@@ -168,6 +180,7 @@
 - When launched from a meals draft, the create sheet opens on the **chooser** ("Create manually" / "Import from URL"), not forced manual.
 - The typed title carries into the manual branch as a default value (so "Create manually" still prefills the title). `RecipeCreateSheet` already accepts `defaultValues` + `defaultMode`; pass `defaultMode="choices"` and keep `defaultValues={{ title }}`.
 - A successful create **or import** started from Meals returns the user to Meals planning with the new recipe available for placement (spec "Return behavior"). Verify the existing meals-return handling in `recipes-view.tsx` (the `onCreated` path for the draft) fires for the import path too; wire it if it currently only covers manual create.
+- This intentionally adds one tap to the existing manual-prefill path. If product wants to preserve manual-first speed instead, implement an "Import from URL" action inside the draft manual sheet and keep the same import-return tests. Do not silently keep manual-only behavior.
 
 - [ ] **Step 1: Failing tests**:
   - From a seeded `recipeCreationDraft`, opening the add flow shows BOTH "Create manually" and "Import from URL".
@@ -182,21 +195,21 @@
 
 ## Phase 3 — Validation & data quality
 
-### Task 6 — C6: route composer payloads through the Zod meal schemas; stop dropping the recipe note
+### Task 6 — C6: route composer payloads through the Zod meal schemas; keep typed notes as slot notes
 
 **Files:** `src/components/meals/meal-composer-sheet.tsx`, `src/components/meals/meal-composer-sheet.test.tsx`. Reference (do not duplicate): `src/lib/validations/meals.ts` (exports `upsertMealSlotSchema`, `mealEntrySchema`, `toMealEntryRequest`, etc.).
 
-**Problem:** The composer hand-builds `UpsertMealSlotRequest` (`meal-composer-sheet.tsx:135-183`) and never uses the tested schemas, so an invalid image URL or over-long title is sent raw; meanwhile the schemas are dead (imported only by the validations barrel). Separately, the typed note is dropped on recipe placement (`buildRecipeRequest` hardcodes `note: null`, `:151`), even though the Note input is visible.
+**Problem:** The composer hand-builds `UpsertMealSlotRequest` (`meal-composer-sheet.tsx:135-183`) and never uses the tested schemas, so an invalid image URL or over-long title is sent raw; meanwhile the schemas are not used by the composer submit path. Separately, the typed note is dropped on recipe placement (`buildRecipeRequest` hardcodes request `note: null`, `:151`), even though the Note input is visible.
 
 **Contract:**
 - Validate the quick-meal and recipe-placement requests with the existing schema(s) before mutating. On validation failure, surface a clear inline error (reuse the existing error region pattern) and do NOT mutate. The schema must reject a non-http(s) / malformed image URL and an over-long title (whatever `mealEntrySchema`/`optionalUrlSchema` already enforce — do not invent new rules; use what's tested).
-- Build the request via the schema's transform (`toMealEntryRequest`) rather than hand-mapping, so the composer and the tested contract can't drift again.
-- Carry the composer's `note` into recipe placement: `buildRecipeRequest` should set the entry/slot note from the trimmed composer note (or `null`), so a typed note attaches to recipe-backed placements (snapshot note field per spec) instead of vanishing.
+- Build quick-meal entries via the schema's transform (`toMealEntryRequest`) rather than hand-mapping, so the composer and the tested contract can't drift again.
+- Carry the composer's typed note into recipe-backed placement as the **slot-level** `UpsertMealSlotRequest.note`. Keep the recipe entry request note `null`; recipe-backed entry snapshots should continue to come from the saved recipe, while the user's meal-planning note belongs to the meal slot.
 
 - [ ] **Step 1: Failing tests**:
   - Entering an invalid image URL (e.g. `not a url`) for a quick meal shows a validation error and performs no mutation (MSW handler not hit).
   - A valid quick meal still saves.
-  - Selecting/placing a recipe with a typed note results in an upsert request whose note carries that value (assert via the captured request payload / resulting board).
+  - Selecting/placing a recipe with a typed note results in an upsert request whose top-level slot `note` carries that value and whose `primary.note` remains `null` (assert via captured request payload and/or resulting board).
 - [ ] **Step 2:** Run → FAIL.
 - [ ] **Step 3:** Wire validation + `toMealEntryRequest`; carry the note into `buildRecipeRequest`.
 - [ ] **Step 4:** `npm test -- --run src/components/meals/meal-composer-sheet.test.tsx src/lib/validations/meals.test.ts src/components/meals-view.test.tsx` green.
@@ -204,7 +217,13 @@
 
 ### Task 7 — C7: broken-image fallback for recipe surfaces
 
-**Files:** `src/components/recipes/recipe-library-card.tsx`, `src/components/recipes/recipe-detail-view.tsx`, `src/components/meals/recipe-match-list.tsx`, plus their tests.
+**Files:**
+- Modify: `src/components/recipes/recipe-library-card.tsx`
+- Modify: `src/components/recipes/recipe-detail-view.tsx`
+- Modify: `src/components/meals/recipe-match-list.tsx`
+- Create if absent: `src/components/recipes/recipe-library-card.test.tsx`
+- Modify existing or create if absent: `src/components/recipes/recipe-detail-view.test.tsx`
+- Create if absent: `src/components/meals/recipe-match-list.test.tsx`
 
 **Problem:** These three `<img>` have no `onError`; a dead URL shows the broken-image glyph. `meal-slot-card.tsx:20,36-41` already has the correct `useState(imgFailed)` + `onError` → placeholder pattern.
 
@@ -213,7 +232,7 @@
 - [ ] **Step 1: Failing tests**: render each with an `imageUrl`, fire the `<img>` `error` event, assert the placeholder renders. (jsdom won't auto-fire load/error — dispatch the `error` event manually on the image node.)
 - [ ] **Step 2:** Run → FAIL.
 - [ ] **Step 3:** Add `imgFailed` state + `onError` + fallback in each.
-- [ ] **Step 4:** `npm test -- --run src/components/recipes src/components/meals/recipe-match-list.test.tsx` green (run whichever test files exist for these).
+- [ ] **Step 4:** `npm test -- --run src/components/recipes/recipe-library-card.test.tsx src/components/recipes/recipe-detail-view.test.tsx src/components/meals/recipe-match-list.test.tsx` green.
 - [ ] **Step 5: Commit** — `fix(recipes): show a placeholder when a recipe image fails to load`
 
 ---
@@ -234,17 +253,23 @@
 
 ### Task 9 — C9: recipe form per-row remove controls
 
-**Files:** `src/components/recipes/recipe-form.tsx`, `src/components/recipes/recipe-form.test.tsx`
+**Files:**
+- Modify: `src/components/recipes/recipe-form.tsx`
+- Create if absent: `src/components/recipes/recipe-form.test.tsx`
+- Modify if broader integration coverage is useful: `src/components/recipes-view.test.tsx`
 
 **Problem:** `ArrayFieldSection` (`recipe-form.tsx:42-89`) renders Add but no per-row Remove.
 
-**Contract:** Each ingredient/instruction row gets a Remove control (icon button with an accessible name like `Remove ingredient N`). Removing updates the array via the existing `onChange` mechanism (add an `onRemove(index)` prop). Respect a sensible floor: do not allow removing below `DEFAULT_LINE_COUNT`-driven empties in a way that breaks the form; simplest contract — allow removing any row, but if all are removed the form still submits validly (name-only recipe is allowed per spec). Match the form's existing react-hook-form wiring.
+**Contract:** Each ingredient, instruction, and tag row gets a Remove control (icon button with an accessible name like `Remove ingredient 2`, `Remove instruction 1`, `Remove tag 3`). Removing updates the array via the existing react-hook-form wiring (add an `onRemove(index)` prop and call `form.setValue(..., { shouldDirty: true })`). Preserve the current visual floor from `ensureMinimumLines`: if a user removes all rows, the underlying array may be empty for submission, but the UI should continue to render two blank rows because name-only recipes are valid.
 
-- [ ] **Step 1:** Failing test: add 3 ingredient rows, fill them, remove the middle one, assert the remaining values are correct and the removed value is gone.
+- [ ] **Step 1:** Failing tests:
+  - Add 3 ingredient rows, fill them, remove the middle one, assert the remaining values are correct and the removed value is gone.
+  - Repeat the same remove behavior for instructions and tags.
+  - Remove all rows from one section and assert the form still shows two blank rows and can submit a name-only recipe without sending blank strings.
 - [ ] **Step 2:** Run → FAIL.
 - [ ] **Step 3:** Add `onRemove` + a Remove button per row; wire to the parent's array state.
 - [ ] **Step 4:** `npm test -- --run src/components/recipes/recipe-form.test.tsx src/components/recipes` green.
-- [ ] **Step 5: Commit** — `feat(recipes): allow removing ingredient and instruction rows`
+- [ ] **Step 5: Commit** — `feat(recipes): allow removing ordered recipe rows`
 
 ### Task 10 — C10: recipes empty-state add button
 
@@ -277,7 +302,7 @@
 - [ ] Manually confirm the editor-first flow still works: tapping a recipe-backed planned meal opens the editor; "View recipe" reaches live detail (and shows no dead Edit/Favorite/Add buttons there).
 - [ ] Open a PR from `fix/meals-recipes-review-consolidated` with `Closes`/links to the relevant Issue(s); body maps each non-negotiable (C1–C12) to its commit + test. No AI attribution.
 
-## Requirement → coverage checklist (fill in the PR body)
+## Requirement → coverage checklist for the PR body
 
 | ID | Addressed by task | Test(s) |
 |----|-------------------|---------|
@@ -287,7 +312,7 @@
 | C3 | T3 | recipe-detail-view optional actions; editor review-only |
 | C4 | T4 | composer full-library in context (updated existing test) |
 | C5 | T5 | meals-origin chooser + import return |
-| C6 | T6 | composer validation + note carry |
+| C6 | T6 | composer validation + slot-note carry |
 | C7 | T7 | image onError fallback ×3 |
 | C8 | T8 | board retry |
 | C9 | T9 | recipe row remove |
