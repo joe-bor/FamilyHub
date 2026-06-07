@@ -524,7 +524,32 @@ describe("RecipesView", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("opens manual create from a meals draft and returns to meals with a slot handoff after save", async () => {
+  it("opens the chooser from a meals draft so URL import is reachable", async () => {
+    seedMockRecipes([]);
+    useAppStore.getState().startRecipeCreationFromMealSlot({
+      requestedAtWeekStartDate: "2026-06-07",
+      dayIndex: 3,
+      mealType: "dinner",
+      typedTitle: "Skillet Eggs",
+    });
+
+    renderWithUser(<RecipesView />);
+
+    // The chooser (Add Recipe) must open — not jump straight to manual mode.
+    expect(
+      await screen.findByRole("dialog", { name: "Add Recipe" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Create manually" }),
+    ).toBeVisible();
+    expect(
+      screen.getByRole("button", { name: "Import from URL" }),
+    ).toBeVisible();
+    // The manual form must NOT be visible yet.
+    expect(screen.queryByLabelText("Title")).not.toBeInTheDocument();
+  });
+
+  it("picking Create manually from the meals-draft chooser prefills the title and returns to meals after save", async () => {
     seedMockRecipes([]);
     useAppStore.getState().startRecipeCreationFromMealSlot({
       requestedAtWeekStartDate: "2026-06-07",
@@ -535,6 +560,11 @@ describe("RecipesView", () => {
 
     const { user } = renderWithUser(<RecipesView />);
 
+    // Wait for the chooser to open.
+    await screen.findByRole("dialog", { name: "Add Recipe" });
+    await user.click(screen.getByRole("button", { name: "Create manually" }));
+
+    // Switching to manual mode should prefill the title from the draft.
     expect(
       await screen.findByRole("dialog", { name: "Create Recipe" }),
     ).toBeInTheDocument();
@@ -555,7 +585,7 @@ describe("RecipesView", () => {
     });
   });
 
-  it("cancels a meals draft create without leaving stale handoff state", async () => {
+  it("importing from URL via the meals-draft chooser returns to meals with a slot handoff", async () => {
     seedMockRecipes([]);
     useAppStore.getState().startRecipeCreationFromMealSlot({
       requestedAtWeekStartDate: "2026-06-07",
@@ -566,10 +596,52 @@ describe("RecipesView", () => {
 
     const { user } = renderWithUser(<RecipesView />);
 
+    // Chooser opens.
+    await screen.findByRole("dialog", { name: "Add Recipe" });
+    await user.click(screen.getByRole("button", { name: "Import from URL" }));
+
+    // Import sheet appears.
+    await typeAndWait(
+      user,
+      screen.getByLabelText("Recipe URL"),
+      "https://example.com/imported-soup",
+    );
+    await user.click(screen.getByRole("button", { name: "Import recipe" }));
+
+    // After a successful import the app returns to Meals with the placement draft.
+    expect(useAppStore.getState().activeModule).toBe("meals");
+    expect(useAppStore.getState().recipeCreationDraft).toBe(null);
+    expect(useAppStore.getState().mealPlacementDraft).toEqual({
+      recipeId: "00000000-0000-4000-8000-000000000502",
+      requestedAtWeekStartDate: "2026-06-07",
+      source: {
+        kind: "meals-slot",
+        dayIndex: 2,
+        mealType: "lunch",
+      },
+    });
+  });
+
+  it("dismissing the meals-draft chooser clears the draft without leaving stale handoff state", async () => {
+    seedMockRecipes([]);
+    useAppStore.getState().startRecipeCreationFromMealSlot({
+      requestedAtWeekStartDate: "2026-06-07",
+      dayIndex: 2,
+      mealType: "lunch",
+      typedTitle: "Soup idea",
+    });
+
+    const { user } = renderWithUser(<RecipesView />);
+
+    // Chooser opens (not manual mode).
     expect(
-      await screen.findByRole("dialog", { name: "Create Recipe" }),
+      await screen.findByRole("dialog", { name: "Add Recipe" }),
     ).toBeInTheDocument();
 
+    // Navigate into manual mode then cancel — onCancelManual fires and clears
+    // the draft.
+    await user.click(screen.getByRole("button", { name: "Create manually" }));
+    await screen.findByRole("dialog", { name: "Create Recipe" });
     await user.click(screen.getByRole("button", { name: "Cancel" }));
 
     expect(useAppStore.getState().recipeCreationDraft).toBe(null);
