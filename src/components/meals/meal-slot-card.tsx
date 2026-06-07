@@ -29,7 +29,6 @@ export function MealSlotCard({
           readOnly ? "cursor-default" : "hover:bg-muted/50",
         )}
         aria-label={`Open ${slot.mealType}: ${slot.primary.title}`}
-        disabled={readOnly}
         onClick={() => onSelectSlot(slot)}
       >
         <div className="flex items-start gap-3">
