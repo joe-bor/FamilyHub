@@ -257,6 +257,86 @@ describe("MealComposerSheet", () => {
     expect(onOpenChange).toHaveBeenCalledWith(false);
   });
 
+  it("rejects an invalid image URL with an inline error and no mutation", async () => {
+    const emptyBoard = createEmptyMealsBoard();
+    seedMockMealsBoard(emptyBoard);
+
+    // dayIndex 4, dinner = slotIndex 2
+    const dinnerSlot = createEmptyMealSlot(testWeekStartDate, 4, "dinner");
+    const onOpenChange = vi.fn();
+    const { user } = renderComposer(dinnerSlot, onOpenChange);
+
+    await user.type(screen.getByLabelText("Meal name"), "Mystery Meal");
+    await user.type(screen.getByLabelText("Image URL"), "not a url");
+    await user.click(screen.getByRole("button", { name: "Create quick meal" }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("valid URL");
+
+    // No mutation: the slot stays empty and the composer stays open.
+    const board = getMockMealsBoard(testWeekStartDate);
+    expect(board.days[4].slots[2].primary).toBeNull();
+    expect(onOpenChange).not.toHaveBeenCalledWith(false);
+  });
+
+  it("saves a valid quick meal to the board", async () => {
+    const emptyBoard = createEmptyMealsBoard();
+    seedMockMealsBoard(emptyBoard);
+
+    // dayIndex 5, lunch = slotIndex 1
+    const lunchSlot = createEmptyMealSlot(testWeekStartDate, 5, "lunch");
+    const onOpenChange = vi.fn();
+    const { user } = renderComposer(lunchSlot, onOpenChange);
+
+    await user.type(screen.getByLabelText("Meal name"), "Tacos");
+    await user.type(
+      screen.getByLabelText("Image URL"),
+      "https://example.com/tacos.jpg",
+    );
+    await user.type(screen.getByLabelText("Note"), "Extra cilantro");
+    await user.click(screen.getByRole("button", { name: "Create quick meal" }));
+
+    await waitFor(() => {
+      expect(onOpenChange).toHaveBeenCalledWith(false);
+    });
+
+    const board = getMockMealsBoard(testWeekStartDate);
+    const slot = board.days[5].slots[1];
+    expect(slot.primary?.sourceType).toBe("quick");
+    expect(slot.primary?.title).toBe("Tacos");
+    // Quick-meal note lives on the entry, not the slot.
+    expect(slot.primary?.note).toBe("Extra cilantro");
+    expect(slot.note).toBeNull();
+  });
+
+  it("carries a typed note onto the slot when placing a recipe", async () => {
+    const emptyBoard = createEmptyMealsBoard();
+    seedMockMealsBoard(emptyBoard);
+
+    // dayIndex 6, dinner = slotIndex 2
+    const dinnerSlot = createEmptyMealSlot(testWeekStartDate, 6, "dinner");
+    const onOpenChange = vi.fn();
+    const { user } = renderComposer(dinnerSlot, onOpenChange);
+
+    await user.type(screen.getByLabelText("Note"), "Double the sauce");
+
+    await user.click(
+      await screen.findByRole("button", {
+        name: /select recipe: imported tomato soup/i,
+      }),
+    );
+
+    await waitFor(() => {
+      expect(onOpenChange).toHaveBeenCalledWith(false);
+    });
+
+    const board = getMockMealsBoard(testWeekStartDate);
+    const slot = board.days[6].slots[2];
+    // The user's meal-planning note belongs to the slot, not the recipe entry.
+    expect(slot.note).toBe("Double the sauce");
+    expect(slot.primary?.sourceType).toBe("recipe");
+    expect(slot.primary?.recipeId).toBe(importedRecipeDetail.id);
+  });
+
   it("shows recent recipes sorted newest-first when there is no query", async () => {
     const olderRecipe: RecipeDetail = {
       ...importedRecipeDetail,

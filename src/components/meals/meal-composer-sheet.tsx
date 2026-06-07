@@ -16,6 +16,10 @@ import type {
   RecipeSummary,
   UpsertMealSlotRequest,
 } from "@/lib/types";
+import {
+  toMealEntryRequest,
+  upsertMealSlotSchema,
+} from "@/lib/validations/meals";
 import { useAppStore } from "@/stores";
 import { formatMealType } from "./meal-type-utils";
 import { RecipeMatchList } from "./recipe-match-list";
@@ -64,6 +68,7 @@ export function MealComposerSheet({
   const [imageUrl, setImageUrl] = useState("");
   const [note, setNote] = useState("");
   const [showAll, setShowAll] = useState(false);
+  const [validationError, setValidationError] = useState<string | null>(null);
   const [collisionRequest, setCollisionRequest] =
     useState<UpsertMealSlotRequest | null>(null);
   const recipes = useRecipes();
@@ -80,6 +85,7 @@ export function MealComposerSheet({
       setImageUrl("");
       setNote("");
       setShowAll(false);
+      setValidationError(null);
       setCollisionRequest(null);
     }
   }, [isOpen]);
@@ -140,54 +146,82 @@ export function MealComposerSheet({
     upsertSlot.mutate(request);
   }
 
-  function buildRecipeRequest(
-    recipeId: string,
-    collisionMode: MealCollisionMode | null = null,
-  ): UpsertMealSlotRequest {
+  function buildValidatedRequest(
+    input: unknown,
+  ):
+    | { ok: true; request: UpsertMealSlotRequest }
+    | { ok: false; message: string } {
+    const parsed = upsertMealSlotSchema.safeParse(input);
+    if (!parsed.success) {
+      return {
+        ok: false,
+        message:
+          parsed.error.issues[0]?.message ??
+          "Check the meal details and try again.",
+      };
+    }
     return {
-      weekStartDate: activeSlot.weekStartDate,
-      dayIndex: activeSlot.dayIndex,
-      mealType: activeSlot.mealType,
-      primary: {
-        sourceType: "recipe",
-        recipeId,
-        title: null,
-        imageUrl: null,
-        note: null,
+      ok: true,
+      request: {
+        weekStartDate: parsed.data.weekStartDate,
+        dayIndex: parsed.data.dayIndex,
+        mealType: parsed.data.mealType,
+        primary: toMealEntryRequest(parsed.data.primary),
+        extras: parsed.data.extras.map(toMealEntryRequest),
+        note: parsed.data.note,
+        collisionMode: parsed.data.collisionMode,
       },
-      extras: [],
-      note: null,
-      collisionMode,
     };
   }
 
+  function placeRecipe(recipeId: string) {
+    const result = buildValidatedRequest({
+      weekStartDate: activeSlot.weekStartDate,
+      dayIndex: activeSlot.dayIndex,
+      mealType: activeSlot.mealType,
+      // The user's meal-planning note belongs to the slot; the recipe entry
+      // snapshot is sourced from the saved recipe (entry note forced to null).
+      primary: { sourceType: "recipe", recipeId },
+      extras: [],
+      note,
+      collisionMode: null,
+    });
+    if (!result.ok) {
+      setValidationError(result.message);
+      return;
+    }
+    setValidationError(null);
+    submitRequest(result.request);
+  }
+
   function handleSelectRecipe(recipe: RecipeSummary) {
-    submitRequest(buildRecipeRequest(recipe.id));
+    placeRecipe(recipe.id);
   }
 
   function handleSeededRecipe() {
     if (!seededRecipeId) return;
-    submitRequest(buildRecipeRequest(seededRecipeId));
+    placeRecipe(seededRecipeId);
   }
 
   function handleCreateQuickMeal() {
     if (!trimmedMealName) return;
 
-    submitRequest({
+    const result = buildValidatedRequest({
       weekStartDate: activeSlot.weekStartDate,
       dayIndex: activeSlot.dayIndex,
       mealType: activeSlot.mealType,
-      primary: {
-        sourceType: "quick",
-        recipeId: null,
-        title: trimmedMealName,
-        imageUrl: imageUrl.trim() || null,
-        note: note.trim() || null,
-      },
+      // Quick-meal note belongs to the entry, not the slot (unchanged behavior).
+      primary: { sourceType: "quick", title: mealName, imageUrl, note },
       extras: [],
       note: null,
       collisionMode: null,
     });
+    if (!result.ok) {
+      setValidationError(result.message);
+      return;
+    }
+    setValidationError(null);
+    submitRequest(result.request);
   }
 
   function handleCreateRecipeFromThis() {
@@ -284,7 +318,11 @@ export function MealComposerSheet({
               </Button>
             </div>
 
-            {upsertSlot.isError ? (
+            {validationError ? (
+              <p className="text-sm text-destructive" role="alert">
+                {validationError}
+              </p>
+            ) : upsertSlot.isError ? (
               <p className="text-sm text-destructive" role="alert">
                 {upsertSlot.error instanceof Error
                   ? upsertSlot.error.message
