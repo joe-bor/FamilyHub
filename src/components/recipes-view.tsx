@@ -137,7 +137,7 @@ export function RecipesView() {
     }
   }, [hasOpenedRecipeDraft, recipeCreationDraft]);
 
-  const createSheetMode = recipeCreationDraft ? "manual" : "choices";
+  const createSheetMode = "choices";
   const createSheetDefaultValues = recipeCreationDraft
     ? { title: recipeCreationDraft.typedTitle }
     : undefined;
