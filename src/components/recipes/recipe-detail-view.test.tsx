@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { testRecipeDetail } from "@/test/fixtures/recipes";
-import { render, screen } from "@/test/test-utils";
+import { fireEvent, render, screen } from "@/test/test-utils";
 import { RecipeDetailView } from "./recipe-detail-view";
 
 describe("RecipeDetailView", () => {
@@ -104,5 +104,20 @@ describe("RecipeDetailView", () => {
         name: `Favorite recipe: ${testRecipeDetail.title}`,
       }),
     ).toBeInTheDocument();
+  });
+
+  it("falls back to No photo placeholder when the recipe image fails to load", () => {
+    // testRecipeDetail has imageUrl set, so the img is rendered initially
+    render(<RecipeDetailView recipe={testRecipeDetail} onBack={vi.fn()} />);
+
+    const img = screen.getByRole("img", { name: testRecipeDetail.title });
+    expect(img).toBeInTheDocument();
+
+    fireEvent.error(img);
+
+    expect(
+      screen.queryByRole("img", { name: testRecipeDetail.title }),
+    ).not.toBeInTheDocument();
+    expect(screen.getByText("No photo")).toBeInTheDocument();
   });
 });

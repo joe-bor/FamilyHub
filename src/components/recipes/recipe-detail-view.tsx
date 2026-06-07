@@ -1,5 +1,6 @@
 import { ArrowLeft, Heart, Pencil } from "lucide-react";
 import type { ReactNode } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { formatRecipeTag } from "@/lib/recipe-tags";
 import type { RecipeDetail } from "@/lib/types";
@@ -37,15 +38,17 @@ export function RecipeDetailView({
   onEdit,
   onToggleFavorite,
 }: RecipeDetailViewProps) {
+  const [imgFailed, setImgFailed] = useState(false);
   return (
     <div className="space-y-4 rounded-lg border border-border bg-card p-4">
       <div className="space-y-5">
         <div className="relative aspect-[4/3] overflow-hidden rounded-lg bg-muted">
-          {recipe.imageUrl ? (
+          {recipe.imageUrl && !imgFailed ? (
             <img
               src={recipe.imageUrl}
               alt={recipe.title}
               className="h-full w-full object-cover"
+              onError={() => setImgFailed(true)}
             />
           ) : (
             <div className="flex h-full items-center justify-center">

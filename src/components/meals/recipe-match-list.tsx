@@ -1,5 +1,21 @@
 import { Heart } from "lucide-react";
+import { useState } from "react";
 import type { RecipeSummary } from "@/lib/types";
+
+function RecipeMatchThumbnail({ recipe }: { recipe: RecipeSummary }) {
+  const [imgFailed, setImgFailed] = useState(false);
+  if (!recipe.imageUrl || imgFailed) {
+    return <div className="h-12 w-12 rounded-md bg-muted" />;
+  }
+  return (
+    <img
+      src={recipe.imageUrl}
+      alt=""
+      className="h-12 w-12 rounded-md object-cover"
+      onError={() => setImgFailed(true)}
+    />
+  );
+}
 
 interface RecipeMatchListProps {
   title: string;
@@ -26,15 +42,7 @@ export function RecipeMatchList({
             aria-label={`Select recipe: ${recipe.title}`}
             onClick={() => onSelectRecipe(recipe)}
           >
-            {recipe.imageUrl ? (
-              <img
-                src={recipe.imageUrl}
-                alt=""
-                className="h-12 w-12 rounded-md object-cover"
-              />
-            ) : (
-              <div className="h-12 w-12 rounded-md bg-muted" />
-            )}
+            <RecipeMatchThumbnail recipe={recipe} />
             <span className="min-w-0 flex-1 truncate text-sm font-semibold text-foreground">
               {recipe.title}
             </span>
