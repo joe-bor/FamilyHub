@@ -616,6 +616,121 @@ describe("MealsView", () => {
     ).toBeInTheDocument();
   });
 
+  it("past occupied slot is enabled and opens the editor in read-only mode", async () => {
+    const pastWeekStartDate = "2026-05-31";
+    const pastBoard = createOccupiedMealsBoard();
+    // Override weekStartDate so the board and slots belong to the past week
+    const pastOccupied = {
+      ...pastBoard,
+      weekStartDate: pastWeekStartDate,
+      days: pastBoard.days.map((day) => ({
+        ...day,
+        slots: day.slots.map((slot) => ({
+          ...slot,
+          weekStartDate: pastWeekStartDate,
+        })),
+      })),
+    };
+    seedMockMealsBoard(pastOccupied);
+    const { user } = renderWithUser(<MealsView />);
+
+    await user.click(
+      await screen.findByRole("button", { name: "Previous week" }),
+    );
+
+    // The week banner and review-only label must be visible
+    expect(await screen.findByText("Review only")).toBeInTheDocument();
+
+    // The occupied dinner card must be present and NOT disabled
+    const occupiedCard = await screen.findByRole("button", {
+      name: /open dinner: pasta/i,
+    });
+    expect(occupiedCard).not.toBeDisabled();
+
+    // Clicking the occupied card opens the editor
+    await user.click(occupiedCard);
+    const editorDialog = await screen.findByRole("dialog", {
+      name: "Dinner Plan",
+    });
+    expect(editorDialog).toBeInTheDocument();
+
+    // Mutation buttons must be disabled on a read-only past week
+    expect(
+      within(editorDialog).getByRole("button", { name: "Replace meal" }),
+    ).toBeDisabled();
+    expect(
+      within(editorDialog).getByRole("button", { name: "Add extra or side" }),
+    ).toBeDisabled();
+    expect(
+      within(editorDialog).getByRole("button", { name: "Move meal" }),
+    ).toBeDisabled();
+    expect(
+      within(editorDialog).getByRole("button", { name: "Duplicate meal" }),
+    ).toBeDisabled();
+    expect(
+      within(editorDialog).getByRole("button", { name: "Remove meal" }),
+    ).toBeDisabled();
+
+    // Extra-remove ✕ must NOT be rendered on a read-only week
+    expect(
+      within(editorDialog).queryByRole("button", {
+        name: /remove extra:/i,
+      }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("past recipe-backed occupied slot opens editor with View recipe available", async () => {
+    const pastWeekStartDate = "2026-05-31";
+    const pastBoard = createRecipeBackedMealsBoard();
+    const pastRecipeBacked = {
+      ...pastBoard,
+      weekStartDate: pastWeekStartDate,
+      days: pastBoard.days.map((day) => ({
+        ...day,
+        slots: day.slots.map((slot) => ({
+          ...slot,
+          weekStartDate: pastWeekStartDate,
+        })),
+      })),
+    };
+    seedMockMealsBoard(pastRecipeBacked);
+    seedMockRecipes([testRecipeDetail]);
+    const { user } = renderWithUser(<MealsView />);
+
+    await user.click(
+      await screen.findByRole("button", { name: "Previous week" }),
+    );
+
+    expect(await screen.findByText("Review only")).toBeInTheDocument();
+
+    // Open the recipe-backed occupied slot
+    const occupiedCard = await screen.findByRole("button", {
+      name: /open dinner: snapshot salmon/i,
+    });
+    expect(occupiedCard).not.toBeDisabled();
+    await user.click(occupiedCard);
+
+    const editorDialog = await screen.findByRole("dialog", {
+      name: "Dinner Plan",
+    });
+
+    // "View recipe" must be present and clickable (no disabled gate)
+    const viewRecipeBtn = within(editorDialog).getByRole("button", {
+      name: "View recipe",
+    });
+    expect(viewRecipeBtn).not.toBeDisabled();
+
+    await user.click(viewRecipeBtn);
+
+    // Recipe detail view is shown
+    expect(
+      await screen.findByRole("heading", { name: testRecipeDetail.title }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "Ingredients" }),
+    ).toBeInTheDocument();
+  });
+
   it("moves a planned meal to a chosen day and meal type", async () => {
     const board = createOccupiedMealsBoard(); // Monday dinner: Pasta + Salad
     seedMockMealsBoard(board);
