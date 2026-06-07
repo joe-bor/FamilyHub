@@ -63,6 +63,7 @@ export function MealComposerSheet({
   const [mealName, setMealName] = useState("");
   const [imageUrl, setImageUrl] = useState("");
   const [note, setNote] = useState("");
+  const [showAll, setShowAll] = useState(false);
   const [collisionRequest, setCollisionRequest] =
     useState<UpsertMealSlotRequest | null>(null);
   const recipes = useRecipes();
@@ -72,13 +73,13 @@ export function MealComposerSheet({
   const startRecipeCreationFromMealSlot = useAppStore(
     (state) => state.startRecipeCreationFromMealSlot,
   );
-  const setActiveModule = useAppStore((state) => state.setActiveModule);
 
   useEffect(() => {
     if (isOpen) {
       setMealName("");
       setImageUrl("");
       setNote("");
+      setShowAll(false);
       setCollisionRequest(null);
     }
   }, [isOpen]);
@@ -106,6 +107,13 @@ export function MealComposerSheet({
       sortedByFavoriteThenRecent(
         allRecipes.filter((recipe) => recipeMatchesQuery(recipe, query)),
       ).slice(0, 6),
+    [allRecipes, query],
+  );
+  const allSortedRecipes = useMemo(
+    () =>
+      sortedByFavoriteThenRecent(
+        allRecipes.filter((recipe) => recipeMatchesQuery(recipe, query)),
+      ),
     [allRecipes, query],
   );
 
@@ -284,36 +292,43 @@ export function MealComposerSheet({
               </p>
             ) : null}
 
-            <Button
-              type="button"
-              variant="ghost"
-              className="w-full justify-start"
-              onClick={() => {
-                setActiveModule("recipes");
-                onOpenChange(false);
-              }}
-            >
-              Browse recipe library
-            </Button>
-
-            {query ? (
+            {showAll ? (
               <RecipeMatchList
-                title="Matching recipes"
-                recipes={matchingRecipes}
+                title="All recipes"
+                recipes={allSortedRecipes}
                 onSelectRecipe={handleSelectRecipe}
               />
             ) : (
               <>
-                <RecipeMatchList
-                  title="Favorite recipes"
-                  recipes={favoriteRecipes}
-                  onSelectRecipe={handleSelectRecipe}
-                />
-                <RecipeMatchList
-                  title="Recent recipes"
-                  recipes={recentRecipes}
-                  onSelectRecipe={handleSelectRecipe}
-                />
+                {query ? (
+                  <RecipeMatchList
+                    title="Matching recipes"
+                    recipes={matchingRecipes}
+                    onSelectRecipe={handleSelectRecipe}
+                  />
+                ) : (
+                  <>
+                    <RecipeMatchList
+                      title="Favorite recipes"
+                      recipes={favoriteRecipes}
+                      onSelectRecipe={handleSelectRecipe}
+                    />
+                    <RecipeMatchList
+                      title="Recent recipes"
+                      recipes={recentRecipes}
+                      onSelectRecipe={handleSelectRecipe}
+                    />
+                  </>
+                )}
+
+                <Button
+                  type="button"
+                  variant="ghost"
+                  className="w-full justify-start"
+                  onClick={() => setShowAll(true)}
+                >
+                  Show all recipes
+                </Button>
               </>
             )}
           </div>
