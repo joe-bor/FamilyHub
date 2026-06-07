@@ -498,6 +498,54 @@ describe("MealsView", () => {
     ).toBeInTheDocument();
   });
 
+  it("shows no Edit/Add-to-Meals/Favorite buttons in the meal-context recipe detail", async () => {
+    const board = createRecipeBackedMealsBoard();
+    seedMockMealsBoard(board);
+    seedMockRecipes([testRecipeDetail]);
+    const { user } = renderWithUser(
+      <MealEditorSheet
+        isOpen
+        slotId={{
+          weekStartDate: board.weekStartDate,
+          dayIndex: 1,
+          mealType: "dinner",
+        }}
+        board={board}
+        readOnly={false}
+        onOpenChange={vi.fn()}
+      />,
+    );
+
+    await user.click(screen.getByRole("button", { name: "View recipe" }));
+
+    // Back is always present
+    expect(
+      await screen.findByRole("button", { name: "Back to recipes" }),
+    ).toBeInTheDocument();
+    // Recipe content present
+    expect(
+      screen.getByRole("heading", { name: testRecipeDetail.title }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "Ingredients" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "Instructions" }),
+    ).toBeInTheDocument();
+    // Dead-end action buttons must NOT appear
+    expect(
+      screen.queryByRole("button", { name: "Edit recipe" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Add to Meals" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", {
+        name: `Favorite recipe: ${testRecipeDetail.title}`,
+      }),
+    ).not.toBeInTheDocument();
+  });
+
   it("reflects a saved meal note in the editor without reopening", async () => {
     seedMockMealsBoard(createOccupiedMealsBoard());
     const queryClient = new QueryClient({

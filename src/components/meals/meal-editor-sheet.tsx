@@ -228,9 +228,6 @@ export function MealEditorSheet({
             <RecipeDetailView
               recipe={recipe.data.data}
               onBack={() => setShowRecipe(false)}
-              onAddToMeals={() => undefined}
-              onEdit={() => undefined}
-              onToggleFavorite={() => undefined}
             />
           ) : recipe.isLoading ? (
             <p className="text-sm text-muted-foreground">Loading recipe...</p>
