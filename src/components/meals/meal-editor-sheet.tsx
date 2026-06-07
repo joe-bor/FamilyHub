@@ -25,6 +25,7 @@ import type {
   MealEntryRequest,
   MealSlot,
   MealSlotEntry,
+  MealType,
   MoveMealSlotRequest,
   UpsertMealSlotRequest,
 } from "@/lib/types";
@@ -56,9 +57,15 @@ type PendingCollision =
   | { kind: "move"; request: MoveMealSlotRequest }
   | { kind: "duplicate"; request: DuplicateMealSlotRequest };
 
+export interface MealSlotId {
+  weekStartDate: string;
+  dayIndex: number;
+  mealType: MealType;
+}
+
 interface MealEditorSheetProps {
   isOpen: boolean;
-  slot: MealSlot | null;
+  slotId: MealSlotId | null;
   board: MealBoard | null;
   readOnly: boolean;
   onReplace?: (slot: MealSlot) => void;
@@ -66,9 +73,15 @@ interface MealEditorSheetProps {
   onOpenChange: (open: boolean) => void;
 }
 
+function findSlot(board: MealBoard, slotId: MealSlotId): MealSlot | undefined {
+  return board.days[slotId.dayIndex]?.slots.find(
+    (candidate) => candidate.mealType === slotId.mealType,
+  );
+}
+
 export function MealEditorSheet({
   isOpen,
-  slot,
+  slotId,
   board,
   readOnly,
   onReplace,
@@ -81,7 +94,10 @@ export function MealEditorSheet({
     null,
   );
   const [showRecipe, setShowRecipe] = useState(false);
-  const recipeId = slot?.primary?.recipeId ?? null;
+  // The slot is always read from the live board so saves and collisions stay
+  // accurate; local state only ever holds in-progress drafts.
+  const liveSlot = board && slotId ? findSlot(board, slotId) : undefined;
+  const recipeId = liveSlot?.primary?.recipeId ?? null;
   const recipe = useRecipe(showRecipe ? recipeId : null);
   const moveSlot = useMoveMealSlot({
     onSuccess: () => onOpenChange(false),
@@ -92,25 +108,27 @@ export function MealEditorSheet({
   const removeSlot = useRemoveMealSlot({
     onSuccess: () => onOpenChange(false),
   });
-  const [workingExtras, setWorkingExtras] = useState<MealSlotEntry[]>(
-    slot?.extras ?? [],
-  );
   const [isEditingNote, setIsEditingNote] = useState(false);
-  const [noteDraft, setNoteDraft] = useState(slot?.note ?? "");
+  const [noteDraft, setNoteDraft] = useState(liveSlot?.note ?? "");
+  // Reset the note draft only when the identified slot changes, not on every
+  // background board refetch (which would clobber an in-progress edit).
+  // biome-ignore lint/correctness/useExhaustiveDependencies: reset keys off the slot identity, not the live slot snapshot.
   useEffect(() => {
-    setWorkingExtras(slot?.extras ?? []);
-    setNoteDraft(slot?.note ?? "");
+    setNoteDraft(liveSlot?.note ?? "");
     setIsEditingNote(false);
-  }, [slot]);
+  }, [slotId?.weekStartDate, slotId?.dayIndex, slotId?.mealType]);
   const upsertSlot = useUpsertMealSlot({
-    onError: () => setWorkingExtras(slot?.extras ?? []),
+    onError: () => {
+      setNoteDraft(liveSlot?.note ?? "");
+      setIsEditingNote(false);
+    },
   });
 
-  if (!slot || !board || !slot.primary) return null;
+  if (!board || !slotId || !liveSlot?.primary) return null;
 
-  const activeSlot = slot;
+  const activeSlot = liveSlot;
   const activeBoard = board;
-  const activePrimary = slot.primary;
+  const activePrimary = liveSlot.primary;
   const actionDisabled =
     readOnly ||
     moveSlot.isPending ||
@@ -141,15 +159,16 @@ export function MealEditorSheet({
   }
 
   function handleRemoveExtra(extraId: string) {
-    const nextExtras = workingExtras.filter((extra) => extra.id !== extraId);
-    setWorkingExtras(nextExtras);
+    const nextExtras = activeSlot.extras.filter(
+      (extra) => extra.id !== extraId,
+    );
     saveComposition(nextExtras, activeSlot.note);
   }
 
   function handleSaveNote() {
     const nextNote = noteDraft.trim() || null;
     setIsEditingNote(false);
-    saveComposition(workingExtras, nextNote);
+    saveComposition(activeSlot.extras, nextNote);
   }
 
   function confirmMoveTarget(target: {
@@ -234,9 +253,9 @@ export function MealEditorSheet({
                   {activePrimary.note}
                 </p>
               ) : null}
-              {workingExtras.length > 0 ? (
+              {activeSlot.extras.length > 0 ? (
                 <div className="mt-3 flex flex-wrap gap-1">
-                  {workingExtras.map((extra) => (
+                  {activeSlot.extras.map((extra) => (
                     <span
                       key={extra.id}
                       className="inline-flex items-center gap-1 rounded-full bg-secondary px-2 py-1 text-xs font-medium text-secondary-foreground"

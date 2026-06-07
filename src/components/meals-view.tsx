@@ -5,7 +5,10 @@ import {
   type MealSlotSelection,
 } from "@/components/meals/meal-composer-sheet";
 import { MealDayCard } from "@/components/meals/meal-day-card";
-import { MealEditorSheet } from "@/components/meals/meal-editor-sheet";
+import {
+  MealEditorSheet,
+  type MealSlotId,
+} from "@/components/meals/meal-editor-sheet";
 import { MealGrid } from "@/components/meals/meal-grid";
 import { WeekHeader } from "@/components/meals/week-header";
 import { useMediaQuery } from "@/hooks";
@@ -14,7 +17,6 @@ import {
   getWeekStartSunday,
   isPastWeek,
 } from "@/lib/time-utils";
-import type { MealBoard } from "@/lib/types";
 import type { MealPlacementDraft } from "@/stores";
 import { useAppStore } from "@/stores";
 
@@ -25,10 +27,7 @@ export function MealsView() {
   const [selectedSlot, setSelectedSlot] = useState<MealSlotSelection | null>(
     null,
   );
-  const [editingSlot, setEditingSlot] = useState<MealSlotSelection | null>(
-    null,
-  );
-  const [editingBoard, setEditingBoard] = useState<MealBoard | null>(null);
+  const [editingSlotId, setEditingSlotId] = useState<MealSlotId | null>(null);
   const [placementDraft, setPlacementDraft] =
     useState<MealPlacementDraft | null>(null);
   const board = useMealsBoard(visibleWeekStartDate);
@@ -82,8 +81,11 @@ export function MealsView() {
 
   function selectSlot(slot: MealSlotSelection) {
     if (slot.primary && !pendingRecipeId) {
-      setEditingSlot(slot);
-      setEditingBoard(board.data?.data ?? null);
+      setEditingSlotId({
+        weekStartDate: slot.weekStartDate,
+        dayIndex: slot.dayIndex,
+        mealType: slot.mealType,
+      });
       return;
     }
 
@@ -101,14 +103,12 @@ export function MealsView() {
   }
 
   function replaceFromEditor(slot: MealSlotSelection) {
-    setEditingSlot(null);
-    setEditingBoard(null);
+    setEditingSlotId(null);
     setSelectedSlot({ ...slot, intent: "primary" });
   }
 
   function addExtraFromEditor(slot: MealSlotSelection) {
-    setEditingSlot(null);
-    setEditingBoard(null);
+    setEditingSlotId(null);
     setSelectedSlot({ ...slot, intent: "extra" });
   }
 
@@ -121,8 +121,7 @@ export function MealsView() {
           onWeekChange={(weekStartDate) => {
             setVisibleWeekStartDate(weekStartDate);
             setSelectedSlot(null);
-            setEditingSlot(null);
-            setEditingBoard(null);
+            setEditingSlotId(null);
           }}
         />
 
@@ -187,16 +186,15 @@ export function MealsView() {
       />
 
       <MealEditorSheet
-        isOpen={editingSlot !== null}
-        slot={editingSlot}
-        board={editingBoard}
+        isOpen={editingSlotId !== null}
+        slotId={editingSlotId}
+        board={board.data?.data ?? null}
         readOnly={readOnly}
         onReplace={replaceFromEditor}
         onAddExtra={addExtraFromEditor}
         onOpenChange={(open) => {
           if (!open) {
-            setEditingSlot(null);
-            setEditingBoard(null);
+            setEditingSlotId(null);
           }
         }}
       />

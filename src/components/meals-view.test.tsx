@@ -1,5 +1,8 @@
+import { QueryClient } from "@tanstack/react-query";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { mealsKeys } from "@/api";
 import { formatLocalDate, getWeekStartSunday } from "@/lib/time-utils";
+import type { MealBoard } from "@/lib/types";
 import { useAppStore } from "@/stores/app-store";
 import {
   createEmptyMealsBoard,
@@ -14,7 +17,7 @@ import {
   seedMockRecipes,
   setupMswServer,
 } from "@/test/mocks/server";
-import { renderWithUser, screen, waitFor } from "@/test/test-utils";
+import { renderWithUser, screen, waitFor, within } from "@/test/test-utils";
 import { MealEditorSheet } from "./meals/meal-editor-sheet";
 import { MealsView } from "./meals-view";
 
@@ -262,7 +265,11 @@ describe("MealsView", () => {
     const { user } = renderWithUser(
       <MealEditorSheet
         isOpen
-        slot={board.days[1].slots[2]}
+        slotId={{
+          weekStartDate: board.weekStartDate,
+          dayIndex: 1,
+          mealType: "dinner",
+        }}
         board={board}
         readOnly={false}
         onOpenChange={vi.fn()}
@@ -297,7 +304,11 @@ describe("MealsView", () => {
     const { user } = renderWithUser(
       <MealEditorSheet
         isOpen
-        slot={board.days[1].slots[2]}
+        slotId={{
+          weekStartDate: board.weekStartDate,
+          dayIndex: 1,
+          mealType: "dinner",
+        }}
         board={board}
         readOnly={false}
         onOpenChange={vi.fn()}
@@ -328,7 +339,11 @@ describe("MealsView", () => {
     const { user } = renderWithUser(
       <MealEditorSheet
         isOpen
-        slot={board.days[1].slots[2]}
+        slotId={{
+          weekStartDate: board.weekStartDate,
+          dayIndex: 1,
+          mealType: "dinner",
+        }}
         board={board}
         readOnly={false}
         onOpenChange={vi.fn()}
@@ -350,7 +365,11 @@ describe("MealsView", () => {
     const { user } = renderWithUser(
       <MealEditorSheet
         isOpen
-        slot={board.days[1].slots[2]}
+        slotId={{
+          weekStartDate: board.weekStartDate,
+          dayIndex: 1,
+          mealType: "dinner",
+        }}
         board={board}
         readOnly={false}
         onOpenChange={vi.fn()}
@@ -374,7 +393,11 @@ describe("MealsView", () => {
     const { user } = renderWithUser(
       <MealEditorSheet
         isOpen
-        slot={board.days[1].slots[2]}
+        slotId={{
+          weekStartDate: board.weekStartDate,
+          dayIndex: 1,
+          mealType: "dinner",
+        }}
         board={board}
         readOnly={false}
         onOpenChange={vi.fn()}
@@ -403,7 +426,11 @@ describe("MealsView", () => {
     const { user } = renderWithUser(
       <MealEditorSheet
         isOpen
-        slot={board.days[1].slots[2]}
+        slotId={{
+          weekStartDate: board.weekStartDate,
+          dayIndex: 1,
+          mealType: "dinner",
+        }}
         board={board}
         readOnly={false}
         onReplace={onReplace}
@@ -446,7 +473,11 @@ describe("MealsView", () => {
     const { user } = renderWithUser(
       <MealEditorSheet
         isOpen
-        slot={board.days[1].slots[2]}
+        slotId={{
+          weekStartDate: board.weekStartDate,
+          dayIndex: 1,
+          mealType: "dinner",
+        }}
         board={board}
         readOnly={false}
         onOpenChange={vi.fn()}
@@ -467,13 +498,135 @@ describe("MealsView", () => {
     ).toBeInTheDocument();
   });
 
+  it("reflects a saved meal note in the editor without reopening", async () => {
+    seedMockMealsBoard(createOccupiedMealsBoard());
+    const queryClient = new QueryClient({
+      defaultOptions: {
+        queries: { retry: false, gcTime: Infinity, staleTime: 0 },
+        mutations: { retry: false },
+      },
+    });
+    const { user } = renderWithUser(<MealsView />, { queryClient });
+
+    await user.click(
+      await screen.findByRole("button", { name: /open dinner: pasta/i }),
+    );
+
+    await user.click(screen.getByRole("button", { name: "Add meal note" }));
+    await user.type(screen.getByLabelText("Meal note"), "Family favorite");
+    await user.click(screen.getByRole("button", { name: "Save note" }));
+
+    // The sheet stays open and its read view shows the freshly saved note.
+    const sheet = screen.getByRole("dialog", { name: "Dinner Plan" });
+    expect(
+      await within(sheet).findByText("Family favorite"),
+    ).toBeInTheDocument();
+    expect(
+      within(sheet).getByRole("button", { name: "Edit meal note" }),
+    ).toBeInTheDocument();
+  });
+
+  it("does not lose the editor when the board revalidates", async () => {
+    seedMockMealsBoard(createOccupiedMealsBoard());
+    const queryClient = new QueryClient({
+      defaultOptions: {
+        queries: { retry: false, gcTime: Infinity, staleTime: 0 },
+        mutations: { retry: false },
+      },
+    });
+    const { user } = renderWithUser(<MealsView />, { queryClient });
+
+    await user.click(
+      await screen.findByRole("button", { name: /open dinner: pasta/i }),
+    );
+    const sheet = screen.getByRole("dialog", { name: "Dinner Plan" });
+    expect(within(sheet).getByText("Pasta")).toBeInTheDocument();
+
+    await queryClient.invalidateQueries({
+      queryKey: mealsKeys.board(testWeekStartDate),
+    });
+
+    // The editor and its primary title survive a background board refetch.
+    await waitFor(() => {
+      expect(
+        screen.getByRole("dialog", { name: "Dinner Plan" }),
+      ).toBeInTheDocument();
+    });
+    expect(
+      within(screen.getByRole("dialog", { name: "Dinner Plan" })).getByText(
+        "Pasta",
+      ),
+    ).toBeInTheDocument();
+  });
+
+  it("re-checks collision against the live board", async () => {
+    // Monday dinner occupied; Tuesday dinner (the default move target) empty.
+    const board = createOccupiedMealsBoard();
+    const emptyTuesdayDinner: MealBoard = {
+      ...board,
+      days: board.days.map((day) =>
+        day.dayIndex === 2
+          ? {
+              ...day,
+              slots: day.slots.map((slot) =>
+                slot.mealType === "dinner"
+                  ? {
+                      ...slot,
+                      id: null,
+                      primary: null,
+                      extras: [],
+                      note: null,
+                    }
+                  : slot,
+              ),
+            }
+          : day,
+      ),
+    };
+    seedMockMealsBoard(emptyTuesdayDinner);
+    const queryClient = new QueryClient({
+      defaultOptions: {
+        queries: { retry: false, gcTime: Infinity, staleTime: 0 },
+        mutations: { retry: false },
+      },
+    });
+    const { user } = renderWithUser(<MealsView />, { queryClient });
+
+    await user.click(
+      await screen.findByRole("button", { name: /open dinner: pasta/i }),
+    );
+
+    // Tuesday dinner becomes occupied after the editor opened.
+    const occupiedTuesdayDinner = createOccupiedMealsBoard();
+    seedMockMealsBoard(occupiedTuesdayDinner);
+    await queryClient.invalidateQueries({
+      queryKey: mealsKeys.board(testWeekStartDate),
+    });
+    await waitFor(() => {
+      expect(
+        getMockMealsBoard(testWeekStartDate).days[2].slots[2].primary?.title,
+      ).toBe("Soup");
+    });
+
+    await user.click(screen.getByRole("button", { name: "Move meal" }));
+    await user.click(screen.getByRole("button", { name: "Move here" }));
+
+    expect(
+      await screen.findByText("That slot already has a meal"),
+    ).toBeInTheDocument();
+  });
+
   it("moves a planned meal to a chosen day and meal type", async () => {
     const board = createOccupiedMealsBoard(); // Monday dinner: Pasta + Salad
     seedMockMealsBoard(board);
     const { user } = renderWithUser(
       <MealEditorSheet
         isOpen
-        slot={board.days[1].slots[2]}
+        slotId={{
+          weekStartDate: board.weekStartDate,
+          dayIndex: 1,
+          mealType: "dinner",
+        }}
         board={board}
         readOnly={false}
         onOpenChange={vi.fn()}
