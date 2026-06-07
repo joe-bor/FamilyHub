@@ -1,4 +1,5 @@
 import { Heart } from "lucide-react";
+import { useState } from "react";
 import { formatRecipeTag } from "@/lib/recipe-tags";
 import type { RecipeSummary } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -12,6 +13,7 @@ export function RecipeLibraryCard({
   recipe,
   onSelect,
 }: RecipeLibraryCardProps) {
+  const [imgFailed, setImgFailed] = useState(false);
   return (
     <article
       aria-label={`Recipe card: ${recipe.title}`}
@@ -26,11 +28,12 @@ export function RecipeLibraryCard({
         onClick={() => onSelect?.(recipe.id)}
       />
       <div className="relative aspect-[4/3] w-full overflow-hidden bg-muted">
-        {recipe.imageUrl ? (
+        {recipe.imageUrl && !imgFailed ? (
           <img
             src={recipe.imageUrl}
             alt={recipe.title}
             className="h-full w-full object-cover"
+            onError={() => setImgFailed(true)}
           />
         ) : (
           <div className="flex h-full items-center justify-center">
