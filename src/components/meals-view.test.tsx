@@ -1,4 +1,5 @@
 import { QueryClient } from "@tanstack/react-query";
+import { HttpResponse, http } from "msw";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { mealsKeys } from "@/api";
 import { formatLocalDate, getWeekStartSunday } from "@/lib/time-utils";
@@ -12,9 +13,11 @@ import {
 } from "@/test/fixtures/meals";
 import { testRecipeDetail } from "@/test/fixtures/recipes";
 import {
+  API_BASE,
   getMockMealsBoard,
   seedMockMealsBoard,
   seedMockRecipes,
+  server,
   setupMswServer,
 } from "@/test/mocks/server";
 import { renderWithUser, screen, waitFor, within } from "@/test/test-utils";
@@ -777,6 +780,38 @@ describe("MealsView", () => {
     expect(
       screen.getByRole("heading", { name: "Ingredients" }),
     ).toBeInTheDocument();
+  });
+
+  it("shows a Retry button in the board error state and retries successfully", async () => {
+    // Force the board GET to return a 500 so the error block renders.
+    server.use(
+      http.get(
+        `${API_BASE}/meals/board`,
+        () => new HttpResponse(null, { status: 500 }),
+      ),
+    );
+
+    const { user } = renderWithUser(<MealsView />);
+
+    expect(
+      await screen.findByRole("heading", { name: "Meals could not be loaded" }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Retry" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Retry" })).toBeEnabled();
+
+    // Remove the error override and seed a real board so retry succeeds.
+    server.resetHandlers();
+    seedMockMealsBoard(createEmptyMealsBoard());
+
+    await user.click(screen.getByRole("button", { name: "Retry" }));
+
+    // After a successful refetch the board's add affordances should be visible.
+    expect(
+      await screen.findAllByRole("button", { name: /add .*meal/i }),
+    ).not.toHaveLength(0);
+    expect(
+      screen.queryByRole("heading", { name: "Meals could not be loaded" }),
+    ).not.toBeInTheDocument();
   });
 
   it("moves a planned meal to a chosen day and meal type", async () => {

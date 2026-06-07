@@ -11,6 +11,7 @@ import {
 } from "@/components/meals/meal-editor-sheet";
 import { MealGrid } from "@/components/meals/meal-grid";
 import { WeekHeader } from "@/components/meals/week-header";
+import { Button } from "@/components/ui/button";
 import { useMediaQuery } from "@/hooks";
 import {
   formatLocalDate,
@@ -147,6 +148,17 @@ export function MealsView() {
                 ? board.error.message
                 : "Try again in a moment."}
             </p>
+            <Button
+              type="button"
+              variant="outline"
+              className="mt-3"
+              onClick={() => {
+                void board.refetch();
+              }}
+              disabled={board.isRefetching}
+            >
+              Retry
+            </Button>
           </div>
         ) : null}
 
