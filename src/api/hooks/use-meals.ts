@@ -3,7 +3,6 @@ import { mealsService } from "@/api/services";
 import type {
   DuplicateMealSlotRequest,
   MealBoardApiResponse,
-  MealSlot,
   MealSlotApiResponse,
   MoveMealSlotRequest,
   RemoveMealSlotRequest,
@@ -15,30 +14,6 @@ export const mealsKeys = {
   board: (weekStartDate: string) =>
     [...mealsKeys.all, "board", weekStartDate] as const,
 };
-
-function replaceSlotInBoard(
-  previous: MealBoardApiResponse | undefined,
-  updatedSlot: MealSlot,
-): MealBoardApiResponse | undefined {
-  if (!previous) return previous;
-
-  return {
-    ...previous,
-    data: {
-      ...previous.data,
-      days: previous.data.days.map((day) =>
-        day.dayIndex === updatedSlot.dayIndex
-          ? {
-              ...day,
-              slots: day.slots.map((slot) =>
-                slot.mealType === updatedSlot.mealType ? updatedSlot : slot,
-              ),
-            }
-          : day,
-      ),
-    },
-  };
-}
 
 function invalidateBoard(
   queryClient: ReturnType<typeof useQueryClient>,
@@ -74,10 +49,6 @@ export function useUpsertMealSlot(callbacks?: {
     mutationFn: (request: UpsertMealSlotRequest) =>
       mealsService.upsertSlot(request),
     onSuccess: (response, request) => {
-      queryClient.setQueryData<MealBoardApiResponse>(
-        mealsKeys.board(request.weekStartDate),
-        (previous) => replaceSlotInBoard(previous, response.data),
-      );
       invalidateBoard(queryClient, request.weekStartDate);
       callbacks?.onSuccess?.(response);
     },

@@ -488,17 +488,23 @@ describe("useMeals", () => {
     expect(result.current.data?.data.weekStartDate).toBe("2026-06-14");
   });
 
-  it("keeps optimistic cache assertions alive for meal mutations", async () => {
+  it("board cache reflects server state after upsert (invalidation drives the authoritative refetch)", async () => {
     seedMockMealsBoard(emptyBoard);
-    queryClient.setQueryData(mealsKeys.board("2026-06-07"), {
-      data: emptyBoard,
-    } satisfies ApiResponse<MealBoard>);
 
-    const { result } = renderHook(() => useUpsertMealSlot(), {
-      wrapper: createWrapper(),
+    const { result } = renderHook(
+      () => ({
+        board: useMealsBoard("2026-06-07"),
+        upsert: useUpsertMealSlot(),
+      }),
+      { wrapper: createWrapper() },
+    );
+
+    // Wait for initial board load
+    await waitFor(() => {
+      expect(result.current.board.isSuccess).toBe(true);
     });
 
-    result.current.mutate({
+    result.current.upsert.mutate({
       weekStartDate: "2026-06-07",
       dayIndex: 0,
       mealType: "breakfast",
@@ -514,12 +520,59 @@ describe("useMeals", () => {
       collisionMode: null,
     });
 
+    // The server is the authority: wait for the board observer to reflect
+    // the server-confirmed state (not a hand-merged setQueryData write)
     await waitFor(() => {
       expect(
-        queryClient.getQueryData<ApiResponse<MealBoard>>(
-          mealsKeys.board("2026-06-07"),
-        )?.data.days[0].slots[0].primary?.title,
+        result.current.board.data?.data.days[0].slots[0].primary?.title,
       ).toBe("Toast");
+    });
+
+    expect(
+      queryClient.getQueryState(mealsKeys.board("2026-06-07"))?.isInvalidated,
+    ).toBe(false); // refetch has completed, no longer invalidated
+  });
+
+  it("upsert with collisionMode add_as_extra: server board shows original primary plus new extras after refetch", async () => {
+    const board = boardWithOccupiedDinner();
+    seedMockMealsBoard(board);
+
+    const { result } = renderHook(
+      () => ({
+        board: useMealsBoard("2026-06-07"),
+        upsert: useUpsertMealSlot(),
+      }),
+      { wrapper: createWrapper() },
+    );
+
+    // Wait for initial board load so the observer is active
+    await waitFor(() => {
+      expect(result.current.board.isSuccess).toBe(true);
+    });
+
+    // Monday dinner is occupied by "Pasta"; upsert a new "Toast" with add_as_extra
+    result.current.upsert.mutate({
+      weekStartDate: "2026-06-07",
+      dayIndex: 1,
+      mealType: "dinner",
+      primary: {
+        sourceType: "quick",
+        recipeId: null,
+        title: "Toast",
+        imageUrl: null,
+        note: null,
+      },
+      extras: [],
+      note: null,
+      collisionMode: "add_as_extra",
+    });
+
+    // After the refetch resolves, the board must show the SERVER state:
+    // original primary "Pasta" is preserved, "Toast" is appended to extras
+    await waitFor(() => {
+      const mondayDinner = result.current.board.data?.data.days[1].slots[2];
+      expect(mondayDinner?.primary?.title).toBe("Pasta");
+      expect(mondayDinner?.extras.map((e) => e.title)).toEqual(["Toast"]);
     });
   });
 });
