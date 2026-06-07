@@ -24,9 +24,9 @@ interface RecipeDetailViewProps {
   recipe: RecipeDetail;
   isUpdatingFavorite?: boolean;
   onBack: () => void;
-  onAddToMeals: () => void;
-  onEdit: () => void;
-  onToggleFavorite: () => void;
+  onAddToMeals?: () => void;
+  onEdit?: () => void;
+  onToggleFavorite?: () => void;
 }
 
 export function RecipeDetailView({
@@ -123,31 +123,37 @@ export function RecipeDetailView({
             <ArrowLeft className="h-4 w-4" />
             Back to recipes
           </Button>
-          <Button type="button" variant="outline" onClick={onEdit}>
-            <Pencil className="h-4 w-4" />
-            Edit recipe
-          </Button>
-          <Button type="button" variant="outline" onClick={onAddToMeals}>
-            Add to Meals
-          </Button>
-          <Button
-            type="button"
-            variant={recipe.favorite ? "secondary" : "outline"}
-            aria-label={`Favorite recipe: ${recipe.title}`}
-            aria-pressed={recipe.favorite}
-            disabled={isUpdatingFavorite}
-            onClick={onToggleFavorite}
-          >
-            <Heart
-              className={cn(
-                "h-4 w-4",
-                recipe.favorite
-                  ? "fill-rose-500 text-rose-500"
-                  : "text-current",
-              )}
-            />
-            {recipe.favorite ? "Favorited" : "Favorite"}
-          </Button>
+          {onEdit ? (
+            <Button type="button" variant="outline" onClick={onEdit}>
+              <Pencil className="h-4 w-4" />
+              Edit recipe
+            </Button>
+          ) : null}
+          {onAddToMeals ? (
+            <Button type="button" variant="outline" onClick={onAddToMeals}>
+              Add to Meals
+            </Button>
+          ) : null}
+          {onToggleFavorite ? (
+            <Button
+              type="button"
+              variant={recipe.favorite ? "secondary" : "outline"}
+              aria-label={`Favorite recipe: ${recipe.title}`}
+              aria-pressed={recipe.favorite}
+              disabled={isUpdatingFavorite}
+              onClick={onToggleFavorite}
+            >
+              <Heart
+                className={cn(
+                  "h-4 w-4",
+                  recipe.favorite
+                    ? "fill-rose-500 text-rose-500"
+                    : "text-current",
+                )}
+              />
+              {recipe.favorite ? "Favorited" : "Favorite"}
+            </Button>
+          ) : null}
         </div>
       </div>
     </div>
