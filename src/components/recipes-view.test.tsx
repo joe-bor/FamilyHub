@@ -476,6 +476,31 @@ describe("RecipesView", () => {
     expect(screen.getByText("Imported Tomato Soup")).toBeInTheDocument();
   });
 
+  it("shows an 'Add your first recipe' button in the empty card that opens the chooser", async () => {
+    seedMockRecipes([]);
+
+    const { user } = renderWithUser(<RecipesView />);
+
+    await screen.findByText("No recipes yet");
+
+    const emptyCardButton = screen.getByRole("button", {
+      name: "Add your first recipe",
+    });
+    expect(emptyCardButton).toBeVisible();
+
+    await user.click(emptyCardButton);
+
+    expect(
+      await screen.findByRole("dialog", { name: "Add Recipe" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Create manually" }),
+    ).toBeVisible();
+    expect(
+      screen.getByRole("button", { name: "Import from URL" }),
+    ).toBeVisible();
+  });
+
   it("opens the add flow with manual and import choices", async () => {
     seedMockRecipes(testRecipeDetails);
 

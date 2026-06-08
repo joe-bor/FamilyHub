@@ -281,6 +281,14 @@ export function RecipesView() {
                 <p className="mt-2 text-sm text-muted-foreground">
                   Add your first recipe to get started.
                 </p>
+                <div className="mt-4">
+                  <Button
+                    type="button"
+                    onClick={() => setIsCreateSheetOpen(true)}
+                  >
+                    Add your first recipe
+                  </Button>
+                </div>
               </div>
             ) : filteredRecipes.length === 0 ? (
               <div className="rounded-lg border border-dashed border-border bg-card p-6 text-center">
