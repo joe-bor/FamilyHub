@@ -68,11 +68,15 @@ test.describe("Mobile Meals", () => {
     });
     await expect(createRecipeSheet).toBeVisible();
     await createRecipeSheet.getByLabel("Title").fill("Sunday Pancakes");
-    await createRecipeSheet.getByLabel("Ingredient 1").fill("1 cup flour");
     await createRecipeSheet
-      .getByLabel("Instruction 1")
+      .getByRole("textbox", { name: "Ingredient 1" })
+      .fill("1 cup flour");
+    await createRecipeSheet
+      .getByRole("textbox", { name: "Instruction 1" })
       .fill("Whisk and griddle");
-    await createRecipeSheet.getByLabel("Tag 1").fill("Breakfast");
+    await createRecipeSheet
+      .getByRole("textbox", { name: "Tag 1" })
+      .fill("Breakfast");
     await createRecipeSheet
       .getByRole("button", { name: "Save recipe" })
       .click();

@@ -48,9 +48,15 @@ test.describe("Mobile Recipes", () => {
     const createDialog = page.getByRole("dialog", { name: "Create Recipe" });
     await expect(createDialog).toBeVisible();
     await createDialog.getByLabel("Title").fill("Sunday Pancakes");
-    await createDialog.getByLabel("Ingredient 1").fill("1 cup flour");
-    await createDialog.getByLabel("Instruction 1").fill("Whisk and griddle");
-    await createDialog.getByLabel("Tag 1").fill("Breakfast");
+    await createDialog
+      .getByRole("textbox", { name: "Ingredient 1" })
+      .fill("1 cup flour");
+    await createDialog
+      .getByRole("textbox", { name: "Instruction 1" })
+      .fill("Whisk and griddle");
+    await createDialog
+      .getByRole("textbox", { name: "Tag 1" })
+      .fill("Breakfast");
     await createDialog.getByRole("button", { name: "Save recipe" }).click();
 
     await expect(createDialog).toBeHidden();
