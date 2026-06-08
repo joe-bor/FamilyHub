@@ -1,5 +1,5 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Plus } from "lucide-react";
+import { Plus, X } from "lucide-react";
 import type { FieldError } from "react-hook-form";
 import { useForm, useWatch } from "react-hook-form";
 import { Button } from "@/components/ui/button";
@@ -45,12 +45,14 @@ function ArrayFieldSection({
   errorMessages,
   onChange,
   onAdd,
+  onRemove,
 }: {
   legend: string;
   values: string[];
   errorMessages?: Array<string | undefined>;
   onChange: (index: number, value: string) => void;
   onAdd: () => void;
+  onRemove: (index: number) => void;
 }) {
   const singular = legend.endsWith("s") ? legend.slice(0, -1) : legend;
 
@@ -75,12 +77,25 @@ function ArrayFieldSection({
       <div className="space-y-2">
         {values.map((value, index) => (
           <div key={`${singular}-${index}`} className="space-y-1">
-            <Input
-              aria-label={`${singular} ${index + 1}`}
-              aria-invalid={Boolean(errorMessages?.[index])}
-              value={value}
-              onChange={(event) => onChange(index, event.target.value)}
-            />
+            <div className="flex items-center gap-2">
+              <Input
+                aria-label={`${singular} ${index + 1}`}
+                aria-invalid={Boolean(errorMessages?.[index])}
+                value={value}
+                onChange={(event) => onChange(index, event.target.value)}
+                className="flex-1"
+              />
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                aria-label={`Remove ${singular.toLowerCase()} ${index + 1}`}
+                onClick={() => onRemove(index)}
+                className="shrink-0"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
             <FormError message={errorMessages?.[index]} />
           </div>
         ))}
@@ -228,6 +243,13 @@ export function RecipeForm({
             shouldDirty: true,
           });
         }}
+        onRemove={(index) => {
+          form.setValue(
+            "ingredients",
+            ingredients.filter((_, i) => i !== index),
+            { shouldDirty: true },
+          );
+        }}
       />
 
       <ArrayFieldSection
@@ -246,6 +268,13 @@ export function RecipeForm({
             shouldDirty: true,
           });
         }}
+        onRemove={(index) => {
+          form.setValue(
+            "instructions",
+            instructions.filter((_, i) => i !== index),
+            { shouldDirty: true },
+          );
+        }}
       />
 
       <ArrayFieldSection
@@ -263,6 +292,13 @@ export function RecipeForm({
           form.setValue("tags", [...tags, ""], {
             shouldDirty: true,
           });
+        }}
+        onRemove={(index) => {
+          form.setValue(
+            "tags",
+            tags.filter((_, i) => i !== index),
+            { shouldDirty: true },
+          );
         }}
       />
 
