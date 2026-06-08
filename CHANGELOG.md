@@ -1,5 +1,94 @@
 # Changelog
 
+## [0.3.11](https://github.com/joe-bor/FamilyHub/compare/family-hub-v0.3.10...family-hub-v0.3.11) (2026-06-08)
+
+
+### Features
+
+* **meals:** add API-backed weekly meal planning ([c272423](https://github.com/joe-bor/FamilyHub/commit/c2724237281d1cba31e7600ac3a3cbf033bddc76))
+* **meals:** add day/meal-type destination picker for move and duplicate ([b7cd8a4](https://github.com/joe-bor/FamilyHub/commit/b7cd8a481ff025d7a1b1f6e80ae3214fcbd7f793))
+* **meals:** add extra-intent mode to the meal composer ([323150d](https://github.com/joe-bor/FamilyHub/commit/323150dca862f4bb0eaabf1e23b2866a8fc58d00))
+* **meals:** add frontend meal contracts ([a417ce5](https://github.com/joe-bor/FamilyHub/commit/a417ce5f98f131857187384c0be9755aadaaec91))
+* **meals:** add mobile meal planning board ([9ccb3d8](https://github.com/joe-bor/FamilyHub/commit/9ccb3d8a6b44407f6cffe127aa16e33edd2ed02d))
+* **meals:** add Replace meal and Add extra editor actions ([fdd3812](https://github.com/joe-bor/FamilyHub/commit/fdd38120daf5f4e13ba4719714cd75a46cfc40ab))
+* **meals:** add slot management controls ([b0b5480](https://github.com/joe-bor/FamilyHub/commit/b0b548076f28752060c6fec3898d745d85cd6a14))
+* **meals:** edit the slot-level meal note from the editor ([42c6cda](https://github.com/joe-bor/FamilyHub/commit/42c6cda31ec8c1f87ada8c9526c409c27673df79))
+* **meals:** remove extras from the planned-meal editor ([838fde6](https://github.com/joe-bor/FamilyHub/commit/838fde6f6d5f3bfab75e1531b8b1deac85250a15))
+* **recipes:** add a CTA button to the empty recipe library state ([bd354e0](https://github.com/joe-bor/FamilyHub/commit/bd354e0a7988546d93a82de0adc75af99d002e1a))
+* **recipes:** add cook-first recipe detail ([d913696](https://github.com/joe-bor/FamilyHub/commit/d913696cdba2ef84b081a4ec536d21bad9e1f2ed))
+* **recipes:** add frontend recipe contracts ([34e3c5e](https://github.com/joe-bor/FamilyHub/commit/34e3c5eafcad4671ccba6fba7578668f251eee5b))
+* **recipes:** add meals handoff draft ([cd3f6d3](https://github.com/joe-bor/FamilyHub/commit/cd3f6d314849bbc3feb75f4526ba129c3a9fd022))
+* **recipes:** add recipe create and import flows ([86af699](https://github.com/joe-bor/FamilyHub/commit/86af69995ca9d69e77627a1caf112bd251459fe3))
+* **recipes:** add recipe library ([317005d](https://github.com/joe-bor/FamilyHub/commit/317005df55cffb7b69adb0418cd05caedabf01e3))
+* **recipes:** allow removing ordered recipe rows ([50f8fa4](https://github.com/joe-bor/FamilyHub/commit/50f8fa4f4cd3a751f9e0d1b362f33572082684b5))
+* **recipes:** register recipes module ([63ac1bf](https://github.com/joe-bor/FamilyHub/commit/63ac1bfd7c55bdfb932a0364ba4e0a8b8a857ea2))
+
+
+### Bug Fixes
+
+* **lists:** preserve items when list-setting PATCH resolves after an item mutation ([14f5a9b](https://github.com/joe-bor/FamilyHub/commit/14f5a9bce6ffcbdb75df5a63d44b5da1b65425a4))
+* **meals:** add a retry action to the board error state ([108b76d](https://github.com/joe-bor/FamilyHub/commit/108b76d13449728cda156d31b329b28df366839d))
+* **meals:** allow opening past occupied slots for read-only review ([3bddb73](https://github.com/joe-bor/FamilyHub/commit/3bddb735c65e88b12046b71fdcf84aec4e5ab9e5))
+* **meals:** clear stale validation error when resolving a composer collision ([cf86261](https://github.com/joe-bor/FamilyHub/commit/cf86261323f7dac0c493b482c4e94da4961df7bb))
+* **meals:** close editor when live slot disappears ([ace88a0](https://github.com/joe-bor/FamilyHub/commit/ace88a064701575c83bf34a591b7235a8794e4f6))
+* **meals:** compute day dates from weekStartDate in fixture ([4bc7130](https://github.com/joe-bor/FamilyHub/commit/4bc7130ff25b3476b753b8251a1cf05d2ffc762b))
+* **meals:** drive the meal editor from live board data so saves and collisions are accurate ([15be07a](https://github.com/joe-bor/FamilyHub/commit/15be07a5857cbeeceb670a3d7368af86bf4502be))
+* **meals:** keep recipe placement draft when switching weeks ([18e37dc](https://github.com/joe-bor/FamilyHub/commit/18e37dc4b9c371d04c0e874985975ac77acc8863))
+* **meals:** keep the slot in context when browsing the full recipe library ([9e465a9](https://github.com/joe-bor/FamilyHub/commit/9e465a969adf2d54fb95a9a641100a5f60981e94))
+* **meals:** make in-editor recipe view review-only instead of showing dead actions ([63e3f6e](https://github.com/joe-bor/FamilyHub/commit/63e3f6e02c604b8234940c6a7aff5cf82c71ad83))
+* **meals:** move/duplicate from Saturday targets next week Sunday ([f896d60](https://github.com/joe-bor/FamilyHub/commit/f896d602cd66a5c22b0ddf90ba9bea8f2b8da4b8))
+* **meals:** satisfy strict slot type narrowing ([722f96f](https://github.com/joe-bor/FamilyHub/commit/722f96fd4743f3b761a31d17944c893afef81138))
+* **meals:** send remove-slot identifiers as query params ([cfa7d77](https://github.com/joe-bor/FamilyHub/commit/cfa7d778d57ad3b05859ade3150fa74f8d9cda8d))
+* **meals:** show placeholder when meal image fails to load ([dff619a](https://github.com/joe-bor/FamilyHub/commit/dff619a9e4bad8861d43bdfb3d9de427990d1646))
+* **meals:** snapshot board at editor open to survive query revalidation ([01b1c4d](https://github.com/joe-bor/FamilyHub/commit/01b1c4d96724c0cee6dbdc3c696b16581c3682f8))
+* **meals:** sort favorite and recent recipe lists by updatedAt desc ([f4fb4df](https://github.com/joe-bor/FamilyHub/commit/f4fb4df3fc079297123c78b682d44116f9699458))
+* **meals:** surface mutation errors in composer and editor ([92c43f6](https://github.com/joe-bor/FamilyHub/commit/92c43f67ef938092cc9c86e404b92a52f9411a0f))
+* **meals:** switch day-card/grid layout at lg to close tablet gap ([de03458](https://github.com/joe-bor/FamilyHub/commit/de03458ba3d8c686f61c47dc413c74e4508c2cf4))
+* **meals:** validate composer payloads with meal schemas and keep typed notes ([043aff5](https://github.com/joe-bor/FamilyHub/commit/043aff51c7a8282592a779a7ba93b5e9054e857c))
+* **recipes:** address final review findings ([e41cea1](https://github.com/joe-bor/FamilyHub/commit/e41cea1e3e077b15dfecc425edb0277c1ada14fc))
+* **recipes:** address remaining review findings ([b229be1](https://github.com/joe-bor/FamilyHub/commit/b229be1bd5dfd9e65389413859e7667b269b4413))
+* **recipes:** address review feedback ([208cd66](https://github.com/joe-bor/FamilyHub/commit/208cd662326dea5af79e7ea9c985a714da924210))
+* **recipes:** align recipe url guardrails ([69b77d0](https://github.com/joe-bor/FamilyHub/commit/69b77d0818e49d2033298242cfad6a906b548d53))
+* **recipes:** clear meals creation draft on cancel ([31b2c34](https://github.com/joe-bor/FamilyHub/commit/31b2c34eb89ffc961259a3a49656e1a33acaff9f))
+* **recipes:** clear the meals draft when dismissing the create chooser ([a7405f5](https://github.com/joe-bor/FamilyHub/commit/a7405f538aa626c5f87c69d269da86eb1a815161))
+* **recipes:** expose URL import in the meals-origin recipe creation flow ([7f1a1d5](https://github.com/joe-bor/FamilyHub/commit/7f1a1d5a4233376654b20a1df74d48baea01e9bc))
+* **recipes:** keep detail actions after cooking content ([06b9042](https://github.com/joe-bor/FamilyHub/commit/06b9042400cc68002072e492d23356e1453e5c0a))
+* **recipes:** keep library discovery-only ([c0af476](https://github.com/joe-bor/FamilyHub/commit/c0af476c1c9cfae640414891f45956762d1a891d))
+* **recipes:** keep mobile nav destinations visible ([b800bfa](https://github.com/joe-bor/FamilyHub/commit/b800bfaa8cc800fa22c0632c9beae0ced95ba2fe))
+* **recipes:** normalize library filters ([b739b75](https://github.com/joe-bor/FamilyHub/commit/b739b75d7344018167e19fa74a6f9ee7fdad79f4))
+* **recipes:** resolve build typing issues ([d785f65](https://github.com/joe-bor/FamilyHub/commit/d785f651aed0ea10186fe5c076bb5b14d8f86007))
+* **recipes:** show a placeholder when a recipe image fails to load ([d03936b](https://github.com/joe-bor/FamilyHub/commit/d03936b1b00650a0f2f647e1c8bb9487ac4f7036))
+* **recipes:** show manual create errors ([f4399a8](https://github.com/joe-bor/FamilyHub/commit/f4399a84d28e317dcb1f2df148e6d7a31113ad2e))
+* **recipes:** sync import mock tags ([6474d10](https://github.com/joe-bor/FamilyHub/commit/6474d109673d6900071bc58fb3f2ba5adb1b6561))
+* **test:** throw on out-of-bounds access in findMealSlot mock ([402b7ba](https://github.com/joe-bor/FamilyHub/commit/402b7baf8be764367449ee00d1c16c545078afef))
+
+
+### Code Refactoring
+
+* **meals:** extract shared formatMealType utility ([1220a71](https://github.com/joe-bor/FamilyHub/commit/1220a717415acb70a573f06b98f4c0e10caa0681))
+* **meals:** rely on board refetch after meal upserts ([11f388f](https://github.com/joe-bor/FamilyHub/commit/11f388fd52b66b89ded3c0e5dbf50324429cf396))
+
+
+### Documentation
+
+* **meals:** add consolidated Recipes/Meals review-fixes implementation plan ([edf222b](https://github.com/joe-bor/FamilyHub/commit/edf222bbd6149d19e7daa0897d252297c8b53a85))
+* **meals:** clarify consolidated review-fixes plan ([566a4be](https://github.com/joe-bor/FamilyHub/commit/566a4be9eb55dbca90a636d32b25370a21fdb587))
+* **meals:** clarify consolidated review-fixes plan ([de2dade](https://github.com/joe-bor/FamilyHub/commit/de2dade95e91f2f0d3a122479a282ae1cad2b157))
+* **meals:** record spec-drift fix plan and triage ([f9aa0d5](https://github.com/joe-bor/FamilyHub/commit/f9aa0d52cb308254666029d470790f66a06fb99d))
+* **recipes:** record final verification ([2bc25ef](https://github.com/joe-bor/FamilyHub/commit/2bc25efee95739b702ba73ebfe61f514be66895c))
+* refresh README module status and fix the roadmap link ([5443734](https://github.com/joe-bor/FamilyHub/commit/54437340b736b6fd19e087472f648808824c151b))
+
+
+### Tests
+
+* **e2e:** disambiguate recipe form field locators ([023847d](https://github.com/joe-bor/FamilyHub/commit/023847dec738d5531b8d886abb951f531309d66f))
+* **lists:** await list mutations and target category heading to fix flake ([63a8baf](https://github.com/joe-bor/FamilyHub/commit/63a8baf27fce9b8f265678e04c9d42d170f918a3))
+* **lists:** drop waitForResponse workarounds that masked the cache-clobber race ([b699ca1](https://github.com/joe-bor/FamilyHub/commit/b699ca1a6fdacb774806749b2dd34423b91a644f))
+* **meals:** cover cross-week move and duplicate from Saturday ([729d306](https://github.com/joe-bor/FamilyHub/commit/729d30644823056c71defc1c8f373c9af0c496fc))
+* **meals:** cover mobile weekly planning ([204d2a8](https://github.com/joe-bor/FamilyHub/commit/204d2a8d3b67128ceecf253b159a2a531ff79264))
+* **meals:** scope weekly-board heading assertions to fix CI strict-mode failure ([3b24e13](https://github.com/joe-bor/FamilyHub/commit/3b24e139798c70017ff6a88d65c202bf4e8ea28c))
+* **recipes:** add mobile recipe e2e coverage ([2bae01c](https://github.com/joe-bor/FamilyHub/commit/2bae01cebd46fbd30121b91b43a0e4e674d93ff8))
+
 ## [0.3.10](https://github.com/joe-bor/FamilyHub/compare/family-hub-v0.3.9...family-hub-v0.3.10) (2026-05-21)
 
 
