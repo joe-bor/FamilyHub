@@ -97,6 +97,8 @@ export function MealEditorSheet({
   // The slot is always read from the live board so saves and collisions stay
   // accurate; local state only ever holds in-progress drafts.
   const liveSlot = board && slotId ? findSlot(board, slotId) : undefined;
+  const selectedSlotMissing =
+    isOpen && Boolean(board && slotId && !liveSlot?.primary);
   const recipeId = liveSlot?.primary?.recipeId ?? null;
   const recipe = useRecipe(showRecipe ? recipeId : null);
   const moveSlot = useMoveMealSlot({
@@ -117,6 +119,11 @@ export function MealEditorSheet({
     setNoteDraft(liveSlot?.note ?? "");
     setIsEditingNote(false);
   }, [slotId?.weekStartDate, slotId?.dayIndex, slotId?.mealType]);
+  useEffect(() => {
+    if (selectedSlotMissing) {
+      onOpenChange(false);
+    }
+  }, [onOpenChange, selectedSlotMissing]);
   const upsertSlot = useUpsertMealSlot({
     onError: () => {
       setNoteDraft(liveSlot?.note ?? "");

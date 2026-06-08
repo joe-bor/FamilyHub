@@ -3,7 +3,7 @@ import { HttpResponse, http } from "msw";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { mealsKeys } from "@/api";
 import { formatLocalDate, getWeekStartSunday } from "@/lib/time-utils";
-import type { MealBoard } from "@/lib/types";
+import type { ApiResponse, MealBoard } from "@/lib/types";
 import { useAppStore } from "@/stores/app-store";
 import {
   createEmptyMealsBoard,
@@ -608,6 +608,76 @@ describe("MealsView", () => {
         "Pasta",
       ),
     ).toBeInTheDocument();
+  });
+
+  it("closes the editor when the selected live slot is removed during a refetch", async () => {
+    seedMockMealsBoard(createOccupiedMealsBoard());
+    const queryClient = new QueryClient({
+      defaultOptions: {
+        queries: { retry: false, gcTime: Infinity, staleTime: 0 },
+        mutations: { retry: false },
+      },
+    });
+    const { user } = renderWithUser(<MealsView />, { queryClient });
+
+    await user.click(
+      await screen.findByRole("button", { name: /open dinner: pasta/i }),
+    );
+    expect(
+      screen.getByRole("dialog", { name: "Dinner Plan" }),
+    ).toBeInTheDocument();
+
+    const occupiedBoard = createOccupiedMealsBoard();
+    const removedMondayDinner: MealBoard = {
+      ...occupiedBoard,
+      days: occupiedBoard.days.map((day) =>
+        day.dayIndex === 1
+          ? {
+              ...day,
+              slots: day.slots.map((slot) =>
+                slot.mealType === "dinner"
+                  ? {
+                      ...slot,
+                      id: null,
+                      primary: null,
+                      extras: [],
+                      note: null,
+                    }
+                  : slot,
+              ),
+            }
+          : day,
+      ),
+    };
+    seedMockMealsBoard(removedMondayDinner);
+    await queryClient.invalidateQueries({
+      queryKey: mealsKeys.board(testWeekStartDate),
+    });
+
+    await waitFor(() => {
+      const cached = queryClient.getQueryData<ApiResponse<MealBoard>>(
+        mealsKeys.board(testWeekStartDate),
+      );
+      expect(cached?.data.days[1].slots[2].primary).toBeNull();
+    });
+    expect(
+      screen.queryByRole("dialog", { name: "Dinner Plan" }),
+    ).not.toBeInTheDocument();
+
+    seedMockMealsBoard(createOccupiedMealsBoard());
+    await queryClient.invalidateQueries({
+      queryKey: mealsKeys.board(testWeekStartDate),
+    });
+
+    await waitFor(() => {
+      const cached = queryClient.getQueryData<ApiResponse<MealBoard>>(
+        mealsKeys.board(testWeekStartDate),
+      );
+      expect(cached?.data.days[1].slots[2].primary?.title).toBe("Pasta");
+    });
+    expect(
+      screen.queryByRole("dialog", { name: "Dinner Plan" }),
+    ).not.toBeInTheDocument();
   });
 
   it("re-checks collision against the live board", async () => {
