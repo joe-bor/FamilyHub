@@ -238,6 +238,7 @@ export function MealComposerSheet({
 
   function resolveCollision(collisionMode: MealCollisionMode) {
     if (!collisionRequest) return;
+    setValidationError(null);
     upsertSlot.mutate({ ...collisionRequest, collisionMode });
     setCollisionRequest(null);
   }
