@@ -20,7 +20,7 @@ A family dashboard I'm building to organize our household — calendars, chores,
 - **Calendar** — Four views (daily, weekly, monthly, schedule list), color-coded by family member, full CRUD operations
 - **Family Management** — Onboarding flow with member profiles and color assignment
 - **PWA** — Installable on any device, offline support coming soon
-- **More modules** — Chores, Meals, Lists, Photos (UI ready, backend coming)
+- **More modules** — Chores, Lists, Meals, and Recipes are backend-integrated; Photos is UI-only for now
 
 ## Prerequisites
 
@@ -52,17 +52,18 @@ Why I chose what I chose:
 
 ## Current Status
 
-**v0.3.10** — Calendar is feature-complete with mock API. Ready for backend integration. <!-- x-release-please-version -->
+**v0.3.10** — Calendar, Chores, Lists, Meals, and Recipes are integrated with the `family-hub-api` backend (v1.5.0). <!-- x-release-please-version -->
 
 | Module   | Status           |
 | -------- | ---------------- |
 | Calendar | ✅ Complete      |
-| Chores   | 🎨 UI ready      |
-| Meals    | 🎨 UI ready      |
-| Lists    | 🎨 UI ready      |
+| Chores   | ✅ Implemented   |
+| Lists    | ✅ Implemented   |
+| Meals    | ✅ Implemented   |
+| Recipes  | ✅ Implemented   |
 | Photos   | 🎨 UI ready      |
 
-See [ROADMAP.md](docs/ROADMAP.md) for the full journey and what's next.
+Product roadmap and backlog live in the `family-hub` workspace repo (`docs/product/`).
 
 ## Why I Built This
 
