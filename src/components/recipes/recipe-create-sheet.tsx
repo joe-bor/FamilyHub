@@ -15,7 +15,7 @@ interface RecipeCreateSheetProps {
   onCreated: (recipeId: string) => void;
   defaultMode?: AddRecipeMode;
   defaultValues?: Partial<RecipeFormInput>;
-  onCancelManual?: () => void;
+  onCancel?: () => void;
 }
 
 export function RecipeCreateSheet({
@@ -24,7 +24,7 @@ export function RecipeCreateSheet({
   onCreated,
   defaultMode = "choices",
   defaultValues,
-  onCancelManual,
+  onCancel,
 }: RecipeCreateSheetProps) {
   const [mode, setMode] = useState<AddRecipeMode>(defaultMode);
   const [importError, setImportError] = useState<string | null>(null);
@@ -57,19 +57,16 @@ export function RecipeCreateSheet({
     },
   });
 
-  const closeAddFlow = () => {
-    onOpenChange(false);
-  };
-
-  const closeManual = () => {
-    if (onCancelManual) {
-      onCancelManual();
+  // Unified dismissal: if the caller provided onCancel (e.g. a meals draft
+  // flow), delegate so it can consume the draft and reset state. Otherwise
+  // just close the sheet. Must NOT be used from handleSuccess — the success
+  // path keeps onCreated responsible for consuming the draft.
+  const dismissFlow = () => {
+    if (onCancel) {
+      onCancel();
       return;
     }
-
-    // "Cancel" dismisses the whole add flow to match its label, rather than
-    // quietly stepping back to the choices screen.
-    closeAddFlow();
+    onOpenChange(false);
   };
 
   if (mode === "manual") {
@@ -79,7 +76,7 @@ export function RecipeCreateSheet({
         : "Could not save recipe";
 
     return (
-      <MobileSheet isOpen={isOpen} onClose={closeManual} title="Create Recipe">
+      <MobileSheet isOpen={isOpen} onClose={dismissFlow} title="Create Recipe">
         <RecipeForm
           defaultValues={defaultValues}
           isPending={createRecipe.isPending}
@@ -96,7 +93,7 @@ export function RecipeCreateSheet({
         isOpen={isOpen}
         isPending={importRecipe.isPending}
         errorMessage={importError}
-        onClose={closeAddFlow}
+        onClose={dismissFlow}
         onSubmit={(url) => {
           setImportError(null);
           importRecipe.mutate(
@@ -117,11 +114,7 @@ export function RecipeCreateSheet({
   }
 
   return (
-    <MobileSheet
-      isOpen={isOpen}
-      onClose={() => onOpenChange(false)}
-      title="Add Recipe"
-    >
+    <MobileSheet isOpen={isOpen} onClose={dismissFlow} title="Add Recipe">
       <div className="space-y-3">
         <Button
           type="button"

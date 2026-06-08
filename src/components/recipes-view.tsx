@@ -318,7 +318,7 @@ export function RecipesView() {
           defaultMode={createSheetMode}
           defaultValues={createSheetDefaultValues}
           isOpen={isCreateSheetOpen}
-          onCancelManual={
+          onCancel={
             recipeCreationDraft
               ? () => {
                   consumeRecipeCreationDraft();
