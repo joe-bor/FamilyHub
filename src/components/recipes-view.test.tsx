@@ -647,6 +647,33 @@ describe("RecipesView", () => {
     });
   });
 
+  it("dismissing the chooser directly (without entering manual) clears the meals draft", async () => {
+    seedMockRecipes([]);
+    useAppStore.getState().startRecipeCreationFromMealSlot({
+      requestedAtWeekStartDate: "2026-06-07",
+      dayIndex: 3,
+      mealType: "dinner",
+      typedTitle: "Skillet Eggs",
+    });
+
+    const { user } = renderWithUser(<RecipesView />);
+
+    // Chooser opens (not manual mode).
+    expect(
+      await screen.findByRole("dialog", { name: "Add Recipe" }),
+    ).toBeInTheDocument();
+
+    // Cancel directly on the chooser — without drilling into "Create manually".
+    await user.click(screen.getByRole("button", { name: "Cancel" }));
+
+    // The draft must be consumed so it cannot stale-prefill a future create.
+    expect(useAppStore.getState().recipeCreationDraft).toBe(null);
+    // The dialog must be gone.
+    expect(
+      screen.queryByRole("dialog", { name: "Add Recipe" }),
+    ).not.toBeInTheDocument();
+  });
+
   it("dismissing the meals-draft chooser clears the draft without leaving stale handoff state", async () => {
     seedMockRecipes([]);
     useAppStore.getState().startRecipeCreationFromMealSlot({
@@ -663,7 +690,7 @@ describe("RecipesView", () => {
       await screen.findByRole("dialog", { name: "Add Recipe" }),
     ).toBeInTheDocument();
 
-    // Navigate into manual mode then cancel — onCancelManual fires and clears
+    // Navigate into manual mode then cancel — onCancel fires and clears
     // the draft.
     await user.click(screen.getByRole("button", { name: "Create manually" }));
     await screen.findByRole("dialog", { name: "Create Recipe" });
