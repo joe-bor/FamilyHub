@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { FormError } from "@/components/ui/form-error";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useIsMobile } from "@/hooks";
+import { cn } from "@/lib/utils";
 import { type LoginFormData, loginFormSchema } from "@/lib/validations/auth";
 import { useAuthStore } from "@/stores";
 
@@ -15,6 +17,7 @@ interface LoginFormProps {
 export function LoginForm({ onSwitchToOnboarding }: LoginFormProps) {
   const login = useLogin();
   const setAuthenticated = useAuthStore((state) => state.setAuthenticated);
+  const isMobile = useIsMobile();
 
   const {
     register,
@@ -42,8 +45,13 @@ export function LoginForm({ onSwitchToOnboarding }: LoginFormProps) {
   };
 
   return (
-    <div className="flex flex-col min-h-screen p-4 md:p-6 bg-background">
-      <div className="flex-1 flex flex-col justify-center max-w-md mx-auto w-full">
+    <div className="flex flex-col min-h-dvh p-4 md:p-6 bg-background overflow-y-auto [padding-top:max(1rem,env(safe-area-inset-top))] [padding-bottom:max(1rem,env(safe-area-inset-bottom))]">
+      <div
+        className={cn(
+          "flex-1 flex flex-col max-w-md mx-auto w-full",
+          !isMobile && "justify-center",
+        )}
+      >
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
           <div className="space-y-3 text-center">
             <h1 className="text-2xl font-bold text-foreground">
@@ -69,7 +77,7 @@ export function LoginForm({ onSwitchToOnboarding }: LoginFormProps) {
                 id="login-username"
                 placeholder="your_username"
                 autoComplete="username"
-                autoFocus
+                autoFocus={!isMobile}
                 {...register("username")}
               />
               <FormError message={errors.username?.message} />

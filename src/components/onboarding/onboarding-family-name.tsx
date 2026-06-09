@@ -5,6 +5,8 @@ import type { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useIsMobile } from "@/hooks";
+import { cn } from "@/lib/utils";
 import { familyNameSchema } from "@/lib/validations/family";
 
 type FamilyNameFormData = z.infer<typeof familyNameSchema>;
@@ -20,6 +22,8 @@ export function OnboardingFamilyName({
   onNext,
   onBack,
 }: OnboardingFamilyNameProps) {
+  const isMobile = useIsMobile();
+
   const {
     register,
     handleSubmit,
@@ -49,7 +53,12 @@ export function OnboardingFamilyName({
       </div>
 
       {/* Content */}
-      <div className="flex-1 flex flex-col justify-center max-w-md mx-auto w-full">
+      <div
+        className={cn(
+          "flex-1 flex flex-col max-w-md mx-auto w-full",
+          !isMobile && "justify-center",
+        )}
+      >
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
           <div className="space-y-3 text-center">
             <h1 className="text-2xl font-bold text-foreground">
