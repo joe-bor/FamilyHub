@@ -3,6 +3,14 @@ import { useEffect, useState } from "react";
 import { useFamilyMembers, useFamilyName, useLogout } from "@/api";
 import { FamilySettingsModal, MemberProfileModal } from "@/components/settings";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { SideSheet } from "@/components/ui/side-sheet";
 import { colorMap } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { useAppStore } from "@/stores";
@@ -11,16 +19,13 @@ export function SidebarMenu() {
   const isOpen = useAppStore((state) => state.isSidebarOpen);
   const closeSidebar = useAppStore((state) => state.closeSidebar);
 
-  // From family-store
   const familyName = useFamilyName();
   const familyMembers = useFamilyMembers();
-
-  // Auth
   const logout = useLogout();
 
-  // Modal state
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [selectedMemberId, setSelectedMemberId] = useState<string | null>(null);
+  const [showSignOutConfirm, setShowSignOutConfirm] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -32,40 +37,41 @@ export function SidebarMenu() {
     }
   }, [isOpen]);
 
-  if (!isOpen) return null;
-
-  const handleOpenMemberProfile = (memberId: string) => {
-    setSelectedMemberId(memberId);
-  };
-
-  const handleOpenSettings = () => {
-    setIsSettingsOpen(true);
-  };
-
   const menuItems = [
-    { icon: Users, label: "Family Settings", action: handleOpenSettings },
-    { icon: LogOut, label: "Sign Out", action: logout },
+    {
+      icon: Users,
+      label: "Family Settings",
+      action: () => setIsSettingsOpen(true),
+    },
+    {
+      icon: LogOut,
+      label: "Sign Out",
+      action: () => setShowSignOutConfirm(true),
+    },
   ];
 
   return (
     <>
-      {/* Backdrop */}
-      <div
-        className="fixed inset-0 z-40 bg-foreground/20 backdrop-blur-sm"
-        onClick={closeSidebar}
-      />
-
-      {/* Sidebar */}
-      <aside className="fixed left-0 top-0 bottom-0 z-50 w-72 bg-card shadow-2xl flex flex-col">
+      <SideSheet
+        open={isOpen}
+        onOpenChange={(open) => !open && closeSidebar()}
+        title="Menu"
+      >
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-border">
           <div>
             <h2 className="text-lg font-bold text-foreground">
               {familyName || "Family Hub"}
             </h2>
-            <p className="text-sm text-muted-foreground">Calendar Settings</p>
+            <p className="text-sm text-muted-foreground">Menu</p>
           </div>
-          <Button variant="ghost" size="icon" onClick={closeSidebar}>
+          <Button
+            variant="ghost"
+            size="icon"
+            aria-label="Close menu"
+            onClick={closeSidebar}
+            className="h-11 w-11"
+          >
             <X className="h-5 w-5" />
           </Button>
         </div>
@@ -82,8 +88,9 @@ export function SidebarMenu() {
                 return (
                   <button
                     key={member.id}
-                    onClick={() => handleOpenMemberProfile(member.id)}
-                    className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-muted transition-colors"
+                    type="button"
+                    onClick={() => setSelectedMemberId(member.id)}
+                    className="w-full min-h-11 flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-muted transition-colors"
                   >
                     {member.avatarUrl ? (
                       <img
@@ -118,13 +125,14 @@ export function SidebarMenu() {
         {/* Menu Items */}
         <nav className="flex-1 p-4">
           <div className="space-y-1">
-            {menuItems.map((item, index) => {
+            {menuItems.map((item) => {
               const Icon = item.icon;
               return (
                 <button
-                  key={index}
+                  key={item.label}
+                  type="button"
                   onClick={item.action}
-                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors text-muted-foreground hover:bg-muted hover:text-foreground"
+                  className="w-full min-h-11 flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium transition-colors text-muted-foreground hover:bg-muted hover:text-foreground"
                 >
                   <Icon className="h-5 w-5" />
                   {item.label}
@@ -138,7 +146,7 @@ export function SidebarMenu() {
         <div className="border-t border-border px-6 py-4">
           <p className="text-xs text-muted-foreground">v{__APP_VERSION__}</p>
         </div>
-      </aside>
+      </SideSheet>
 
       {/* Family Settings Modal */}
       <FamilySettingsModal
@@ -154,6 +162,29 @@ export function SidebarMenu() {
           memberId={selectedMemberId}
         />
       )}
+
+      {/* Sign Out Confirmation */}
+      <Dialog open={showSignOutConfirm} onOpenChange={setShowSignOutConfirm}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Sign out?</DialogTitle>
+            <DialogDescription>
+              You'll need your family username and password to sign back in.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-end gap-3 pt-4">
+            <Button
+              variant="outline"
+              onClick={() => setShowSignOutConfirm(false)}
+            >
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={() => logout()}>
+              Sign Out
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
