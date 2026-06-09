@@ -5,62 +5,48 @@ import { MobileBottomNav } from "./mobile-bottom-nav";
 
 describe("MobileBottomNav", () => {
   beforeEach(() => {
-    useAppStore.setState({ activeModule: null, isSidebarOpen: false });
+    useAppStore.setState({ activeModule: null });
   });
 
-  it("renders all seven destinations and marks Home active when activeModule is null", () => {
+  it("shows four primary tabs plus More, and no Photos", () => {
     render(<MobileBottomNav />);
-
     const nav = screen.getByRole("navigation", { name: /primary/i });
-
     expect(nav).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /^home$/i })).toHaveAttribute(
+
+    for (const label of ["Home", "Calendar", "Lists", "Chores", "More"]) {
+      expect(
+        screen.getByRole("button", { name: new RegExp(`^${label}$`, "i") }),
+      ).toBeInTheDocument();
+    }
+    // Overflow + deferred modules are not in the bar.
+    expect(
+      screen.queryByRole("button", { name: /^meals$/i }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /^photos$/i }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("opens the More sheet and switches to an overflow module", async () => {
+    const { user } = renderWithUser(<MobileBottomNav />);
+    await user.click(screen.getByRole("button", { name: /^more$/i }));
+
+    const meals = await screen.findByRole("button", { name: /^meals$/i });
+    await user.click(meals);
+
+    expect(useAppStore.getState().activeModule).toBe("meals");
+    // sheet closes
+    expect(
+      screen.queryByRole("button", { name: /^recipes$/i }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("marks More active when an overflow module is active", () => {
+    useAppStore.setState({ activeModule: "recipes" });
+    render(<MobileBottomNav />);
+    expect(screen.getByRole("button", { name: /^more$/i })).toHaveAttribute(
       "aria-current",
       "page",
     );
-    expect(
-      screen.getByRole("button", { name: /^calendar$/i }),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: /^lists$/i }),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: /^chores$/i }),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: /^meals$/i }),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: /^recipes$/i }),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: /^photos$/i }),
-    ).toBeInTheDocument();
-  });
-
-  it("keeps all seven destinations readable in a horizontally scrollable row", () => {
-    render(<MobileBottomNav />);
-
-    const navItems = screen.getByRole("navigation", {
-      name: /primary/i,
-    }).firstElementChild;
-    const buttons = screen.getAllByRole("button");
-
-    expect(navItems).toHaveClass("flex", "overflow-x-auto");
-    expect(navItems).not.toHaveClass("grid-cols-7");
-    for (const button of buttons) {
-      expect(button).toHaveClass("min-w-16");
-      expect(button).not.toHaveClass("min-w-0");
-    }
-  });
-
-  it("switches modules through the app store", async () => {
-    const { user } = renderWithUser(<MobileBottomNav />);
-
-    await user.click(screen.getByRole("button", { name: /^photos$/i }));
-    expect(useAppStore.getState().activeModule).toBe("photos");
-
-    await user.click(screen.getByRole("button", { name: /^home$/i }));
-    expect(useAppStore.getState().activeModule).toBeNull();
   });
 });

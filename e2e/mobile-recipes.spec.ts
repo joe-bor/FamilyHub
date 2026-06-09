@@ -33,7 +33,11 @@ test.describe("Mobile Recipes", () => {
     await waitForHydration(page);
 
     const nav = page.getByRole("navigation", { name: /primary/i });
-    await safeClick(nav.getByRole("button", { name: "Recipes" }));
+    await safeClick(nav.getByRole("button", { name: "More" }));
+    const moreSheet = page.getByRole("dialog", { name: "More" });
+    await expect(moreSheet).toBeVisible();
+    await safeClick(moreSheet.getByRole("button", { name: "Recipes" }));
+    await expect(moreSheet).toBeHidden();
 
     await expect(
       page.getByRole("heading", { name: "Recipes", level: 1 }),
