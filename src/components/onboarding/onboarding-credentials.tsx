@@ -7,7 +7,8 @@ import { Button } from "@/components/ui/button";
 import { FormError } from "@/components/ui/form-error";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useDebounce } from "@/hooks";
+import { useDebounce, useIsMobile } from "@/hooks";
+import { cn } from "@/lib/utils";
 import {
   type CredentialsFormData,
   credentialsFormSchema,
@@ -36,6 +37,8 @@ export function OnboardingCredentials({
   } = useForm<CredentialsFormData>({
     resolver: zodResolver(credentialsFormSchema),
   });
+
+  const isMobile = useIsMobile();
 
   const username = watch("username");
   const debouncedUsername = useDebounce(username || "", 500);
@@ -66,7 +69,7 @@ export function OnboardingCredentials({
   const showUsernameStatus = debouncedUsername.length >= 3;
 
   return (
-    <div className="flex flex-col min-h-screen p-4 md:p-6 bg-background">
+    <div className="flex flex-col min-h-dvh p-4 md:p-6 bg-background overflow-y-auto [padding-top:max(1rem,env(safe-area-inset-top))] [padding-bottom:max(1rem,env(safe-area-inset-bottom))]">
       {/* Header with back button */}
       <div className="flex items-center gap-2 mb-8">
         <Button
@@ -82,7 +85,12 @@ export function OnboardingCredentials({
       </div>
 
       {/* Content */}
-      <div className="flex-1 flex flex-col justify-center max-w-md mx-auto w-full">
+      <div
+        className={cn(
+          "flex-1 flex flex-col max-w-md mx-auto w-full",
+          !isMobile && "justify-center",
+        )}
+      >
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
           <div className="space-y-3 text-center">
             <h1 className="text-2xl font-bold text-foreground">
@@ -107,7 +115,7 @@ export function OnboardingCredentials({
                   id="credentials-username"
                   placeholder="your_family_username"
                   autoComplete="username"
-                  autoFocus
+                  autoFocus={!isMobile}
                   className="pr-10"
                   {...register("username")}
                 />
