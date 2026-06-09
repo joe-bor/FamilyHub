@@ -65,6 +65,19 @@ export function clearStoredToken(): void {
 }
 
 /**
+ * Remove persisted family data from localStorage.
+ */
+export function clearStoredFamily(): void {
+  try {
+    localStorage.removeItem(FAMILY_STORAGE_KEY);
+  } catch (error) {
+    if (import.meta.env.DEV) {
+      console.error("Failed to clear family from localStorage:", error);
+    }
+  }
+}
+
+/**
  * Write family data to localStorage (Zustand persist format).
  */
 function writeFamilyToStorage(family: FamilyData): void {
@@ -189,8 +202,8 @@ export function useLogout() {
     // Clear token from storage
     clearStoredToken();
 
-    // Clear family data from localStorage
-    localStorage.removeItem(FAMILY_STORAGE_KEY);
+    // Clear family data from localStorage (storage may be disabled in some webviews)
+    clearStoredFamily();
 
     // Clear all query cache
     queryClient.clear();
