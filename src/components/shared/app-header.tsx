@@ -1,4 +1,4 @@
-import { Cloud, Menu, Settings, Sun } from "lucide-react";
+import { Cloud, Menu, Sun } from "lucide-react";
 import { useFamilyMembers, useFamilyName } from "@/api";
 import { Button } from "@/components/ui/button";
 import { useIsMobile } from "@/hooks";
@@ -93,15 +93,6 @@ export function AppHeader() {
             ))}
           </div>
         )}
-
-        {/* Settings */}
-        <Button
-          variant="ghost"
-          size="icon"
-          className="text-muted-foreground hover:text-foreground"
-        >
-          <Settings className="h-5 w-5" />
-        </Button>
       </div>
     </header>
   );
