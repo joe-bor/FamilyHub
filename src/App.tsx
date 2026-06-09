@@ -98,7 +98,7 @@ function renderModule(activeModule: ModuleType | null) {
 
 function LoadingScreen() {
   return (
-    <div className="h-screen flex items-center justify-center bg-background">
+    <div className="h-dvh flex items-center justify-center bg-background">
       <div className="animate-pulse text-muted-foreground">Loading...</div>
     </div>
   );
@@ -166,7 +166,7 @@ export default function FamilyHub() {
 
   return (
     <>
-      <div className="h-screen flex flex-col bg-background">
+      <div className="h-dvh flex flex-col bg-background">
         {!(isMobile && activeModule === "calendar") && <AppHeader />}
 
         <div className="flex-1 flex min-h-0 overflow-hidden">
