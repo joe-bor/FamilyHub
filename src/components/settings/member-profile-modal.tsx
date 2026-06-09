@@ -138,15 +138,15 @@ export function MemberProfileModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-sm max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-sm max-h-[90dvh] overflow-y-auto">
         <DialogHeader>
           <div className="flex items-center justify-between">
             <DialogTitle className="text-xl">Member Profile</DialogTitle>
             <Button
               variant="ghost"
-              size="icon"
+              size="icon-lg"
               onClick={() => onOpenChange(false)}
-              className="h-8 w-8"
+              aria-label="Close"
             >
               <X className="h-4 w-4" />
             </Button>
@@ -176,7 +176,7 @@ export function MemberProfileModal({
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
-                className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-md hover:bg-primary/90 transition-colors"
+                className="absolute bottom-0 right-0 w-11 h-11 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-md hover:bg-primary/90 transition-colors"
                 aria-label="Upload avatar"
               >
                 <Camera className="h-4 w-4" />
