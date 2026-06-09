@@ -30,7 +30,11 @@ test.describe("Mobile Meals", () => {
     await waitForHydration(page);
 
     const nav = page.getByRole("navigation", { name: /primary/i });
-    await safeClick(nav.getByRole("button", { name: "Meals" }));
+    await safeClick(nav.getByRole("button", { name: "More" }));
+    const mealsMoreSheet = page.getByRole("dialog", { name: "More" });
+    await expect(mealsMoreSheet).toBeVisible();
+    await safeClick(mealsMoreSheet.getByRole("button", { name: "Meals" }));
+    await expect(mealsMoreSheet).toBeHidden();
 
     await expect(
       page.getByRole("heading", { name: "Meals", level: 1, exact: true }),
@@ -51,7 +55,11 @@ test.describe("Mobile Meals", () => {
       page.getByRole("button", { name: /open dinner: leftovers/i }),
     ).toBeVisible();
 
-    await safeClick(nav.getByRole("button", { name: "Recipes" }));
+    await safeClick(nav.getByRole("button", { name: "More" }));
+    const recipesMoreSheet = page.getByRole("dialog", { name: "More" });
+    await expect(recipesMoreSheet).toBeVisible();
+    await safeClick(recipesMoreSheet.getByRole("button", { name: "Recipes" }));
+    await expect(recipesMoreSheet).toBeHidden();
     await expect(
       page.getByRole("heading", { name: "Recipes", level: 1, exact: true }),
     ).toBeVisible();

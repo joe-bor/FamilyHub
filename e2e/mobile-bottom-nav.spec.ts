@@ -35,17 +35,12 @@ test.describe("Mobile Bottom Navigation", () => {
     const nav = page.getByRole("navigation", { name: /primary/i });
     await expect(nav).toBeVisible();
 
-    const expectedTabs = [
-      "Home",
-      "Calendar",
-      "Lists",
-      "Chores",
-      "Meals",
-      "Photos",
-    ];
+    const expectedTabs = ["Home", "Calendar", "Lists", "Chores", "More"];
     for (const tab of expectedTabs) {
       await expect(nav.getByRole("button", { name: tab })).toBeVisible();
     }
+    await expect(nav.getByRole("button", { name: "Meals" })).toHaveCount(0);
+    await expect(nav.getByRole("button", { name: "Photos" })).toHaveCount(0);
 
     await nav.getByRole("button", { name: "Calendar" }).click();
     await expect(page.getByRole("button", { name: "Add event" })).toBeVisible();
@@ -64,14 +59,13 @@ test.describe("Mobile Bottom Navigation", () => {
       page.getByRole("heading", { name: "Chores", level: 1 }),
     ).toBeVisible();
 
-    await nav.getByRole("button", { name: "Meals" }).click();
+    await nav.getByRole("button", { name: "More" }).click();
+    const moreSheet = page.getByRole("dialog", { name: "More" });
+    await expect(moreSheet).toBeVisible();
+    await moreSheet.getByRole("button", { name: "Meals" }).click();
+    await expect(moreSheet).toBeHidden();
     await expect(
       page.getByRole("heading", { name: "Meals", level: 1 }),
-    ).toBeVisible();
-
-    await nav.getByRole("button", { name: "Photos" }).click();
-    await expect(
-      page.getByRole("heading", { name: "Family Photos" }),
     ).toBeVisible();
 
     await expect(nav).toBeVisible();
