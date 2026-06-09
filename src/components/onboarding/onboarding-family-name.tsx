@@ -38,7 +38,7 @@ export function OnboardingFamilyName({
   };
 
   return (
-    <div className="flex flex-col min-h-dvh p-4 md:p-6 bg-background [padding-top:max(1rem,env(safe-area-inset-top))] [padding-bottom:max(1rem,env(safe-area-inset-bottom))]">
+    <div className="flex flex-col min-h-dvh p-4 md:p-6 bg-background overflow-y-auto [padding-top:max(1rem,env(safe-area-inset-top))] [padding-bottom:max(1rem,env(safe-area-inset-bottom))]">
       {/* Header with back button */}
       <div className="flex items-center gap-2 mb-8">
         <Button
@@ -78,7 +78,7 @@ export function OnboardingFamilyName({
               placeholder="The Smiths"
               className="text-center text-lg h-14"
               autoComplete="off"
-              autoFocus
+              autoFocus={!isMobile}
               aria-describedby={
                 errors.name ? "onboarding-family-name-error" : undefined
               }
