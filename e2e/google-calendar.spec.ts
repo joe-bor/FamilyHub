@@ -25,7 +25,7 @@ test.describe("Google Calendar Integration", () => {
   test("member profile shows Google Calendar section", async ({ page }) => {
     // Open sidebar
     await page.getByRole("button", { name: "Menu" }).click();
-    const sidebar = page.locator("aside");
+    const sidebar = page.getByRole("dialog", { name: "Menu" });
     await expect(sidebar).toBeVisible();
 
     // Click on member name to open profile
@@ -42,7 +42,7 @@ test.describe("Google Calendar Integration", () => {
 
   test("connect button is disabled without email", async ({ page }) => {
     await page.getByRole("button", { name: "Menu" }).click();
-    const sidebar = page.locator("aside");
+    const sidebar = page.getByRole("dialog", { name: "Menu" });
     await expect(sidebar).toBeVisible();
     await sidebar.getByText("Alice").click();
 
