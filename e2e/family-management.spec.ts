@@ -33,8 +33,8 @@ test.describe("Family Member Management", () => {
     const menuButton = page.getByRole("button", { name: "Menu" });
     await menuButton.click();
 
-    // Wait for sidebar to appear
-    const sidebar = page.locator("aside");
+    // Wait for sidebar (now an accessible side-sheet dialog) to appear
+    const sidebar = page.getByRole("dialog", { name: "Menu" });
     await expect(sidebar).toBeVisible();
 
     // Verify family members are shown in sidebar
@@ -47,8 +47,9 @@ test.describe("Family Member Management", () => {
     // Click Family Settings button
     await page.getByRole("button", { name: "Family Settings" }).click();
 
-    // Wait for Family Settings modal
-    const dialog = page.getByRole("dialog");
+    // Wait for Family Settings modal. Scope by accessible name — the menu
+    // side-sheet is also a dialog (aria-hidden behind this modal).
+    const dialog = page.getByRole("dialog", { name: "Family Settings" });
     await expect(dialog).toBeVisible();
     await expect(
       page.getByRole("heading", { name: "Family Settings" }),
@@ -153,8 +154,12 @@ test.describe("Family Member Management", () => {
     // Close the settings modal using Escape (more reliable than clicking Close button
     // which can be unstable due to layout shift after member removal)
     await page.keyboard.press("Escape");
+    await expect(
+      page.getByRole("dialog", { name: "Family Settings" }),
+    ).toBeHidden();
 
-    // Wait for dialog to close
+    // The menu side-sheet is still open behind the modal — close it too.
+    await page.keyboard.press("Escape");
     await waitForDialogClosed(page);
 
     // Verify we're back to the main app
