@@ -7,7 +7,7 @@ interface OnboardingWelcomeProps {
 
 export function OnboardingWelcome({ onNext }: OnboardingWelcomeProps) {
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen p-4 md:p-6 bg-gradient-to-b from-primary/10 to-background">
+    <div className="flex flex-col items-center justify-center min-h-dvh p-4 md:p-6 bg-gradient-to-b from-primary/10 to-background [padding-top:max(1rem,env(safe-area-inset-top))] [padding-bottom:max(1rem,env(safe-area-inset-bottom))]">
       <div className="max-w-md w-full text-center space-y-8">
         {/* Logo / Icon */}
         <div className="flex justify-center">
