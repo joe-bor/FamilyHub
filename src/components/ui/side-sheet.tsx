@@ -21,19 +21,57 @@ export function SideSheet({
   className,
 }: SideSheetProps) {
   const startX = useRef<number | null>(null);
+  const startY = useRef<number | null>(null);
   const [dragX, setDragX] = useState(0);
+  // True while the panel eases back to rest after a sub-threshold release, so it
+  // doesn't teleport. Cleared on transition end to restore the slide animations.
+  const [animatingBack, setAnimatingBack] = useState(false);
+
+  const resetGesture = () => {
+    startX.current = null;
+    startY.current = null;
+  };
 
   const handleTouchStart = (e: React.TouchEvent) => {
-    startX.current = e.touches[0]?.clientX ?? null;
+    const touch = e.touches[0];
+    if (!touch) return;
+    startX.current = touch.clientX;
+    startY.current = touch.clientY;
+    setAnimatingBack(false);
   };
+
   const handleTouchMove = (e: React.TouchEvent) => {
-    if (startX.current === null) return;
-    const delta = (e.touches[0]?.clientX ?? startX.current) - startX.current;
-    if (delta < 0) setDragX(delta); // track leftward drag only
+    if (startX.current === null || startY.current === null) return;
+    const touch = e.touches[0];
+    if (!touch) return;
+    const deltaX = touch.clientX - startX.current;
+    const deltaY = touch.clientY - startY.current;
+    // Only follow the finger once the drag is leftward AND predominantly
+    // horizontal, so a vertical scroll never drags the sheet.
+    setDragX(deltaX < 0 && Math.abs(deltaX) > Math.abs(deltaY) ? deltaX : 0);
   };
-  const handleTouchEnd = () => {
-    if (dragX < -SWIPE_CLOSE_THRESHOLD) onOpenChange(false);
-    startX.current = null;
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (startX.current === null || startY.current === null) {
+      resetGesture();
+      return;
+    }
+    const touch = e.changedTouches[0];
+    const deltaX = (touch?.clientX ?? startX.current) - startX.current;
+    const deltaY = (touch?.clientY ?? startY.current) - startY.current;
+    const isHorizontal = Math.abs(deltaX) > Math.abs(deltaY);
+    if (isHorizontal && deltaX < -SWIPE_CLOSE_THRESHOLD) {
+      onOpenChange(false);
+    }
+    resetGesture();
+    if (dragX !== 0) setAnimatingBack(true);
+    setDragX(0);
+  };
+
+  const handleTouchCancel = () => {
+    // An OS-interrupted gesture must reset without evaluating the close threshold.
+    resetGesture();
+    if (dragX !== 0) setAnimatingBack(true);
     setDragX(0);
   };
 
@@ -52,7 +90,15 @@ export function SideSheet({
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
-          style={dragX ? { transform: `translateX(${dragX}px)` } : undefined}
+          onTouchCancel={handleTouchCancel}
+          onTransitionEnd={() => setAnimatingBack(false)}
+          style={
+            dragX !== 0
+              ? { transform: `translateX(${dragX}px)`, transition: "none" }
+              : animatingBack
+                ? { transition: "transform 150ms ease-out" }
+                : undefined
+          }
           className={cn(
             "fixed inset-y-0 left-0 z-50 flex w-[min(20rem,85vw)] flex-col bg-card shadow-2xl",
             "[padding-top:env(safe-area-inset-top)] [padding-bottom:env(safe-area-inset-bottom)]",
