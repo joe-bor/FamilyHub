@@ -52,6 +52,7 @@ export function MobileBottomNav() {
     <>
       <nav
         aria-label="Primary"
+        inert={moreOpen}
         className="z-30 shrink-0 border-t border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/85"
       >
         <div
