@@ -87,7 +87,7 @@ export function AppHeader() {
             {familyMembers.slice(0, 6).map((member) => (
               <div
                 key={member.id}
-                className={`w-3 h-3 rounded-full ${colorMap[member.color]?.bg || "bg-gray-300"}`}
+                className={`w-3 h-3 rounded-full ${colorMap[member.color].bg}`}
                 title={member.name}
               />
             ))}
