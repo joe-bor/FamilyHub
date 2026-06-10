@@ -91,7 +91,7 @@ export function MobileToolbar({ members, onOpenSidebar }: MobileToolbarProps) {
             type="button"
             onClick={onOpenSidebar}
             aria-label="Menu"
-            className="rounded-lg p-2 text-foreground/70 transition-colors hover:bg-muted hover:text-foreground"
+            className="-my-1 flex h-11 w-11 items-center justify-center rounded-lg text-foreground/70 transition-colors hover:bg-muted hover:text-foreground"
           >
             <Menu className="h-5 w-5" />
           </button>
