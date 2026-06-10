@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { type ReactNode, useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 
 export interface MobileSheetProps {
@@ -9,22 +9,45 @@ export interface MobileSheetProps {
   children: ReactNode;
 }
 
-export function MobileSheet({
-  isOpen,
+export function MobileSheet({ isOpen, ...props }: MobileSheetProps) {
+  if (!isOpen) return null;
+  return <MobileSheetContent {...props} />;
+}
+
+function MobileSheetContent({
   onClose,
   title,
   headerRight,
   children,
-}: MobileSheetProps) {
-  if (!isOpen) return null;
+}: Omit<MobileSheetProps, "isOpen">) {
+  const dialogRef = useRef<HTMLDivElement>(null);
+  // Captured during render: by the time effects run, the opener may already
+  // be unfocusable (e.g. inside a background the opener marked inert).
+  const [openerElement] = useState(() =>
+    document.activeElement instanceof HTMLElement
+      ? document.activeElement
+      : null,
+  );
+
+  useEffect(() => {
+    const dialog = dialogRef.current;
+    if (dialog && !dialog.contains(document.activeElement)) {
+      dialog.focus();
+    }
+    return () => {
+      openerElement?.focus();
+    };
+  }, [openerElement]);
 
   return (
     <div
+      ref={dialogRef}
       role="dialog"
       aria-label={title}
       aria-describedby={undefined}
+      tabIndex={-1}
       className={cn(
-        "fixed inset-0 z-50 flex flex-col bg-card",
+        "fixed inset-0 z-50 flex flex-col bg-card outline-none",
         "motion-safe:animate-in motion-safe:slide-in-from-bottom motion-safe:duration-200",
       )}
     >
