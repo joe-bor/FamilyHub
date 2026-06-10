@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import type { z } from "zod";
 import {
+  isTempMemberId,
   useAddMember,
   useDeleteFamily,
   useFamilyMembers,
@@ -195,6 +196,7 @@ export function FamilySettingsModal({
                     onEdit={() => handleEditMember(member)}
                     onRemove={() => handleRemoveMember(member.id)}
                     canRemove={familyMembers.length > 1}
+                    isPending={isTempMemberId(member.id)}
                   />
                 ))}
               </div>

@@ -8,6 +8,13 @@ interface MemberCardProps {
   onEdit: () => void;
   onRemove: () => void;
   canRemove: boolean;
+  /**
+   * When true, the member has been added optimistically and its create
+   * request has not yet been confirmed by the server. Editing or removing it
+   * would target an id the server does not know about, so the controls are
+   * disabled until the add resolves. Defaults to false.
+   */
+  isPending?: boolean;
 }
 
 export function MemberCard({
@@ -15,6 +22,7 @@ export function MemberCard({
   onEdit,
   onRemove,
   canRemove,
+  isPending = false,
 }: MemberCardProps) {
   const colors = colorMap[member.color];
 
@@ -37,6 +45,7 @@ export function MemberCard({
           variant="ghost"
           size="icon"
           onClick={onEdit}
+          disabled={isPending}
           className="h-11 w-11"
           aria-label={`Edit ${member.name}`}
         >
@@ -47,7 +56,7 @@ export function MemberCard({
           variant="ghost"
           size="icon"
           onClick={onRemove}
-          disabled={!canRemove}
+          disabled={!canRemove || isPending}
           className={cn(
             "h-11 w-11",
             canRemove

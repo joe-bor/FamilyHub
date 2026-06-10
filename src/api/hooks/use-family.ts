@@ -29,6 +29,27 @@ export const familyKeys = {
 };
 
 // ============================================================================
+// Optimistic Member Helpers
+// ============================================================================
+
+/**
+ * Prefix for the client-side id assigned to a member that has been added
+ * optimistically but whose create request has not yet been confirmed by the
+ * server. Once the POST resolves, `useAddMember` swaps this for the real id.
+ */
+export const TEMP_MEMBER_ID_PREFIX = "temp-";
+
+/**
+ * Whether a member id is an unconfirmed optimistic id (see
+ * {@link TEMP_MEMBER_ID_PREFIX}). The server does not know about such members
+ * yet, so update/remove requests against them would 404 — callers should wait
+ * for the add to confirm before mutating them.
+ */
+export function isTempMemberId(id: string): boolean {
+  return id.startsWith(TEMP_MEMBER_ID_PREFIX);
+}
+
+// ============================================================================
 // localStorage Helpers
 // ============================================================================
 
@@ -273,7 +294,8 @@ export function useAddMember(callbacks?: AddMemberCallbacks) {
 
       if (previousData?.data) {
         const optimisticMember: FamilyMember = {
-          id: `temp-${Date.now()}`, // Temporary ID, replaced on success
+          // Temporary id, replaced with the real one on success.
+          id: `${TEMP_MEMBER_ID_PREFIX}${Date.now()}`,
           ...request,
         };
         const optimisticFamily: FamilyData = {
@@ -304,7 +326,7 @@ export function useAddMember(callbacks?: AddMemberCallbacks) {
         const updatedFamily: FamilyData = {
           ...currentData.data,
           members: currentData.data.members.map((m) =>
-            m.id.startsWith("temp-") ? response.data : m,
+            isTempMemberId(m.id) ? response.data : m,
           ),
         };
         queryClient.setQueryData<FamilyApiResponse>(familyKeys.family(), {

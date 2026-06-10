@@ -32,8 +32,10 @@ export {
 
 export {
   familyKeys,
+  isTempMemberId,
   readFamilyFromStorage,
   syncFamilyFromStorage,
+  TEMP_MEMBER_ID_PREFIX,
   useAddMember,
   useDeleteFamily,
   useFamily,
