@@ -79,6 +79,10 @@ export function MobileSheet({
   const isExpandable = cycleSnapPoints === HALF_SNAP_POINTS;
   const isExpanded = snap === FULL_SNAP;
 
+  // Drags that start on the handle get their click retargeted to it by
+  // pointer capture; only stationary taps should toggle the snap height.
+  const handlePointerOriginRef = useRef<{ x: number; y: number } | null>(null);
+
   return (
     <Drawer.Root
       open={isOpen}
@@ -118,7 +122,26 @@ export function MobileSheet({
               <button
                 type="button"
                 aria-label={isExpanded ? "Collapse sheet" : "Expand sheet"}
-                onClick={() => setSnap(isExpanded ? HALF_SNAP : FULL_SNAP)}
+                onPointerDown={(event) => {
+                  handlePointerOriginRef.current = {
+                    x: event.clientX,
+                    y: event.clientY,
+                  };
+                }}
+                onClick={(event) => {
+                  const origin = handlePointerOriginRef.current;
+                  handlePointerOriginRef.current = null;
+                  if (
+                    origin &&
+                    Math.hypot(
+                      event.clientX - origin.x,
+                      event.clientY - origin.y,
+                    ) > 8
+                  ) {
+                    return;
+                  }
+                  setSnap(isExpanded ? HALF_SNAP : FULL_SNAP);
+                }}
                 className="-my-2 rounded-full px-6 py-3"
               >
                 <span className="block h-1.5 w-10 rounded-full bg-muted-foreground/25" />
