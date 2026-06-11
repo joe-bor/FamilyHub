@@ -1,5 +1,45 @@
 # Changelog
 
+## [0.3.12](https://github.com/joe-bor/FamilyHub/compare/family-hub-v0.3.11...family-hub-v0.3.12) (2026-06-11)
+
+
+### Features
+
+* **mobile:** collapse bottom nav to five slots with More overflow ([1d16544](https://github.com/joe-bor/FamilyHub/commit/1d16544ef5bee0bf3ad54f431c99739ee0c690a9))
+* **mobile:** open short forms as half-height sheets ([e7e3eff](https://github.com/joe-bor/FamilyHub/commit/e7e3eff4e2bbea15c9ec2d2ad43145d1f6601a65))
+* **mobile:** rebuild sidebar as accessible side sheet with sign-out confirm ([70016b3](https://github.com/joe-bor/FamilyHub/commit/70016b397ec38d93909e78e8131cd40de997791e))
+* **ui:** rebuild MobileSheet as an expandable bottom sheet on vaul ([abb13c8](https://github.com/joe-bor/FamilyHub/commit/abb13c86468a26fa4d8e4ff11f312133b896625c))
+
+
+### Bug Fixes
+
+* **auth:** harden logout against storage-removal failure ([872a1f1](https://github.com/joe-bor/FamilyHub/commit/872a1f180a12d3237bf685502c26450eadae9e6a))
+* **calendar:** enlarge mobile toolbar menu button to 44px touch target ([c6af6fa](https://github.com/joe-bor/FamilyHub/commit/c6af6fa1483047871626eb29cfb987a719df7cd7))
+* **family:** block member edit/remove until optimistic add confirms ([3d7d1b5](https://github.com/joe-bor/FamilyHub/commit/3d7d1b584ba5ab52f8b496621174535f00b296c9))
+* **mobile:** bound member profile modal height with scroll ([a0fcbf5](https://github.com/joe-bor/FamilyHub/commit/a0fcbf5d6f1f3fbd04eb3b8fff1d6fa47e8b93d9))
+* **mobile:** gate onboarding family-name autofocus off on mobile ([c2a3518](https://github.com/joe-bor/FamilyHub/commit/c2a3518c1a48292923350352c4565d06a52993a8))
+* **mobile:** keep auth form inputs above the keyboard ([f195695](https://github.com/joe-bor/FamilyHub/commit/f195695136492fe6416c5a7fbd8a726b6d59047e))
+* **mobile:** manage focus for sheets and inert the nav behind More ([e73fc0c](https://github.com/joe-bor/FamilyHub/commit/e73fc0c702d937c8d6548d7c68d5aaf73f058310))
+* **mobile:** meet 44px touch targets and use dvh on onboarding + settings surfaces ([d8c546e](https://github.com/joe-bor/FamilyHub/commit/d8c546e4c3730548d8e091f6dd079de9685807d3))
+* **mobile:** remove dead settings button from app header ([979428d](https://github.com/joe-bor/FamilyHub/commit/979428d528b4b37bc53491043085df2f2b801635))
+* **mobile:** require horizontal intent before swipe-closing the side sheet ([dd11c48](https://github.com/joe-bor/FamilyHub/commit/dd11c48a4cebf1191927430ea508b7c104ccdd65))
+* **mobile:** use dvh + safe-area on auth, onboarding, and shell ([aa33983](https://github.com/joe-bor/FamilyHub/commit/aa3398373e503cd56eb09e33f780aab3a6ccbea8))
+* **ui:** ignore drag-retargeted clicks on the sheet handle ([956eeda](https://github.com/joe-bor/FamilyHub/commit/956eeda35a0c57b5cede1c934a125336f3875ae9))
+
+
+### Code Refactoring
+
+* **header:** drop dead colorMap fallback ([52c0b84](https://github.com/joe-bor/FamilyHub/commit/52c0b841ce3e16f964ec8216690a58bce17537bd))
+* **recipes:** consolidate add-recipe flow into one sheet instance ([6a8b50a](https://github.com/joe-bor/FamilyHub/commit/6a8b50a2d7646017bad2ae5f5e4e95833868eb16))
+
+
+### Tests
+
+* **e2e:** cover mobile menu sidebar and More overflow ([6fcaec3](https://github.com/joe-bor/FamilyHub/commit/6fcaec3c20b32a925398f43d39be5c6dd7484160))
+* **e2e:** exact-match the Recipes heading assertion ([4eb3375](https://github.com/joe-bor/FamilyHub/commit/4eb337571703634189c8b6d6fb94b44d70eeb7f5))
+* **e2e:** locate the sidebar as a dialog after the side-sheet rebuild ([4d66c36](https://github.com/joe-bor/FamilyHub/commit/4d66c3629a785df7b95904e2f8adf1fb48b50f75))
+* **family:** cover the add-then-edit temp-id race in FamilySettingsModal ([5b913d9](https://github.com/joe-bor/FamilyHub/commit/5b913d93056cb48f6880860b623e768095b0f2c8))
+
 ## [0.3.11](https://github.com/joe-bor/FamilyHub/compare/family-hub-v0.3.10...family-hub-v0.3.11) (2026-06-08)
 
 
