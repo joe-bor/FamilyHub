@@ -54,13 +54,13 @@ describe("MobileEventSheet", () => {
     expect(screen.getByRole("button", { name: "Add" })).toBeInTheDocument();
   });
 
-  it("uses fixed inset-0 z-50 positioning", () => {
+  it("uses fixed bottom-anchored z-50 positioning", () => {
     render(
       <MobileEventSheet isOpen={true} onClose={vi.fn()} title="New Event">
         <div>content</div>
       </MobileEventSheet>,
     );
     const sheet = screen.getByRole("dialog");
-    expect(sheet).toHaveClass("fixed", "inset-0", "z-50");
+    expect(sheet).toHaveClass("fixed", "inset-x-0", "bottom-0", "z-50");
   });
 });

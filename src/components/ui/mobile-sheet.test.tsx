@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { describe, expect, it } from "vitest";
-import { renderWithUser, screen } from "@/test/test-utils";
+import { renderWithUser, screen, waitFor } from "@/test/test-utils";
 import { MobileSheet } from "./mobile-sheet";
 
 function SheetHarness({ children }: { children?: React.ReactNode }) {
@@ -37,7 +37,8 @@ describe("MobileSheet", () => {
     await user.click(trigger);
     await user.click(screen.getByRole("button", { name: "Cancel" }));
 
-    expect(trigger).toHaveFocus();
+    // The sheet animates out before unmounting, so focus restore is async.
+    await waitFor(() => expect(trigger).toHaveFocus());
   });
 
   it("does not steal focus from a child that focuses itself on mount", async () => {
