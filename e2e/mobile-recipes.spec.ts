@@ -40,7 +40,9 @@ test.describe("Mobile Recipes", () => {
     await expect(moreSheet).toBeHidden();
 
     await expect(
-      page.getByRole("heading", { name: "Recipes", level: 1 }),
+      // exact: true — the app-header h1 holds the family name "Recipes E2E
+      // Family", which substring-matches "Recipes" once family data loads.
+      page.getByRole("heading", { name: "Recipes", level: 1, exact: true }),
     ).toBeVisible();
     await expect(page.getByText("No recipes yet")).toBeVisible();
 
