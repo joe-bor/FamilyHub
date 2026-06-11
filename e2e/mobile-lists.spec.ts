@@ -34,7 +34,19 @@ test.describe("Mobile Lists", () => {
     await expect(
       page.getByRole("heading", { name: "Trader Joe's Run" }),
     ).toBeVisible();
-    await expect(page.getByLabel("Categories")).toHaveValue("grouped");
+
+    // On mobile the set-once controls live behind the "List options" sheet.
+    const optionsSheet = page.getByRole("dialog", { name: "List options" });
+    const openOptions = async () => {
+      await page.getByRole("button", { name: "List options" }).click();
+      await expect(optionsSheet).toBeVisible();
+      return optionsSheet;
+    };
+
+    let options = await openOptions();
+    await expect(options.getByLabel("Categories")).toHaveValue("grouped");
+    await options.getByRole("button", { name: "Cancel" }).click();
+    await expect(optionsSheet).toBeHidden();
 
     await page.getByRole("button", { name: "Add item" }).click();
     await page.getByLabel("Item text").fill("Bananas");
@@ -48,8 +60,11 @@ test.describe("Mobile Lists", () => {
 
     // Switch the category mode immediately — the item create may still be in
     // flight, so the list-level PATCH response must not clobber the new item.
-    await page.getByLabel("Categories").selectOption("flat");
+    options = await openOptions();
+    await options.getByLabel("Categories").selectOption("flat");
     await expect(page.getByRole("heading", { name: "Produce" })).toBeHidden();
+    await options.getByRole("button", { name: "Cancel" }).click();
+    await expect(optionsSheet).toBeHidden();
     await expect(page.getByText("Bananas")).toBeVisible();
 
     await page.getByRole("button", { name: /^Bananas$/ }).click();
@@ -58,7 +73,9 @@ test.describe("Mobile Lists", () => {
       "line-through",
     );
 
-    await page.getByRole("button", { name: "Remove all completed" }).click();
+    // "Remove all completed" runs from inside the sheet, which stays open.
+    options = await openOptions();
+    await options.getByRole("button", { name: "Remove all completed" }).click();
     await expect(page.getByText("Bananas")).toBeHidden();
   });
 });
