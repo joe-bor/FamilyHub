@@ -228,10 +228,10 @@ export function RecipesView() {
               {Array.from({ length: 3 }, (_, index) => (
                 <div
                   key={`recipe-loading-${index}`}
-                  className="overflow-hidden rounded-lg border border-border bg-card"
+                  className="flex flex-row gap-3 overflow-hidden rounded-lg border border-border bg-card p-3 md:flex-col md:gap-0 md:p-0"
                 >
-                  <div className="aspect-[4/3] animate-pulse bg-muted" />
-                  <div className="space-y-3 p-4">
+                  <div className="size-24 shrink-0 animate-pulse rounded-lg bg-muted md:size-auto md:aspect-[4/3] md:w-full md:rounded-none" />
+                  <div className="flex min-w-0 flex-1 flex-col justify-center space-y-3 md:p-4">
                     <div className="h-4 w-2/3 animate-pulse rounded bg-muted" />
                     <div className="h-4 w-1/2 animate-pulse rounded bg-muted" />
                   </div>
