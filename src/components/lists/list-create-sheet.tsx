@@ -63,6 +63,7 @@ export function ListCreateSheet({
       isOpen={open}
       onClose={() => onOpenChange(false)}
       title="New List"
+      initialHeight="half"
       headerRight={
         <Button
           type="submit"

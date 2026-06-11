@@ -18,7 +18,12 @@ export function ChoreFormSheet({
   defaultValues,
 }: ChoreFormSheetProps) {
   return (
-    <MobileSheet isOpen={isOpen} onClose={onClose} title="New Chore">
+    <MobileSheet
+      isOpen={isOpen}
+      onClose={onClose}
+      title="New Chore"
+      initialHeight="half"
+    >
       <ChoreForm
         defaultValues={defaultValues}
         onSubmit={onSubmit}

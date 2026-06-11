@@ -85,6 +85,7 @@ export function ListItemSheet({
       isOpen={open}
       onClose={() => onOpenChange(false)}
       title={mode === "edit" ? "Edit Item" : "Add Item"}
+      initialHeight="half"
       headerRight={
         <Button
           type="submit"
