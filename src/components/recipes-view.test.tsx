@@ -84,10 +84,16 @@ describe("RecipesView", () => {
       }),
     );
 
-    render(<RecipesView />);
+    const { container } = render(<RecipesView />);
 
     expect(screen.getByText("Loading recipes...")).toBeInTheDocument();
     expect(screen.queryByText(testRecipeDetail.title)).not.toBeInTheDocument();
+    expect(container.querySelector(".animate-pulse")).toHaveClass(
+      "size-24",
+      "shrink-0",
+      "md:aspect-[4/3]",
+      "md:w-full",
+    );
     expect(await screen.findByText(testRecipeDetail.title)).toBeInTheDocument();
   });
 

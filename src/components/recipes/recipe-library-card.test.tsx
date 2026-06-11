@@ -12,6 +12,27 @@ describe("RecipeLibraryCard", () => {
     expect(screen.queryByText("No photo")).not.toBeInTheDocument();
   });
 
+  it("uses a compact mobile row with the desktop vertical card restored at md", () => {
+    render(<RecipeLibraryCard recipe={testRecipeSummary} />);
+
+    const card = screen.getByRole("article", {
+      name: `Recipe card: ${testRecipeSummary.title}`,
+    });
+    const thumbnail = screen.getByRole("img", {
+      name: testRecipeSummary.title,
+    }).parentElement;
+
+    expect(card).toHaveClass("flex-row", "p-3", "md:flex-col", "md:p-0");
+    expect(thumbnail).toHaveClass(
+      "size-24",
+      "shrink-0",
+      "rounded-lg",
+      "md:aspect-[4/3]",
+      "md:w-full",
+      "md:rounded-none",
+    );
+  });
+
   it("shows the No photo placeholder when imageUrl is absent", () => {
     const recipe = { ...testRecipeSummary, imageUrl: null };
     render(<RecipeLibraryCard recipe={recipe} />);
