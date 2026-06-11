@@ -42,9 +42,11 @@ test.describe("Mobile Chores", () => {
     await expect(dialog).toBeHidden();
 
     await page.getByRole("button", { name: "Week" }).click();
-    await expect(
-      page.getByRole("heading", { name: "This Week" }),
-    ).toBeVisible();
+    await expect(page.getByRole("region", { name: "This Week" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "This Week" })).toHaveCount(
+      0,
+    );
+    await expect(page.getByText("1 left of 1")).toBeVisible();
 
     const row = page
       .locator('[data-testid^="chore-row-"]')
