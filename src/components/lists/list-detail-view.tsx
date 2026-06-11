@@ -1,4 +1,4 @@
-import { ArrowLeft, Plus } from "lucide-react";
+import { ArrowLeft, Plus, SlidersHorizontal } from "lucide-react";
 import { useState } from "react";
 import {
   useClearCompleted,
@@ -8,8 +8,10 @@ import {
   useUpdateListItem,
   useUpdateListPreferences,
 } from "@/api";
+import { useIsMobile } from "@/hooks";
 import type { ListItem, ListPreferences } from "@/lib/types";
 import { Button } from "../ui/button";
+import { MobileSheet } from "../ui/mobile-sheet";
 import { buildListSections } from "./build-list-sections";
 import { ListItemRow } from "./list-item-row";
 import { ListItemSheet } from "./list-item-sheet";
@@ -40,6 +42,8 @@ export function ListDetailView({
   const deleteItem = useDeleteListItem(listId);
   const clearCompleted = useClearCompleted(listId);
   const updatePreferences = useUpdateListPreferences();
+  const isMobile = useIsMobile();
+  const [optionsOpen, setOptionsOpen] = useState(false);
   const [itemSheet, setItemSheet] = useState<{
     mode: "create" | "edit";
     item: ListItem | null;
@@ -115,31 +119,47 @@ export function ListDetailView({
                 {list.name}
               </h2>
             </div>
-            <Button
-              type="button"
-              onClick={() => setItemSheet({ mode: "create", item: null })}
-            >
-              <Plus className="h-4 w-4" />
-              Add item
-            </Button>
+            <div className="flex shrink-0 items-center gap-2">
+              <Button
+                type="button"
+                onClick={() => setItemSheet({ mode: "create", item: null })}
+              >
+                <Plus className="h-4 w-4" />
+                Add item
+              </Button>
+              {isMobile && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  aria-label="List options"
+                  className="h-11 w-11"
+                  onClick={() => setOptionsOpen(true)}
+                >
+                  <SlidersHorizontal className="h-5 w-5" />
+                </Button>
+              )}
+            </div>
           </div>
 
-          <div className="mt-4">
-            <ListOptionsControls
-              list={list}
-              hasPreferences={hasPreferences}
-              familyShowCompletedDefault={familyShowCompletedDefault}
-              completedControlsDisabled={completedControlsDisabled}
-              completedOverrideValue={completedOverrideValue}
-              completedFallbackMessage={completedFallbackMessage}
-              clearCompletedDisabled={clearCompletedDisabled}
-              onUpdateList={(request) => updateList.mutate(request)}
-              onUpdatePreferences={(request) =>
-                updatePreferences.mutate(request)
-              }
-              onClearCompleted={() => clearCompleted.mutate()}
-            />
-          </div>
+          {!isMobile && (
+            <div className="mt-4">
+              <ListOptionsControls
+                list={list}
+                hasPreferences={hasPreferences}
+                familyShowCompletedDefault={familyShowCompletedDefault}
+                completedControlsDisabled={completedControlsDisabled}
+                completedOverrideValue={completedOverrideValue}
+                completedFallbackMessage={completedFallbackMessage}
+                clearCompletedDisabled={clearCompletedDisabled}
+                onUpdateList={(request) => updateList.mutate(request)}
+                onUpdatePreferences={(request) =>
+                  updatePreferences.mutate(request)
+                }
+                onClearCompleted={() => clearCompleted.mutate()}
+              />
+            </div>
+          )}
         </div>
 
         {list.items.length === 0 ? (
@@ -192,6 +212,33 @@ export function ListDetailView({
               </section>
             ))}
           </div>
+        )}
+
+        {isMobile && (
+          <MobileSheet
+            isOpen={optionsOpen}
+            onClose={() => setOptionsOpen(false)}
+            title="List options"
+            initialHeight="half"
+          >
+            <div className="space-y-5">
+              <ListOptionsControls
+                list={list}
+                hasPreferences={hasPreferences}
+                familyShowCompletedDefault={familyShowCompletedDefault}
+                completedControlsDisabled={completedControlsDisabled}
+                completedOverrideValue={completedOverrideValue}
+                completedFallbackMessage={completedFallbackMessage}
+                clearCompletedDisabled={clearCompletedDisabled}
+                fullWidthClearButton
+                onUpdateList={(request) => updateList.mutate(request)}
+                onUpdatePreferences={(request) =>
+                  updatePreferences.mutate(request)
+                }
+                onClearCompleted={() => clearCompleted.mutate()}
+              />
+            </div>
+          </MobileSheet>
         )}
 
         <ListItemSheet
