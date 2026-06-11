@@ -42,6 +42,11 @@ global.IntersectionObserver = vi.fn().mockImplementation(() => ({
 Element.prototype.scrollTo = vi.fn();
 window.scrollTo = vi.fn();
 
+// Mock pointer capture APIs (used by vaul's drag handling; missing in jsdom)
+Element.prototype.setPointerCapture = vi.fn();
+Element.prototype.releasePointerCapture = vi.fn();
+Element.prototype.hasPointerCapture = vi.fn().mockReturnValue(false);
+
 // =============================================================================
 // Zustand Store Reset
 // =============================================================================
@@ -105,6 +110,14 @@ function resetAllStores(): void {
 beforeEach(() => {
   localStorage.clear();
   sessionStorage.clear();
+
+  // vaul injects keyframe CSS on import. jsdom parses the closed-state
+  // animation rules but never fires animation events, so Radix Presence would
+  // keep closed drawers mounted forever. Removing the stylesheet makes exit
+  // animations resolve instantly, like the other Radix dialogs in tests.
+  for (const style of document.querySelectorAll("head style")) {
+    if (style.textContent?.includes("data-vaul-drawer")) style.remove();
+  }
 });
 
 // Cleanup after each test case
