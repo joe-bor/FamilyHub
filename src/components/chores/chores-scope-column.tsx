@@ -3,6 +3,7 @@ import { ChoreAssigneeGroup } from "./chore-assignee-group";
 
 interface ChoreScopeColumnProps {
   scope: ChoreScopeBoard;
+  showHeading?: boolean;
   onArchive?: (scope: ChoreScopeBoard, chore: ChoreBoardItem) => void;
   onComplete?: (scope: ChoreScopeBoard, chore: ChoreBoardItem) => void;
   onUncomplete?: (scope: ChoreScopeBoard, chore: ChoreBoardItem) => void;
@@ -16,30 +17,35 @@ function scopeHeading(scope: ChoreScopeBoard["scope"]): string {
 
 export function ChoreScopeColumn({
   scope,
+  showHeading = true,
   onArchive,
   onComplete,
   onUncomplete,
 }: ChoreScopeColumnProps) {
   const heading = scopeHeading(scope.scope);
+  const summary = `${scope.summary.remaining} left of ${scope.summary.total}`;
   const isFullyComplete =
     scope.summary.total > 0 && scope.summary.remaining === 0;
 
   return (
     <section
-      aria-labelledby={`${scope.scope}-heading`}
+      aria-label={showHeading ? undefined : heading}
+      aria-labelledby={showHeading ? `${scope.scope}-heading` : undefined}
       className="rounded-lg border bg-card p-4 shadow-sm"
     >
-      <header className="mb-4">
-        <h2
-          id={`${scope.scope}-heading`}
-          className="text-lg font-semibold text-foreground"
-        >
-          {heading}
-        </h2>
-        <p className="mt-1 text-sm text-muted-foreground">
-          {scope.summary.remaining} left of {scope.summary.total}
-        </p>
-      </header>
+      {showHeading ? (
+        <header className="mb-4">
+          <h2
+            id={`${scope.scope}-heading`}
+            className="text-lg font-semibold text-foreground"
+          >
+            {heading}
+          </h2>
+          <p className="mt-1 text-sm text-muted-foreground">{summary}</p>
+        </header>
+      ) : (
+        <p className="mb-4 text-sm text-muted-foreground">{summary}</p>
+      )}
 
       {scope.summary.total === 0 ? (
         <p className="rounded-lg border border-dashed border-border p-4 text-sm text-muted-foreground">
