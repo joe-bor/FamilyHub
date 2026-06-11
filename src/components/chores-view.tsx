@@ -165,6 +165,7 @@ export function ChoresView() {
                 <ChoreScopeColumn
                   key={scope.scope}
                   scope={scope}
+                  showHeading={!isMobile}
                   onArchive={handleArchive}
                   onComplete={handleComplete}
                   onUncomplete={handleUncomplete}

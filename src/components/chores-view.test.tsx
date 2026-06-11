@@ -202,16 +202,22 @@ describe("ChoresView", () => {
       "aria-pressed",
       "true",
     );
-    expect(await screen.findByRole("heading", { name: "Today" })).toBeVisible();
+    expect(await screen.findByRole("region", { name: "Today" })).toBeVisible();
     expect(
-      screen.queryByRole("heading", { name: "This Week" }),
+      screen.queryByRole("heading", { name: "Today" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("region", { name: "This Week" }),
     ).not.toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "Week" }));
 
-    expect(screen.getByRole("heading", { name: "This Week" })).toBeVisible();
+    expect(screen.getByRole("region", { name: "This Week" })).toBeVisible();
     expect(
-      screen.queryByRole("heading", { name: "Today" }),
+      screen.queryByRole("heading", { name: "This Week" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("region", { name: "Today" }),
     ).not.toBeInTheDocument();
   });
 
