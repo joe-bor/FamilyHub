@@ -1,4 +1,4 @@
-import { ArrowLeft, Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, Plus } from "lucide-react";
 import { useState } from "react";
 import {
   useClearCompleted,
@@ -8,16 +8,12 @@ import {
   useUpdateListItem,
   useUpdateListPreferences,
 } from "@/api";
-import type {
-  ListCategoryDisplayMode,
-  ListItem,
-  ListPreferences,
-} from "@/lib/types";
+import type { ListItem, ListPreferences } from "@/lib/types";
 import { Button } from "../ui/button";
-import { Label } from "../ui/label";
 import { buildListSections } from "./build-list-sections";
 import { ListItemRow } from "./list-item-row";
 import { ListItemSheet } from "./list-item-sheet";
+import { ListOptionsControls } from "./list-options-controls";
 
 const kindLabels = {
   grocery: "Grocery",
@@ -128,93 +124,21 @@ export function ListDetailView({
             </Button>
           </div>
 
-          <div className="mt-4 grid gap-3 sm:grid-cols-2">
-            {list.kind !== "general" && (
-              <div className="space-y-1">
-                <Label htmlFor="category-mode">Categories</Label>
-                <select
-                  id="category-mode"
-                  value={list.categoryDisplayMode}
-                  onChange={(event) =>
-                    updateList.mutate({
-                      categoryDisplayMode: event.target
-                        .value as ListCategoryDisplayMode,
-                      showCompletedOverride: list.showCompletedOverride,
-                    })
-                  }
-                  className="h-10 w-full rounded-lg border border-input bg-background px-3 text-[15px] leading-5 shadow-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                >
-                  <option value="grouped">Show categories</option>
-                  <option value="flat">Hide categories</option>
-                </select>
-              </div>
-            )}
-
-            <div className="space-y-1">
-              <Label htmlFor="completed-items">Completed items</Label>
-              <select
-                id="completed-items"
-                value={completedOverrideValue}
-                disabled={completedControlsDisabled}
-                onChange={(event) =>
-                  updateList.mutate({
-                    categoryDisplayMode: list.categoryDisplayMode,
-                    showCompletedOverride:
-                      event.target.value === "family-default"
-                        ? null
-                        : event.target.value === "show",
-                  })
-                }
-                className="h-10 w-full rounded-lg border border-input bg-background px-3 text-[15px] leading-5 shadow-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              >
-                <option value="family-default">
-                  Family default (
-                  {hasPreferences
-                    ? familyShowCompletedDefault
-                      ? "show"
-                      : "hide"
-                    : "show for now"}
-                  )
-                </option>
-                <option value="show">Always show</option>
-                <option value="hide">Hide completed</option>
-              </select>
-              {completedControlsDisabled && (
-                <p className="text-xs leading-4 text-muted-foreground">
-                  {completedFallbackMessage}
-                </p>
-              )}
-            </div>
-          </div>
-
-          <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
-            <label
-              htmlFor="family-completed-default"
-              className="flex items-center gap-2 text-sm font-medium text-foreground"
-            >
-              <input
-                id="family-completed-default"
-                type="checkbox"
-                checked={familyShowCompletedDefault}
-                disabled={completedControlsDisabled}
-                onChange={(event) =>
-                  updatePreferences.mutate({
-                    showCompletedByDefault: event.target.checked,
-                  })
-                }
-                className="h-4 w-4 rounded border-border"
-              />
-              Show completed by default
-            </label>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => clearCompleted.mutate()}
-              disabled={clearCompletedDisabled}
-            >
-              <Trash2 className="h-4 w-4" />
-              Remove all completed
-            </Button>
+          <div className="mt-4">
+            <ListOptionsControls
+              list={list}
+              hasPreferences={hasPreferences}
+              familyShowCompletedDefault={familyShowCompletedDefault}
+              completedControlsDisabled={completedControlsDisabled}
+              completedOverrideValue={completedOverrideValue}
+              completedFallbackMessage={completedFallbackMessage}
+              clearCompletedDisabled={clearCompletedDisabled}
+              onUpdateList={(request) => updateList.mutate(request)}
+              onUpdatePreferences={(request) =>
+                updatePreferences.mutate(request)
+              }
+              onClearCompleted={() => clearCompleted.mutate()}
+            />
           </div>
         </div>
 
