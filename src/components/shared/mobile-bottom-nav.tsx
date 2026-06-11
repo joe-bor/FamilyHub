@@ -96,6 +96,7 @@ export function MobileBottomNav() {
         isOpen={moreOpen}
         onClose={() => setMoreOpen(false)}
         title="More"
+        initialHeight="half"
       >
         <div className="space-y-1">
           {overflowModules.map((tab) => {
