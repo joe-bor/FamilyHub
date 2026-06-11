@@ -5,9 +5,15 @@ import { MobileSheet } from "@/components/ui/mobile-sheet";
 import type { RecipeDetailApiResponse } from "@/lib/types";
 import type { RecipeFormInput } from "@/lib/validations/recipes";
 import { RecipeForm, toRecipeRequest } from "./recipe-form";
-import { RecipeImportSheet } from "./recipe-import-sheet";
+import { RecipeImportForm } from "./recipe-import-form";
 
 type AddRecipeMode = "choices" | "manual" | "import";
+
+const sheetTitles: Record<AddRecipeMode, string> = {
+  choices: "Add Recipe",
+  manual: "Create Recipe",
+  import: "Import Recipe",
+};
 
 interface RecipeCreateSheetProps {
   isOpen: boolean;
@@ -69,70 +75,65 @@ export function RecipeCreateSheet({
     onOpenChange(false);
   };
 
-  if (mode === "manual") {
-    const createErrorMessage =
-      createRecipe.error instanceof Error
-        ? createRecipe.error.message
-        : "Could not save recipe";
+  const createErrorMessage =
+    createRecipe.error instanceof Error
+      ? createRecipe.error.message
+      : "Could not save recipe";
 
-    return (
-      <MobileSheet isOpen={isOpen} onClose={dismissFlow} title="Create Recipe">
+  return (
+    <MobileSheet
+      isOpen={isOpen}
+      onClose={dismissFlow}
+      title={sheetTitles[mode]}
+      initialHeight={mode === "manual" ? "full" : "half"}
+    >
+      {mode === "manual" ? (
         <RecipeForm
           defaultValues={defaultValues}
           isPending={createRecipe.isPending}
           errorMessage={createRecipe.isError ? createErrorMessage : null}
           onSubmit={(values) => createRecipe.mutate(toRecipeRequest(values))}
         />
-      </MobileSheet>
-    );
-  }
-
-  if (mode === "import") {
-    return (
-      <RecipeImportSheet
-        isOpen={isOpen}
-        isPending={importRecipe.isPending}
-        errorMessage={importError}
-        onClose={dismissFlow}
-        onSubmit={(url) => {
-          setImportError(null);
-          importRecipe.mutate(
-            { url },
-            {
-              onError: (error) => {
-                setImportError(
-                  error instanceof Error
-                    ? error.message
-                    : "Could not import recipe",
-                );
+      ) : mode === "import" ? (
+        <RecipeImportForm
+          isPending={importRecipe.isPending}
+          errorMessage={importError}
+          onSubmit={(url) => {
+            setImportError(null);
+            importRecipe.mutate(
+              { url },
+              {
+                onError: (error) => {
+                  setImportError(
+                    error instanceof Error
+                      ? error.message
+                      : "Could not import recipe",
+                  );
+                },
               },
-            },
-          );
-        }}
-      />
-    );
-  }
-
-  return (
-    <MobileSheet isOpen={isOpen} onClose={dismissFlow} title="Add Recipe">
-      <div className="space-y-3">
-        <Button
-          type="button"
-          variant="outline"
-          className="h-auto w-full justify-start px-4 py-4 text-left"
-          onClick={() => setMode("manual")}
-        >
-          Create manually
-        </Button>
-        <Button
-          type="button"
-          variant="outline"
-          className="h-auto w-full justify-start px-4 py-4 text-left"
-          onClick={() => setMode("import")}
-        >
-          Import from URL
-        </Button>
-      </div>
+            );
+          }}
+        />
+      ) : (
+        <div className="space-y-3">
+          <Button
+            type="button"
+            variant="outline"
+            className="h-auto w-full justify-start px-4 py-4 text-left"
+            onClick={() => setMode("manual")}
+          >
+            Create manually
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            className="h-auto w-full justify-start px-4 py-4 text-left"
+            onClick={() => setMode("import")}
+          >
+            Import from URL
+          </Button>
+        </div>
+      )}
     </MobileSheet>
   );
 }
