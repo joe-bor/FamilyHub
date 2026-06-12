@@ -240,9 +240,13 @@ export function useUpdateFamily(callbacks?: UpdateFamilyCallbacks) {
       );
 
       if (previousData?.data) {
+        // Partial update: fields left undefined are unchanged (BE semantics).
         const optimisticFamily: FamilyData = {
           ...previousData.data,
-          name: request.name,
+          ...(request.name !== undefined && { name: request.name }),
+          ...(request.timezone !== undefined && {
+            timezone: request.timezone,
+          }),
         };
         queryClient.setQueryData<FamilyApiResponse>(familyKeys.family(), {
           ...previousData,

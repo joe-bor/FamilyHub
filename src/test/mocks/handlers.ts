@@ -1547,10 +1547,12 @@ export const handlers = [
       );
     }
 
+    // Mirrors BE FamilyService (v1.6.0): fields left undefined are unchanged.
     const body = (await request.json()) as UpdateFamilyRequest;
     mockFamily = {
       ...mockFamily,
-      name: body.name,
+      ...(body.name !== undefined && { name: body.name }),
+      ...(body.timezone !== undefined && { timezone: body.timezone }),
     };
 
     return HttpResponse.json(
