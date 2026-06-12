@@ -37,7 +37,10 @@ export function WeekHeader({
     <div className="flex items-start justify-between gap-3">
       <div>
         <div className="flex flex-wrap items-center gap-2">
-          <h1 className="text-2xl font-semibold text-foreground">Meals</h1>
+          {/* Title is redundant with the mobile module-aware header; desktop keeps it. */}
+          <h1 className="hidden text-2xl font-semibold text-foreground md:block">
+            Meals
+          </h1>
           {readOnly ? (
             <span className="rounded-full bg-muted px-2 py-1 text-xs font-semibold text-muted-foreground">
               Review only
