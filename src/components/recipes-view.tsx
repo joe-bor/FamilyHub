@@ -9,6 +9,7 @@ import {
 } from "@/components/recipes/recipe-filter-bar";
 import { RecipeLibraryCard } from "@/components/recipes/recipe-library-card";
 import { Button } from "@/components/ui/button";
+import { useIsMobile } from "@/hooks";
 import { formatRecipeTag } from "@/lib/recipe-tags";
 import { formatLocalDate, getWeekStartSunday } from "@/lib/time-utils";
 import type { RecipeSummary } from "@/lib/types";
@@ -70,6 +71,7 @@ function sortRecipes(recipes: RecipeSummary[], isSearching: boolean) {
 }
 
 export function RecipesView() {
+  const isMobile = useIsMobile();
   const { data, error, isLoading, isError, refetch, isRefetching } =
     useRecipes();
   const recipeCreationDraft = useAppStore((state) => state.recipeCreationDraft);
@@ -145,14 +147,23 @@ export function RecipesView() {
   return (
     <section className="flex-1 overflow-y-auto p-4 sm:p-6">
       <div className="mx-auto flex max-w-3xl flex-col gap-4">
-        <div className="flex items-start justify-end gap-3 md:justify-between">
+        <div
+          className={cn(
+            "flex items-start gap-3",
+            isMobile ? "justify-end" : "justify-between",
+          )}
+        >
           {/* Title is redundant with the mobile header; desktop keeps it. */}
-          <div className="hidden md:block">
-            <h1 className="text-2xl font-semibold text-foreground">Recipes</h1>
-            <p className="text-sm text-muted-foreground">
-              Save family favorites and discover what to cook next.
-            </p>
-          </div>
+          {!isMobile && (
+            <div>
+              <h1 className="text-2xl font-semibold text-foreground">
+                Recipes
+              </h1>
+              <p className="text-sm text-muted-foreground">
+                Save family favorites and discover what to cook next.
+              </p>
+            </div>
+          )}
           {selectedRecipeId === null ? (
             <Button type="button" onClick={() => setIsCreateSheetOpen(true)}>
               Add recipe
