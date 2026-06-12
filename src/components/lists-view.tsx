@@ -43,8 +43,8 @@ export function ListsView() {
     return (
       <div className="flex-1 overflow-y-auto p-4 sm:p-6">
         <div className="mx-auto max-w-2xl space-y-6">
-          <div className="flex items-center justify-between gap-3">
-            <h2 className="text-[24px] font-semibold leading-8 text-foreground">
+          <div className="flex items-center justify-end gap-3 md:justify-between">
+            <h2 className="hidden text-[24px] font-semibold leading-8 text-foreground md:block">
               My Lists
             </h2>
             <Button type="button" onClick={() => setCreateOpen(true)}>
@@ -85,8 +85,8 @@ export function ListsView() {
   return (
     <div className="flex-1 overflow-y-auto p-4 sm:p-6">
       <div className="mx-auto max-w-2xl space-y-6">
-        <div className="flex items-center justify-between gap-3">
-          <h2 className="text-[24px] font-semibold leading-8 text-foreground">
+        <div className="flex items-center justify-end gap-3 md:justify-between">
+          <h2 className="hidden text-[24px] font-semibold leading-8 text-foreground md:block">
             My Lists
           </h2>
           <Button type="button" onClick={() => setCreateOpen(true)}>

@@ -114,9 +114,11 @@ export function ChoresView() {
         <div className="mx-auto max-w-6xl">
           <div className="mb-6 flex items-start justify-between gap-3">
             <div className="space-y-3">
-              <h1 className="text-[24px] leading-8 font-semibold text-foreground">
-                Chores
-              </h1>
+              {!isMobile && (
+                <h1 className="text-[24px] leading-8 font-semibold text-foreground">
+                  Chores
+                </h1>
+              )}
               {isMobile && (
                 <ChoreScopeSwitcher
                   value={selectedScopeKey}
