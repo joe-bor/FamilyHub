@@ -1,9 +1,9 @@
-import { endOfWeek, format, startOfWeek } from "date-fns";
 import { Menu } from "lucide-react";
 import { useEffect } from "react";
 import type { FamilyMember } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { useCalendarStore, useIsViewingToday } from "@/stores";
+import { getContextLabel } from "../utils/context-label";
 import { MemberAvatar } from "./member-avatar";
 
 interface MobileToolbarProps {
@@ -17,27 +17,6 @@ const VIEW_PILLS = [
   { view: "monthly", label: "M", ariaLabel: "Monthly view" },
   { view: "schedule", label: "S", ariaLabel: "Schedule view" },
 ] as const;
-
-function getContextLabel(calendarView: string, currentDate: Date): string {
-  switch (calendarView) {
-    case "monthly":
-      return format(currentDate, "MMMM yyyy");
-    case "weekly": {
-      const weekStart = startOfWeek(currentDate);
-      const weekEnd = endOfWeek(currentDate);
-      const sameMonth = weekStart.getMonth() === weekEnd.getMonth();
-      return sameMonth
-        ? `${format(weekStart, "MMM d")} \u2013 ${format(weekEnd, "d")}`
-        : `${format(weekStart, "MMM d")} \u2013 ${format(weekEnd, "MMM d")}`;
-    }
-    case "daily":
-      return format(currentDate, "EEE, MMM d");
-    case "schedule":
-      return "Upcoming";
-    default:
-      return format(currentDate, "MMMM yyyy");
-  }
-}
 
 export function MobileToolbar({ members, onOpenSidebar }: MobileToolbarProps) {
   const calendarView = useCalendarStore((s) => s.calendarView);
