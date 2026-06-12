@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { useAppStore, useCalendarStore } from "@/stores";
 import {
+  act,
   render,
   renderWithUser,
   screen,
@@ -45,6 +46,35 @@ describe("AppHeader (mobile)", () => {
     expect(screen.getByText("June 2026")).toBeInTheDocument();
   });
 
+  it("updates the calendar context label live as the view and date change", () => {
+    useAppStore.setState({ activeModule: "calendar" });
+    seedCalendarStore({
+      calendarView: "monthly",
+      currentDate: new Date(2026, 5, 11),
+    });
+    render(<AppHeader />);
+    expect(screen.getByText("June 2026")).toBeInTheDocument();
+
+    // Switching to the daily view + a new date should re-render the label.
+    act(() => {
+      seedCalendarStore({
+        calendarView: "daily",
+        currentDate: new Date(2026, 6, 4),
+      });
+    });
+    expect(screen.queryByText("June 2026")).toBeNull();
+    expect(screen.getByText(/Jul 4/)).toBeInTheDocument();
+
+    // And navigating to a different month while monthly updates it again.
+    act(() => {
+      seedCalendarStore({
+        calendarView: "monthly",
+        currentDate: new Date(2026, 11, 25),
+      });
+    });
+    expect(screen.getByText("December 2026")).toBeInTheDocument();
+  });
+
   it("exposes exactly one header control (Menu) outside Calendar", () => {
     useAppStore.setState({ activeModule: "lists" });
     render(<AppHeader />);
@@ -66,8 +96,10 @@ describe("AppHeader (mobile)", () => {
     expect(today).toBeInTheDocument();
 
     await user.click(today);
-    expect(useCalendarStore.getState().currentDate.getFullYear()).toBe(
-      new Date().getFullYear(),
-    );
+    const current = useCalendarStore.getState().currentDate;
+    const now = new Date();
+    expect(current.getFullYear()).toBe(now.getFullYear());
+    expect(current.getMonth()).toBe(now.getMonth());
+    expect(current.getDate()).toBe(now.getDate());
   });
 });
