@@ -41,7 +41,6 @@ import { format24hTo12h, formatLocalDate } from "@/lib/time-utils";
 import type { CalendarEvent, CreateEventRequest } from "@/lib/types";
 import type { EventFormData } from "@/lib/validations";
 import {
-  useAppStore,
   useCalendarActions,
   useCalendarState,
   useCalendarStore,
@@ -106,9 +105,6 @@ export function CalendarModule() {
     openAddEventModal,
     closeAddEventModal,
   } = useCalendarActions();
-
-  // App store actions for mobile toolbar
-  const openSidebar = useAppStore((state) => state.openSidebar);
 
   // Family data for mobile views
   const members = useFamilyMembers();
@@ -457,7 +453,7 @@ export function CalendarModule() {
     <div className="flex-1 flex flex-col overflow-hidden">
       {/* Toolbar */}
       {isMobile ? (
-        <MobileToolbar members={members} onOpenSidebar={openSidebar} />
+        <MobileToolbar members={members} />
       ) : (
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 px-4 py-3 bg-card border-b border-border">
           <CalendarViewSwitcher />

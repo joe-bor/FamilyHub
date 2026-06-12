@@ -76,7 +76,7 @@ describe("App shell", () => {
     expect(screen.getAllByText(/^calendar$/i)).toHaveLength(1);
   });
 
-  it("suppresses AppHeader on mobile calendar while keeping bottom nav", async () => {
+  it("renders the module-aware AppHeader on mobile calendar alongside bottom nav", async () => {
     setViewportWidth(768);
     useAppStore.setState({ activeModule: "calendar", isSidebarOpen: false });
 
@@ -85,10 +85,13 @@ describe("App shell", () => {
     expect(
       await screen.findByRole("navigation", { name: /primary/i }),
     ).toBeInTheDocument();
+    // Calendar header shows the context label, not the family name.
     expect(
       screen.queryByRole("heading", { name: /test family/i }),
     ).not.toBeInTheDocument();
     expect(screen.getAllByRole("button", { name: /^home$/i })).toHaveLength(1);
+    // Header carries the calendar Today action + a single Menu button.
+    expect(screen.getByRole("button", { name: /today/i })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /^menu$/i })).toBeInTheDocument();
   });
 
