@@ -1,14 +1,31 @@
 import { Cloud, Menu, Sun } from "lucide-react";
 import { useFamilyMembers, useFamilyName } from "@/api";
+import { getContextLabel } from "@/components/calendar/utils/context-label";
 import { Button } from "@/components/ui/button";
 import { useIsMobile } from "@/hooks";
 import { colorMap } from "@/lib/types";
 import { cn } from "@/lib/utils";
-import { useAppStore, useCalendarStore } from "@/stores";
+import {
+  type ModuleType,
+  useAppStore,
+  useCalendarStore,
+  useIsViewingToday,
+} from "@/stores";
+
+const MODULE_TITLES: Record<Exclude<ModuleType, "calendar">, string> = {
+  lists: "Lists",
+  chores: "Chores",
+  meals: "Meals",
+  recipes: "Recipes",
+  photos: "Photos",
+};
 
 export function AppHeader() {
   // From calendar-store
   const currentDate = useCalendarStore((state) => state.currentDate);
+  const calendarView = useCalendarStore((state) => state.calendarView);
+  const goToToday = useCalendarStore((state) => state.goToToday);
+  const isViewingToday = useIsViewingToday();
 
   // From family-store
   const familyName = useFamilyName();
@@ -16,6 +33,7 @@ export function AppHeader() {
 
   // From app-store
   const openSidebar = useAppStore((state) => state.openSidebar);
+  const activeModule = useAppStore((state) => state.activeModule);
 
   // Mobile detection
   const isMobile = useIsMobile();
@@ -36,15 +54,60 @@ export function AppHeader() {
     });
   };
 
+  // Mobile: a single module-aware row — title left, contextual actions + Menu
+  // right. The title reflects where you are (family name on Home, calendar
+  // context label on Calendar, module name elsewhere).
+  if (isMobile) {
+    const mobileTitle =
+      activeModule === null
+        ? familyName || "Family Hub"
+        : activeModule === "calendar"
+          ? getContextLabel(calendarView, currentDate)
+          : MODULE_TITLES[activeModule];
+
+    return (
+      <header className="shrink-0 border-b border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/85 flex items-center justify-between gap-3 min-h-16 px-4 py-3">
+        <h1 className="min-w-0 truncate text-[22px] leading-7 font-semibold text-foreground">
+          {mobileTitle}
+        </h1>
+        <div className="flex shrink-0 items-center gap-2">
+          {activeModule === "calendar" && (
+            <button
+              type="button"
+              onClick={goToToday}
+              className={cn(
+                "rounded-lg px-2.5 py-1.5 text-sm leading-5 font-semibold transition-colors",
+                isViewingToday
+                  ? "text-primary/50"
+                  : "text-primary hover:bg-primary/10",
+              )}
+            >
+              Today
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={openSidebar}
+            aria-label="Menu"
+            className="-my-1 flex h-11 w-11 items-center justify-center rounded-lg text-foreground/70 transition-colors hover:bg-muted hover:text-foreground"
+          >
+            <Menu className="h-5 w-5" />
+          </button>
+        </div>
+      </header>
+    );
+  }
+
+  // Desktop: unchanged — Menu left + family name + date/time, weather, dots.
   return (
     <header
       className={cn(
         "shrink-0 border-b border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/85",
         "flex items-center justify-between",
-        isMobile ? "min-h-16 px-4 py-3" : "px-6 py-4",
+        "px-6 py-4",
       )}
     >
-      <div className={cn("flex items-center", isMobile ? "gap-3" : "gap-4")}>
+      <div className="flex items-center gap-4">
         <Button
           variant="ghost"
           size="icon"
@@ -58,31 +121,26 @@ export function AppHeader() {
           <h1 className="text-[22px] leading-7 font-semibold text-foreground">
             {familyName || "Family Hub"}
           </h1>
-          {/* Date/time - hidden on mobile (device shows in status bar) */}
-          {!isMobile && (
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <span>{formatDate(currentDate)}</span>
-              <span>•</span>
-              <span>{formatTime(new Date())}</span>
-            </div>
-          )}
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <span>{formatDate(currentDate)}</span>
+            <span>•</span>
+            <span>{formatTime(new Date())}</span>
+          </div>
         </div>
       </div>
 
-      <div className={cn("flex items-center", isMobile ? "gap-2" : "gap-6")}>
-        {/* Weather - hidden on mobile (future: widget on desktop) */}
-        {!isMobile && (
-          <div className="flex items-center gap-2 text-muted-foreground">
-            <div className="relative">
-              <Sun className="h-5 w-5 text-yellow-500" />
-              <Cloud className="h-4 w-4 text-gray-400 absolute -bottom-1 -right-1" />
-            </div>
-            <span className="text-sm font-medium">72°</span>
+      <div className="flex items-center gap-6">
+        {/* Weather - future: real widget */}
+        <div className="flex items-center gap-2 text-muted-foreground">
+          <div className="relative">
+            <Sun className="h-5 w-5 text-yellow-500" />
+            <Cloud className="h-4 w-4 text-gray-400 absolute -bottom-1 -right-1" />
           </div>
-        )}
+          <span className="text-sm font-medium">72°</span>
+        </div>
 
-        {/* Family member indicators - hidden on mobile (used for calendar filtering) */}
-        {!isMobile && familyMembers.length > 0 && (
+        {/* Family member indicators - used for calendar filtering */}
+        {familyMembers.length > 0 && (
           <div className="flex items-center gap-1.5">
             {familyMembers.slice(0, 6).map((member) => (
               <div
