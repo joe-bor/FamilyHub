@@ -8,6 +8,7 @@ import {
   describe,
   expect,
   it,
+  vi,
 } from "vitest";
 import { type FamilyApiResponse, familyKeys } from "@/api";
 import type {
@@ -29,6 +30,14 @@ import {
   within,
 } from "@/test/test-utils";
 import { FamilySettingsModal } from "./family-settings-modal";
+
+// The responsive wrapper switches on useIsMobile; default to desktop so the
+// existing dialog-role assertions below keep exercising the centered dialog.
+let mockIsMobile = false;
+vi.mock("@/hooks", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/hooks")>();
+  return { ...actual, useIsMobile: () => mockIsMobile };
+});
 
 // ============================================================================
 // Test Setup
@@ -63,6 +72,7 @@ afterAll(() => server.close());
 
 beforeEach(() => {
   resetMockFamily();
+  mockIsMobile = false;
 });
 
 afterEach(() => {
@@ -195,5 +205,51 @@ describe("FamilySettingsModal — add then immediately edit", () => {
     ).toBeInTheDocument();
     expect(putIds.length).toBeGreaterThan(0);
     expect(putIds.some((id) => id.startsWith("temp-"))).toBe(false);
+  });
+});
+
+// ============================================================================
+// Responsive surface: centered dialog on desktop, bottom sheet on mobile
+// ============================================================================
+
+describe("FamilySettingsModal — responsive surface", () => {
+  function seededClient(): QueryClient {
+    const client = createClient();
+    client.setQueryData<FamilyApiResponse>(familyKeys.family(), {
+      data: baseFamily(),
+    });
+    return client;
+  }
+
+  it("renders a centered dialog with an X close button on desktop", () => {
+    mockIsMobile = false;
+    render(<FamilySettingsModal open onOpenChange={noop} />, {
+      queryClient: seededClient(),
+    });
+
+    expect(
+      screen.getByRole("dialog", { name: "Family Settings" }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Close" })).toBeInTheDocument();
+    // The mobile sheet's Cancel chrome is absent on desktop.
+    expect(screen.queryByRole("button", { name: "Cancel" })).toBeNull();
+  });
+
+  it("renders the content in a bottom sheet with Cancel (no X) on mobile", () => {
+    mockIsMobile = true;
+    render(<FamilySettingsModal open onOpenChange={noop} />, {
+      queryClient: seededClient(),
+    });
+
+    expect(
+      screen.getByRole("dialog", { name: "Family Settings" }),
+    ).toBeInTheDocument();
+    // Sheet supplies the Cancel affordance; the in-content X close is desktop-only.
+    expect(screen.getByRole("button", { name: "Cancel" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Close" })).toBeNull();
+    // Content still renders inside the sheet.
+    expect(
+      screen.getByRole("button", { name: "Edit Alice" }),
+    ).toBeInTheDocument();
   });
 });
