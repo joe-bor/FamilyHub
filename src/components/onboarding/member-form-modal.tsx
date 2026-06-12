@@ -3,14 +3,9 @@ import { useEffect, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { ColorPicker } from "@/components/ui/color-picker";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { ResponsiveFormDialog } from "@/components/ui/responsive-form-dialog";
 import type { FamilyColor, FamilyMember } from "@/lib/types";
 import {
   createMemberFormSchema,
@@ -81,57 +76,52 @@ export function MemberFormModal({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent
-        className="w-full max-w-md mx-4 sm:mx-auto"
-        aria-describedby={undefined}
-      >
-        <DialogHeader>
-          <DialogTitle>
-            {mode === "add" ? "Add Family Member" : "Edit Family Member"}
-          </DialogTitle>
-        </DialogHeader>
+    <ResponsiveFormDialog
+      open={open}
+      onOpenChange={onOpenChange}
+      title={mode === "add" ? "Add Family Member" : "Edit Family Member"}
+      initialHeight="half"
+      dialogClassName="w-full max-w-md mx-4 sm:mx-auto max-h-[90dvh] overflow-y-auto"
+    >
+      <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">
+        <div className="space-y-2">
+          <Label htmlFor="member-name">Name</Label>
+          <Input
+            id="member-name"
+            placeholder="Enter name"
+            {...register("name")}
+            autoComplete="off"
+            aria-describedby={errors.name ? "member-name-error" : undefined}
+            aria-invalid={errors.name ? "true" : undefined}
+          />
+          {errors.name && (
+            <p id="member-name-error" className="text-sm text-destructive">
+              {errors.name.message}
+            </p>
+          )}
+        </div>
 
-        <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">
-          <div className="space-y-2">
-            <Label htmlFor="member-name">Name</Label>
-            <Input
-              id="member-name"
-              placeholder="Enter name"
-              {...register("name")}
-              autoComplete="off"
-              aria-describedby={errors.name ? "member-name-error" : undefined}
-              aria-invalid={errors.name ? "true" : undefined}
-            />
-            {errors.name && (
-              <p id="member-name-error" className="text-sm text-destructive">
-                {errors.name.message}
-              </p>
-            )}
-          </div>
+        <div className="space-y-2">
+          <Label>Color</Label>
+          <ColorPicker
+            value={selectedColor}
+            onChange={(color) => setValue("color", color)}
+            usedColors={usedColors}
+            error={errors.color?.message}
+          />
+        </div>
 
-          <div className="space-y-2">
-            <Label>Color</Label>
-            <ColorPicker
-              value={selectedColor}
-              onChange={(color) => setValue("color", color)}
-              usedColors={usedColors}
-              error={errors.color?.message}
-            />
-          </div>
-
-          <div className="flex justify-end gap-3">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-            >
-              Cancel
-            </Button>
-            <Button type="submit">{mode === "add" ? "Add" : "Save"}</Button>
-          </div>
-        </form>
-      </DialogContent>
-    </Dialog>
+        <div className="flex justify-end gap-3">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+          >
+            Cancel
+          </Button>
+          <Button type="submit">{mode === "add" ? "Add" : "Save"}</Button>
+        </div>
+      </form>
+    </ResponsiveFormDialog>
   );
 }
