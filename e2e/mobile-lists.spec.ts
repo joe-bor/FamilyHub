@@ -25,7 +25,9 @@ test.describe("Mobile Lists", () => {
     const nav = page.getByRole("navigation", { name: /primary/i });
     await nav.getByRole("button", { name: "Lists" }).click();
 
-    await expect(page.getByRole("heading", { name: "My Lists" })).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Lists", level: 1, exact: true }),
+    ).toBeVisible();
     await page.getByRole("button", { name: "New List" }).click();
     await page.getByLabel("List name").fill("Trader Joe's Run");
     await page.getByRole("radio", { name: "Grocery" }).click();

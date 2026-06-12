@@ -52,7 +52,9 @@ test.describe("Mobile Bottom Navigation", () => {
     ).toBeVisible();
 
     await nav.getByRole("button", { name: "Lists" }).click();
-    await expect(page.getByRole("heading", { name: "My Lists" })).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Lists", level: 1, exact: true }),
+    ).toBeVisible();
 
     await nav.getByRole("button", { name: "Chores" }).click();
     await expect(
