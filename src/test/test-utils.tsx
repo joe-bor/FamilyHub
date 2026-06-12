@@ -180,6 +180,7 @@ export function seedFamilyStore(
   const familyData: FamilyData = {
     id: data.id ?? crypto.randomUUID(),
     name: data.name ?? "Test Family",
+    timezone: data.timezone,
     members: data.members,
     createdAt: data.createdAt ?? new Date().toISOString(),
   };
