@@ -1,5 +1,42 @@
 # Changelog
 
+## [0.3.13](https://github.com/joe-bor/FamilyHub/compare/family-hub-v0.3.12...family-hub-v0.3.13) (2026-06-12)
+
+
+### Features
+
+* **mobile:** family settings opens as a full-height bottom sheet ([295c4c6](https://github.com/joe-bor/FamilyHub/commit/295c4c6c14e5bca06b90d96ec3e644e709de7430))
+* **mobile:** member profile and member form open as bottom sheets ([6c3098f](https://github.com/joe-bor/FamilyHub/commit/6c3098f22ccf11f4ab62016fbdc242c2fdcd1237))
+* **mobile:** module-aware app header with calendar context and Today ([5db0340](https://github.com/joe-bor/FamilyHub/commit/5db03401717ed6397d1dc431fab1ae8579989da0))
+* **mobile:** render shared header on calendar; slim mobile toolbar to controls row ([9a1108e](https://github.com/joe-bor/FamilyHub/commit/9a1108e37b1032a4c7464ae7cb68667fc4aded15))
+* **ui:** add responsive form dialog (sheet on mobile, dialog on desktop) ([91e0a7e](https://github.com/joe-bor/FamilyHub/commit/91e0a7ea0df105d1d9c67d40445c543b07c656ad))
+
+
+### Bug Fixes
+
+* **mobile:** compact horizontal recipe cards on mobile ([871e853](https://github.com/joe-bor/FamilyHub/commit/871e8538f739f989d1b1e2dfdb4779d0b298774c))
+* **mobile:** drop redundant chores period heading on mobile ([4dd37e4](https://github.com/joe-bor/FamilyHub/commit/4dd37e45c9f2aee2619cd171b62d9e74d3b8a8eb))
+* **mobile:** gate module titles with useIsMobile to avoid 768px duplicate ([07c85c2](https://github.com/joe-bor/FamilyHub/commit/07c85c231f049fcc2f3c0bb7c9ce8aed259c607e))
+* **mobile:** hide Meals week-header title duplicated by the module-aware header ([dded5d6](https://github.com/joe-bor/FamilyHub/commit/dded5d6604ef45f2e010a183697b0d00f7b714cb))
+* **mobile:** keep calendar chrome height parity with the old two-row toolbar ([a4aa03a](https://github.com/joe-bor/FamilyHub/commit/a4aa03a662722164f38e6e7c65a45fc89988399a))
+* **mobile:** keep settings dialogs desktop at md breakpoint ([dba4dcf](https://github.com/joe-bor/FamilyHub/commit/dba4dcf3b7a9e0b82d47f67007b8e776f29284a5))
+* **mobile:** move list options into a half-height sheet ([01468a4](https://github.com/joe-bor/FamilyHub/commit/01468a429d5cbc84e089a2f8e01dc841be67c9b7))
+* **mobile:** remove module titles duplicated by the module-aware header ([5156f42](https://github.com/joe-bor/FamilyHub/commit/5156f423da9f518f4c9bcf7fee73b8e8e0e0d688))
+
+
+### Code Refactoring
+
+* **calendar:** extract context label util ([ba76b58](https://github.com/joe-bor/FamilyHub/commit/ba76b58814cdceef52cb1bec568c5616d3b94413))
+* **lists:** extract list options controls component ([1c43995](https://github.com/joe-bor/FamilyHub/commit/1c4399509a3d3bff24fda53d37feff41204289d0))
+
+
+### Tests
+
+* **e2e:** cover mobile settings bottom sheets and stacking flow ([2e08617](https://github.com/joe-bor/FamilyHub/commit/2e08617ef96476994ce68d35c67bbda67a8b1ed5))
+* **e2e:** drive list options through the mobile options sheet ([542944d](https://github.com/joe-bor/FamilyHub/commit/542944d97828369c2a0a361424cf2650e9102ed2))
+* **mobile:** assert full Today date and live calendar label updates ([08a25cb](https://github.com/joe-bor/FamilyHub/commit/08a25cbf15d6b4da6688b45b0f0c2dd6ee21dbcb))
+* **mobile:** update chores e2e for hidden scope heading ([a7a4111](https://github.com/joe-bor/FamilyHub/commit/a7a4111a0e5ed71247a31aeb4c92d19f2ce9d3d2))
+
 ## [0.3.12](https://github.com/joe-bor/FamilyHub/compare/family-hub-v0.3.11...family-hub-v0.3.12) (2026-06-11)
 
 
