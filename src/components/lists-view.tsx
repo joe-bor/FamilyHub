@@ -1,12 +1,15 @@
 import { Plus } from "lucide-react";
 import { useState } from "react";
 import { useListPreferences, useLists } from "@/api";
+import { useIsMobile } from "@/hooks";
+import { cn } from "@/lib/utils";
 import { ListCard } from "./lists/list-card";
 import { ListCreateSheet } from "./lists/list-create-sheet";
 import { ListDetailView } from "./lists/list-detail-view";
 import { Button } from "./ui/button";
 
 export function ListsView() {
+  const isMobile = useIsMobile();
   const [selectedListId, setSelectedListId] = useState<string | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
   const lists = useLists();
@@ -43,10 +46,17 @@ export function ListsView() {
     return (
       <div className="flex-1 overflow-y-auto p-4 sm:p-6">
         <div className="mx-auto max-w-2xl space-y-6">
-          <div className="flex items-center justify-end gap-3 md:justify-between">
-            <h2 className="hidden text-[24px] font-semibold leading-8 text-foreground md:block">
-              My Lists
-            </h2>
+          <div
+            className={cn(
+              "flex items-center gap-3",
+              isMobile ? "justify-end" : "justify-between",
+            )}
+          >
+            {!isMobile && (
+              <h2 className="text-[24px] font-semibold leading-8 text-foreground">
+                My Lists
+              </h2>
+            )}
             <Button type="button" onClick={() => setCreateOpen(true)}>
               <Plus className="h-4 w-4" />
               New List
@@ -85,10 +95,17 @@ export function ListsView() {
   return (
     <div className="flex-1 overflow-y-auto p-4 sm:p-6">
       <div className="mx-auto max-w-2xl space-y-6">
-        <div className="flex items-center justify-end gap-3 md:justify-between">
-          <h2 className="hidden text-[24px] font-semibold leading-8 text-foreground md:block">
-            My Lists
-          </h2>
+        <div
+          className={cn(
+            "flex items-center gap-3",
+            isMobile ? "justify-end" : "justify-between",
+          )}
+        >
+          {!isMobile && (
+            <h2 className="text-[24px] font-semibold leading-8 text-foreground">
+              My Lists
+            </h2>
+          )}
           <Button type="button" onClick={() => setCreateOpen(true)}>
             <Plus className="h-4 w-4" />
             New List

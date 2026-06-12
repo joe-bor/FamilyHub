@@ -1,5 +1,6 @@
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useIsMobile } from "@/hooks";
 import {
   addWeeksLocal,
   formatLocalDate,
@@ -31,6 +32,7 @@ export function WeekHeader({
   readOnly,
   onWeekChange,
 }: WeekHeaderProps) {
+  const isMobile = useIsMobile();
   const currentStart = parseLocalDate(weekStartDate);
 
   return (
@@ -38,9 +40,9 @@ export function WeekHeader({
       <div>
         <div className="flex flex-wrap items-center gap-2">
           {/* Title is redundant with the mobile module-aware header; desktop keeps it. */}
-          <h1 className="hidden text-2xl font-semibold text-foreground md:block">
-            Meals
-          </h1>
+          {!isMobile && (
+            <h1 className="text-2xl font-semibold text-foreground">Meals</h1>
+          )}
           {readOnly ? (
             <span className="rounded-full bg-muted px-2 py-1 text-xs font-semibold text-muted-foreground">
               Review only
