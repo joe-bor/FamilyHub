@@ -1,6 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { useAppStore } from "@/stores";
-import { renderWithUser, screen, seedFamilyStore } from "@/test/test-utils";
+import {
+  renderWithUser,
+  screen,
+  seedFamilyStore,
+  within,
+} from "@/test/test-utils";
 import { SidebarMenu } from "./sidebar-menu";
 
 const logoutSpy = vi.fn();
@@ -24,6 +29,26 @@ describe("SidebarMenu", () => {
     expect(screen.getByText("Test Family")).toBeInTheDocument();
     await user.keyboard("{Escape}");
     expect(useAppStore.getState().isSidebarOpen).toBe(false);
+  });
+
+  it("orders menu rows: Family Settings, Preferences, Sign Out", () => {
+    renderWithUser(<SidebarMenu />);
+
+    const nav = screen.getByRole("navigation");
+    const labels = within(nav)
+      .getAllByRole("button")
+      .map((button) => button.textContent?.trim());
+    expect(labels).toEqual(["Family Settings", "Preferences", "Sign Out"]);
+  });
+
+  it("opens the Preferences sheet from the Preferences row", async () => {
+    const { user } = renderWithUser(<SidebarMenu />);
+
+    await user.click(screen.getByRole("button", { name: "Preferences" }));
+
+    expect(
+      screen.getByRole("dialog", { name: "Preferences" }),
+    ).toBeInTheDocument();
   });
 
   it("requires confirmation before signing out", async () => {

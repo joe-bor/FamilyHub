@@ -1,7 +1,11 @@
-import { LogOut, Users, X } from "lucide-react";
+import { LogOut, SlidersHorizontal, Users, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useFamilyMembers, useFamilyName, useLogout } from "@/api";
-import { FamilySettingsModal, MemberProfileModal } from "@/components/settings";
+import {
+  FamilySettingsModal,
+  MemberProfileModal,
+  PreferencesSheet,
+} from "@/components/settings";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -24,6 +28,7 @@ export function SidebarMenu() {
   const logout = useLogout();
 
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isPreferencesOpen, setIsPreferencesOpen] = useState(false);
   const [selectedMemberId, setSelectedMemberId] = useState<string | null>(null);
   const [showSignOutConfirm, setShowSignOutConfirm] = useState(false);
 
@@ -42,6 +47,11 @@ export function SidebarMenu() {
       icon: Users,
       label: "Family Settings",
       action: () => setIsSettingsOpen(true),
+    },
+    {
+      icon: SlidersHorizontal,
+      label: "Preferences",
+      action: () => setIsPreferencesOpen(true),
     },
     {
       icon: LogOut,
@@ -152,6 +162,12 @@ export function SidebarMenu() {
       <FamilySettingsModal
         open={isSettingsOpen}
         onOpenChange={setIsSettingsOpen}
+      />
+
+      {/* Preferences Sheet */}
+      <PreferencesSheet
+        open={isPreferencesOpen}
+        onOpenChange={setIsPreferencesOpen}
       />
 
       {/* Member Profile Modal */}
