@@ -12,6 +12,14 @@ import {
 } from "@/test/test-utils";
 import { MemberProfileModal } from "./member-profile-modal";
 
+// The responsive wrapper switches on useIsMobile; default to desktop so the
+// existing assertions exercise the centered dialog.
+let mockIsMobile = false;
+vi.mock("@/hooks", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/hooks")>();
+  return { ...actual, useIsMobile: () => mockIsMobile };
+});
+
 setupMswServer();
 
 const testMember: FamilyMember = {
@@ -214,5 +222,41 @@ describe("MemberProfileModal", () => {
     expect(
       await screen.findByText("Image must be smaller than 500KB"),
     ).toBeInTheDocument();
+  });
+});
+
+describe("MemberProfileModal — responsive surface", () => {
+  it("renders a centered dialog with an X close button on desktop", () => {
+    mockIsMobile = false;
+    seedFamily();
+    render(
+      <MemberProfileModal open onOpenChange={vi.fn()} memberId="member-1" />,
+    );
+
+    expect(
+      screen.getByRole("dialog", { name: "Member Profile" }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Close" })).toBeInTheDocument();
+  });
+
+  it("renders the profile form in a bottom sheet with Cancel (no X) on mobile", () => {
+    mockIsMobile = true;
+    seedFamily();
+    render(
+      <MemberProfileModal open onOpenChange={vi.fn()} memberId="member-1" />,
+    );
+
+    expect(
+      screen.getByRole("dialog", { name: "Member Profile" }),
+    ).toBeInTheDocument();
+    // The sheet supplies a Cancel affordance (the form footer also keeps its
+    // own Cancel), and the in-content X close is desktop-only.
+    expect(
+      screen.getAllByRole("button", { name: "Cancel" }).length,
+    ).toBeGreaterThanOrEqual(1);
+    expect(screen.queryByRole("button", { name: "Close" })).toBeNull();
+    // Form content (email field) still renders inside the sheet.
+    expect(screen.getByLabelText("Email")).toBeInTheDocument();
+    mockIsMobile = false;
   });
 });
