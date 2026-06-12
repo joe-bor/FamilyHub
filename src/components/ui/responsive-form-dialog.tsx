@@ -9,7 +9,7 @@ import {
   MobileSheet,
   type MobileSheetHeight,
 } from "@/components/ui/mobile-sheet";
-import { useIsMobile } from "@/hooks";
+import { useIsMobile, useMediaQuery } from "@/hooks";
 
 interface ResponsiveFormDialogProps {
   open: boolean;
@@ -50,8 +50,10 @@ export function ResponsiveFormDialog({
   children,
 }: ResponsiveFormDialogProps) {
   const isMobile = useIsMobile();
+  const isMdOrLarger = useMediaQuery("(min-width: 768px)");
 
-  if (isMobile) {
+  // These dialogs preserve desktop parity from Tailwind's md breakpoint up.
+  if (isMobile && !isMdOrLarger) {
     return (
       <MobileSheet
         isOpen={open}
