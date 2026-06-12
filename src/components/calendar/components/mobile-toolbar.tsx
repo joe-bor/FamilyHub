@@ -41,7 +41,9 @@ export function MobileToolbar({ members }: MobileToolbarProps) {
   return (
     // Controls row — the title / Today / Menu row now lives in the shared
     // module-aware AppHeader; this bar owns only the calendar-specific controls.
-    <div className="flex items-center justify-between gap-3 border-b border-border bg-background px-4 py-3">
+    // Tight vertical padding keeps total calendar chrome (64px header + this row)
+    // no taller than the old two-row toolbar.
+    <div className="flex items-center justify-between gap-3 border-b border-border bg-background px-4 py-1">
       {/* View Switcher */}
       <div className="flex items-center gap-0.5 rounded-xl bg-muted p-1">
         {VIEW_PILLS.map(({ view, label, ariaLabel }) => (
