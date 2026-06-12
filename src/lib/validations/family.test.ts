@@ -540,6 +540,35 @@ describe("family validations", () => {
       });
     });
 
+    describe("timezone field", () => {
+      it("preserves a valid IANA timezone", () => {
+        const result = familyDataSchema.safeParse({
+          ...validFamilyData,
+          timezone: "America/Chicago",
+        });
+        expect(result.success).toBe(true);
+        if (result.success) {
+          expect(result.data.timezone).toBe("America/Chicago");
+        }
+      });
+
+      it("accepts data without timezone (pre-1.6.0 localStorage caches)", () => {
+        const result = familyDataSchema.safeParse(validFamilyData);
+        expect(result.success).toBe(true);
+        if (result.success) {
+          expect(result.data.timezone).toBeUndefined();
+        }
+      });
+
+      it("rejects an empty timezone string", () => {
+        const result = familyDataSchema.safeParse({
+          ...validFamilyData,
+          timezone: "",
+        });
+        expect(result.success).toBe(false);
+      });
+    });
+
     describe("complete validation", () => {
       it("validates complete valid family data", () => {
         const result = familyDataSchema.safeParse(validFamilyData);

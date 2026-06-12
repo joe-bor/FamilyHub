@@ -1,7 +1,8 @@
 import { z } from "zod";
 
 // BE DTO alignment:
-//   FamilyRequest.java      — name: @Size(max=50)
+//   FamilyRequest.java      — name: @Size(max=50), timezone: optional IANA zone id
+//                             (validated server-side via ZoneId.of; invalid → 400)
 //   FamilyMemberRequest.java — name: @Size(max=30), email: @Size(max=254) @Email,
 //                              color: @NotBlank, avatarUrl: @Size(max=254)
 
@@ -150,6 +151,8 @@ export const familyMemberSchema = z.object({
 export const familyDataSchema = z.object({
   id: z.string().min(1),
   name: z.string().min(1).max(50),
+  // Optional: pre-1.6.0 BE localStorage caches lack timezone.
+  timezone: z.string().min(1).optional(),
   members: z.array(familyMemberSchema),
   createdAt: z.string().datetime({ offset: true }).or(z.string().min(1)),
 });

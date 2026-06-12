@@ -23,10 +23,15 @@ export interface FamilyMember {
 
 /**
  * Family data stored in localStorage.
+ *
+ * BE DTO: FamilyResponse.java (v1.6.0) — id, name, timezone, members, createdAt.
+ * `timezone` is always present in API responses (server resolves a default),
+ * but optional here because pre-1.6.0 localStorage caches lack it.
  */
 export interface FamilyData {
   id: string;
   name: string;
+  timezone?: string;
   members: FamilyMember[];
   createdAt: string;
 }
@@ -114,10 +119,15 @@ export const familyColors: FamilyColor[] = [
 // ============================================================================
 
 /**
- * Request to update family properties.
+ * Request to update family properties. Fields left undefined are unchanged.
+ *
+ * BE DTO: FamilyRequest.java (v1.6.0) — name: @Size(1..50), timezone: IANA zone
+ * id validated server-side (invalid → 400 "Timezone must be a valid IANA
+ * timezone."). FamilyRequest also carries `username`, which the FE never updates.
  */
 export interface UpdateFamilyRequest {
-  name: string;
+  name?: string;
+  timezone?: string;
 }
 
 /**

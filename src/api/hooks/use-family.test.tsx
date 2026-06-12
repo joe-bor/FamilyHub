@@ -429,6 +429,28 @@ describe("useUpdateFamily", () => {
     );
   });
 
+  it("updates timezone without clobbering name", async () => {
+    const onSuccess = vi.fn();
+    const { result } = renderHook(() => useUpdateFamily({ onSuccess }), {
+      wrapper: createWrapper(),
+    });
+
+    result.current.mutate({ timezone: "America/New_York" });
+
+    await waitFor(() => {
+      expect(result.current.isSuccess).toBe(true);
+    });
+
+    expect(onSuccess).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          name: "Test Family",
+          timezone: "America/New_York",
+        }),
+      }),
+    );
+  });
+
   it("writes updated family to localStorage", async () => {
     const { result } = renderHook(() => useUpdateFamily(), {
       wrapper: createWrapper(),
@@ -852,6 +874,66 @@ describe("rollback on error", () => {
     );
     expect(cached?.data?.name).toBe("Test Family");
     expect(onError).toHaveBeenCalled();
+  });
+
+  it("useUpdateFamily applies timezone optimistically without clobbering name", async () => {
+    // Hold the PUT open so assertions observe the optimistic cache state,
+    // not the server response.
+    server.use(
+      http.put("http://localhost:3000/api/family", async () => {
+        await new Promise((resolve) => setTimeout(resolve, 10_000));
+        return HttpResponse.json({ message: "too late" }, { status: 500 });
+      }),
+    );
+
+    const { result } = renderHook(() => useUpdateFamily(), {
+      wrapper: createRollbackWrapper(),
+    });
+
+    result.current.mutate({ timezone: "America/New_York" });
+
+    await waitFor(() => {
+      const cached = rollbackQueryClient.getQueryData<FamilyApiResponse>(
+        familyKeys.family(),
+      );
+      expect(cached?.data?.timezone).toBe("America/New_York");
+      expect(cached?.data?.name).toBe("Test Family");
+    });
+  });
+
+  it("useUpdateFamily rolls back timezone on BE validation error", async () => {
+    rollbackQueryClient.setQueryData<FamilyApiResponse>(familyKeys.family(), {
+      data: { ...testFamily, timezone: "America/Los_Angeles" },
+    });
+    server.use(
+      http.put("http://localhost:3000/api/family", () => {
+        return HttpResponse.json(
+          { message: "Timezone must be a valid IANA timezone." },
+          { status: 400 },
+        );
+      }),
+    );
+
+    const onError = vi.fn();
+    const { result } = renderHook(() => useUpdateFamily({ onError }), {
+      wrapper: createRollbackWrapper(),
+    });
+
+    result.current.mutate({ timezone: "Not/AZone" });
+
+    await waitFor(() => {
+      expect(result.current.isError).toBe(true);
+    });
+
+    const cached = rollbackQueryClient.getQueryData<FamilyApiResponse>(
+      familyKeys.family(),
+    );
+    expect(cached?.data?.timezone).toBe("America/Los_Angeles");
+    expect(onError).toHaveBeenCalledWith(
+      expect.objectContaining({
+        message: "Timezone must be a valid IANA timezone.",
+      }),
+    );
   });
 
   it("useAddMember removes optimistic member on server error", async () => {
