@@ -34,6 +34,9 @@ test-results/
 # Lighthouse CI
 .lighthouseci/
 
+# Bundle analysis (rollup-plugin-visualizer, ANALYZE=true)
+.analyze/
+
 # Personal learning notes
 docs/VERSIONING-WALKTHROUGH.md
 .worktrees/

@@ -22,12 +22,13 @@ export default defineConfig(() => {
         manifest: {
           name: "FamilyHub",
           short_name: "FamilyHub",
-          description: "Your family's command center",
+          description:
+            "Your family's command center for calendar, lists, chores, and meals.",
           id: "/",
           scope: "/",
           start_url: "/",
           display: "standalone",
-          orientation: "portrait",
+          orientation: "any",
           background_color: "#faf8f5",
           theme_color: "#faf8f5",
           icons: [
@@ -51,40 +52,26 @@ export default defineConfig(() => {
         },
         workbox: {
           globPatterns: ["**/*.{js,css,html,ico,png,svg,woff,woff2}"],
+          // Never precache the bundle-analysis report (only present with ANALYZE=true).
+          globIgnores: ["**/stats.html"],
           navigateFallback: "/index.html",
           navigateFallbackDenylist: [/^\/api/],
-          runtimeCaching: [
-            {
-              urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
-              handler: "CacheFirst",
-              options: {
-                cacheName: "google-fonts-cache",
-                expiration: {
-                  maxEntries: 10,
-                  maxAgeSeconds: 60 * 60 * 24 * 365,
-                },
-              },
-            },
-            {
-              urlPattern: /^https:\/\/fonts\.gstatic\.com\/.*/i,
-              handler: "CacheFirst",
-              options: {
-                cacheName: "gstatic-fonts-cache",
-                expiration: {
-                  maxEntries: 10,
-                  maxAgeSeconds: 60 * 60 * 24 * 365,
-                },
-              },
-            },
-          ],
+          // No runtimeCaching: Nunito is self-hosted via @fontsource/nunito and
+          // precached by the glob above; the old Google Fonts CDN rules were dead.
         },
       }),
-      visualizer({
-        filename: "dist/stats.html",
-        open: false,
-        gzipSize: true,
-        brotliSize: true,
-      }),
+      // Bundle analysis is opt-in (ANALYZE=true) and written outside dist/ so it
+      // is never deployed or swept into the service-worker precache.
+      ...(process.env.ANALYZE === "true"
+        ? [
+            visualizer({
+              filename: ".analyze/stats.html",
+              open: false,
+              gzipSize: true,
+              brotliSize: true,
+            }),
+          ]
+        : []),
     ],
     define: {
       __APP_VERSION__: JSON.stringify(version),
