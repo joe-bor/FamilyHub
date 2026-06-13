@@ -13,6 +13,12 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
+      // vite-plugin-pwa's virtual module isn't available in vitest (the PWA
+      // plugin isn't loaded); resolve it to a stub so PWAUpdater can be tested.
+      "virtual:pwa-register/react": path.resolve(
+        __dirname,
+        "./src/test/mocks/virtual-pwa-register.ts",
+      ),
     },
   },
   define: {
