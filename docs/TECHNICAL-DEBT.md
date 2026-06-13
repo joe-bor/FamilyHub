@@ -88,23 +88,22 @@ Lighthouse detected unused JavaScript in the bundle.
 ---
 
 ### 5. PWA Optimizations
-**Source:** Lighthouse CI (PR #60)
-**Files:** `vite.config.ts` (vite-plugin-pwa)
-**Status:** Deferred - PWA basics in place
+**Source:** Lighthouse CI (PR #60); revisited by the PWA installability story (2026-06-13)
+**Files:** `vite.config.ts` (vite-plugin-pwa), `index.html`, `lighthouserc.cjs`
+**Status:** Installability polish shipped (Option B); offline *data* deferred to Option C
 
-**Current State:**
-PWA is configured via `vite-plugin-pwa` but not fully optimized.
+**Shipped — Option B / [PWA installability story](https://github.com/joe-bor/family-hub/blob/main/docs/product/backlog/mobile-ux/pwa-installability.md):**
+- Controlled update prompt (`registerType: "prompt"` + `PWAUpdater`) — no more silent reloads
+- Sidebar **Install app** affordance (one-tap on Chromium / manual instructions elsewhere / hidden when installed)
+- Honest, accessible offline banner (does **not** imply offline data)
+- Config cleanups: `stats.html` no longer deployed/precached; dead Google-Fonts CDN cache rules removed; dead Lighthouse `pwa` category removed; manifest/meta description reconciled; modern `mobile-web-app-capable`; orientation unlocked
 
-**Optimization Opportunities:**
-- **Offline support**: Cache critical assets and API responses (see Backend Compatibility Notes #3)
-- **Installability**: Ensure manifest meets all criteria
-- **Service worker**: Implement background sync for offline mutations
-- **App shell**: Cache the app shell for instant loading
+**Deferred to Option C / offline reads (NOT done):**
+- Cache API responses (calendar/module data) for offline *viewing* (see Backend Compatibility Notes #3)
+- Background sync for offline mutations; offline write queue
+- TanStack Query persistence / IndexedDB
 
-**Lighthouse PWA Checklist:**
-- [ ] Installable (valid manifest, service worker)
-- [ ] Optimized (fast page loads, responsive)
-- [ ] Network resilience (works offline/flaky network)
+> Note: Lighthouse 12 removed the standalone PWA category; installability is now tracked via manifest/SW checks rather than a Lighthouse PWA score.
 
 ---
 
@@ -185,6 +184,7 @@ Types: `src/lib/types/family.ts`
 
 | Item | Sprint | PR | Date |
 |------|--------|----|----|
+| PWA config cleanup (stats.html leak, dead Google-Fonts cache rules, Lighthouse PWA category, metadata) | - | #215 | Jun 13, 2026 |
 | "Edit All" Clears Recurrence Rule (BE includes recurrenceRule on instances) | - | BE #21 | Mar 13, 2026 |
 | Recurring Event Detail Generic Label (formatRecurrenceLabel now receives RRULE) | - | BE #21 | Mar 13, 2026 |
 | E2E Tests for Recurring Events (8 tests: create, edit this/all, delete this/all, monthly, all-day, end date) | - | #119 | Mar 13, 2026 |
