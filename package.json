@@ -17,7 +17,7 @@
     "test:coverage": "vitest run --coverage",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
-    "analyze": "npm run build && echo 'Bundle analysis available at dist/stats.html'",
+    "analyze": "ANALYZE=true npm run build && echo 'Bundle analysis available at .analyze/stats.html'",
     "lighthouse": "npm run build && lhci autorun"
   },
   "lint-staged": {
