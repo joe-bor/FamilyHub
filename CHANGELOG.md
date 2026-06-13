@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.3.14](https://github.com/joe-bor/FamilyHub/compare/family-hub-v0.3.13...family-hub-v0.3.14) (2026-06-13)
+
+
+### Features
+
+* **family:** carry timezone through family types, Zod layer, and update mutation ([0afa8e2](https://github.com/joe-bor/FamilyHub/commit/0afa8e204bc0e48b17518cee43c2d98786ed9c85))
+* **settings:** add PreferencesSheet with BE-backed family timezone ([9988994](https://github.com/joe-bor/FamilyHub/commit/9988994c03d813e4ee14c6f9215c743dd823a3b5))
+* **sidebar:** add Preferences row between Family Settings and Sign Out ([ea4bfc5](https://github.com/joe-bor/FamilyHub/commit/ea4bfc5b0dd5546ee54b679c427db64ba3b33a11))
+
+
+### Bug Fixes
+
+* **e2e:** wait for sheets to settle before forced clicks inside them ([88d9463](https://github.com/joe-bor/FamilyHub/commit/88d9463d783d49a2b2a8a9f5f17606c35c8f7d35))
+
+
+### Tests
+
+* **e2e:** cover Preferences timezone change, BE persistence, and stub rows ([9fee111](https://github.com/joe-bor/FamilyHub/commit/9fee111cce3e75b58250c541066a7666435d70db))
+
 ## [0.3.13](https://github.com/joe-bor/FamilyHub/compare/family-hub-v0.3.12...family-hub-v0.3.13) (2026-06-12)
 
 
