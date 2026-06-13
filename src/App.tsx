@@ -6,6 +6,7 @@ import {
   AppHeader,
   MobileBottomNav,
   NavigationTabs,
+  OfflineBanner,
   SidebarMenu,
 } from "@/components/shared";
 import { Toaster } from "@/components/ui/toaster";
@@ -176,6 +177,7 @@ export default function FamilyHub() {
           </main>
         </div>
 
+        <OfflineBanner />
         {isMobile && isAuthenticated && setupComplete && <MobileBottomNav />}
         <SidebarMenu />
       </div>
