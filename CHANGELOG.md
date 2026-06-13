@@ -1,5 +1,30 @@
 # Changelog
 
+## [0.3.15](https://github.com/joe-bor/FamilyHub/compare/family-hub-v0.3.14...family-hub-v0.3.15) (2026-06-13)
+
+
+### Features
+
+* **hooks:** add useInstallPrompt ([59b869a](https://github.com/joe-bor/FamilyHub/commit/59b869a397813c7a791aed2413a1060cf852fcbd))
+* **hooks:** add useOnlineStatus ([b884483](https://github.com/joe-bor/FamilyHub/commit/b8844838329bde8c6263d7421583d8bdc28ccc40))
+* **pwa:** add sidebar Install app row (one-tap install / manual instructions / hidden when installed) ([6730ba4](https://github.com/joe-bor/FamilyHub/commit/6730ba4319905e4528dc6baba828a7c4d1e4bdd2))
+* **pwa:** add standalone + iOS detection helpers ([b30901b](https://github.com/joe-bor/FamilyHub/commit/b30901bbe5cb0ef548745abdacc599499434cf58))
+* **pwa:** prompt before applying service worker updates instead of silent reload ([7ec2117](https://github.com/joe-bor/FamilyHub/commit/7ec21170e0a2706049509d54e38ff57412dabb0f))
+* **pwa:** show offline banner above the bottom nav ([597088b](https://github.com/joe-bor/FamilyHub/commit/597088b97acf0caf6499f7159716be7089c8aa1c))
+* **shared:** add accessible offline banner ([8cf6617](https://github.com/joe-bor/FamilyHub/commit/8cf6617caad4320486e9b3143153300a67580fc9))
+* **shared:** add manual install-instructions sheet ([1686f07](https://github.com/joe-bor/FamilyHub/commit/1686f0797e2f1603f0c3a1c1f504334e6ff94cb8))
+* **ui:** support optional sticky duration on toast ([d820dba](https://github.com/joe-bor/FamilyHub/commit/d820dba210d8cc7f900b126f81afadfc9fbff790))
+
+
+### Bug Fixes
+
+* **pwa:** reconcile metadata, unlock orientation, keep bundle stats + dead font rules out of the build ([9d6e8f2](https://github.com/joe-bor/FamilyHub/commit/9d6e8f2dc16b0c37aef3076b50254617486d9d7a))
+
+
+### Documentation
+
+* **pwa:** record config cleanups; scope offline data to Option C ([8cd32de](https://github.com/joe-bor/FamilyHub/commit/8cd32def25633424a029b58951a42bae335ec003))
+
 ## [0.3.14](https://github.com/joe-bor/FamilyHub/compare/family-hub-v0.3.13...family-hub-v0.3.14) (2026-06-13)
 
 
