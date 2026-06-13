@@ -94,6 +94,60 @@ export async function safeClick(
 }
 
 /**
+ * Waits for a just-opened sheet/dialog to finish moving into place before
+ * interacting with its contents.
+ *
+ * Mobile sheets (vaul drawers, SideSheet) mount translated off-screen and
+ * slide in via a transform. toBeVisible() passes while the panel is still
+ * off-viewport, so safeClick's force:true click — which skips Playwright's
+ * own stability wait — computes its point against a not-yet-positioned
+ * target and misses, or errors with "Element is outside of the viewport"
+ * on slow CI runners. Even with reduced motion (instant transitions), vaul
+ * positions snap-point drawers from JS after mount, so there is a window
+ * where the sheet is visible but still fully below the viewport.
+ *
+ * Settled means: bounding box overlaps the viewport on both axes AND is
+ * unchanged across two consecutive polls. Stability alone is not enough —
+ * a pre-positioned sheet is motionless while fully off-viewport. Overlap
+ * (rather than fully-inside) is required because half-height vaul sheets
+ * rest with their lower half translated below the viewport by design.
+ */
+export async function waitForSheetSettled(
+  sheet: Locator,
+  options?: { timeout?: number },
+): Promise<void> {
+  const timeout = options?.timeout ?? 10000;
+  await expect(sheet).toBeVisible({ timeout });
+
+  const viewport = sheet.page().viewportSize();
+  let previous: string | null = null;
+  await expect
+    .poll(
+      async () => {
+        const box = await sheet.boundingBox();
+        if (!box) {
+          previous = null;
+          return false;
+        }
+        // Pre-positioned sheets are translated exactly 100% off-screen, so
+        // requiring ≥1px of overlap on both axes excludes them.
+        const overlapsViewport =
+          viewport === null ||
+          (box.x + box.width >= 1 &&
+            box.x <= viewport.width - 1 &&
+            box.y + box.height >= 1 &&
+            box.y <= viewport.height - 1);
+        const current = [box.x, box.y, box.width, box.height].join(",");
+        const settled = overlapsViewport && current === previous;
+        previous = current;
+        return settled;
+      },
+      { timeout, intervals: [50, 100] },
+    )
+    .toBe(true);
+}
+
+/**
  * Enhanced dialog wait that returns the dialog locator for chaining.
  * - Checks visibility with expect() auto-retry
  * - Confirms data-state="open" attribute

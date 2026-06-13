@@ -4,6 +4,7 @@ import {
   clearStorage,
   safeClick,
   waitForHydration,
+  waitForSheetSettled,
 } from "./helpers/test-helpers";
 
 /**
@@ -31,7 +32,7 @@ test.describe("Mobile settings bottom sheets", () => {
   async function openMenu(page: import("@playwright/test").Page) {
     await safeClick(page.getByRole("button", { name: /^menu$/i }));
     const menu = page.getByRole("dialog", { name: "Menu" });
-    await expect(menu).toBeVisible();
+    await waitForSheetSettled(menu);
     return menu;
   }
 
@@ -62,12 +63,12 @@ test.describe("Mobile settings bottom sheets", () => {
     await safeClick(menu.getByRole("button", { name: "Family Settings" }));
 
     const settings = page.getByRole("dialog", { name: "Family Settings" });
-    await expect(settings).toBeVisible();
+    await waitForSheetSettled(settings);
 
     await safeClick(settings.getByRole("button", { name: "Add" }));
 
     const memberForm = page.getByRole("dialog", { name: "Add Family Member" });
-    await expect(memberForm).toBeVisible();
+    await waitForSheetSettled(memberForm);
 
     await memberForm.getByPlaceholder("Enter name").fill("Charlie");
     await safeClick(
@@ -89,7 +90,7 @@ test.describe("Mobile settings bottom sheets", () => {
     await safeClick(menu.getByRole("button", { name: "Alice" }));
 
     const profile = page.getByRole("dialog", { name: "Member Profile" });
-    await expect(profile).toBeVisible();
+    await waitForSheetSettled(profile);
 
     // The long profile content (Google Calendar section) is reachable in the
     // scrollable sheet body.
