@@ -31,14 +31,19 @@ describe("SidebarMenu", () => {
     expect(useAppStore.getState().isSidebarOpen).toBe(false);
   });
 
-  it("orders menu rows: Family Settings, Preferences, Sign Out", () => {
+  it("orders menu rows: Family Settings, Preferences, Install app, Sign Out", () => {
     renderWithUser(<SidebarMenu />);
 
     const nav = screen.getByRole("navigation");
     const labels = within(nav)
       .getAllByRole("button")
       .map((button) => button.textContent?.trim());
-    expect(labels).toEqual(["Family Settings", "Preferences", "Sign Out"]);
+    expect(labels).toEqual([
+      "Family Settings",
+      "Preferences",
+      "Install app",
+      "Sign Out",
+    ]);
   });
 
   it("opens the Preferences sheet from the Preferences row", async () => {
