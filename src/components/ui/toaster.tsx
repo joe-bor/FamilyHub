@@ -42,7 +42,8 @@ export function toast({
   description,
   action,
   variant,
-}: Omit<ToastData, "id" | "open">) {
+  duration = TOAST_REMOVE_DELAY,
+}: Omit<ToastData, "id" | "open"> & { duration?: number }) {
   const id = genId();
   const newToast: ToastData = {
     id,
@@ -57,11 +58,15 @@ export function toast({
     [newToast, ...memoryToasts.filter((t) => t.open)].slice(0, TOAST_LIMIT),
   );
 
-  setTimeout(() => {
-    dispatch(
-      memoryToasts.map((t) => (t.id === id ? { ...t, open: false } : t)),
-    );
-  }, TOAST_REMOVE_DELAY);
+  // A duration of Infinity (or <= 0) keeps the toast until the user dismisses
+  // it — used by the PWA update prompt so the Reload action can't time out.
+  if (Number.isFinite(duration) && duration > 0) {
+    setTimeout(() => {
+      dispatch(
+        memoryToasts.map((t) => (t.id === id ? { ...t, open: false } : t)),
+      );
+    }, duration);
+  }
 
   return id;
 }
