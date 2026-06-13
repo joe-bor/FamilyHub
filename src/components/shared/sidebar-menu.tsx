@@ -1,5 +1,5 @@
 import { LogOut, SlidersHorizontal, Users, X } from "lucide-react";
-import { useEffect, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import { useFamilyMembers, useFamilyName, useLogout } from "@/api";
 import {
   FamilySettingsModal,
@@ -18,6 +18,7 @@ import { SideSheet } from "@/components/ui/side-sheet";
 import { colorMap } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { useAppStore } from "@/stores";
+import { InstallAppRow } from "./install-app-row";
 
 export function SidebarMenu() {
   const isOpen = useAppStore((state) => state.isSidebarOpen);
@@ -138,15 +139,18 @@ export function SidebarMenu() {
             {menuItems.map((item) => {
               const Icon = item.icon;
               return (
-                <button
-                  key={item.label}
-                  type="button"
-                  onClick={item.action}
-                  className="w-full min-h-11 flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium transition-colors text-muted-foreground hover:bg-muted hover:text-foreground"
-                >
-                  <Icon className="h-5 w-5" />
-                  {item.label}
-                </button>
+                <Fragment key={item.label}>
+                  {/* Install app sits just above Sign Out (hidden when installed). */}
+                  {item.label === "Sign Out" && <InstallAppRow />}
+                  <button
+                    type="button"
+                    onClick={item.action}
+                    className="w-full min-h-11 flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium transition-colors text-muted-foreground hover:bg-muted hover:text-foreground"
+                  >
+                    <Icon className="h-5 w-5" />
+                    {item.label}
+                  </button>
+                </Fragment>
               );
             })}
           </div>
