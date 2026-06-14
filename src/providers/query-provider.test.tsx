@@ -48,12 +48,14 @@ function Probe() {
   return <div>tz:{data?.data?.timezone ?? "none"}</div>;
 }
 
-function seededPersistedClient(): PersistedClient {
+function seededPersistedClient(
+  buster: string = __APP_VERSION__,
+): PersistedClient {
   const source = new QueryClient();
   source.setQueryData(choreKeys.board(), { data: board });
   return {
     timestamp: Date.now(),
-    buster: __APP_VERSION__,
+    buster,
     clientState: dehydrate(source, offlineReadDehydrateOptions),
   };
 }
@@ -93,6 +95,27 @@ describe("PersistQueryClientProvider wiring", () => {
     await waitFor(() =>
       expect(screen.getByText("tz:America/Los_Angeles")).toBeInTheDocument(),
     );
+  });
+
+  it("drops a persisted cache whose buster (app version) no longer matches", async () => {
+    // Cache written by a previous app version → discarded, not hydrated.
+    const idb = fakeIdb(async () => seededPersistedClient("0.0.0-stale"));
+    const client = new QueryClient();
+    render(
+      <PersistQueryClientProvider
+        client={client}
+        persistOptions={persistOptionsFor(idb)}
+      >
+        <Probe />
+      </PersistQueryClientProvider>,
+    );
+
+    // The stale cache is removed (removeClient → idb.del) and no data hydrates.
+    await waitFor(() => expect(idb.del).toHaveBeenCalled());
+    expect(screen.getByText("tz:none")).toBeInTheDocument();
+    expect(
+      screen.queryByText("tz:America/Los_Angeles"),
+    ).not.toBeInTheDocument();
   });
 
   it("still renders the app when IndexedDB/persistence is unavailable", async () => {
