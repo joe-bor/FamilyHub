@@ -84,6 +84,16 @@ export default defineConfig(() => {
         },
       },
     },
+    // `vite preview` does not inherit `server.proxy`. Mirror it so the offline
+    // persistence E2E (built app served by preview) can still reach the backend.
+    preview: {
+      proxy: {
+        "/api": {
+          target: "http://localhost:8080",
+          changeOrigin: true,
+        },
+      },
+    },
     resolve: {
       alias: {
         "@": path.resolve(__dirname, "./src"),

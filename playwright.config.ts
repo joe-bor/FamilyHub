@@ -1,16 +1,43 @@
 import { defineConfig, devices } from "@playwright/test";
 
-// Full browser matrix - runs on all CI builds and locally
+// Offline persistence (Option C) runs against the production build + preview
+// server (service worker + IndexedDB persistence), not the dev server. It lives
+// in its own project/port; the dev-server projects below skip it.
+const OFFLINE_SPEC = "**/offline-persistence.spec.ts";
+
+// Full browser matrix - runs on all CI builds and locally (dev server, 5173).
 const projects = [
-  { name: "chromium", use: { ...devices["Desktop Chrome"] } },
-  { name: "firefox", use: { ...devices["Desktop Firefox"] } },
-  { name: "webkit", use: { ...devices["Desktop Safari"] } },
+  {
+    name: "chromium",
+    testIgnore: OFFLINE_SPEC,
+    use: { ...devices["Desktop Chrome"] },
+  },
+  {
+    name: "firefox",
+    testIgnore: OFFLINE_SPEC,
+    use: { ...devices["Desktop Firefox"] },
+  },
+  {
+    name: "webkit",
+    testIgnore: OFFLINE_SPEC,
+    use: { ...devices["Desktop Safari"] },
+  },
   {
     name: "Mobile Chrome",
+    testIgnore: OFFLINE_SPEC,
     use: {
       ...devices["iPhone 14"],
       // Extended action timeout for mobile - touch interactions can be slower
       actionTimeout: 20000,
+    },
+  },
+  // Offline reads: production build served by `vite preview` on port 4173.
+  {
+    name: "offline-persistence",
+    testMatch: OFFLINE_SPEC,
+    use: {
+      ...devices["Desktop Chrome"],
+      baseURL: "http://localhost:4173",
     },
   },
 ];
@@ -37,12 +64,25 @@ export default defineConfig({
     video: "retain-on-failure",
   },
   projects,
-  webServer: {
-    command: "npm run dev",
-    url: "http://localhost:5173",
-    reuseExistingServer: !process.env.CI,
-    env: {
-      VITE_E2E: "true",
+  webServer: [
+    {
+      command: "npm run dev",
+      url: "http://localhost:5173",
+      reuseExistingServer: !process.env.CI,
+      env: {
+        VITE_E2E: "true",
+      },
     },
-  },
+    {
+      // Build then preview so the offline spec exercises the real service worker
+      // and IndexedDB persistence. `--strictPort` fails fast if 4173 is taken.
+      command: "npm run build && npm run preview -- --port 4173 --strictPort",
+      url: "http://localhost:4173",
+      reuseExistingServer: !process.env.CI,
+      timeout: 180_000,
+      env: {
+        VITE_E2E: "true",
+      },
+    },
+  ],
 });
