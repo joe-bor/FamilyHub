@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { listsService } from "@/api/services";
+import { assertOnlineForWrite } from "@/lib/offline/read-only-guard";
 import type {
   CreateListItemRequest,
   CreateListRequest,
@@ -100,6 +101,8 @@ export function useUpdateList(id: string) {
     mutationFn: (request: UpdateListRequest) =>
       listsService.updateList(id, request),
     onMutate: async (request) => {
+      // Read-only offline: reject before any optimistic cache change.
+      assertOnlineForWrite();
       await queryClient.cancelQueries({ queryKey: listsKeys.detail(id) });
       const previous = queryClient.getQueryData<ListDetailApiResponse>(
         listsKeys.detail(id),
@@ -155,6 +158,8 @@ export function useCreateListItem(listId: string) {
     mutationFn: (request: CreateListItemRequest) =>
       listsService.createItem(listId, request),
     onMutate: async (request) => {
+      // Read-only offline: reject before any optimistic cache change.
+      assertOnlineForWrite();
       await queryClient.cancelQueries({ queryKey: listsKeys.detail(listId) });
       const previous = queryClient.getQueryData<ListDetailApiResponse>(
         listsKeys.detail(listId),
@@ -208,6 +213,8 @@ export function useUpdateListItem(listId: string) {
       request: UpdateListItemRequest;
     }) => listsService.updateItem(listId, itemId, request),
     onMutate: async ({ itemId, request }) => {
+      // Read-only offline: reject before any optimistic cache change.
+      assertOnlineForWrite();
       await queryClient.cancelQueries({ queryKey: listsKeys.detail(listId) });
       const previous = queryClient.getQueryData<ListDetailApiResponse>(
         listsKeys.detail(listId),
@@ -259,6 +266,8 @@ export function useDeleteListItem(listId: string) {
   return useMutation({
     mutationFn: (itemId: string) => listsService.deleteItem(listId, itemId),
     onMutate: async (itemId) => {
+      // Read-only offline: reject before any optimistic cache change.
+      assertOnlineForWrite();
       await queryClient.cancelQueries({ queryKey: listsKeys.detail(listId) });
       const previous = queryClient.getQueryData<ListDetailApiResponse>(
         listsKeys.detail(listId),
@@ -298,6 +307,8 @@ export function useClearCompleted(listId: string) {
   return useMutation({
     mutationFn: () => listsService.clearCompleted(listId),
     onMutate: async () => {
+      // Read-only offline: reject before any optimistic cache change.
+      assertOnlineForWrite();
       await queryClient.cancelQueries({ queryKey: listsKeys.detail(listId) });
       const previous = queryClient.getQueryData<ListDetailApiResponse>(
         listsKeys.detail(listId),
@@ -338,6 +349,8 @@ export function useUpdateListPreferences() {
     mutationFn: (request: UpdateListPreferencesRequest) =>
       listsService.updatePreferences(request),
     onMutate: async (request) => {
+      // Read-only offline: reject before any optimistic cache change.
+      assertOnlineForWrite();
       await queryClient.cancelQueries({ queryKey: listsKeys.preferences() });
       const previous = queryClient.getQueryData<ListPreferencesApiResponse>(
         listsKeys.preferences(),

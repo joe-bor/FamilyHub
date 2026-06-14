@@ -4,6 +4,7 @@ import { useMemo } from "react";
 import type { ApiException } from "@/api/client";
 import { familyService } from "@/api/services";
 import { FAMILY_STORAGE_KEY } from "@/lib/constants";
+import { assertOnlineForWrite } from "@/lib/offline/read-only-guard";
 import type {
   AddMemberRequest,
   FamilyApiResponse,
@@ -233,6 +234,8 @@ export function useUpdateFamily(callbacks?: UpdateFamilyCallbacks) {
       familyService.updateFamily(request),
     // Optimistic update
     onMutate: async (request) => {
+      // Read-only offline: reject before any optimistic cache change.
+      assertOnlineForWrite();
       await queryClient.cancelQueries({ queryKey: familyKeys.family() });
 
       const previousData = queryClient.getQueryData<FamilyApiResponse>(
@@ -290,6 +293,8 @@ export function useAddMember(callbacks?: AddMemberCallbacks) {
     mutationFn: (request: AddMemberRequest) => familyService.addMember(request),
     // Optimistic update
     onMutate: async (request) => {
+      // Read-only offline: reject before any optimistic cache change.
+      assertOnlineForWrite();
       await queryClient.cancelQueries({ queryKey: familyKeys.family() });
 
       const previousData = queryClient.getQueryData<FamilyApiResponse>(
@@ -361,6 +366,8 @@ export function useUpdateMember(callbacks?: UpdateMemberCallbacks) {
       familyService.updateMember(id, body),
     // Optimistic update
     onMutate: async (variables) => {
+      // Read-only offline: reject before any optimistic cache change.
+      assertOnlineForWrite();
       await queryClient.cancelQueries({ queryKey: familyKeys.family() });
 
       const previousData = queryClient.getQueryData<FamilyApiResponse>(
@@ -440,6 +447,8 @@ export function useRemoveMember(callbacks?: RemoveMemberCallbacks) {
     mutationFn: (id: string) => familyService.removeMember(id),
     // Optimistic delete
     onMutate: async (memberId) => {
+      // Read-only offline: reject before any optimistic cache change.
+      assertOnlineForWrite();
       await queryClient.cancelQueries({ queryKey: familyKeys.family() });
 
       const previousData = queryClient.getQueryData<FamilyApiResponse>(

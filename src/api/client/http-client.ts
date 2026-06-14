@@ -1,4 +1,5 @@
-import { AUTH_TOKEN_STORAGE_KEY } from "@/lib/constants";
+import { AUTH_TOKEN_STORAGE_KEY, FAMILY_STORAGE_KEY } from "@/lib/constants";
+import { clearOfflineReadCache } from "@/lib/offline/persister";
 import {
   ApiErrorCode,
   ApiException,
@@ -31,7 +32,40 @@ interface RequestConfig extends Omit<RequestInit, "body"> {
 interface HttpClientConfig {
   baseUrl: string;
   defaultHeaders?: Record<string, string>;
-  onUnauthorized?: () => void;
+  onUnauthorized?: () => void | Promise<void>;
+}
+
+/**
+ * Clean up all per-account state on a 401 (session expiry) BEFORE reloading.
+ *
+ * The persisted IndexedDB read cache and the localStorage family data are
+ * per-origin and survive a reload, so they must be cleared here — otherwise the
+ * next account to sign in on a shared device could briefly read the previous
+ * account's cached data. Awaited so the IndexedDB clear completes before the
+ * reload navigates away.
+ */
+export async function handleUnauthorized(): Promise<void> {
+  let hadToken = false;
+  try {
+    hadToken = !!localStorage.getItem(AUTH_TOKEN_STORAGE_KEY);
+    localStorage.removeItem(AUTH_TOKEN_STORAGE_KEY);
+    localStorage.removeItem(FAMILY_STORAGE_KEY);
+  } catch {
+    // localStorage might not be available
+  }
+
+  // Clear the persisted offline read cache (never rejects).
+  await clearOfflineReadCache();
+
+  // Only reload if a token existed (session expiry).
+  // Prevents an infinite reload loop on first-visit 401s.
+  if (hadToken) {
+    try {
+      window.location.reload();
+    } catch {
+      // window.location may be unavailable (SSR/tests)
+    }
+  }
 }
 
 async function parseErrorResponse(response: Response): Promise<{
@@ -114,7 +148,8 @@ export function createHttpClient(config: HttpClientConfig) {
         const error = await parseErrorResponse(response);
 
         if (response.status === 401 && onUnauthorized) {
-          onUnauthorized();
+          // Await so the offline cache clear completes before any reload.
+          await onUnauthorized();
         }
 
         throw new ApiException(error);
@@ -185,17 +220,5 @@ export function createHttpClient(config: HttpClientConfig) {
 // Singleton instance for the app
 export const httpClient = createHttpClient({
   baseUrl: import.meta.env.VITE_API_BASE_URL || "/api",
-  onUnauthorized: () => {
-    try {
-      const hadToken = !!localStorage.getItem(AUTH_TOKEN_STORAGE_KEY);
-      localStorage.removeItem(AUTH_TOKEN_STORAGE_KEY);
-      // Only reload if a token existed (session expiry).
-      // Prevents infinite reload loop on first-visit 401s.
-      if (hadToken) {
-        window.location.reload();
-      }
-    } catch {
-      // localStorage might not be available
-    }
-  },
+  onUnauthorized: handleUnauthorized,
 });

@@ -2,6 +2,7 @@ import type { UseQueryOptions } from "@tanstack/react-query";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { ApiException } from "@/api/client";
 import { calendarService } from "@/api/services";
+import { assertOnlineForWrite } from "@/lib/offline/read-only-guard";
 import { parseLocalDate } from "@/lib/time-utils";
 import type {
   ApiResponse,
@@ -86,6 +87,8 @@ export function useUpdateEvent(callbacks?: UpdateEventCallbacks) {
       calendarService.updateEvent(id, body),
     // Optimistic update
     onMutate: async (updatedEvent) => {
+      // Read-only offline: reject before any optimistic cache change.
+      assertOnlineForWrite();
       await queryClient.cancelQueries({ queryKey: calendarKeys.events() });
 
       const previousData = queryClient.getQueriesData<
@@ -149,6 +152,8 @@ export function useDeleteEvent(callbacks?: DeleteEventCallbacks) {
     mutationFn: calendarService.deleteEvent,
     // Optimistic delete
     onMutate: async (eventId) => {
+      // Read-only offline: reject before any optimistic cache change.
+      assertOnlineForWrite();
       await queryClient.cancelQueries({ queryKey: calendarKeys.events() });
 
       const previousData = queryClient.getQueriesData<
