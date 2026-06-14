@@ -1,0 +1,298 @@
+import type { PersistedClient } from "@tanstack/react-query-persist-client";
+import { describe, expect, it } from "vitest";
+import {
+  calendarKeys,
+  choreKeys,
+  familyKeys,
+  listsKeys,
+  mealsKeys,
+  recipesKeys,
+} from "@/api";
+import type {
+  CalendarEvent,
+  ChoresBoard,
+  FamilyData,
+  ListDetail,
+  ListPreferences,
+  ListSummary,
+  MealBoard,
+  RecipeDetail,
+  RecipeSummary,
+} from "@/lib/types";
+import {
+  restorePersistedClient,
+  sanitizePersistedClient,
+  validatePersistedQueryData,
+} from "./validators";
+
+// ---------------------------------------------------------------------------
+// Sample data matching real cache shapes
+// ---------------------------------------------------------------------------
+
+const family: FamilyData = {
+  id: "fam-1",
+  name: "The Borlongans",
+  timezone: "America/Los_Angeles",
+  members: [
+    { id: "m-1", name: "Alice", color: "coral" },
+    { id: "m-2", name: "Bob", color: "teal", avatarUrl: "https://cdn/x.png" },
+  ],
+  createdAt: "2026-01-01T00:00:00Z",
+};
+
+const calendarEvent: CalendarEvent = {
+  id: "evt-1",
+  title: "Dentist",
+  startTime: "09:00",
+  endTime: "10:00",
+  date: new Date(2026, 0, 5),
+  memberId: "m-1",
+  isAllDay: false,
+};
+
+const choreScope = {
+  scope: "TODAY" as const,
+  periodStartDate: "2026-01-05",
+  periodEndDate: "2026-01-05",
+  summary: { total: 0, completed: 0, remaining: 0 },
+  assignees: [],
+};
+const choresBoard: ChoresBoard = {
+  timezone: "America/Los_Angeles",
+  today: choreScope,
+  thisWeek: { ...choreScope, scope: "THIS_WEEK" },
+  thisMonth: { ...choreScope, scope: "THIS_MONTH" },
+};
+
+const listSummary: ListSummary = {
+  id: "l-1",
+  name: "Groceries",
+  kind: "grocery",
+  totalItems: 3,
+  completedItems: 1,
+};
+const listDetail: ListDetail = {
+  id: "l-1",
+  name: "Groceries",
+  kind: "grocery",
+  categoryDisplayMode: "grouped",
+  showCompletedOverride: null,
+  categories: [],
+  items: [
+    {
+      id: "i-1",
+      text: "Milk",
+      completed: false,
+      completedAt: null,
+      categoryId: null,
+      createdAt: "2026-01-01T00:00:00Z",
+      updatedAt: "2026-01-01T00:00:00Z",
+    },
+  ],
+  createdAt: "2026-01-01T00:00:00Z",
+  updatedAt: "2026-01-01T00:00:00Z",
+};
+const listPreferences: ListPreferences = { showCompletedByDefault: true };
+
+const mealBoard: MealBoard = {
+  weekStartDate: "2026-01-05",
+  days: [{ date: "2026-01-05", dayIndex: 0, slots: [] }],
+};
+
+const recipeSummary: RecipeSummary = {
+  id: "r-1",
+  title: "Pancakes",
+  imageUrl: null,
+  favorite: false,
+  tags: [],
+  updatedAt: "2026-01-01T00:00:00Z",
+};
+const recipeDetail: RecipeDetail = {
+  ...recipeSummary,
+  ingredients: ["flour"],
+  instructions: ["mix"],
+  note: null,
+  sourceUrl: null,
+};
+
+function wrap<T>(data: T) {
+  return { data };
+}
+
+// ---------------------------------------------------------------------------
+// validatePersistedQueryData
+// ---------------------------------------------------------------------------
+
+describe("validatePersistedQueryData", () => {
+  it("accepts well-formed data for every allowlisted query family", () => {
+    const cases: Array<[readonly unknown[], unknown]> = [
+      [familyKeys.family(), wrap(family)],
+      [familyKeys.family(), wrap(null)], // no family yet is valid
+      [
+        calendarKeys.eventList({ startDate: "a", endDate: "b" }),
+        wrap([calendarEvent]),
+      ],
+      [calendarKeys.event("evt-1"), wrap(calendarEvent)],
+      [choreKeys.board(), wrap(choresBoard)],
+      [listsKeys.hub(), wrap([listSummary])],
+      [listsKeys.detail("l-1"), wrap(listDetail)],
+      [listsKeys.preferences(), wrap(listPreferences)],
+      [mealsKeys.board("2026-01-05"), wrap(mealBoard)],
+      [recipesKeys.list(), wrap([recipeSummary])],
+      [recipesKeys.detail("r-1"), wrap(recipeDetail)],
+    ];
+
+    for (const [key, data] of cases) {
+      expect(validatePersistedQueryData(key, data)).toBe(true);
+    }
+  });
+
+  it("rejects malformed data for each family", () => {
+    const cases: Array<[readonly unknown[], unknown]> = [
+      [familyKeys.family(), wrap({ name: "no id" })],
+      [calendarKeys.eventList({ startDate: "a", endDate: "b" }), wrap("nope")],
+      [calendarKeys.eventList({ startDate: "a", endDate: "b" }), wrap([{}])],
+      [choreKeys.board(), wrap({ today: {} })],
+      [listsKeys.hub(), wrap([{ id: 1 }])],
+      [listsKeys.detail("l-1"), wrap({ id: "l-1" })],
+      [listsKeys.preferences(), wrap({ showCompletedByDefault: "yes" })],
+      [mealsKeys.board("2026-01-05"), wrap({ days: "nope" })],
+      [recipesKeys.list(), wrap([{ id: "r-1" }])],
+      [recipesKeys.detail("r-1"), wrap({ title: "no id" })],
+    ];
+
+    for (const [key, data] of cases) {
+      expect(validatePersistedQueryData(key, data)).toBe(false);
+    }
+  });
+
+  it("rejects missing wrapper and unknown query families", () => {
+    expect(validatePersistedQueryData(familyKeys.family(), undefined)).toBe(
+      false,
+    );
+    expect(validatePersistedQueryData(familyKeys.family(), { foo: 1 })).toBe(
+      false,
+    );
+    expect(validatePersistedQueryData(["auth", "session"], wrap({}))).toBe(
+      false,
+    );
+  });
+});
+
+// ---------------------------------------------------------------------------
+// sanitizePersistedClient (strip data: URL avatars)
+// ---------------------------------------------------------------------------
+
+function clientWith(
+  queries: Array<{ queryKey: readonly unknown[]; data: unknown }>,
+): PersistedClient {
+  return {
+    timestamp: Date.now(),
+    buster: "test",
+    clientState: {
+      mutations: [],
+      queries: queries.map((q) => ({
+        queryKey: q.queryKey,
+        queryHash: JSON.stringify(q.queryKey),
+        state: { data: q.data, status: "success" },
+      })),
+    },
+  } as unknown as PersistedClient;
+}
+
+describe("sanitizePersistedClient", () => {
+  it("strips data: URL avatars from the family query but keeps http(s) URLs", () => {
+    const client = clientWith([
+      {
+        queryKey: familyKeys.family(),
+        data: wrap({
+          ...family,
+          members: [
+            {
+              id: "m-1",
+              name: "Alice",
+              color: "coral",
+              avatarUrl: "data:image/png;base64,AAAA",
+            },
+            {
+              id: "m-2",
+              name: "Bob",
+              color: "teal",
+              avatarUrl: "https://cdn/x.png",
+            },
+          ],
+        }),
+      },
+    ]);
+
+    const sanitized = sanitizePersistedClient(client);
+    const members = (
+      sanitized.clientState.queries[0].state.data as { data: FamilyData }
+    ).data.members;
+
+    expect(members[0].avatarUrl).toBeUndefined();
+    expect(members[1].avatarUrl).toBe("https://cdn/x.png");
+  });
+
+  it("does not mutate the input client (live cache must stay intact)", () => {
+    const client = clientWith([
+      {
+        queryKey: familyKeys.family(),
+        data: wrap({
+          ...family,
+          members: [
+            {
+              id: "m-1",
+              name: "Alice",
+              color: "coral",
+              avatarUrl: "data:image/png;base64,AAAA",
+            },
+          ],
+        }),
+      },
+    ]);
+
+    sanitizePersistedClient(client);
+    const original = (
+      client.clientState.queries[0].state.data as { data: FamilyData }
+    ).data.members[0];
+    expect(original.avatarUrl).toBe("data:image/png;base64,AAAA");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// restorePersistedClient (validate + filter on hydration)
+// ---------------------------------------------------------------------------
+
+describe("restorePersistedClient", () => {
+  it("keeps valid queries and drops malformed ones", () => {
+    const client = clientWith([
+      { queryKey: familyKeys.family(), data: wrap(family) },
+      { queryKey: choreKeys.board(), data: wrap({ broken: true }) },
+      { queryKey: recipesKeys.list(), data: wrap([recipeSummary]) },
+    ]);
+
+    const restored = restorePersistedClient(client);
+
+    expect(restored).toBeDefined();
+    const keys = restored?.clientState.queries.map((q) => q.queryKey[0]);
+    expect(keys).toEqual(["family", "recipes"]);
+  });
+
+  it("returns undefined for a structurally corrupt client", () => {
+    expect(restorePersistedClient(null)).toBeUndefined();
+    expect(restorePersistedClient({})).toBeUndefined();
+    expect(
+      restorePersistedClient({ clientState: { queries: "nope" } }),
+    ).toBeUndefined();
+  });
+
+  it("preserves buster and timestamp so age/version checks still run", () => {
+    const client = clientWith([
+      { queryKey: familyKeys.family(), data: wrap(family) },
+    ]);
+    const restored = restorePersistedClient(client);
+    expect(restored?.buster).toBe("test");
+    expect(restored?.timestamp).toBe(client.timestamp);
+  });
+});
