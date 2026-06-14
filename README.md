@@ -52,7 +52,7 @@ Why I chose what I chose:
 
 ## Current Status
 
-**v0.3.15** — Calendar, Chores, Lists, Meals, and Recipes are integrated with the `family-hub-api` backend (v1.5.0). <!-- x-release-please-version -->
+**v0.3.16** — Calendar, Chores, Lists, Meals, and Recipes are integrated with the `family-hub-api` backend (v1.5.0). <!-- x-release-please-version -->
 
 | Module   | Status           |
 | -------- | ---------------- |

@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.16](https://github.com/joe-bor/FamilyHub/compare/family-hub-v0.3.15...family-hub-v0.3.16) (2026-06-14)
+
+
+### Bug Fixes
+
+* **pwa:** capture beforeinstallprompt at app root so the sidebar offers one-tap install on Chromium ([45a53e2](https://github.com/joe-bor/FamilyHub/commit/45a53e2820356da8afd45857879be05fee488124))
+
 ## [0.3.15](https://github.com/joe-bor/FamilyHub/compare/family-hub-v0.3.14...family-hub-v0.3.15) (2026-06-13)
 
 
