@@ -90,7 +90,7 @@ Lighthouse detected unused JavaScript in the bundle.
 ### 5. PWA Optimizations
 **Source:** Lighthouse CI (PR #60); revisited by the PWA installability story (2026-06-13)
 **Files:** `vite.config.ts` (vite-plugin-pwa), `index.html`, `lighthouserc.cjs`
-**Status:** Installability polish shipped (Option B); offline *data* deferred to Option C
+**Status:** Installability polish shipped (Option B); read-only offline data shipped (Option C); offline *writes* deferred
 
 **Shipped — Option B / [PWA installability story](https://github.com/joe-bor/family-hub/blob/main/docs/product/backlog/mobile-ux/pwa-installability.md):**
 - Controlled update prompt (`registerType: "prompt"` + `PWAUpdater`) — no more silent reloads
@@ -98,10 +98,16 @@ Lighthouse detected unused JavaScript in the bundle.
 - Honest, accessible offline banner (does **not** imply offline data)
 - Config cleanups: `stats.html` no longer deployed/precached; dead Google-Fonts CDN cache rules removed; dead Lighthouse `pwa` category removed; manifest/meta description reconciled; modern `mobile-web-app-capable`; orientation unlocked
 
-**Deferred to Option C / offline reads (NOT done):**
-- Cache API responses (calendar/module data) for offline *viewing* (see Backend Compatibility Notes #3)
-- Background sync for offline mutations; offline write queue
-- TanStack Query persistence / IndexedDB
+**Shipped — Option C / read-only offline reads (Issue #222):**
+- TanStack Query read cache persisted to IndexedDB via a custom `idb-keyval` `Persister` (`src/lib/offline/`) and `PersistQueryClientProvider`
+- Already-fetched calendar/chores/lists/meals/recipes/family data render on cold start and stay viewable offline; never-loaded modules show a clear offline empty state
+- Read-only enforced: offline write controls produce no optimistic change, no queued/persisted mutations (`assertOnlineForWrite` in optimistic `onMutate`; `mutations.networkMode: "always"`; `shouldDehydrateMutation: () => false`)
+- Cross-account safety: persisted IndexedDB cache + family storage cleared on logout and 401 before reload
+- Achieved **without** a Workbox `/api` runtime cache (see Backend Compatibility Notes #3)
+
+**Still deferred — offline writes (PRD §7.5.3, NOT done):**
+- Background sync for offline mutations; offline write queue / outbox
+- Web Push / notifications
 
 > Note: Lighthouse 12 removed the standalone PWA category; installability is now tracked via manifest/SW checks rather than a Lighthouse PWA score.
 
@@ -162,9 +168,19 @@ Types: `src/lib/types/family.ts`
 
 2. **Event-Member Relationship**: ✅ Resolved — Backend uses `ON DELETE CASCADE`, so member deletion automatically removes their events.
 
-3. **PWA API Response Caching**: Add service worker caching for API responses to enable offline functionality.
-   - **Files:** `vite.config.ts` (workbox runtimeCaching)
-   - **Suggested Config:**
+3. **PWA API Response Caching**: ⚠️ **Superseded by TanStack Query persistence (Option C, Issue #222).**
+   Offline viewing of already-fetched read data is now provided by persisting the
+   Query cache to IndexedDB (`src/lib/offline/`), **not** by a Workbox `/api`
+   runtime cache. This was deliberate: a service-worker `NetworkFirst` `/api`
+   cache would also cache auth/Google-settings responses and photo/binary
+   payloads, and offers no per-query allowlist, response validation, or
+   per-account clearing — all of which the Query persistence layer provides.
+   - **Do not** add a Workbox `/api` runtime cache by default; the previously
+     suggested `runtimeCaching` config below is retained only as historical
+     context.
+   - **Files:** `vite.config.ts` (workbox — intentionally has **no** `/api`
+     `runtimeCaching`)
+   - **Superseded config (do not apply):**
      ```typescript
      {
        urlPattern: /\/api\/.*/,
@@ -176,7 +192,6 @@ Types: `src/lib/types/family.ts`
        }
      }
      ```
-   - This enables showing cached data when offline and falls back gracefully.
 
 ---
 
