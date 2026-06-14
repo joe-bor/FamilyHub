@@ -15,6 +15,7 @@ import {
   type ChoreScopeKey,
   ChoreScopeSwitcher,
 } from "@/components/chores/chores-scope-switcher";
+import { OfflineUnavailable } from "@/components/shared";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/toaster";
 import { useIsMobile } from "@/hooks";
@@ -148,6 +149,11 @@ export function ChoresView() {
               <AlertCircle className="h-5 w-5 shrink-0" />
               Could not load chores. Try again in a moment.
             </div>
+          )}
+
+          {/* Offline + never loaded: paused query leaves no data and no error. */}
+          {!isLoading && !isError && !board && (
+            <OfflineUnavailable label="chores" />
           )}
 
           {!isLoading && !isError && board && !hasRoutines && (
