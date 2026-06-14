@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { ApiException } from "@/api/client";
 import { authService } from "@/api/services";
 import { AUTH_TOKEN_STORAGE_KEY, FAMILY_STORAGE_KEY } from "@/lib/constants";
+import { clearOfflineReadCache } from "@/lib/offline/persister";
 import type {
   FamilyApiResponse,
   FamilyData,
@@ -194,19 +195,27 @@ export function useCheckUsername(username: string, enabled = true) {
 
 /**
  * Returns a logout function that clears auth state and reloads the page.
+ *
+ * Async because the persisted IndexedDB read cache must be cleared and awaited
+ * BEFORE the reload — it is per-origin and survives logout, so leaving it would
+ * let the next account that signs in on a shared device read the previous
+ * account's cached data.
  */
 export function useLogout() {
   const queryClient = useQueryClient();
 
-  return () => {
+  return async () => {
     // Clear token from storage
     clearStoredToken();
 
     // Clear family data from localStorage (storage may be disabled in some webviews)
     clearStoredFamily();
 
-    // Clear all query cache
+    // Clear all in-memory query cache
     queryClient.clear();
+
+    // Clear the persisted offline read cache (never rejects).
+    await clearOfflineReadCache();
 
     // Force page reload to reset all state
     window.location.reload();
