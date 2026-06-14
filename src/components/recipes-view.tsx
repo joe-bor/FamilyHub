@@ -8,6 +8,7 @@ import {
   type RecipeTagFilterOption,
 } from "@/components/recipes/recipe-filter-bar";
 import { RecipeLibraryCard } from "@/components/recipes/recipe-library-card";
+import { OfflineUnavailable } from "@/components/shared";
 import { Button } from "@/components/ui/button";
 import { useIsMobile } from "@/hooks";
 import { formatRecipeTag } from "@/lib/recipe-tags";
@@ -273,7 +274,10 @@ export function RecipesView() {
               Retry
             </Button>
           </div>
-        ) : !isLoading && !isError ? (
+        ) : !data ? (
+          // Offline + never loaded: paused query, no data and no error.
+          <OfflineUnavailable label="recipes" />
+        ) : (
           <>
             <RecipeFilterBar
               availableTags={availableTags}
@@ -324,7 +328,7 @@ export function RecipesView() {
               </div>
             )}
           </>
-        ) : null}
+        )}
 
         <RecipeCreateSheet
           defaultMode={createSheetMode}

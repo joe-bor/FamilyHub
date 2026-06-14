@@ -1,6 +1,7 @@
 import { Plus } from "lucide-react";
 import { useState } from "react";
 import { useListPreferences, useLists } from "@/api";
+import { OfflineUnavailable } from "@/components/shared";
 import { useIsMobile } from "@/hooks";
 import { cn } from "@/lib/utils";
 import { ListCard } from "./lists/list-card";
@@ -90,7 +91,13 @@ export function ListsView() {
     );
   }
 
-  const summaries = lists.data?.data ?? [];
+  // Offline + never loaded: the paused query has no data and no error, so
+  // distinguish "offline, nothing cached" from a genuinely empty list.
+  if (!lists.data) {
+    return <OfflineUnavailable label="lists" />;
+  }
+
+  const summaries = lists.data.data;
 
   return (
     <div className="flex-1 overflow-y-auto p-4 sm:p-6">

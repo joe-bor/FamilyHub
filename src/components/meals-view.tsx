@@ -11,6 +11,7 @@ import {
 } from "@/components/meals/meal-editor-sheet";
 import { MealGrid } from "@/components/meals/meal-grid";
 import { WeekHeader } from "@/components/meals/week-header";
+import { OfflineUnavailable } from "@/components/shared";
 import { Button } from "@/components/ui/button";
 import { useMediaQuery } from "@/hooks";
 import {
@@ -160,6 +161,11 @@ export function MealsView() {
               Retry
             </Button>
           </div>
+        ) : null}
+
+        {/* Offline + never loaded: paused query, no data and no error. */}
+        {!board.isLoading && !board.isError && !board.data ? (
+          <OfflineUnavailable label="meals" />
         ) : null}
 
         {board.data?.data && !showGrid ? (
