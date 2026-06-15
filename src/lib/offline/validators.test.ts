@@ -279,6 +279,92 @@ describe("restorePersistedClient", () => {
     expect(keys).toEqual(["family", "recipes"]);
   });
 
+  it("drops malformed ENTRIES from array families but keeps the query", () => {
+    const goodEvent = calendarEvent;
+    const badEvent = { id: "evt-2", title: "Missing fields" };
+    const client = clientWith([
+      {
+        queryKey: calendarKeys.eventList({ startDate: "a", endDate: "b" }),
+        data: wrap([goodEvent, badEvent]),
+      },
+    ]);
+
+    const restored = restorePersistedClient(client);
+    const events = (
+      restored?.clientState.queries[0].state.data as {
+        data: CalendarEvent[];
+      }
+    ).data;
+
+    // One bad event must not discard the whole month's offline calendar.
+    expect(restored?.clientState.queries).toHaveLength(1);
+    expect(events).toHaveLength(1);
+    expect(events[0].id).toBe("evt-1");
+  });
+
+  it("filters bad entries for lists hub and recipes list too", () => {
+    const client = clientWith([
+      {
+        queryKey: listsKeys.hub(),
+        data: wrap([listSummary, { id: 1 }]),
+      },
+      {
+        queryKey: recipesKeys.list(),
+        data: wrap([recipeSummary, { id: "r-2" }]),
+      },
+    ]);
+
+    const restored = restorePersistedClient(client);
+    const lists = restored?.clientState.queries[0].state.data as {
+      data: ListSummary[];
+    };
+    const recipes = restored?.clientState.queries[1].state.data as {
+      data: RecipeSummary[];
+    };
+
+    expect(lists.data).toHaveLength(1);
+    expect(lists.data[0].id).toBe("l-1");
+    expect(recipes.data).toHaveLength(1);
+    expect(recipes.data[0].id).toBe("r-1");
+  });
+
+  it("keeps the original data reference when every array entry is valid", () => {
+    const data = wrap([calendarEvent]);
+    const client = clientWith([
+      {
+        queryKey: calendarKeys.eventList({ startDate: "a", endDate: "b" }),
+        data,
+      },
+    ]);
+
+    const restored = restorePersistedClient(client);
+    // No filtering → same reference, so extra fields the UI relies on survive.
+    expect(restored?.clientState.queries[0].state.data).toBe(data);
+  });
+
+  it("drops an array family whose envelope is not { data: [] }", () => {
+    const client = clientWith([
+      { queryKey: familyKeys.family(), data: wrap(family) },
+      {
+        queryKey: calendarKeys.eventList({ startDate: "a", endDate: "b" }),
+        data: wrap("not-an-array"),
+      },
+    ]);
+
+    const restored = restorePersistedClient(client);
+    const keys = restored?.clientState.queries.map((q) => q.queryKey[0]);
+    expect(keys).toEqual(["family"]);
+  });
+
+  it("still drops object families wholesale on any malformed field", () => {
+    // Object families (chores) are not entry-filtered: a broken board is dropped.
+    const client = clientWith([
+      { queryKey: choreKeys.board(), data: wrap({ today: {} }) },
+    ]);
+    const restored = restorePersistedClient(client);
+    expect(restored?.clientState.queries).toHaveLength(0);
+  });
+
   it("returns undefined for a structurally corrupt client", () => {
     expect(restorePersistedClient(null)).toBeUndefined();
     expect(restorePersistedClient({})).toBeUndefined();

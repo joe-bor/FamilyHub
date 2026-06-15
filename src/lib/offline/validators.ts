@@ -204,6 +204,42 @@ export function validatePersistedQueryData(
   return schema.safeParse(data).success;
 }
 
+/**
+ * The element schema for an allowlisted query family whose response `data` is
+ * an array (`{ data: [...] }`), or `null` for object-shaped families.
+ *
+ * Array families filter malformed ENTRIES on restore (see {@link
+ * restorePersistedClient}) so one bad item does not discard a whole cached
+ * collection — e.g. a single corrupt event must not wipe the entire month's
+ * offline calendar. Object families stay all-or-nothing.
+ */
+function arrayElementSchemaForQueryKey(
+  queryKey: readonly unknown[],
+): z.ZodTypeAny | null {
+  const [domain, sub] = queryKey;
+  switch (domain) {
+    case "calendar":
+      // eventList(params) is an array; event(id) (3rd key is a string) is not.
+      if (sub !== "events") return null;
+      return typeof queryKey[2] === "string" ? null : calendarEventSchema;
+    case "lists":
+      return sub === "hub" ? listSummarySchema : null;
+    case "recipes":
+      return sub === "list" ? recipeSummarySchema : null;
+    default:
+      return null;
+  }
+}
+
+function isDataArrayEnvelope(data: unknown): data is { data: unknown[] } {
+  return (
+    typeof data === "object" &&
+    data !== null &&
+    "data" in data &&
+    Array.isArray((data as { data: unknown }).data)
+  );
+}
+
 // ---------------------------------------------------------------------------
 // Avatar/photo scope: strip data: URL avatars before persisting
 // ---------------------------------------------------------------------------
@@ -290,11 +326,40 @@ function isPersistedClientShape(value: unknown): value is PersistedClient {
   );
 }
 
+/** Sentinel returned by {@link restoreQueryData} to drop a whole query. */
+const DROP_QUERY = Symbol("drop-query");
+
 /**
- * Validate a restored PersistedClient: drop any query whose data does not match
- * its expected response shape, and return `undefined` if the client itself is
- * structurally corrupt. `buster`/`timestamp` are preserved so TanStack's
- * version-buster and `maxAge` checks still run after this filter.
+ * Validate one persisted query's data on restore.
+ *
+ * Array families keep the query and drop only malformed ENTRIES; object
+ * families are all-or-nothing. Returns the data to keep (the original reference
+ * when nothing was filtered, so extra fields the UI relies on survive), or
+ * {@link DROP_QUERY} to discard the whole query.
+ */
+function restoreQueryData(
+  queryKey: readonly unknown[],
+  data: unknown,
+): unknown {
+  const elementSchema = arrayElementSchemaForQueryKey(queryKey);
+  if (elementSchema) {
+    // The envelope itself must be `{ data: [...] }`; otherwise drop the query.
+    if (!isDataArrayEnvelope(data)) return DROP_QUERY;
+    const kept = data.data.filter(
+      (item) => elementSchema.safeParse(item).success,
+    );
+    if (kept.length === data.data.length) return data; // all valid → keep original
+    return { ...data, data: kept };
+  }
+  return validatePersistedQueryData(queryKey, data) ? data : DROP_QUERY;
+}
+
+/**
+ * Validate a restored PersistedClient: drop any query (or, for array families,
+ * any malformed entry) whose data does not match its expected response shape,
+ * and return `undefined` if the client itself is structurally corrupt.
+ * `buster`/`timestamp` are preserved so TanStack's version-buster and `maxAge`
+ * checks still run after this filter.
  */
 export function restorePersistedClient(
   client: unknown,
@@ -302,9 +367,12 @@ export function restorePersistedClient(
   try {
     if (!isPersistedClientShape(client)) return undefined;
 
-    const queries = client.clientState.queries.filter((query) =>
-      validatePersistedQueryData(query.queryKey, query.state.data),
-    );
+    const queries = client.clientState.queries.flatMap((query) => {
+      const data = restoreQueryData(query.queryKey, query.state.data);
+      if (data === DROP_QUERY) return [];
+      if (data === query.state.data) return [query];
+      return [{ ...query, state: { ...query.state, data } }];
+    });
 
     return {
       ...client,
