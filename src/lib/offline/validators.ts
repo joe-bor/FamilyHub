@@ -26,15 +26,13 @@ function apiResponse<T extends z.ZodTypeAny>(dataSchema: T) {
   return z.object({ data: dataSchema });
 }
 
-const familyColorSchema = z.enum([
-  "coral",
-  "teal",
-  "green",
-  "purple",
-  "yellow",
-  "pink",
-  "orange",
-]);
+// Response-side enums are deliberately validated as plain non-empty strings,
+// NOT z.enum(...). These gate already-served backend data for STRUCTURE only;
+// pinning the enum would make a future backend addition (a new family color,
+// list kind, or chore scope) fail validation and silently drop that family's
+// entire persisted cache on restore. Form/request schemas in
+// `src/lib/validations/*` keep the strict enums where they belong.
+const familyColorSchema = z.string().min(1);
 
 const familyMemberSchema = z.object({
   id: z.string().min(1),
@@ -72,7 +70,8 @@ const choreSummarySchema = z.object({
   remaining: z.number(),
 });
 const choreScopeBoardSchema = z.object({
-  scope: z.enum(["TODAY", "THIS_WEEK", "THIS_MONTH"]),
+  // Response-side: drift-tolerant string, not z.enum (see familyColorSchema).
+  scope: z.string().min(1),
   periodStartDate: z.string(),
   periodEndDate: z.string(),
   summary: choreSummarySchema,
@@ -85,7 +84,8 @@ const choresBoardSchema = z.object({
   thisMonth: choreScopeBoardSchema,
 });
 
-const listKindSchema = z.enum(["grocery", "to-do", "general"]);
+// Response-side: drift-tolerant string, not z.enum (see familyColorSchema).
+const listKindSchema = z.string().min(1);
 const listSummarySchema = z.object({
   id: z.string().min(1),
   name: z.string(),

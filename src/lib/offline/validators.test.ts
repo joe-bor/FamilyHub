@@ -166,6 +166,28 @@ describe("validatePersistedQueryData", () => {
     }
   });
 
+  it("tolerates backend enum drift (new color/kind/scope) without dropping the cache", () => {
+    const familyNewColor = {
+      ...family,
+      members: [{ id: "m-9", name: "Zed", color: "chartreuse" }],
+    };
+    const listNewKind = { ...listSummary, kind: "wishlist" };
+    const choresNewScope = {
+      ...choresBoard,
+      today: { ...choreScope, scope: "THIS_QUARTER" },
+    };
+
+    expect(
+      validatePersistedQueryData(familyKeys.family(), wrap(familyNewColor)),
+    ).toBe(true);
+    expect(
+      validatePersistedQueryData(listsKeys.hub(), wrap([listNewKind])),
+    ).toBe(true);
+    expect(
+      validatePersistedQueryData(choreKeys.board(), wrap(choresNewScope)),
+    ).toBe(true);
+  });
+
   it("rejects missing wrapper and unknown query families", () => {
     expect(validatePersistedQueryData(familyKeys.family(), undefined)).toBe(
       false,
