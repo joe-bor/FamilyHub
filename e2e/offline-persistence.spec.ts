@@ -8,6 +8,7 @@ import {
   clearStorage,
   getTodayDateString,
   waitForHydration,
+  waitForOfflineCachePersisted,
 } from "./helpers/test-helpers";
 
 /**
@@ -47,8 +48,8 @@ test.describe("Offline read persistence (Option C)", () => {
     await waitForHydration(page);
     await expect(page.getByText("Persisted Dentist")).toBeVisible();
 
-    // Give the persister a beat to write the dehydrated cache to IndexedDB.
-    await page.waitForTimeout(500);
+    // Wait until the throttled persister has actually written to IndexedDB.
+    await waitForOfflineCachePersisted(page);
 
     // Go offline and reload — the app shell + cached data must come back.
     await context.setOffline(true);
@@ -109,7 +110,7 @@ test.describe("Offline read persistence (Option C)", () => {
     await page.reload();
     await waitForHydration(page);
     await expect(page.getByText("Family A Secret")).toBeVisible();
-    await page.waitForTimeout(500);
+    await waitForOfflineCachePersisted(page);
 
     // Sign out through the real UI flow (clears token, family storage, and the
     // persisted IndexedDB cache before reloading).

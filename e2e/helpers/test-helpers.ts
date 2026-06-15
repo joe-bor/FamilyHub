@@ -1,5 +1,10 @@
 import { expect, type Locator, type Page } from "@playwright/test";
 import { format } from "date-fns";
+import {
+  OFFLINE_CACHE_DB_NAME,
+  OFFLINE_CACHE_KEY,
+  OFFLINE_CACHE_STORE_NAME,
+} from "../../src/lib/offline/constants";
 import type { FamilyColor, FamilyMember } from "../../src/lib/types/family";
 
 /**
@@ -25,6 +30,76 @@ export async function waitForHydration(page: Page): Promise<void> {
     .catch(() => {
       // Loading might already be gone, that's fine
     });
+}
+
+/**
+ * Wait until the TanStack Query persister has written the dehydrated read cache
+ * to IndexedDB.
+ *
+ * The persist is throttled (~1s, trailing-edge), so a fixed `waitForTimeout`
+ * races the write and can go offline + reload before anything is persisted.
+ * Poll the real IndexedDB key instead.
+ *
+ * The poll never CREATES the database: it gates on `indexedDB.databases()` and
+ * checks the object store exists before reading, so it cannot beat idb-keyval
+ * to store creation and leave a storeless DB that silently breaks the persister.
+ */
+export async function waitForOfflineCachePersisted(
+  page: Page,
+  options?: { timeout?: number },
+): Promise<void> {
+  const timeout = options?.timeout ?? 5000;
+  await expect
+    .poll(
+      () =>
+        page.evaluate(
+          ({ dbName, storeName, key }) =>
+            new Promise<boolean>((resolve) => {
+              if (!indexedDB.databases) {
+                resolve(false);
+                return;
+              }
+              indexedDB
+                .databases()
+                .then((dbs) => {
+                  if (!dbs.some((d) => d.name === dbName)) {
+                    resolve(false);
+                    return;
+                  }
+                  const req = indexedDB.open(dbName);
+                  req.onerror = () => resolve(false);
+                  req.onsuccess = () => {
+                    const db = req.result;
+                    if (!db.objectStoreNames.contains(storeName)) {
+                      db.close();
+                      resolve(false);
+                      return;
+                    }
+                    const getReq = db
+                      .transaction(storeName, "readonly")
+                      .objectStore(storeName)
+                      .get(key);
+                    getReq.onsuccess = () => {
+                      resolve(getReq.result !== undefined);
+                      db.close();
+                    };
+                    getReq.onerror = () => {
+                      resolve(false);
+                      db.close();
+                    };
+                  };
+                })
+                .catch(() => resolve(false));
+            }),
+          {
+            dbName: OFFLINE_CACHE_DB_NAME,
+            storeName: OFFLINE_CACHE_STORE_NAME,
+            key: OFFLINE_CACHE_KEY,
+          },
+        ),
+      { timeout, intervals: [100, 200, 300] },
+    )
+    .toBe(true);
 }
 
 /**
