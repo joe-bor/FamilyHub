@@ -17,6 +17,7 @@ import {
   useUpdateEvent,
   useUpdateInstance,
 } from "@/api";
+import type { ApiException } from "@/api/client";
 import {
   AddEventButton,
   CalendarViewSwitcher,
@@ -36,6 +37,7 @@ import {
 } from "@/components/calendar";
 import { toast } from "@/components/ui/toaster";
 import { useIsMobile } from "@/hooks";
+import { isOfflineWriteError } from "@/lib/offline/read-only-guard";
 import { buildRRule } from "@/lib/recurrence-utils";
 import { format24hTo12h, formatLocalDate } from "@/lib/time-utils";
 import type { CalendarEvent, CreateEventRequest } from "@/lib/types";
@@ -63,6 +65,24 @@ function getParentId(event: CalendarEvent): string {
       "Cannot resolve parent ID: event has no id or recurringEventId",
     );
   return id;
+}
+
+/**
+ * Toast when a calendar write fails because the device is offline. Read-only
+ * offline mode rejects writes — optimistic ones throw OfflineWriteError before
+ * onMutate, others fail with a network error — so without this the only hint is
+ * the global banner. Genuine online server errors are left to existing handling.
+ */
+function notifyOfflineWrite(error: ApiException): void {
+  if (
+    isOfflineWriteError(error) ||
+    (typeof navigator !== "undefined" && navigator.onLine === false)
+  ) {
+    toast({
+      title: "You're offline",
+      description: "Changes can't be saved until you reconnect.",
+    });
+  }
 }
 
 export function CalendarModule() {
@@ -156,6 +176,7 @@ export function CalendarModule() {
     onSuccess: () => {
       closeAddEventModal();
     },
+    onError: notifyOfflineWrite,
   });
 
   const deleteEvent = useDeleteEvent({
@@ -168,14 +189,14 @@ export function CalendarModule() {
     onSuccess: () => {
       closeEditModal();
     },
-    onError: () => {},
+    onError: notifyOfflineWrite,
   });
 
   const updateInstance = useUpdateInstance({
     onSuccess: () => {
       closeEditModal();
     },
-    onError: () => {},
+    onError: notifyOfflineWrite,
   });
 
   const deleteInstance = useDeleteInstance({

@@ -1,3 +1,5 @@
+import { ApiErrorCode, ApiException } from "@/api/client/api-error";
+
 /**
  * Read-only enforcement for offline mode.
  *
@@ -10,11 +12,32 @@
  * `setQueryData`, so no optimistic local change, queued mutation, or persisted
  * mutation is created.
  */
-export class OfflineWriteError extends Error {
+
+/**
+ * Thrown by {@link assertOnlineForWrite} when a write is attempted offline.
+ *
+ * Extends {@link ApiException} (code `NETWORK_ERROR`, status 0) so it matches
+ * the `onError?: (error: ApiException) => void` shape every mutation hook
+ * exposes — consumers reading `error.status`/`error.code` get sane values
+ * instead of `undefined`, and `ApiException.isApiException` returns true. Use
+ * {@link isOfflineWriteError} to detect this specific case for user messaging.
+ */
+export class OfflineWriteError extends ApiException {
   constructor() {
-    super("You're offline — changes can't be saved until you reconnect.");
+    super({
+      code: ApiErrorCode.NETWORK_ERROR,
+      message: "You're offline — changes can't be saved until you reconnect.",
+      status: 0,
+    });
     this.name = "OfflineWriteError";
   }
+}
+
+/** Whether an error is the offline write rejection from {@link assertOnlineForWrite}. */
+export function isOfflineWriteError(
+  error: unknown,
+): error is OfflineWriteError {
+  return error instanceof OfflineWriteError;
 }
 
 /**
