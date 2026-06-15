@@ -10,6 +10,7 @@ import {
 } from "vitest";
 import { AUTH_TOKEN_STORAGE_KEY, FAMILY_STORAGE_KEY } from "@/lib/constants";
 import * as offlinePersister from "@/lib/offline/persister";
+import { queryClient } from "@/providers/query-client";
 import { server } from "@/test/mocks/server";
 import { createHttpClient, handleUnauthorized } from "./http-client";
 
@@ -128,6 +129,35 @@ describe("handleUnauthorized (401 session cleanup)", () => {
     expect(reload).toHaveBeenCalled();
     // Offline cache must be cleared BEFORE the reload navigates away.
     expect(clearSpy.mock.invocationCallOrder[0]).toBeLessThan(
+      reload.mock.invocationCallOrder[0],
+    );
+  });
+
+  it("empties the in-memory query cache before wiping IndexedDB (no cross-account re-leak)", async () => {
+    localStorage.setItem(AUTH_TOKEN_STORAGE_KEY, "token-123");
+    const clearStorageSpy = vi
+      .spyOn(offlinePersister, "clearOfflineReadCache")
+      .mockResolvedValue(undefined);
+    // Spy without clearing the real app singleton.
+    const clearCacheSpy = vi
+      .spyOn(queryClient, "clear")
+      .mockImplementation(() => {});
+    const reload = vi.fn();
+    Object.defineProperty(window, "location", {
+      configurable: true,
+      value: { ...originalLocation, reload },
+    });
+
+    await handleUnauthorized();
+
+    expect(clearCacheSpy).toHaveBeenCalledTimes(1);
+    // In-memory cache cleared BEFORE the IndexedDB wipe, so any late throttled
+    // persist dehydrates an empty client rather than re-seeding account-A data.
+    expect(clearCacheSpy.mock.invocationCallOrder[0]).toBeLessThan(
+      clearStorageSpy.mock.invocationCallOrder[0],
+    );
+    // ...and both happen before the reload navigates away.
+    expect(clearStorageSpy.mock.invocationCallOrder[0]).toBeLessThan(
       reload.mock.invocationCallOrder[0],
     );
   });
