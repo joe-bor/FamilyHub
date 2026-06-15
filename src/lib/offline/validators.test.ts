@@ -280,6 +280,56 @@ describe("sanitizePersistedClient", () => {
     ).data.members[0];
     expect(original.avatarUrl).toBe("data:image/png;base64,AAAA");
   });
+
+  it("nulls data: URL recipe images in the list but keeps http(s) URLs", () => {
+    const client = clientWith([
+      {
+        queryKey: recipesKeys.list(),
+        data: wrap([
+          {
+            ...recipeSummary,
+            id: "r-1",
+            imageUrl: "data:image/png;base64,AAAA",
+          },
+          { ...recipeSummary, id: "r-2", imageUrl: "https://cdn/r.png" },
+        ]),
+      },
+    ]);
+
+    const recipes = (
+      sanitizePersistedClient(client).clientState.queries[0].state.data as {
+        data: RecipeSummary[];
+      }
+    ).data;
+
+    expect(recipes[0].imageUrl).toBeNull();
+    expect(recipes[1].imageUrl).toBe("https://cdn/r.png");
+  });
+
+  it("nulls a data: URL recipe image in the detail view", () => {
+    const client = clientWith([
+      {
+        queryKey: recipesKeys.detail("r-1"),
+        data: wrap({ ...recipeDetail, imageUrl: "data:image/png;base64,AAAA" }),
+      },
+    ]);
+
+    const recipe = (
+      sanitizePersistedClient(client).clientState.queries[0].state.data as {
+        data: RecipeDetail;
+      }
+    ).data;
+
+    expect(recipe.imageUrl).toBeNull();
+  });
+
+  it("leaves recipes without data: images untouched (same reference)", () => {
+    const data = wrap([recipeSummary]); // imageUrl is null
+    const client = clientWith([{ queryKey: recipesKeys.list(), data }]);
+    expect(
+      sanitizePersistedClient(client).clientState.queries[0].state.data,
+    ).toBe(data);
+  });
 });
 
 // ---------------------------------------------------------------------------

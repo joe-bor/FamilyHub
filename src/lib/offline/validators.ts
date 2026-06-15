@@ -291,17 +291,79 @@ function stripAvatarBinary(data: unknown): unknown {
   return { ...(data as object), data: { ...family, members } };
 }
 
+/** If `recipe.imageUrl` is a `data:` URL, return a copy with it nulled. */
+function stripRecipeImage(recipe: unknown): unknown {
+  if (
+    recipe &&
+    typeof recipe === "object" &&
+    isDataUrl((recipe as { imageUrl?: unknown }).imageUrl)
+  ) {
+    return { ...(recipe as object), imageUrl: null };
+  }
+  return recipe;
+}
+
+/**
+ * Strip `data:` URL images from a recipes response — the list shape
+ * (`{ data: [recipe] }`) or the detail shape (`{ data: recipe }`). Inline
+ * base64 images are the only binary that could reach the recipes cache, so
+ * nulling them honors the same "no photos/binary in the persisted cache" rule
+ * applied to family avatars. Returns the original reference when there is
+ * nothing to strip. Latent today (the backend serves http(s) `imageUrl`s) but
+ * it closes the rule so a future `data:` image can't be persisted as binary.
+ */
+function stripRecipeImageBinary(data: unknown, isList: boolean): unknown {
+  if (typeof data !== "object" || data === null || !("data" in data)) {
+    return data;
+  }
+  const payload = (data as { data: unknown }).data;
+
+  if (isList) {
+    if (!Array.isArray(payload)) return data;
+    let changed = false;
+    const recipes = payload.map((recipe) => {
+      const stripped = stripRecipeImage(recipe);
+      if (stripped !== recipe) changed = true;
+      return stripped;
+    });
+    return changed ? { ...(data as object), data: recipes } : data;
+  }
+
+  const stripped = stripRecipeImage(payload);
+  return stripped === payload ? data : { ...(data as object), data: stripped };
+}
+
+/**
+ * Strip binary (`data:` URLs) from a single query's data before persisting.
+ * Family member avatars and recipe images are the only fields that can carry
+ * inline base64; everything else is passed through by reference (idb-keyval
+ * structured-clones on write, so this is read-only).
+ */
+function sanitizeQueryData(
+  queryKey: readonly unknown[],
+  data: unknown,
+): unknown {
+  const [domain, sub] = queryKey;
+  if (domain === "family") return stripAvatarBinary(data);
+  if (domain === "recipes" && sub === "list") {
+    return stripRecipeImageBinary(data, true);
+  }
+  if (domain === "recipes" && sub === "detail") {
+    return stripRecipeImageBinary(data, false);
+  }
+  return data;
+}
+
 /**
  * Return a copy of the dehydrated client safe to persist: strips `data:` URL
- * avatars from the family query. Other queries are passed through by reference
- * (idb-keyval structured-clones them on write, so this is read-only).
+ * binary (family avatars, recipe images). Other queries are passed through by
+ * reference.
  */
 export function sanitizePersistedClient(
   client: PersistedClient,
 ): PersistedClient {
   const queries = client.clientState.queries.map((query) => {
-    if (query.queryKey[0] !== "family") return query;
-    const sanitized = stripAvatarBinary(query.state.data);
+    const sanitized = sanitizeQueryData(query.queryKey, query.state.data);
     if (sanitized === query.state.data) return query;
     return { ...query, state: { ...query.state, data: sanitized } };
   });
