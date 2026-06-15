@@ -1,5 +1,6 @@
 import { AUTH_TOKEN_STORAGE_KEY, FAMILY_STORAGE_KEY } from "@/lib/constants";
 import { clearOfflineReadCache } from "@/lib/offline/persister";
+import { queryClient } from "@/providers/query-client";
 import {
   ApiErrorCode,
   ApiException,
@@ -52,6 +53,18 @@ export async function handleUnauthorized(): Promise<void> {
     localStorage.removeItem(FAMILY_STORAGE_KEY);
   } catch {
     // localStorage might not be available
+  }
+
+  // Empty the in-memory query cache BEFORE wiping IndexedDB — mirroring
+  // useLogout(). Otherwise the still-present successful account-A queries can be
+  // re-dehydrated by the persister's throttled save AFTER clearOfflineReadCache()
+  // resolves but before the reload tears the page down, re-seeding the cache the
+  // next login hydrates. Clearing first means any late persist writes an empty
+  // client. Guarded because clear() must never block the session teardown.
+  try {
+    queryClient.clear();
+  } catch {
+    // QueryClient unavailable — nothing in-memory to leak.
   }
 
   // Clear the persisted offline read cache (never rejects).
