@@ -52,6 +52,11 @@ test.describe("Offline read persistence (Option C)", () => {
     // Wait until the throttled persister has actually written to IndexedDB.
     await waitForOfflineCachePersisted(page);
 
+    // The offline reload must be served from the SW precache; wait until the SW
+    // controls the page or page.reload() races it and fails offline with
+    // ERR_INTERNET_DISCONNECTED.
+    await waitForServiceWorkerReady(page);
+
     // Go offline and reload — the app shell + cached data must come back.
     await context.setOffline(true);
     await page.reload();
