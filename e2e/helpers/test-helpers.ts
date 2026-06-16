@@ -38,14 +38,14 @@ export async function waitForHydration(page: Page): Promise<void> {
  * Tests that navigate to a never-visited, lazily-loaded module (e.g. Chores)
  * while offline rely on that module's JS chunk being served from the Workbox
  * precache. The chunk is only served once the SW is ACTIVE (precache complete)
- * and controls this page. The PWA ships `skipWaiting` without `clientsClaim`,
- * so a tab opened before the SW activated stays uncontrolled until its next
- * navigation — on slow CI the test can go offline before that happens, the
- * chunk import hits the network, fails, and the app crashes to a blank page.
+ * and controls this page. The PWA now ships `clientsClaim`, so the SW claims
+ * this tab as soon as it activates and the controller usually appears without a
+ * reload.
  *
- * Wait for an active SW (its `ready` promise), then reload once if this page is
- * not yet controlled so the SW serves it — and its offline lazy imports — from
- * cache.
+ * Wait for an active SW (its `ready` promise), then — as a defensive guard for
+ * the brief gap between activation and the clientsClaim `controllerchange` —
+ * reload once if this page is still not controlled so the SW serves it, and its
+ * offline lazy imports, from cache.
  */
 export async function waitForServiceWorkerReady(page: Page): Promise<void> {
   const isControlled = () =>
