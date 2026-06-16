@@ -38,8 +38,11 @@ const familyMemberSchema = z.object({
   id: z.string().min(1),
   name: z.string().min(1),
   color: familyColorSchema,
-  avatarUrl: z.string().optional(),
-  email: z.string().optional(),
+  // The backend returns null (not absent) for an unset avatar/email, so accept
+  // null too — pinning these to string|undefined drops a real family's entire
+  // persisted cache on restore.
+  avatarUrl: z.string().nullish(),
+  email: z.string().nullish(),
 });
 
 const familyDataSchema = z.object({
