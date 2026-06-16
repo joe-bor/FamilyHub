@@ -100,6 +100,58 @@ test.describe("Offline read persistence (Option C)", () => {
     ).toBeVisible();
   });
 
+  test("a precached module chunk that fails to load shows the offline empty state, not a blank page", async ({
+    page,
+    context,
+    request,
+  }) => {
+    const reg = await registerFamily(request, {
+      familyName: "Evicted Chunk",
+      members: [{ name: "Alice", color: "coral" }],
+    });
+
+    // Load online and gain SW control so the Chores chunk is precached and would
+    // normally be served offline.
+    await seedBrowserAuth(page, reg);
+    await page.reload();
+    await waitForHydration(page);
+    await expect(page.getByRole("button", { name: "Add event" })).toBeVisible();
+    await waitForServiceWorkerReady(page);
+
+    // Force a precache miss for the Chores chunk by dropping it from BOTH the
+    // Workbox cache and the HTTP cache, so the offline dynamic import has nothing
+    // to serve and must hit the (offline) network. This is the defense-in-depth
+    // path clientsClaim cannot cover: a precached chunk that was evicted.
+    const client = await context.newCDPSession(page);
+    await client.send("Network.clearBrowserCache");
+    const evicted = await page.evaluate(async () => {
+      let count = 0;
+      for (const name of await caches.keys()) {
+        const cache = await caches.open(name);
+        for (const req of await cache.keys()) {
+          if (new URL(req.url).pathname.includes("chores-view")) {
+            if (await cache.delete(req)) count++;
+          }
+        }
+      }
+      return count;
+    });
+    expect(evicted).toBeGreaterThan(0);
+
+    // Offline, navigate to Chores — the chunk import now fails.
+    await context.setOffline(true);
+    await page.getByRole("button", { name: /chores/i }).click();
+
+    // The error boundary renders the offline empty state instead of crashing.
+    await expect(
+      page.getByText(/haven't been saved for offline viewing yet/i),
+    ).toBeVisible();
+    // It is the boundary fallback, not the loaded module: the module's own header
+    // is absent, and the app shell (nav) survived rather than blanking out.
+    await expect(page.getByRole("heading", { name: "Chores" })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: /chores/i })).toBeVisible();
+  });
+
   test("cross-account: a second family never sees the first family's cached data", async ({
     page,
     request,
@@ -140,5 +192,65 @@ test.describe("Offline read persistence (Option C)", () => {
 
     // Family A's persisted event must not leak into Family B's session.
     await expect(page.getByText("Family A Secret")).toHaveCount(0);
+  });
+});
+
+/**
+ * First-session case: the tab that registered the service worker is itself
+ * uncontrolled until the SW claims it. Without clientsClaim it stays uncontrolled
+ * for the whole session, so an offline lazy import hits the network and crashes
+ * the app to a blank page. These tests use a single authenticated load (auth is
+ * seeded before navigation) and never do the control-gaining reload.
+ */
+test.describe("Offline first session (clientsClaim)", () => {
+  test("a never-visited module loads offline without a control-gaining reload", async ({
+    page,
+    context,
+    request,
+  }) => {
+    const reg = await registerFamily(request, {
+      familyName: "First Session",
+      members: [{ name: "Alice", color: "coral" }],
+    });
+
+    // Seed auth BEFORE the first navigation so the very first load — the one that
+    // registers the SW and is therefore uncontrolled — is already authenticated.
+    // No second, control-gaining reload happens after this.
+    await page.addInitScript((data) => {
+      localStorage.setItem("family-hub-auth-token", data.token);
+      localStorage.setItem(
+        "family-hub-family",
+        JSON.stringify({
+          state: { family: data.family, _hasHydrated: true },
+          version: 0,
+        }),
+      );
+    }, reg);
+
+    await page.goto("/");
+    await waitForHydration(page);
+    await expect(page.getByRole("button", { name: "Add event" })).toBeVisible();
+
+    // The SW activates after this page loaded. clientsClaim must make it take
+    // control of this already-open tab WITHOUT a reload; otherwise the controller
+    // never appears and offline lazy imports cannot be served from precache.
+    await page.evaluate(() => navigator.serviceWorker?.ready);
+    await page.waitForFunction(
+      () => navigator.serviceWorker.controller != null,
+      undefined,
+      { timeout: 15000 },
+    );
+
+    // Offline, navigate via SPA (no reload) to the never-visited Chores module.
+    await context.setOffline(true);
+    await page.getByRole("button", { name: /chores/i }).click();
+
+    // The precached chunk loads from the now-controlling SW: the module's own
+    // header renders (proof the chunk loaded, not the error-boundary fallback)…
+    await expect(page.getByRole("heading", { name: "Chores" })).toBeVisible();
+    // …alongside its honest "not saved for offline" empty state (no cached data).
+    await expect(
+      page.getByText(/haven't been saved for offline viewing yet/i),
+    ).toBeVisible();
   });
 });
