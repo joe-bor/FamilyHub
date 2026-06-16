@@ -36,8 +36,8 @@ test.describe("Offline read persistence (Option C)", () => {
     });
     await createCalendarEvent(request, reg.token, {
       title: "Persisted Dentist",
-      startTime: "09:00",
-      endTime: "10:00",
+      startTime: "9:00 AM",
+      endTime: "10:00 AM",
       date: getTodayDateString(),
       memberId: reg.family.members[0].id,
     });
@@ -82,7 +82,7 @@ test.describe("Offline read persistence (Option C)", () => {
 
     // Offline, navigate to the never-loaded Chores module.
     await context.setOffline(true);
-    await page.getByRole("tab", { name: /chores/i }).click();
+    await page.getByRole("button", { name: /chores/i }).click();
 
     // No crash / infinite spinner — a clear offline empty state instead.
     await expect(
@@ -101,8 +101,8 @@ test.describe("Offline read persistence (Option C)", () => {
     });
     await createCalendarEvent(request, familyA.token, {
       title: "Family A Secret",
-      startTime: "09:00",
-      endTime: "10:00",
+      startTime: "9:00 AM",
+      endTime: "10:00 AM",
       date: getTodayDateString(),
       memberId: familyA.family.members[0].id,
     });
