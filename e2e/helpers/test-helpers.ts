@@ -33,6 +33,47 @@ export async function waitForHydration(page: Page): Promise<void> {
 }
 
 /**
+ * Wait until the production service worker is active AND controls the page.
+ *
+ * Tests that navigate to a never-visited, lazily-loaded module (e.g. Chores)
+ * while offline rely on that module's JS chunk being served from the Workbox
+ * precache. The chunk is only served once the SW is ACTIVE (precache complete)
+ * and controls this page. The PWA ships `skipWaiting` without `clientsClaim`,
+ * so a tab opened before the SW activated stays uncontrolled until its next
+ * navigation — on slow CI the test can go offline before that happens, the
+ * chunk import hits the network, fails, and the app crashes to a blank page.
+ *
+ * Wait for an active SW (its `ready` promise), then reload once if this page is
+ * not yet controlled so the SW serves it — and its offline lazy imports — from
+ * cache.
+ */
+export async function waitForServiceWorkerReady(page: Page): Promise<void> {
+  const isControlled = () =>
+    page.evaluate(
+      () =>
+        !("serviceWorker" in navigator) ||
+        navigator.serviceWorker.controller != null,
+    );
+
+  // Resolves once an active SW exists for this scope (install/precache done).
+  await page.evaluate(() => navigator.serviceWorker?.ready);
+
+  if (!(await isControlled())) {
+    // Uncontrolled tab (skipWaiting without clientsClaim): a fresh navigation
+    // through the now-active SW makes it control the page.
+    await page.reload();
+    await waitForHydration(page);
+    await page.waitForFunction(
+      () =>
+        !("serviceWorker" in navigator) ||
+        navigator.serviceWorker.controller != null,
+      undefined,
+      { timeout: 10000 },
+    );
+  }
+}
+
+/**
  * Wait until the TanStack Query persister has written the dehydrated read cache
  * to IndexedDB.
  *
