@@ -4,6 +4,7 @@ import { CalendarModule } from "@/components/calendar";
 import { HomeDashboard } from "@/components/home";
 import {
   AppHeader,
+  LazyModule,
   MobileBottomNav,
   NavigationTabs,
   OfflineBanner,
@@ -46,14 +47,6 @@ const LoginFlow = lazy(() =>
   import("@/components/auth").then((m) => ({ default: m.LoginFlow })),
 );
 
-function ModuleLoader() {
-  return (
-    <div className="flex-1 flex items-center justify-center">
-      <div className="animate-pulse text-muted-foreground">Loading...</div>
-    </div>
-  );
-}
-
 function renderModule(activeModule: ModuleType | null) {
   if (activeModule === null) {
     return <HomeDashboard />;
@@ -64,33 +57,33 @@ function renderModule(activeModule: ModuleType | null) {
       return <CalendarModule />;
     case "chores":
       return (
-        <Suspense fallback={<ModuleLoader />}>
+        <LazyModule label="chores">
           <ChoresView />
-        </Suspense>
+        </LazyModule>
       );
     case "meals":
       return (
-        <Suspense fallback={<ModuleLoader />}>
+        <LazyModule label="meals">
           <MealsView />
-        </Suspense>
+        </LazyModule>
       );
     case "recipes":
       return (
-        <Suspense fallback={<ModuleLoader />}>
+        <LazyModule label="recipes">
           <RecipesView />
-        </Suspense>
+        </LazyModule>
       );
     case "lists":
       return (
-        <Suspense fallback={<ModuleLoader />}>
+        <LazyModule label="lists">
           <ListsView />
-        </Suspense>
+        </LazyModule>
       );
     case "photos":
       return (
-        <Suspense fallback={<ModuleLoader />}>
+        <LazyModule label="photos">
           <PhotosView />
-        </Suspense>
+        </LazyModule>
       );
     default:
       return null;
