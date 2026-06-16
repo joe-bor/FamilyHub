@@ -9,6 +9,7 @@ import {
   getTodayDateString,
   waitForHydration,
   waitForOfflineCachePersisted,
+  waitForServiceWorkerReady,
 } from "./helpers/test-helpers";
 
 /**
@@ -79,6 +80,10 @@ test.describe("Offline read persistence (Option C)", () => {
     await page.reload();
     await waitForHydration(page);
     await expect(page.getByRole("button", { name: "Add event" })).toBeVisible();
+
+    // The Chores chunk is lazy-loaded; ensure the SW controls the page so its
+    // precached chunk is served offline (otherwise the import crashes to blank).
+    await waitForServiceWorkerReady(page);
 
     // Offline, navigate to the never-loaded Chores module.
     await context.setOffline(true);
