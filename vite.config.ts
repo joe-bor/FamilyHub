@@ -56,6 +56,13 @@ export default defineConfig(() => {
           globIgnores: ["**/stats.html"],
           navigateFallback: "/index.html",
           navigateFallbackDenylist: [/^\/api/],
+          // Take control of the already-open tab as soon as the SW activates.
+          // The tab that registered the SW is otherwise uncontrolled for the rest
+          // of the session, so a first-session offline navigation to a
+          // not-yet-visited lazy module would miss the precache, hit the network,
+          // and crash the app to a blank page. Pairs with the message-driven
+          // skipWaiting the `prompt` update flow already ships.
+          clientsClaim: true,
           // No runtimeCaching: Nunito is self-hosted via @fontsource/nunito and
           // precached by the glob above; the old Google Fonts CDN rules were dead.
         },
