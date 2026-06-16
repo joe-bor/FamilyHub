@@ -188,6 +188,27 @@ describe("validatePersistedQueryData", () => {
     ).toBe(true);
   });
 
+  it("keeps a family whose member email/avatarUrl are null (backend default)", () => {
+    // The backend returns null (not absent) for an unset email/avatar; pinning
+    // these to string|undefined would drop the whole family on restore.
+    const familyNullContact = {
+      ...family,
+      members: [
+        {
+          id: "m-1",
+          name: "Alice",
+          color: "coral",
+          email: null,
+          avatarUrl: null,
+        },
+      ],
+    };
+
+    expect(
+      validatePersistedQueryData(familyKeys.family(), wrap(familyNullContact)),
+    ).toBe(true);
+  });
+
   it("rejects missing wrapper and unknown query families", () => {
     expect(validatePersistedQueryData(familyKeys.family(), undefined)).toBe(
       false,

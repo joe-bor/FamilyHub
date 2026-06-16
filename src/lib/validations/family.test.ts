@@ -679,5 +679,24 @@ describe("family validations", () => {
         "https://example.com/avatar.jpg",
       );
     });
+
+    it("accepts null email/avatarUrl (backend default) and normalizes to undefined", () => {
+      const dataWithNulls = {
+        ...validFamilyData,
+        members: [
+          {
+            id: "member-1",
+            name: "John",
+            color: "coral",
+            email: null,
+            avatarUrl: null,
+          },
+        ],
+      };
+      const result = validateFamilyData(dataWithNulls);
+      expect(result).not.toBeNull();
+      expect(result?.members[0].email).toBeUndefined();
+      expect(result?.members[0].avatarUrl).toBeUndefined();
+    });
   });
 });
