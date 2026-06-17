@@ -1,5 +1,50 @@
 # Changelog
 
+## [0.3.17](https://github.com/joe-bor/FamilyHub/compare/family-hub-v0.3.16...family-hub-v0.3.17) (2026-06-17)
+
+
+### Features
+
+* **motion:** add ScreenTransition primitive ([c9afb4a](https://github.com/joe-bor/FamilyHub/commit/c9afb4a42c4ff21df662178a49fb6720406a6b25))
+* **motion:** add usePrefersReducedMotion hook ([3b3a0b9](https://github.com/joe-bor/FamilyHub/commit/3b3a0b9e5ac4087fa336b4dd331da7c1ada869f9))
+* **motion:** add usePressable press-feedback primitive ([451c861](https://github.com/joe-bor/FamilyHub/commit/451c861f8321def5e8151541adc2dfe763a26412))
+* **motion:** fade-through on module switch ([27d0ec4](https://github.com/joe-bor/FamilyHub/commit/27d0ec4d0ea1f0da40b92e2b1e21de921aae83a2))
+* **motion:** shared-axis slide for list and recipe detail ([2754dec](https://github.com/joe-bor/FamilyHub/commit/2754decd5f2a3157fdfe12de07a628d068047f93))
+* **offline:** enforce read-only writes and clear cache on logout/401 ([51014b0](https://github.com/joe-bor/FamilyHub/commit/51014b06df3bca13592088ab8d34fa855b938295))
+* **offline:** honest offline banner and empty states for cached data ([09326b6](https://github.com/joe-bor/FamilyHub/commit/09326b683ed6dfa9f131d83d62c913b9e769e216))
+* **offline:** persist read query cache to IndexedDB ([e0f2b7b](https://github.com/joe-bor/FamilyHub/commit/e0f2b7b81bfcdb30310e33a649ffaa810a7f8d7a))
+* **ui:** apply press feedback to Button ([f684286](https://github.com/joe-bor/FamilyHub/commit/f6842869ba1a6941a1f4571e341426c95b3d58e3))
+* **ui:** press feedback on nav, sidebar, and rows ([d7d9cd1](https://github.com/joe-bor/FamilyHub/commit/d7d9cd1990c1ebe97a2052582264f77c3ecb0c11))
+
+
+### Bug Fixes
+
+* **offline:** accept null member email/avatar in persisted family validators ([e0db264](https://github.com/joe-bor/FamilyHub/commit/e0db2640c6461f7cd4285e7c9c4f1194fbe4f177))
+* **offline:** clear in-memory query cache on 401 to prevent cross-account re-leak ([77c2210](https://github.com/joe-bor/FamilyHub/commit/77c2210c3671d283b7aba24d0a7be0c60e66b564))
+* **offline:** drop malformed entries, not whole collections, on restore ([53eb6e7](https://github.com/joe-bor/FamilyHub/commit/53eb6e7b1d3bc5c4f00bbd593f7a423b43177c67))
+* **offline:** make OfflineWriteError an ApiException and surface offline writes in calendar ([911b236](https://github.com/joe-bor/FamilyHub/commit/911b236ff939c1161ddce631ae3bb485cce132f4))
+* **offline:** show offline empty state when a lazy-module chunk fails to load ([1375b5f](https://github.com/joe-bor/FamilyHub/commit/1375b5f561290b09ecd9ffb1dcea63f1a6c8d982))
+* **offline:** strip data: URL recipe images before persisting ([65b4d87](https://github.com/joe-bor/FamilyHub/commit/65b4d876428858ad9ad2192bd707baee3bd15a05))
+* **offline:** tolerate backend enum drift in persisted-response validators ([fb78b8b](https://github.com/joe-bor/FamilyHub/commit/fb78b8b4775bd2bc33603802a56d231dbec3f310))
+* **pwa:** claim clients on activation for first-session offline ([fb1cb52](https://github.com/joe-bor/FamilyHub/commit/fb1cb52e1ce97b0b3d03ddd014e7b5ad3e7a14d7))
+
+
+### Documentation
+
+* **offline:** mark Workbox /api note superseded by Query persistence ([c206324](https://github.com/joe-bor/FamilyHub/commit/c206324284373e064d0397a3381e64755c63dc6f))
+
+
+### Tests
+
+* **calendar:** provide usePressable in event-detail-modal hooks mock ([605637d](https://github.com/joe-bor/FamilyHub/commit/605637d5ff627e1ef6db44e8f56a9f9a60a9472d))
+* **offline:** cover __APP_VERSION__ buster invalidation ([ecccd02](https://github.com/joe-bor/FamilyHub/commit/ecccd02a860f4ca88d62119dc4981f21a313f59d))
+* **offline:** cover first-session and evicted-chunk offline paths ([89a33ea](https://github.com/joe-bor/FamilyHub/commit/89a33eaa5ba488eb66e81f2e9458b16e82ed07ff))
+* **offline:** e2e offline-reads coverage against build + preview ([0eb4e2b](https://github.com/joe-bor/FamilyHub/commit/0eb4e2b84a5963ec647ac8e12e1928a169d6d38d))
+* **offline:** guard the offline-reload test with service worker readiness ([638bff8](https://github.com/joe-bor/FamilyHub/commit/638bff8b57e023ef0a512d8ea56bba03c34e227f))
+* **offline:** poll IndexedDB instead of a fixed wait for the persister flush ([fd5a5d6](https://github.com/joe-bor/FamilyHub/commit/fd5a5d6e87bb7c01242d11a2276bf0f9280821bb))
+* **offline:** post 12-hour times and target the nav button in offline e2e ([44934c6](https://github.com/joe-bor/FamilyHub/commit/44934c6557fcb0f558c4a4d3fd13f23878a43ebf))
+* **offline:** wait for service worker control before going offline ([d652207](https://github.com/joe-bor/FamilyHub/commit/d652207ee58d7da659c65e3f58458711ab6c8995))
+
 ## [0.3.16](https://github.com/joe-bor/FamilyHub/compare/family-hub-v0.3.15...family-hub-v0.3.16) (2026-06-14)
 
 
