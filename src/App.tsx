@@ -8,6 +8,7 @@ import {
   MobileBottomNav,
   NavigationTabs,
   OfflineBanner,
+  ScreenTransition,
   SidebarMenu,
 } from "@/components/shared";
 import { Toaster } from "@/components/ui/toaster";
@@ -166,7 +167,9 @@ export default function FamilyHub() {
         <div className="flex-1 flex min-h-0 overflow-hidden">
           {!isMobile && <NavigationTabs />}
           <main className="flex-1 min-h-0 flex flex-col overflow-hidden">
-            {renderModule(activeModule)}
+            <ScreenTransition token={activeModule} mode="fade">
+              {renderModule(activeModule)}
+            </ScreenTransition>
           </main>
         </div>
 
