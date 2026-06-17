@@ -1,6 +1,7 @@
 import FamilyHub from "./App";
 import { useAppStore } from "./stores";
 import {
+  act,
   render,
   screen,
   seedAuthStore,
@@ -130,5 +131,32 @@ describe("App shell", () => {
     expect(
       screen.queryByRole("navigation", { name: /primary/i }),
     ).not.toBeInTheDocument();
+  });
+
+  it("animates the module container when the active module changes", () => {
+    // Mobile width so Home (null) is valid; reduced-motion OFF so ScreenTransition animates.
+    window.matchMedia = vi.fn().mockImplementation((query: string) => ({
+      matches: query.includes("max-width"),
+      media: query,
+      onchange: null,
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      addListener: vi.fn(),
+      removeListener: vi.fn(),
+      dispatchEvent: vi.fn(),
+    }));
+    const animateMock = vi.fn();
+    (Element.prototype as unknown as { animate: unknown }).animate =
+      animateMock;
+
+    useAppStore.setState({ activeModule: "calendar", isSidebarOpen: false });
+    render(<FamilyHub />);
+
+    // Switch between two eager modules so the container's token changes (no lazy/Suspense).
+    act(() => {
+      useAppStore.getState().setActiveModule(null);
+    });
+
+    expect(animateMock).toHaveBeenCalled();
   });
 });
