@@ -902,6 +902,18 @@ describe("RecipesView", () => {
     expect(importRecipe).toHaveBeenCalledTimes(1);
   });
 
+  it("gives recipe cards press feedback", async () => {
+    seedMockRecipes([testRecipeDetail]);
+    render(<RecipesView />);
+    expect(
+      (
+        await screen.findByRole("article", {
+          name: `Recipe card: ${testRecipeDetail.title}`,
+        })
+      ).className,
+    ).toContain("active:scale-[0.97]");
+  });
+
   it("slides the recipe detail right on open and back-left on close", async () => {
     const animateMock = vi.fn();
     (Element.prototype as unknown as { animate: unknown }).animate =

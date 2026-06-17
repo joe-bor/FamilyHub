@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { MobileSheet } from "@/components/ui/mobile-sheet";
+import { usePressable } from "@/hooks";
 import { cn } from "@/lib/utils";
 import { type ModuleType, useAppStore } from "@/stores";
 
@@ -40,6 +41,7 @@ export function MobileBottomNav() {
   const activeModule = useAppStore((state) => state.activeModule);
   const setActiveModule = useAppStore((state) => state.setActiveModule);
   const [moreOpen, setMoreOpen] = useState(false);
+  const pressable = usePressable();
 
   const overflowActive = overflowModules.some((m) => m.id === activeModule);
 
@@ -67,9 +69,14 @@ export function MobileBottomNav() {
                 key={tab.label}
                 type="button"
                 onClick={() => setActiveModule(tab.id)}
+                onPointerDown={pressable.onPointerDown}
                 aria-label={tab.label}
                 aria-current={isActive ? "page" : undefined}
-                className={cn(tabBase, isActive ? tabActive : tabIdle)}
+                className={cn(
+                  tabBase,
+                  pressable.className,
+                  isActive ? tabActive : tabIdle,
+                )}
               >
                 <Icon className="h-4 w-4" />
                 <span className="whitespace-nowrap leading-3">{tab.label}</span>
@@ -81,9 +88,14 @@ export function MobileBottomNav() {
             <button
               type="button"
               onClick={() => setMoreOpen(true)}
+              onPointerDown={pressable.onPointerDown}
               aria-label="More"
               aria-current={overflowActive ? "page" : undefined}
-              className={cn(tabBase, overflowActive ? tabActive : tabIdle)}
+              className={cn(
+                tabBase,
+                pressable.className,
+                overflowActive ? tabActive : tabIdle,
+              )}
             >
               <MoreHorizontal className="h-4 w-4" />
               <span className="whitespace-nowrap leading-3">More</span>
@@ -107,9 +119,11 @@ export function MobileBottomNav() {
                 key={tab.label}
                 type="button"
                 onClick={() => selectOverflow(tab.id)}
+                onPointerDown={pressable.onPointerDown}
                 aria-current={isActive ? "page" : undefined}
                 className={cn(
                   "flex w-full min-h-11 items-center gap-3 rounded-lg px-3 py-3 text-base font-medium transition-colors",
+                  pressable.className,
                   isActive
                     ? "bg-primary/10 text-primary"
                     : "text-foreground hover:bg-muted",

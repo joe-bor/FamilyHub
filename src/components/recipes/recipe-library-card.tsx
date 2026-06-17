@@ -1,5 +1,6 @@
 import { Heart } from "lucide-react";
 import { useState } from "react";
+import { usePressable } from "@/hooks";
 import { formatRecipeTag } from "@/lib/recipe-tags";
 import type { RecipeSummary } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -13,12 +14,15 @@ export function RecipeLibraryCard({
   recipe,
   onSelect,
 }: RecipeLibraryCardProps) {
+  const pressable = usePressable();
   const [imgFailed, setImgFailed] = useState(false);
   return (
     <article
       aria-label={`Recipe card: ${recipe.title}`}
+      onPointerDown={pressable.onPointerDown}
       className={cn(
         "relative flex w-full flex-row gap-3 overflow-hidden rounded-lg border border-border bg-card p-3 text-left shadow-xs transition-colors md:flex-col md:gap-0 md:p-0",
+        pressable.className,
       )}
     >
       <button
