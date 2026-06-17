@@ -2,6 +2,7 @@ import { Slot } from "@radix-ui/react-slot";
 import { cva, type VariantProps } from "class-variance-authority";
 import type * as React from "react";
 
+import { usePressable } from "@/hooks";
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
@@ -41,17 +42,27 @@ function Button({
   variant,
   size,
   asChild = false,
+  onPointerDown,
   ...props
 }: React.ComponentProps<"button"> &
   VariantProps<typeof buttonVariants> & {
     asChild?: boolean;
   }) {
   const Comp = asChild ? Slot : "button";
+  const pressable = usePressable();
 
   return (
     <Comp
       data-slot="button"
-      className={cn(buttonVariants({ variant, size, className }))}
+      className={cn(
+        buttonVariants({ variant, size }),
+        pressable.className,
+        className,
+      )}
+      onPointerDown={(event) => {
+        pressable.onPointerDown(event);
+        onPointerDown?.(event);
+      }}
       {...props}
     />
   );
