@@ -72,4 +72,11 @@ describe("MobileBottomNav", () => {
       "page",
     );
   });
+
+  it("gives nav tabs press feedback", () => {
+    render(<MobileBottomNav />);
+    expect(
+      screen.getByRole("button", { name: /^calendar$/i }).className,
+    ).toContain("active:scale-[0.97]");
+  });
 });

@@ -454,6 +454,14 @@ describe("ListsView hub", () => {
     ).toBeInTheDocument();
   });
 
+  it("gives list cards press feedback", async () => {
+    seedMockLists([generalList]);
+    render(<ListsView />);
+    expect(
+      (await screen.findByRole("button", { name: /Movie Night/i })).className,
+    ).toContain("active:scale-[0.97]");
+  });
+
   it("slides the detail in from the right when a list opens", async () => {
     const animateMock = vi.fn();
     (Element.prototype as unknown as { animate: unknown }).animate =

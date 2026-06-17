@@ -15,6 +15,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { SideSheet } from "@/components/ui/side-sheet";
+import { usePressable } from "@/hooks";
 import { colorMap } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { useAppStore } from "@/stores";
@@ -42,6 +43,8 @@ export function SidebarMenu() {
       }
     }
   }, [isOpen]);
+
+  const pressable = usePressable();
 
   const menuItems = [
     {
@@ -101,7 +104,11 @@ export function SidebarMenu() {
                     key={member.id}
                     type="button"
                     onClick={() => setSelectedMemberId(member.id)}
-                    className="w-full min-h-11 flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-muted transition-colors"
+                    onPointerDown={pressable.onPointerDown}
+                    className={cn(
+                      "w-full min-h-11 flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-muted transition-colors",
+                      pressable.className,
+                    )}
                   >
                     {member.avatarUrl ? (
                       <img
@@ -145,7 +152,11 @@ export function SidebarMenu() {
                   <button
                     type="button"
                     onClick={item.action}
-                    className="w-full min-h-11 flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium transition-colors text-muted-foreground hover:bg-muted hover:text-foreground"
+                    onPointerDown={pressable.onPointerDown}
+                    className={cn(
+                      "w-full min-h-11 flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium transition-colors text-muted-foreground hover:bg-muted hover:text-foreground",
+                      pressable.className,
+                    )}
                   >
                     <Icon className="h-5 w-5" />
                     {item.label}

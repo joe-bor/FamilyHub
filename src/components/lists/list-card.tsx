@@ -1,4 +1,5 @@
 import { ClipboardList, ListTodo, ShoppingCart } from "lucide-react";
+import { usePressable } from "@/hooks";
 import type { ListKind, ListSummary } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -33,6 +34,7 @@ const kindMeta: Record<
 };
 
 export function ListCard({ list, onOpen }: ListCardProps) {
+  const pressable = usePressable();
   const meta = kindMeta[list.kind];
   const Icon = meta.icon;
   const remainingItems = list.totalItems - list.completedItems;
@@ -49,7 +51,11 @@ export function ListCard({ list, onOpen }: ListCardProps) {
     <button
       type="button"
       onClick={onOpen}
-      className="min-h-32 rounded-lg border border-border bg-card p-4 text-left shadow-sm transition-all hover:border-primary/40 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      onPointerDown={pressable.onPointerDown}
+      className={cn(
+        "min-h-32 rounded-lg border border-border bg-card p-4 text-left shadow-sm transition-all hover:border-primary/40 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+        pressable.className,
+      )}
     >
       <div className="flex items-start justify-between gap-3">
         <div
