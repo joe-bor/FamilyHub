@@ -47,6 +47,9 @@ Element.prototype.setPointerCapture = vi.fn();
 Element.prototype.releasePointerCapture = vi.fn();
 Element.prototype.hasPointerCapture = vi.fn().mockReturnValue(false);
 
+// Mock Web Animations API (used by ScreenTransition; jsdom lacks it)
+Element.prototype.animate = vi.fn();
+
 // =============================================================================
 // Zustand Store Reset
 // =============================================================================

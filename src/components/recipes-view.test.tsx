@@ -902,6 +902,31 @@ describe("RecipesView", () => {
     expect(importRecipe).toHaveBeenCalledTimes(1);
   });
 
+  it("slides the recipe detail right on open and back-left on close", async () => {
+    const animateMock = vi.fn();
+    (Element.prototype as unknown as { animate: unknown }).animate =
+      animateMock;
+    seedMockRecipes([testRecipeDetail]);
+
+    const { user } = renderWithUser(<RecipesView />);
+
+    await user.click(
+      await screen.findByRole("button", {
+        name: `Open recipe: ${testRecipeDetail.title}`,
+      }),
+    );
+    expect(animateMock.mock.calls.at(-1)?.[0][0].transform).toBe(
+      "translateX(22%)",
+    );
+
+    await user.click(
+      await screen.findByRole("button", { name: "Back to recipes" }),
+    );
+    expect(animateMock.mock.calls.at(-1)?.[0][0].transform).toBe(
+      "translateX(-22%)",
+    );
+  });
+
   it("shows an import error without selecting a partial recipe", async () => {
     seedMockRecipes([]);
 
