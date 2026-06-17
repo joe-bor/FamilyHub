@@ -453,4 +453,20 @@ describe("ListsView hub", () => {
       screen.getByRole("button", { name: "Add item" }),
     ).toBeInTheDocument();
   });
+
+  it("slides the detail in from the right when a list opens", async () => {
+    const animateMock = vi.fn();
+    (Element.prototype as unknown as { animate: unknown }).animate =
+      animateMock;
+    seedMockLists([generalList]);
+
+    const { user } = renderWithUser(<ListsView />);
+    await user.click(
+      await screen.findByRole("button", { name: /Movie Night/i }),
+    );
+
+    expect(animateMock.mock.calls.at(-1)?.[0][0].transform).toBe(
+      "translateX(22%)",
+    );
+  });
 });

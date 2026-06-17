@@ -8,7 +8,7 @@ import {
   type RecipeTagFilterOption,
 } from "@/components/recipes/recipe-filter-bar";
 import { RecipeLibraryCard } from "@/components/recipes/recipe-library-card";
-import { OfflineUnavailable } from "@/components/shared";
+import { OfflineUnavailable, ScreenTransition } from "@/components/shared";
 import { Button } from "@/components/ui/button";
 import { useIsMobile } from "@/hooks";
 import { formatRecipeTag } from "@/lib/recipe-tags";
@@ -172,163 +172,169 @@ export function RecipesView() {
           ) : null}
         </div>
 
-        {selectedRecipeId !== null ? (
-          selectedRecipeData ? (
-            <RecipeDetailView
-              recipe={selectedRecipeData}
-              isUpdatingFavorite={updateSelectedRecipe.isPending}
-              onAddToMeals={() => {
-                startMealPlacementFromRecipe({
-                  recipeId: selectedRecipeData.id,
-                  requestedAtWeekStartDate: formatLocalDate(
-                    getWeekStartSunday(new Date()),
-                  ),
-                  source: { kind: "recipes-library" },
-                });
-              }}
-              onBack={() => {
-                setIsEditSheetOpen(false);
-                setSelectedRecipeId(null);
-              }}
-              onEdit={() => setIsEditSheetOpen(true)}
-              onToggleFavorite={() => {
-                updateSelectedRecipe.mutate({
-                  favorite: !selectedRecipeData.favorite,
-                });
-              }}
-            />
-          ) : selectedRecipe.isLoading ? (
-            <p className="text-sm font-medium text-muted-foreground">
-              Loading recipe...
-            </p>
-          ) : selectedRecipe.isError ? (
-            <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-4">
-              <h2 className="text-base font-semibold text-foreground">
-                Recipe could not be loaded
-              </h2>
-              <p className="mt-1 text-sm text-muted-foreground">
-                {selectedRecipe.error instanceof Error
-                  ? selectedRecipe.error.message
-                  : "Try again in a moment."}
+        <ScreenTransition
+          token={selectedRecipeId ?? "__list__"}
+          mode="slide"
+          direction={selectedRecipeId ? "forward" : "back"}
+        >
+          {selectedRecipeId !== null ? (
+            selectedRecipeData ? (
+              <RecipeDetailView
+                recipe={selectedRecipeData}
+                isUpdatingFavorite={updateSelectedRecipe.isPending}
+                onAddToMeals={() => {
+                  startMealPlacementFromRecipe({
+                    recipeId: selectedRecipeData.id,
+                    requestedAtWeekStartDate: formatLocalDate(
+                      getWeekStartSunday(new Date()),
+                    ),
+                    source: { kind: "recipes-library" },
+                  });
+                }}
+                onBack={() => {
+                  setIsEditSheetOpen(false);
+                  setSelectedRecipeId(null);
+                }}
+                onEdit={() => setIsEditSheetOpen(true)}
+                onToggleFavorite={() => {
+                  updateSelectedRecipe.mutate({
+                    favorite: !selectedRecipeData.favorite,
+                  });
+                }}
+              />
+            ) : selectedRecipe.isLoading ? (
+              <p className="text-sm font-medium text-muted-foreground">
+                Loading recipe...
               </p>
-              <div className="mt-3 flex flex-wrap gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setSelectedRecipeId(null)}
-                >
-                  Back to recipes
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  disabled={selectedRecipe.isRefetching}
-                  onClick={() => {
-                    void selectedRecipe.refetch();
-                  }}
-                >
-                  Retry
-                </Button>
-              </div>
-            </div>
-          ) : null
-        ) : isLoading ? (
-          <div className="space-y-3">
-            <p className="text-sm font-medium text-muted-foreground">
-              Loading recipes...
-            </p>
-            <div className="grid gap-3">
-              {Array.from({ length: 3 }, (_, index) => (
-                <div
-                  key={`recipe-loading-${index}`}
-                  className="flex flex-row gap-3 overflow-hidden rounded-lg border border-border bg-card p-3 md:flex-col md:gap-0 md:p-0"
-                >
-                  <div className="size-24 shrink-0 animate-pulse rounded-lg bg-muted md:size-auto md:aspect-[4/3] md:w-full md:rounded-none" />
-                  <div className="flex min-w-0 flex-1 flex-col justify-center space-y-3 md:p-4">
-                    <div className="h-4 w-2/3 animate-pulse rounded bg-muted" />
-                    <div className="h-4 w-1/2 animate-pulse rounded bg-muted" />
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        ) : isError ? (
-          <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-4">
-            <h2 className="text-base font-semibold text-foreground">
-              Recipes could not be loaded
-            </h2>
-            <p className="mt-1 text-sm text-muted-foreground">
-              {error instanceof Error
-                ? error.message
-                : "Try again in a moment."}
-            </p>
-            <Button
-              type="button"
-              variant="outline"
-              className="mt-3"
-              onClick={() => {
-                void refetch();
-              }}
-              disabled={isRefetching}
-            >
-              Retry
-            </Button>
-          </div>
-        ) : !data ? (
-          // Offline + never loaded: paused query, no data and no error.
-          <OfflineUnavailable label="recipes" />
-        ) : (
-          <>
-            <RecipeFilterBar
-              availableTags={availableTags}
-              favoritesOnly={favoritesOnly}
-              onFavoritesOnlyChange={setFavoritesOnly}
-              onSearchChange={setSearchValue}
-              onTagChange={setSelectedTag}
-              searchValue={searchValue}
-              selectedTag={selectedTag}
-            />
-
-            {recipes.length === 0 ? (
-              <div className="rounded-lg border border-dashed border-border bg-card p-6 text-center">
-                <h2 className="text-lg font-semibold text-foreground">
-                  No recipes yet
+            ) : selectedRecipe.isError ? (
+              <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-4">
+                <h2 className="text-base font-semibold text-foreground">
+                  Recipe could not be loaded
                 </h2>
-                <p className="mt-2 text-sm text-muted-foreground">
-                  Add your first recipe to get started.
+                <p className="mt-1 text-sm text-muted-foreground">
+                  {selectedRecipe.error instanceof Error
+                    ? selectedRecipe.error.message
+                    : "Try again in a moment."}
                 </p>
-                <div className="mt-4">
+                <div className="mt-3 flex flex-wrap gap-2">
                   <Button
                     type="button"
-                    onClick={() => setIsCreateSheetOpen(true)}
+                    variant="outline"
+                    onClick={() => setSelectedRecipeId(null)}
                   >
-                    Add your first recipe
+                    Back to recipes
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    disabled={selectedRecipe.isRefetching}
+                    onClick={() => {
+                      void selectedRecipe.refetch();
+                    }}
+                  >
+                    Retry
                   </Button>
                 </div>
               </div>
-            ) : filteredRecipes.length === 0 ? (
-              <div className="rounded-lg border border-dashed border-border bg-card p-6 text-center">
-                <h2 className="text-lg font-semibold text-foreground">
-                  No recipes match those filters
-                </h2>
-                <p className="mt-2 text-sm text-muted-foreground">
-                  Try a different search or clear a filter chip.
-                </p>
-              </div>
-            ) : (
+            ) : null
+          ) : isLoading ? (
+            <div className="space-y-3">
+              <p className="text-sm font-medium text-muted-foreground">
+                Loading recipes...
+              </p>
               <div className="grid gap-3">
-                {filteredRecipes.map((recipe) => (
-                  <div key={recipe.id} className={cn("min-w-0")}>
-                    <RecipeLibraryCard
-                      recipe={recipe}
-                      onSelect={(recipeId) => setSelectedRecipeId(recipeId)}
-                    />
+                {Array.from({ length: 3 }, (_, index) => (
+                  <div
+                    key={`recipe-loading-${index}`}
+                    className="flex flex-row gap-3 overflow-hidden rounded-lg border border-border bg-card p-3 md:flex-col md:gap-0 md:p-0"
+                  >
+                    <div className="size-24 shrink-0 animate-pulse rounded-lg bg-muted md:size-auto md:aspect-[4/3] md:w-full md:rounded-none" />
+                    <div className="flex min-w-0 flex-1 flex-col justify-center space-y-3 md:p-4">
+                      <div className="h-4 w-2/3 animate-pulse rounded bg-muted" />
+                      <div className="h-4 w-1/2 animate-pulse rounded bg-muted" />
+                    </div>
                   </div>
                 ))}
               </div>
-            )}
-          </>
-        )}
+            </div>
+          ) : isError ? (
+            <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-4">
+              <h2 className="text-base font-semibold text-foreground">
+                Recipes could not be loaded
+              </h2>
+              <p className="mt-1 text-sm text-muted-foreground">
+                {error instanceof Error
+                  ? error.message
+                  : "Try again in a moment."}
+              </p>
+              <Button
+                type="button"
+                variant="outline"
+                className="mt-3"
+                onClick={() => {
+                  void refetch();
+                }}
+                disabled={isRefetching}
+              >
+                Retry
+              </Button>
+            </div>
+          ) : !data ? (
+            // Offline + never loaded: paused query, no data and no error.
+            <OfflineUnavailable label="recipes" />
+          ) : (
+            <>
+              <RecipeFilterBar
+                availableTags={availableTags}
+                favoritesOnly={favoritesOnly}
+                onFavoritesOnlyChange={setFavoritesOnly}
+                onSearchChange={setSearchValue}
+                onTagChange={setSelectedTag}
+                searchValue={searchValue}
+                selectedTag={selectedTag}
+              />
+
+              {recipes.length === 0 ? (
+                <div className="rounded-lg border border-dashed border-border bg-card p-6 text-center">
+                  <h2 className="text-lg font-semibold text-foreground">
+                    No recipes yet
+                  </h2>
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    Add your first recipe to get started.
+                  </p>
+                  <div className="mt-4">
+                    <Button
+                      type="button"
+                      onClick={() => setIsCreateSheetOpen(true)}
+                    >
+                      Add your first recipe
+                    </Button>
+                  </div>
+                </div>
+              ) : filteredRecipes.length === 0 ? (
+                <div className="rounded-lg border border-dashed border-border bg-card p-6 text-center">
+                  <h2 className="text-lg font-semibold text-foreground">
+                    No recipes match those filters
+                  </h2>
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    Try a different search or clear a filter chip.
+                  </p>
+                </div>
+              ) : (
+                <div className="grid gap-3">
+                  {filteredRecipes.map((recipe) => (
+                    <div key={recipe.id} className={cn("min-w-0")}>
+                      <RecipeLibraryCard
+                        recipe={recipe}
+                        onSelect={(recipeId) => setSelectedRecipeId(recipeId)}
+                      />
+                    </div>
+                  ))}
+                </div>
+              )}
+            </>
+          )}
+        </ScreenTransition>
 
         <RecipeCreateSheet
           defaultMode={createSheetMode}
