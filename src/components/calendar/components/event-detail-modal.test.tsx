@@ -5,6 +5,8 @@ import { EventDetailModal } from "./event-detail-modal";
 
 vi.mock("@/hooks", () => ({
   useIsMobile: () => false,
+  // Button now calls usePressable(); this fully-mocked barrel must provide it.
+  usePressable: () => ({ className: "", onPointerDown: () => {} }),
 }));
 
 vi.mock("@/api", () => ({
