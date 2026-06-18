@@ -8,7 +8,7 @@ vi.mock("@/lib/pwa", () => ({
 vi.mock("@/components/ui/toaster", () => ({ toast: vi.fn() }));
 
 import { toast } from "@/components/ui/toaster";
-import { isStandalone } from "@/lib/pwa";
+import { isIOS, isStandalone } from "@/lib/pwa";
 import { useAppStore, useBackStack } from "@/stores";
 import { useAndroidBackButton } from "./use-android-back-button";
 
@@ -33,6 +33,7 @@ function popstate() {
 
 beforeEach(() => {
   vi.mocked(isStandalone).mockReturnValue(true);
+  vi.mocked(isIOS).mockReturnValue(false);
   mockCoarsePointer(true);
   useAppStore.setState({ activeModule: null });
   vi.spyOn(window.history, "pushState").mockImplementation(() => {});
@@ -52,6 +53,12 @@ describe("useAndroidBackButton", () => {
 
   it("is a no-op on desktop (no coarse pointer)", () => {
     mockCoarsePointer(false);
+    renderHook(() => useAndroidBackButton(true));
+    expect(window.history.pushState).not.toHaveBeenCalled();
+  });
+
+  it("is a no-op on iOS standalone (even with a coarse pointer)", () => {
+    vi.mocked(isIOS).mockReturnValue(true);
     renderHook(() => useAndroidBackButton(true));
     expect(window.history.pushState).not.toHaveBeenCalled();
   });
