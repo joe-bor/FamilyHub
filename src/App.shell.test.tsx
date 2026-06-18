@@ -134,6 +134,10 @@ describe("App shell", () => {
   });
 
   it("hardware back steps up to Home from a module (Android standalone)", async () => {
+    // setViewportWidth's matchMedia mock returns true for non-dimension queries,
+    // which satisfies the Android back gate (isStandalone + coarse pointer) for
+    // this integration check. The gate's exclusivity (iOS/desktop/disabled
+    // no-ops) is unit-tested in use-android-back-button.test.ts.
     setViewportWidth(768);
     useAppStore.setState({ activeModule: "calendar", isSidebarOpen: false });
 
