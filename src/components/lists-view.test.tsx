@@ -1,5 +1,6 @@
 import { delay, HttpResponse, http } from "msw";
 import type { ListDetail } from "@/lib/types";
+import { useBackStack } from "@/stores";
 import {
   API_BASE,
   seedMockListPreferences,
@@ -8,6 +9,7 @@ import {
   setupMswServer,
 } from "@/test/mocks/server";
 import {
+  act,
   render,
   renderWithUser,
   screen,
@@ -476,5 +478,20 @@ describe("ListsView hub", () => {
     expect(animateMock.mock.calls.at(-1)?.[0][0].transform).toBe(
       "translateX(22%)",
     );
+  });
+
+  it("registers a back handler that closes the open list detail", async () => {
+    seedMockLists([groceryList]);
+    const { user } = renderWithUser(<ListsView />);
+    await user.click(
+      await screen.findByRole("button", { name: /Trader Joe's Run/i }),
+    );
+    expect(useBackStack.getState().stack).toHaveLength(1);
+    act(() => {
+      useBackStack.getState().peek()?.handler();
+    });
+    expect(
+      await screen.findByRole("button", { name: /new list/i }),
+    ).toBeInTheDocument();
   });
 });

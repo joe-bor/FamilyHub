@@ -2,7 +2,7 @@ import { Plus } from "lucide-react";
 import { useState } from "react";
 import { useListPreferences, useLists } from "@/api";
 import { OfflineUnavailable, ScreenTransition } from "@/components/shared";
-import { useIsMobile } from "@/hooks";
+import { useBackHandler, useIsMobile } from "@/hooks";
 import { cn } from "@/lib/utils";
 import { ListCard } from "./lists/list-card";
 import { ListCreateSheet } from "./lists/list-create-sheet";
@@ -15,6 +15,7 @@ export function ListsView() {
   const [createOpen, setCreateOpen] = useState(false);
   const lists = useLists();
   const preferences = useListPreferences();
+  useBackHandler(selectedListId !== null, () => setSelectedListId(null));
 
   const body = (() => {
     if (selectedListId !== null) {
