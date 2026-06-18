@@ -15,7 +15,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { SideSheet } from "@/components/ui/side-sheet";
-import { usePressable } from "@/hooks";
+import { useBackHandler, usePressable } from "@/hooks";
 import { colorMap } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { useAppStore } from "@/stores";
@@ -33,6 +33,7 @@ export function SidebarMenu() {
   const [isPreferencesOpen, setIsPreferencesOpen] = useState(false);
   const [selectedMemberId, setSelectedMemberId] = useState<string | null>(null);
   const [showSignOutConfirm, setShowSignOutConfirm] = useState(false);
+  useBackHandler(showSignOutConfirm, () => setShowSignOutConfirm(false));
 
   useEffect(() => {
     if (isOpen) {

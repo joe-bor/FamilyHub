@@ -21,7 +21,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { toast } from "@/components/ui/toaster";
-import { useIsMobile } from "@/hooks";
+import { useBackHandler, useIsMobile } from "@/hooks";
 import { formatRecurrenceLabel } from "@/lib/recurrence-utils";
 import type { CalendarEvent } from "@/lib/types";
 import { colorMap, getFamilyMember } from "@/lib/types";
@@ -50,6 +50,7 @@ function EventDetailModal({
   const isMobile = useIsMobile();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const familyMembers = useFamilyMembers();
+  useBackHandler(isOpen, onClose);
 
   // Reset confirmation state when modal closes or event changes
   useEffect(() => {

@@ -10,6 +10,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { toast } from "@/components/ui/toaster";
+import { useBackHandler } from "@/hooks";
 
 interface GoogleCalendarPickerModalProps {
   open: boolean;
@@ -29,6 +30,7 @@ export function GoogleCalendarPickerModal({
   const updateCalendars = useUpdateGoogleCalendars();
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const hasSynced = useRef(false);
+  useBackHandler(open, () => onOpenChange(false));
 
   const calendars = calendarsResponse?.data ?? [];
 

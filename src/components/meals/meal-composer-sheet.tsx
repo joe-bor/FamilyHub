@@ -10,6 +10,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { MobileSheet } from "@/components/ui/mobile-sheet";
+import { useBackHandler } from "@/hooks";
 import type {
   MealCollisionMode,
   MealSlot,
@@ -71,6 +72,7 @@ export function MealComposerSheet({
   const [validationError, setValidationError] = useState<string | null>(null);
   const [collisionRequest, setCollisionRequest] =
     useState<UpsertMealSlotRequest | null>(null);
+  useBackHandler(collisionRequest !== null, () => setCollisionRequest(null));
   const recipes = useRecipes();
   const upsertSlot = useUpsertMealSlot({
     onSuccess: () => onOpenChange(false),
