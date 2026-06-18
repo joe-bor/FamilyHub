@@ -1,5 +1,6 @@
 import { type ReactNode, useEffect, useRef, useState } from "react";
 import { Drawer } from "vaul";
+import { useBackHandler } from "@/hooks";
 import { cn } from "@/lib/utils";
 
 const HALF_SNAP = 0.5;
@@ -75,6 +76,8 @@ export function MobileSheet({
     }
     prevOpenRef.current = isOpen;
   }, [isOpen, initialHeight]);
+
+  useBackHandler(isOpen, onClose);
 
   const isExpandable = cycleSnapPoints === HALF_SNAP_POINTS;
   const isExpanded = snap === FULL_SNAP;

@@ -1,5 +1,6 @@
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { type ReactNode, useRef, useState } from "react";
+import { useBackHandler } from "@/hooks";
 import { cn } from "@/lib/utils";
 
 const SWIPE_CLOSE_THRESHOLD = 60; // px of leftward drag before dismiss
@@ -20,6 +21,8 @@ export function SideSheet({
   children,
   className,
 }: SideSheetProps) {
+  useBackHandler(open, () => onOpenChange(false));
+
   const startX = useRef<number | null>(null);
   const startY = useRef<number | null>(null);
   const [dragX, setDragX] = useState(0);
