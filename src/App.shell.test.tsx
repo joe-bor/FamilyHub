@@ -133,6 +133,20 @@ describe("App shell", () => {
     ).not.toBeInTheDocument();
   });
 
+  it("hardware back steps up to Home from a module (Android standalone)", async () => {
+    setViewportWidth(768);
+    useAppStore.setState({ activeModule: "calendar", isSidebarOpen: false });
+
+    render(<FamilyHub />);
+    await screen.findByRole("navigation", { name: /primary/i });
+
+    act(() => {
+      window.dispatchEvent(new PopStateEvent("popstate"));
+    });
+
+    expect(useAppStore.getState().activeModule).toBeNull();
+  });
+
   it("animates the module container when the active module changes", () => {
     // Mobile width so Home (null) is valid; reduced-motion OFF so ScreenTransition animates.
     window.matchMedia = vi.fn().mockImplementation((query: string) => ({
