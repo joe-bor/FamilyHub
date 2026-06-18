@@ -10,7 +10,7 @@ import {
 import { RecipeLibraryCard } from "@/components/recipes/recipe-library-card";
 import { OfflineUnavailable, ScreenTransition } from "@/components/shared";
 import { Button } from "@/components/ui/button";
-import { useIsMobile } from "@/hooks";
+import { useBackHandler, useIsMobile } from "@/hooks";
 import { formatRecipeTag } from "@/lib/recipe-tags";
 import { formatLocalDate, getWeekStartSunday } from "@/lib/time-utils";
 import type { RecipeSummary } from "@/lib/types";
@@ -90,6 +90,7 @@ export function RecipesView() {
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
   const [hasOpenedRecipeDraft, setHasOpenedRecipeDraft] = useState(false);
   const selectedRecipe = useRecipe(selectedRecipeId);
+  useBackHandler(selectedRecipeId !== null, () => setSelectedRecipeId(null));
 
   const recipes = data?.data ?? [];
   const searchQuery = normalizeValue(searchValue);

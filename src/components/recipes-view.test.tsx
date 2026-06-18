@@ -4,6 +4,7 @@ import type {
   CreateRecipeRequest,
   ImportRecipeRequest,
 } from "@/lib/types/recipes";
+import { useBackStack } from "@/stores";
 import { useAppStore } from "@/stores/app-store";
 import {
   importedRecipeDetail,
@@ -16,7 +17,13 @@ import {
   server,
   setupMswServer,
 } from "@/test/mocks/server";
-import { render, renderWithUser, screen, typeAndWait } from "@/test/test-utils";
+import {
+  act,
+  render,
+  renderWithUser,
+  screen,
+  typeAndWait,
+} from "@/test/test-utils";
 import { RecipesView } from "./recipes-view";
 
 describe("RecipesView", () => {
@@ -966,6 +973,23 @@ describe("RecipesView", () => {
     expect(
       screen.queryByRole("heading", { name: importedRecipeDetail.title }),
     ).not.toBeInTheDocument();
+  });
+
+  it("registers a back handler that closes the open recipe detail", async () => {
+    seedMockRecipes([testRecipeDetail]);
+    const { user } = renderWithUser(<RecipesView />);
+    await user.click(
+      await screen.findByRole("button", {
+        name: `Open recipe: ${testRecipeDetail.title}`,
+      }),
+    );
+    expect(useBackStack.getState().stack).toHaveLength(1);
+    act(() => {
+      useBackStack.getState().peek()?.handler();
+    });
+    expect(
+      await screen.findByRole("button", { name: /add recipe/i }),
+    ).toBeInTheDocument();
   });
 
   it("toggles favorite from detail and updates the visible saved state", async () => {
