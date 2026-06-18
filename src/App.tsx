@@ -12,7 +12,11 @@ import {
   SidebarMenu,
 } from "@/components/shared";
 import { Toaster } from "@/components/ui/toaster";
-import { useGoogleAuthReturn, useIsMobile } from "@/hooks";
+import {
+  useAndroidBackButton,
+  useGoogleAuthReturn,
+  useIsMobile,
+} from "@/hooks";
 import {
   type ModuleType,
   useAppStore,
@@ -109,6 +113,7 @@ export default function FamilyHub() {
   const isMobile = useIsMobile();
 
   useGoogleAuthReturn();
+  useAndroidBackButton(isAuthenticated && setupComplete);
 
   // State to toggle between login and onboarding for new users
   const [showOnboarding, setShowOnboarding] = useState(false);
