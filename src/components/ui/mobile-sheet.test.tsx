@@ -1,6 +1,13 @@
 import { useState } from "react";
-import { describe, expect, it } from "vitest";
-import { renderWithUser, screen, waitFor } from "@/test/test-utils";
+import { describe, expect, it, vi } from "vitest";
+import { useBackStack } from "@/stores";
+import {
+  act,
+  render,
+  renderWithUser,
+  screen,
+  waitFor,
+} from "@/test/test-utils";
 import { MobileSheet } from "./mobile-sheet";
 
 function SheetHarness({ children }: { children?: React.ReactNode }) {
@@ -53,5 +60,19 @@ describe("MobileSheet", () => {
     await user.click(screen.getByRole("button", { name: "Open sheet" }));
 
     expect(screen.getByRole("button", { name: "Inside action" })).toHaveFocus();
+  });
+
+  it("registers its close handler on the back-stack while open", () => {
+    const onClose = vi.fn();
+    render(
+      <MobileSheet isOpen onClose={onClose} title="Test sheet">
+        <button type="button">Inside</button>
+      </MobileSheet>,
+    );
+    expect(useBackStack.getState().stack).toHaveLength(1);
+    act(() => {
+      useBackStack.getState().peek()?.handler();
+    });
+    expect(onClose).toHaveBeenCalledTimes(1);
   });
 });

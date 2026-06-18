@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
-import { fireEvent, render, screen } from "@/test/test-utils";
+import { useBackStack } from "@/stores";
+import { act, fireEvent, render, screen } from "@/test/test-utils";
 import { SideSheet } from "./side-sheet";
 
 function renderSheet(onOpenChange = vi.fn()) {
@@ -70,5 +71,16 @@ describe("SideSheet swipe-to-close", () => {
     fireEvent.touchEnd(panel, point(100, 300));
 
     expect(onOpenChange).not.toHaveBeenCalled();
+  });
+});
+
+describe("SideSheet back-handler", () => {
+  it("registers a back handler that closes via onOpenChange(false) while open", () => {
+    const { onOpenChange } = renderSheet();
+    expect(useBackStack.getState().stack).toHaveLength(1);
+    act(() => {
+      useBackStack.getState().peek()?.handler();
+    });
+    expect(onOpenChange).toHaveBeenCalledWith(false);
   });
 });
