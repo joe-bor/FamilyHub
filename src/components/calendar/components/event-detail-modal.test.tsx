@@ -1,9 +1,11 @@
 import { userEvent } from "@testing-library/user-event";
 import type { CalendarEvent } from "@/lib/types";
-import { render, screen } from "@/test/test-utils";
+import { useBackStack } from "@/stores";
+import { act, render, screen } from "@/test/test-utils";
 import { EventDetailModal } from "./event-detail-modal";
 
-vi.mock("@/hooks", () => ({
+vi.mock("@/hooks", async (importActual) => ({
+  ...(await importActual<typeof import("@/hooks")>()),
   useIsMobile: () => false,
   // Button now calls usePressable(); this fully-mocked barrel must provide it.
   usePressable: () => ({ className: "", onPointerDown: () => {} }),
@@ -116,5 +118,14 @@ describe("EventDetailModal", () => {
     await user.click(screen.getByRole("button", { name: /edit/i }));
     expect(mockEdit).toHaveBeenCalled();
     expect(mockToast).not.toHaveBeenCalled();
+  });
+
+  it("registers a back handler that closes the modal", () => {
+    render(<EventDetailModal {...defaultProps} />);
+    expect(useBackStack.getState().stack).toHaveLength(1);
+    act(() => {
+      useBackStack.getState().peek()?.handler();
+    });
+    expect(mockClose).toHaveBeenCalledTimes(1);
   });
 });

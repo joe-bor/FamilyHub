@@ -18,6 +18,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { MobileSheet } from "@/components/ui/mobile-sheet";
+import { useBackHandler } from "@/hooks";
 import type {
   DuplicateMealSlotRequest,
   MealBoard,
@@ -90,6 +91,7 @@ export function MealEditorSheet({
 }: MealEditorSheetProps) {
   const [pendingCollision, setPendingCollision] =
     useState<PendingCollision | null>(null);
+  useBackHandler(pendingCollision !== null, () => setPendingCollision(null));
   const [mover, setMover] = useState<{ kind: "move" | "duplicate" } | null>(
     null,
   );

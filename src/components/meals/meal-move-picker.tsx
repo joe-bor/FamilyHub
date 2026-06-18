@@ -8,6 +8,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { useBackHandler } from "@/hooks";
 import { parseLocalDate } from "@/lib/time-utils";
 import type { MealBoard, MealType } from "@/lib/types";
 import { formatMealType } from "./meal-type-utils";
@@ -48,6 +49,7 @@ export function MealMovePicker({
 }: MealMovePickerProps) {
   const [dayIndex, setDayIndex] = useState((source.dayIndex + 1) % 7);
   const [mealType, setMealType] = useState<MealType>(source.mealType);
+  useBackHandler(open, () => onCancel());
 
   useEffect(() => {
     if (!open) return;

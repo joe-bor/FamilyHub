@@ -25,6 +25,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ResponsiveFormDialog } from "@/components/ui/responsive-form-dialog";
+import { useBackHandler } from "@/hooks";
 import type { FamilyColor, FamilyMember } from "@/lib/types";
 import {
   familyNameSchema,
@@ -58,6 +59,7 @@ export function FamilySettingsModal({
   const [isMemberFormOpen, setIsMemberFormOpen] = useState(false);
   const [editingMember, setEditingMember] = useState<FamilyMember | null>(null);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
+  useBackHandler(showResetConfirm, () => setShowResetConfirm(false));
 
   // Family name form
   const {

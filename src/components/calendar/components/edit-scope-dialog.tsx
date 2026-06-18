@@ -7,6 +7,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { useBackHandler } from "@/hooks";
 
 export type EditScope = "this" | "all";
 
@@ -24,6 +25,7 @@ function EditScopeDialog({
   action,
 }: EditScopeDialogProps) {
   const [scope, setScope] = useState<EditScope>("this");
+  useBackHandler(isOpen, onClose);
 
   useEffect(() => {
     if (isOpen) setScope("this");
