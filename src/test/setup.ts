@@ -58,6 +58,7 @@ Element.prototype.animate = vi.fn();
 import { AUTH_TOKEN_STORAGE_KEY, FAMILY_STORAGE_KEY } from "@/lib/constants";
 import { useAppStore } from "@/stores/app-store";
 import { useAuthStore } from "@/stores/auth-store";
+import { useBackStack } from "@/stores/back-stack-store";
 import { useCalendarStore } from "@/stores/calendar-store";
 import { useFamilyStore } from "@/stores/family-store";
 import { resetTestQueryClient } from "@/test/test-utils";
@@ -103,6 +104,9 @@ function resetAllStores(): void {
     isAuthenticated: false,
   });
   localStorage.removeItem(AUTH_TOKEN_STORAGE_KEY);
+
+  // Reset back stack store
+  useBackStack.setState({ stack: [] });
 }
 
 // =============================================================================
