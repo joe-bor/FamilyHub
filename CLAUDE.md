@@ -77,7 +77,7 @@ See `src/test/test-utils.tsx` for `waitForMemberSelected`, `typeAndWait`, `TEST_
 
 **Optimistic update tests need `gcTime: Infinity`:** The default test `QueryClient` uses `gcTime: 0` — cache is GC'd before assertions. Create a dedicated client for any test asserting cache state after mutations.
 
-**Store auto-reset:** All Zustand stores reset after each test via `src/test/setup.ts`. Use `seedCalendarStore`, `seedFamilyStore`, `seedAuthStore` from `@/test/test-utils` to set up state.
+**Store reset (by name, not generic):** `resetAllStores()` in `src/test/setup.ts` (called from `afterEach`) resets each store explicitly **by name** — `useFamilyStore`, `useCalendarStore`, `useAppStore`, `useAuthStore`. It is NOT generic: a newly added store leaks its state across tests until you add a reset for it there (e.g. `useFoo.setState({ ... })`). Use `seedCalendarStore`, `seedFamilyStore`, `seedAuthStore` from `@/test/test-utils` to set up state.
 
 **E2E helpers** (`e2e/helpers/`): `safeClick`, `waitForDialogReady`, `waitForCalendarReady`, `waitForDialogClosed`, `waitForHydration`, `registerFamily`, `seedBrowserAuth`.
 
