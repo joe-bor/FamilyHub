@@ -12,6 +12,8 @@ export {
   useAuthStore,
   useIsAuthenticated,
 } from "./auth-store";
+// Back Stack Store
+export { type BackHandlerEntry, useBackStack } from "./back-stack-store";
 // Calendar Store
 export {
   useCalendarActions,
