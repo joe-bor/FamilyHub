@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import { toast } from "@/components/ui/toaster";
+import { haptics } from "@/lib/haptics";
 import { isIOS, isStandalone } from "@/lib/pwa";
 import { useAppStore, useBackStack } from "@/stores";
 
@@ -32,6 +33,7 @@ export function useAndroidBackButton(enabled: boolean): void {
       //    itself via its own useBackHandler effect; we only peek.
       const top = useBackStack.getState().peek();
       if (top) {
+        haptics.back();
         top.handler();
         rebuffer();
         return;
@@ -39,6 +41,7 @@ export function useAndroidBackButton(enabled: boolean): void {
       // 2. Module layer (single-root): step up to Home.
       const { activeModule, setActiveModule } = useAppStore.getState();
       if (activeModule !== null) {
+        haptics.back();
         setActiveModule(null);
         rebuffer();
         return;
