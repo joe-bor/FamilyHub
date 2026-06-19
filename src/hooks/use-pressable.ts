@@ -1,5 +1,6 @@
 import type { PointerEvent } from "react";
 import { useCallback } from "react";
+import { haptics } from "@/lib/haptics";
 
 /**
  * Press-feedback visual. The scale is motion-gated (reduced-motion drops it);
@@ -20,7 +21,7 @@ export interface Pressable {
 /** Single integration point for press visuals and (later) haptics. */
 export function usePressable(): Pressable {
   const onPointerDown = useCallback((_event: PointerEvent) => {
-    // Haptic seam: the optional-haptics story adds `useHaptics().tap()` here.
+    haptics.tap();
   }, []);
   return { className: PRESSABLE, onPointerDown };
 }

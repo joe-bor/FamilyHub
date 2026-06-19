@@ -1,5 +1,6 @@
 import { renderHook } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+import { haptics } from "@/lib/haptics";
 import { PRESSABLE, usePressable } from "./use-pressable";
 
 describe("usePressable", () => {
@@ -13,5 +14,11 @@ describe("usePressable", () => {
     const { result } = renderHook(() => usePressable());
     expect(result.current.className).toBe(PRESSABLE);
     expect(() => result.current.onPointerDown({} as never)).not.toThrow();
+  });
+  it("fires haptics.tap() on pointer down", () => {
+    const tap = vi.spyOn(haptics, "tap").mockImplementation(() => {});
+    const { result } = renderHook(() => usePressable());
+    result.current.onPointerDown({} as never);
+    expect(tap).toHaveBeenCalledTimes(1);
   });
 });
