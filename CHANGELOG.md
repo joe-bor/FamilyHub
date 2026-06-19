@@ -1,5 +1,44 @@
 # Changelog
 
+## [0.3.18](https://github.com/joe-bor/FamilyHub/compare/family-hub-v0.3.17...family-hub-v0.3.18) (2026-06-19)
+
+
+### Features
+
+* **back-button:** add useAndroidBackButton popstate interceptor ([6d24f6d](https://github.com/joe-bor/FamilyHub/commit/6d24f6d051a1df35621475afd22820b4db60a616))
+* **back-button:** add useBackHandler registration seam ([1f7b673](https://github.com/joe-bor/FamilyHub/commit/1f7b6737fb2b7c03dce87dbd4d409df8c09e5cb9))
+* **back-button:** add useBackStack dismiss registry ([d8b28c7](https://github.com/joe-bor/FamilyHub/commit/d8b28c7379ff48c6c0cbde3e26e3c7f199fd8ddc))
+* **back-button:** mount the interceptor in the authenticated shell ([31de74f](https://github.com/joe-bor/FamilyHub/commit/31de74f71778914436b119f05610601cb9df825c))
+* **back-button:** register list and recipe detail back handlers ([a65aa5a](https://github.com/joe-bor/FamilyHub/commit/a65aa5a8d1bcb8463bcd50bde66ec89d92d791d3))
+* **back-button:** register raw dialog close handlers ([2d8d45e](https://github.com/joe-bor/FamilyHub/commit/2d8d45edfb6587ed860f8b59902ade8ce7ba9be9))
+* **back-button:** register sheet/side-sheet close handlers ([8dccae2](https://github.com/joe-bor/FamilyHub/commit/8dccae215ae1adfd9f746f736d73875cb5c87fbe))
+* **haptics:** add capability-gated Haptics preferences section ([dc33877](https://github.com/joe-bor/FamilyHub/commit/dc338777ddbc04d2c1bf6a418507d87060ab0900))
+* **haptics:** add centralized haptics helper + canVibrate ([b9136ae](https://github.com/joe-bor/FamilyHub/commit/b9136aec23597e73a0f2a8e3b327db1032a9698b))
+* **haptics:** add useHapticsPreference persisted store ([fd65190](https://github.com/joe-bor/FamilyHub/commit/fd651908e7f463ec7c6552ce4cb10f3513d7b59c))
+* **haptics:** fire back haptic on handled back-dismiss ([b3f4b18](https://github.com/joe-bor/FamilyHub/commit/b3f4b18abd61929e43d7954aca521192e5b8ce63))
+* **haptics:** fire success haptic on list and chore completion ([b503e0b](https://github.com/joe-bor/FamilyHub/commit/b503e0b9c8ffb340a366c141ed3417d235f3c7a0))
+* **haptics:** fire tap haptic from the usePressable seam ([5dbc21f](https://github.com/joe-bor/FamilyHub/commit/5dbc21f708266ac1f686b687a046c233d5b7f295))
+* **ui:** add Switch primitive over @radix-ui/react-switch ([b2fb574](https://github.com/joe-bor/FamilyHub/commit/b2fb57479be76d2af01a95b624e22095266de4e6))
+
+
+### Bug Fixes
+
+* **haptics:** gate canVibrate on a coarse pointer ([8340b76](https://github.com/joe-bor/FamilyHub/commit/8340b76357227f51c33ec74f227aa5e0816ecc2d))
+* **haptics:** type vibration patterns as mutable VibratePattern ([d5150ac](https://github.com/joe-bor/FamilyHub/commit/d5150aca904709361533c04f6bedfa9366668d6f))
+
+
+### Documentation
+
+* clarify Zustand store reset is by-name, not generic ([392e10d](https://github.com/joe-bor/FamilyHub/commit/392e10d8e8525b993cb38e3f358513c310d939e5))
+* **haptics:** drop stale (later) from usePressable comment ([71db2cb](https://github.com/joe-bor/FamilyHub/commit/71db2cbd079f3d7f39b546fadb8fc91e8ea19c0d))
+
+
+### Tests
+
+* **back-button:** cover iOS-standalone gate exclusion ([4c42752](https://github.com/joe-bor/FamilyHub/commit/4c427524f33b31129d2ed27e89e8031d9c3c9bb6))
+* **haptics:** guard the no-double-pulse throttle coupling ([92406e3](https://github.com/joe-bor/FamilyHub/commit/92406e343153f17ce8feeeeb2a787432427ad4c2))
+* **haptics:** reset the fire throttle clock in resetAllStores ([731917a](https://github.com/joe-bor/FamilyHub/commit/731917a11188d157174472e99985d1b79b2b3aa8))
+
 ## [0.3.17](https://github.com/joe-bor/FamilyHub/compare/family-hub-v0.3.16...family-hub-v0.3.17) (2026-06-17)
 
 
