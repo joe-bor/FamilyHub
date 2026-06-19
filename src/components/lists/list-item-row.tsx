@@ -1,4 +1,5 @@
 import { Check, Pencil, Trash2 } from "lucide-react";
+import { haptics } from "@/lib/haptics";
 import type { ListItem } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { Button } from "../ui/button";
@@ -21,7 +22,10 @@ export function ListItemRow({
       <button
         type="button"
         aria-pressed={item.completed}
-        onClick={() => onToggle(!item.completed)}
+        onClick={() => {
+          if (!item.completed) haptics.success(); // completing transition only
+          onToggle(!item.completed);
+        }}
         className="flex min-w-0 flex-1 items-center gap-3 rounded-md px-2 py-2 text-left transition-colors hover:bg-muted/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
       >
         <span
