@@ -138,7 +138,9 @@ export function PreferencesSheet({
           </Button>
         </section>
 
-        {/* Haptics Section (capability-gated: hidden on iOS/desktop) */}
+        {/* Haptics Section — canVibrate() gates on the Vibration API + a coarse
+            (touch) pointer, so this is hidden on iOS Safari and on desktop
+            Chrome/Edge/Firefox (which define a no-op navigator.vibrate). */}
         {hapticsSupported && (
           <section className="space-y-4">
             <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">

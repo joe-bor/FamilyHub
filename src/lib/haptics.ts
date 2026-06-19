@@ -17,11 +17,22 @@ const PATTERNS: Record<HapticCategory, number | number[]> = {
 const THROTTLE_MS = 40; // guard against pointerdown storms / rapid repeats
 let lastFireAt = Number.NEGATIVE_INFINITY;
 
-/** Feature-detect the Vibration API. Android Chrome → true; iOS Safari + desktop → false. */
+/**
+ * Detect a device that can actually deliver haptics: the Vibration API AND a
+ * touch-primary (coarse) pointer. Android Chrome PWA → true; iOS Safari → false
+ * (no `navigator.vibrate`); desktop Chrome/Edge/Firefox → false too, because
+ * they define a *no-op* `navigator.vibrate` on mouse-primary hardware — so the
+ * function's presence alone is not a touch-device gate. Mirrors the
+ * `(pointer: coarse)` check in `use-android-back-button.ts`.
+ */
 export function canVibrate(): boolean {
-  return (
-    typeof navigator !== "undefined" && typeof navigator.vibrate === "function"
-  );
+  if (
+    typeof navigator === "undefined" ||
+    typeof navigator.vibrate !== "function"
+  ) {
+    return false;
+  }
+  return window.matchMedia?.("(pointer: coarse)").matches === true;
 }
 
 function fire(category: keyof typeof PATTERNS): void {

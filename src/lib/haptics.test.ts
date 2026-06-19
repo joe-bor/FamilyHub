@@ -14,10 +14,29 @@ function setVibrate(fn: ((p: number | number[]) => boolean) | undefined) {
   }
 }
 
+/**
+ * Drive `(pointer: coarse)` — a touch-primary device is `true`, a mouse-primary
+ * desktop is `false`. canVibrate() requires this in addition to the Vibration
+ * API, because desktop Chrome/Edge/Firefox define a no-op `navigator.vibrate`.
+ */
+function setCoarsePointer(coarse: boolean) {
+  vi.mocked(window.matchMedia).mockImplementation((query: string) => ({
+    matches: query.includes("coarse") ? coarse : false,
+    media: query,
+    onchange: null,
+    addListener: vi.fn(),
+    removeListener: vi.fn(),
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+    dispatchEvent: vi.fn(),
+  }));
+}
+
 beforeEach(() => {
   vi.useFakeTimers(); // controls the throttle clock (Date.now)
   resetHapticsThrottle(); // reset the module throttle clock between tests
   setVibrate(vi.fn(() => true)); // capable baseline; tests override
+  setCoarsePointer(true); // touch-primary baseline (Android PWA); tests override
   useHapticsPreference.setState({
     enabled: true,
     categories: { taps: true, completions: true, back: true },
@@ -32,6 +51,15 @@ describe("canVibrate", () => {
   it("is true when navigator.vibrate exists, false when absent", () => {
     expect(canVibrate()).toBe(true);
     setVibrate(undefined);
+    expect(canVibrate()).toBe(false);
+  });
+
+  it("is false on a fine-pointer (desktop) device even when navigator.vibrate exists", () => {
+    // Desktop Chrome/Edge/Firefox define a silent no-op navigator.vibrate, so
+    // the function's presence alone is NOT a touch-device gate; the coarse
+    // pointer is what excludes mouse-primary desktops.
+    setCoarsePointer(false);
+    setVibrate(vi.fn(() => true));
     expect(canVibrate()).toBe(false);
   });
 });
