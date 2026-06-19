@@ -248,7 +248,6 @@ function setVibrate(on: boolean) {
       writable: true,
     });
   } else {
-    // biome-ignore lint/performance/noDelete: capability removal for the test
     delete (navigator as { vibrate?: unknown }).vibrate;
   }
 }

@@ -10,7 +10,6 @@ function setVibrate(fn: ((p: number | number[]) => boolean) | undefined) {
       writable: true,
     });
   } else {
-    // biome-ignore lint/performance/noDelete: capability removal for the test
     delete (navigator as { vibrate?: unknown }).vibrate;
   }
 }
