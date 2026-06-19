@@ -12,6 +12,7 @@ import {
 } from "vitest";
 import { type FamilyApiResponse, familyKeys } from "@/api";
 import type { FamilyData, UpdateFamilyRequest } from "@/lib/types";
+import { useHapticsPreference } from "@/stores";
 import {
   API_BASE,
   resetMockFamily,
@@ -236,6 +237,23 @@ describe("PreferencesSheet — roadmap stubs", () => {
 });
 
 // ============================================================================
+// Haptics helpers
+// ============================================================================
+
+function setVibrate(on: boolean) {
+  if (on) {
+    Object.defineProperty(navigator, "vibrate", {
+      value: () => true,
+      configurable: true,
+      writable: true,
+    });
+  } else {
+    // biome-ignore lint/performance/noDelete: capability removal for the test
+    delete (navigator as { vibrate?: unknown }).vibrate;
+  }
+}
+
+// ============================================================================
 // Breakpoints (mirrors responsive-form-dialog-breakpoint.test.tsx)
 // ============================================================================
 
@@ -299,5 +317,43 @@ describe("PreferencesSheet — breakpoints", () => {
       screen.getByRole("dialog", { name: "Preferences" }),
     ).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Cancel" })).toBeNull();
+  });
+});
+
+// ============================================================================
+// Haptics section
+// ============================================================================
+
+describe("PreferencesSheet — Haptics section", () => {
+  afterEach(() => setVibrate(false));
+
+  it("is absent when navigator.vibrate is unsupported", () => {
+    setVibrate(false);
+    const client = seedClient(baseFamily("America/Chicago"));
+    render(<PreferencesSheet open onOpenChange={noop} />, {
+      queryClient: client,
+    });
+    expect(screen.queryByRole("heading", { name: /haptics/i })).toBeNull();
+  });
+
+  it("shows the master switch and reveals sub-switches when enabled", async () => {
+    setVibrate(true);
+    const client = seedClient(baseFamily("America/Chicago"));
+    const { user } = renderWithUser(
+      <PreferencesSheet open onOpenChange={noop} />,
+      { queryClient: client },
+    );
+    expect(
+      screen.getByRole("heading", { name: /haptics/i }),
+    ).toBeInTheDocument();
+    // sub-switches hidden while master is off
+    expect(screen.queryByRole("switch", { name: /taps/i })).toBeNull();
+
+    await user.click(screen.getByRole("switch", { name: /enable haptics/i }));
+    expect(useHapticsPreference.getState().enabled).toBe(true);
+
+    // sub-switches now visible; toggling one writes its category
+    await user.click(screen.getByRole("switch", { name: /taps/i }));
+    expect(useHapticsPreference.getState().categories.taps).toBe(false);
   });
 });
