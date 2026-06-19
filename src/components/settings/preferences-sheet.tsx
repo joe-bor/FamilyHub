@@ -1,10 +1,13 @@
-import { Bell, LocateFixed, Palette, X } from "lucide-react";
+import { Bell, LocateFixed, Palette, Vibrate, X } from "lucide-react";
 import { useState } from "react";
 import { useFamilyData, useUpdateFamily } from "@/api";
 import { Button } from "@/components/ui/button";
 import { FormError } from "@/components/ui/form-error";
 import { Label } from "@/components/ui/label";
 import { ResponsiveFormDialog } from "@/components/ui/responsive-form-dialog";
+import { Switch } from "@/components/ui/switch";
+import { canVibrate } from "@/lib/haptics";
+import { type HapticCategory, useHapticsPreference } from "@/stores";
 
 /**
  * Curated US zones offered in the timezone select. The family's current zone
@@ -25,6 +28,12 @@ const COMING_SOON_ROWS = [
   { icon: Bell, label: "Notifications" },
   { icon: Palette, label: "Appearance" },
 ] as const;
+
+const SUB_TOGGLES: ReadonlyArray<{ key: HapticCategory; label: string }> = [
+  { key: "taps", label: "Taps" },
+  { key: "completions", label: "Completions" },
+  { key: "back", label: "Back" },
+];
 
 interface PreferencesSheetProps {
   open: boolean;
@@ -48,6 +57,12 @@ export function PreferencesSheet({
   const updateFamilyMutation = useUpdateFamily({
     onError: (error) => setSaveError(error.message),
   });
+
+  const hapticsSupported = canVibrate();
+  const hapticsEnabled = useHapticsPreference((s) => s.enabled);
+  const hapticCategories = useHapticsPreference((s) => s.categories);
+  const setHapticsEnabled = useHapticsPreference((s) => s.setEnabled);
+  const setHapticCategory = useHapticsPreference((s) => s.setCategory);
 
   const saveTimezone = (zone: string) => {
     if (!zone || zone === timezone) return;
@@ -122,6 +137,49 @@ export function PreferencesSheet({
             Use this device's timezone
           </Button>
         </section>
+
+        {/* Haptics Section (capability-gated: hidden on iOS/desktop) */}
+        {hapticsSupported && (
+          <section className="space-y-4">
+            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
+              Haptics
+            </h3>
+            <Label
+              htmlFor="haptics-master"
+              className="flex min-h-11 items-center justify-between gap-3 font-medium"
+            >
+              <span className="flex items-center gap-2">
+                <Vibrate className="h-4 w-4" />
+                Enable haptics
+              </span>
+              <Switch
+                id="haptics-master"
+                aria-label="Enable haptics"
+                checked={hapticsEnabled}
+                onCheckedChange={setHapticsEnabled}
+              />
+            </Label>
+            {hapticsEnabled && (
+              <div className="space-y-1 pl-6">
+                {SUB_TOGGLES.map(({ key, label }) => (
+                  <Label
+                    key={key}
+                    htmlFor={`haptics-${key}`}
+                    className="flex min-h-11 items-center justify-between gap-3 font-normal text-muted-foreground"
+                  >
+                    {label}
+                    <Switch
+                      id={`haptics-${key}`}
+                      aria-label={label}
+                      checked={hapticCategories[key]}
+                      onCheckedChange={(on) => setHapticCategory(key, on)}
+                    />
+                  </Label>
+                ))}
+              </div>
+            )}
+          </section>
+        )}
 
         {/* Coming Soon Section */}
         <section className="space-y-4">
