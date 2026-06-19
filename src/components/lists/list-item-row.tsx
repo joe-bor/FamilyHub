@@ -19,6 +19,13 @@ export function ListItemRow({
 }: ListItemRowProps) {
   return (
     <div className="flex min-h-14 items-center gap-2 rounded-lg border border-border bg-card p-2 shadow-sm">
+      {/*
+        Keep this a raw <button>, not <Button>/usePressable: a pressable would
+        fire haptics.tap() on pointerdown, and the shared 40ms throttle would
+        then coalesce away the haptics.success() pulse on click. The single
+        completion pulse depends on no preceding tap on the same gesture.
+        Guarded by the throttle-coupling test in haptics.test.ts.
+      */}
       <button
         type="button"
         aria-pressed={item.completed}
