@@ -241,6 +241,19 @@ describe("PreferencesSheet — roadmap stubs", () => {
 // ============================================================================
 
 function setVibrate(on: boolean) {
+  // A capable device is touch-primary (coarse pointer) AND exposes the
+  // Vibration API — canVibrate() now requires both, so a mouse-primary desktop
+  // (fine pointer, no-op vibrate) hides the section.
+  vi.mocked(window.matchMedia).mockImplementation((query: string) => ({
+    matches: query.includes("coarse") ? on : false,
+    media: query,
+    onchange: null,
+    addListener: vi.fn(),
+    removeListener: vi.fn(),
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+    dispatchEvent: vi.fn(),
+  }));
   if (on) {
     Object.defineProperty(navigator, "vibrate", {
       value: () => true,
