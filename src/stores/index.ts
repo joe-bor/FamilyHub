@@ -27,4 +27,10 @@ export {
 } from "./calendar-store";
 // Family Store - Hydration only (data selectors moved to @/api)
 export { useFamilyStore, useHasHydrated } from "./family-store";
+// Haptics Store
+export {
+  HAPTICS_STORAGE_KEY,
+  type HapticCategory,
+  useHapticsPreference,
+} from "./haptics-store";
 export { type Photo, usePhotosStore } from "./photos-store";
