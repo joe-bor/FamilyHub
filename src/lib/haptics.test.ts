@@ -106,4 +106,17 @@ describe("haptics", () => {
     haptics.tap();
     expect(vibrate).toHaveBeenCalledTimes(2);
   });
+
+  it("coalesces a success that follows a tap on the same gesture — why completion controls must stay raw <button>", () => {
+    // A usePressable control fires tap() on pointerdown, then success() on the
+    // same click — within THROTTLE_MS, so the shared throttle would swallow the
+    // success double-pulse. The list/chore complete controls stay raw <button>
+    // precisely to avoid this; if that ever regresses, this test changes color.
+    const vibrate = navigator.vibrate as ReturnType<typeof vi.fn>;
+    haptics.tap(); // pointerdown → 10
+    haptics.success(); // same gesture, inside the window → suppressed
+    expect(vibrate).toHaveBeenCalledTimes(1);
+    expect(vibrate).toHaveBeenCalledWith(10);
+    expect(vibrate).not.toHaveBeenCalledWith([12, 40, 12]);
+  });
 });

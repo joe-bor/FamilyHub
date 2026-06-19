@@ -33,6 +33,13 @@ export function ChoreRow({
           : "border-transparent bg-card hover:border-border",
       )}
     >
+      {/*
+        Keep this a raw <button>, not <Button>/usePressable (the Archive control
+        beside it uses <Button>): a pressable would fire haptics.tap() on
+        pointerdown, and the shared 40ms throttle would then coalesce away the
+        haptics.success() pulse on click. The single completion pulse depends on
+        no preceding tap. Guarded by the throttle-coupling test in haptics.test.ts.
+      */}
       <button
         type="button"
         aria-label={
