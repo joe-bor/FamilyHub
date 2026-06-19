@@ -1,5 +1,6 @@
 import { Archive, Check, Circle } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { haptics } from "@/lib/haptics";
 import type { ChoreBoardItem } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -39,7 +40,14 @@ export function ChoreRow({
             ? `Mark ${chore.title} incomplete`
             : `Mark ${chore.title} complete`
         }
-        onClick={chore.completed ? onUncomplete : onComplete}
+        onClick={() => {
+          if (chore.completed) {
+            onUncomplete?.();
+          } else {
+            haptics.success();
+            onComplete?.();
+          }
+        }}
         className={cn(
           "flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 transition-colors",
           chore.completed
