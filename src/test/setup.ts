@@ -56,6 +56,7 @@ Element.prototype.animate = vi.fn();
 
 // Import stores directly to reset them (avoid circular deps with test-utils)
 import { AUTH_TOKEN_STORAGE_KEY, FAMILY_STORAGE_KEY } from "@/lib/constants";
+import { resetHapticsThrottle } from "@/lib/haptics";
 import { useAppStore } from "@/stores/app-store";
 import { useAuthStore } from "@/stores/auth-store";
 import { useBackStack } from "@/stores/back-stack-store";
@@ -118,6 +119,9 @@ function resetAllStores(): void {
     categories: { taps: true, completions: true, back: true },
   });
   localStorage.removeItem(HAPTICS_STORAGE_KEY);
+  // Reset the module-level throttle clock so a test that exercises the real
+  // fire() (capable + opted-in) cannot leak a recent lastFireAt into the next.
+  resetHapticsThrottle();
 }
 
 // =============================================================================
