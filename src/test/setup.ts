@@ -61,6 +61,10 @@ import { useAuthStore } from "@/stores/auth-store";
 import { useBackStack } from "@/stores/back-stack-store";
 import { useCalendarStore } from "@/stores/calendar-store";
 import { useFamilyStore } from "@/stores/family-store";
+import {
+  HAPTICS_STORAGE_KEY,
+  useHapticsPreference,
+} from "@/stores/haptics-store";
 import { resetTestQueryClient } from "@/test/test-utils";
 
 /**
@@ -107,6 +111,13 @@ function resetAllStores(): void {
 
   // Reset back stack store
   useBackStack.setState({ stack: [] });
+
+  // Reset haptics preference store
+  useHapticsPreference.setState({
+    enabled: false,
+    categories: { taps: true, completions: true, back: true },
+  });
+  localStorage.removeItem(HAPTICS_STORAGE_KEY);
 }
 
 // =============================================================================
