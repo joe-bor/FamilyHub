@@ -8,6 +8,7 @@ vi.mock("@/lib/pwa", () => ({
 vi.mock("@/components/ui/toaster", () => ({ toast: vi.fn() }));
 
 import { toast } from "@/components/ui/toaster";
+import { haptics } from "@/lib/haptics";
 import { isIOS, isStandalone } from "@/lib/pwa";
 import { useAppStore, useBackStack } from "@/stores";
 import { useAndroidBackButton } from "./use-android-back-button";
@@ -114,5 +115,29 @@ describe("useAndroidBackButton", () => {
     expect(toast).toHaveBeenCalledTimes(2);
     expect(window.history.back).not.toHaveBeenCalled();
     vi.useRealTimers();
+  });
+
+  it("fires haptics.back() when dismissing the top overlay", () => {
+    const back = vi.spyOn(haptics, "back").mockImplementation(() => {});
+    useBackStack.getState().register(vi.fn());
+    renderHook(() => useAndroidBackButton(true));
+    popstate();
+    expect(back).toHaveBeenCalledTimes(1);
+  });
+
+  it("fires haptics.back() when stepping up to Home", () => {
+    const back = vi.spyOn(haptics, "back").mockImplementation(() => {});
+    useAppStore.setState({ activeModule: "lists" });
+    renderHook(() => useAndroidBackButton(true));
+    popstate();
+    expect(back).toHaveBeenCalledTimes(1);
+  });
+
+  it("does NOT fire haptics.back() on the exit-hint branch (Home root)", () => {
+    const back = vi.spyOn(haptics, "back").mockImplementation(() => {});
+    useAppStore.setState({ activeModule: null });
+    renderHook(() => useAndroidBackButton(true));
+    popstate(); // first press at Home → hint toast, not a dismiss
+    expect(back).not.toHaveBeenCalled();
   });
 });
