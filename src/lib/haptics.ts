@@ -1,11 +1,18 @@
-import { useHapticsPreference } from "@/stores/haptics-store";
+import {
+  type HapticCategory,
+  useHapticsPreference,
+} from "@/stores/haptics-store";
 
-/** Short, subtle patterns (ms). Single pulses for tap/back; a brief double for success. */
-const PATTERNS = {
+/**
+ * Short, subtle patterns (ms). Single pulses for tap/back; a brief double for
+ * success. Typed as `number | number[]` (not `as const`) so each value is
+ * assignable to `navigator.vibrate`'s mutable `VibratePattern`.
+ */
+const PATTERNS: Record<HapticCategory, number | number[]> = {
   taps: 10,
   completions: [12, 40, 12],
   back: 8,
-} as const;
+};
 
 const THROTTLE_MS = 40; // guard against pointerdown storms / rapid repeats
 let lastFireAt = Number.NEGATIVE_INFINITY;
