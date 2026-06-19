@@ -18,7 +18,7 @@ export interface Pressable {
   onPointerDown: (event: PointerEvent) => void;
 }
 
-/** Single integration point for press visuals and (later) haptics. */
+/** Single integration point for press visuals and haptics. */
 export function usePressable(): Pressable {
   const onPointerDown = useCallback((_event: PointerEvent) => {
     haptics.tap();
