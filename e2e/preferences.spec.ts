@@ -2,6 +2,7 @@ import { expect, test } from "@playwright/test";
 import { registerFamily, seedBrowserAuth } from "./helpers/api-helpers";
 import {
   clearStorage,
+  readPersistedQueryData,
   safeClick,
   waitForHydration,
   waitForSheetSettled,
@@ -69,7 +70,24 @@ test.describe("Preferences sheet", () => {
     const family = await familyResponse.json();
     expect(family.data.timezone).toBe("America/New_York");
 
-    // Survives a full reload.
+    // Survives a full reload. The reload rehydrates the family query from the
+    // offline read cache (IndexedDB), which takes precedence over useFamily's
+    // localStorage initialData seed; its 5-minute staleTime then suppresses a
+    // corrective refetch. Wait for the new zone to be durable there first,
+    // otherwise the reload can resurface the stale pre-change zone (flaky).
+    await expect
+      .poll(
+        async () =>
+          (
+            await readPersistedQueryData<{ data?: { timezone?: string } }>(
+              page,
+              ["family", "data"], // familyKeys.family()
+            )
+          )?.data?.timezone,
+        { timeout: 10000 },
+      )
+      .toBe("America/New_York");
+
     await page.reload();
     await waitForHydration(page);
     const reopened = await openPreferences(page);
