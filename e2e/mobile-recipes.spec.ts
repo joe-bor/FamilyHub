@@ -4,6 +4,7 @@ import {
   clearStorage,
   safeClick,
   waitForHydration,
+  waitForSheetSettled,
 } from "./helpers/test-helpers";
 
 test.describe("Mobile Recipes", () => {
@@ -35,7 +36,7 @@ test.describe("Mobile Recipes", () => {
     const nav = page.getByRole("navigation", { name: /primary/i });
     await safeClick(nav.getByRole("button", { name: "More" }));
     const moreSheet = page.getByRole("dialog", { name: "More" });
-    await expect(moreSheet).toBeVisible();
+    await waitForSheetSettled(moreSheet);
     await safeClick(moreSheet.getByRole("button", { name: "Recipes" }));
     await expect(moreSheet).toBeHidden();
 
@@ -48,11 +49,11 @@ test.describe("Mobile Recipes", () => {
 
     await page.getByRole("button", { name: "Add recipe" }).click();
     const addDialog = page.getByRole("dialog", { name: "Add Recipe" });
-    await expect(addDialog).toBeVisible();
+    await waitForSheetSettled(addDialog);
     await addDialog.getByRole("button", { name: "Create manually" }).click();
 
     const createDialog = page.getByRole("dialog", { name: "Create Recipe" });
-    await expect(createDialog).toBeVisible();
+    await waitForSheetSettled(createDialog);
     await createDialog.getByLabel("Title").fill("Sunday Pancakes");
     await createDialog
       .getByRole("textbox", { name: "Ingredient 1" })
@@ -102,13 +103,13 @@ test.describe("Mobile Recipes", () => {
     await page.getByLabel("Search recipes").clear();
     await page.getByRole("button", { name: "Add recipe" }).click();
     const secondAddDialog = page.getByRole("dialog", { name: "Add Recipe" });
-    await expect(secondAddDialog).toBeVisible();
+    await waitForSheetSettled(secondAddDialog);
     await secondAddDialog
       .getByRole("button", { name: "Import from URL" })
       .click();
 
     const importDialog = page.getByRole("dialog", { name: "Import Recipe" });
-    await expect(importDialog).toBeVisible();
+    await waitForSheetSettled(importDialog);
     await importDialog.getByLabel("Recipe URL").fill("not-a-url");
     await importDialog.getByRole("button", { name: "Import recipe" }).click();
     await expect(importDialog.getByText("Enter a valid URL")).toBeVisible();
