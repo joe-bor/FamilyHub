@@ -6,6 +6,7 @@ import {
   switchCalendarView,
   waitForCalendarReady,
   waitForHydration,
+  waitForSheetSettled,
 } from "./helpers/test-helpers";
 
 test.describe("Mobile Bottom Navigation", () => {
@@ -63,7 +64,7 @@ test.describe("Mobile Bottom Navigation", () => {
 
     await nav.getByRole("button", { name: "More" }).click();
     const moreSheet = page.getByRole("dialog", { name: "More" });
-    await expect(moreSheet).toBeVisible();
+    await waitForSheetSettled(moreSheet);
     await moreSheet.getByRole("button", { name: "Meals" }).click();
     await expect(moreSheet).toBeHidden();
     await expect(

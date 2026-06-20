@@ -4,6 +4,7 @@ import {
   clearStorage,
   safeClick,
   waitForHydration,
+  waitForSheetSettled,
 } from "./helpers/test-helpers";
 
 test.describe("Mobile Meals", () => {
@@ -32,7 +33,7 @@ test.describe("Mobile Meals", () => {
     const nav = page.getByRole("navigation", { name: /primary/i });
     await safeClick(nav.getByRole("button", { name: "More" }));
     const mealsMoreSheet = page.getByRole("dialog", { name: "More" });
-    await expect(mealsMoreSheet).toBeVisible();
+    await waitForSheetSettled(mealsMoreSheet);
     await safeClick(mealsMoreSheet.getByRole("button", { name: "Meals" }));
     await expect(mealsMoreSheet).toBeHidden();
 
@@ -44,7 +45,7 @@ test.describe("Mobile Meals", () => {
     );
 
     const quickMealSheet = page.getByRole("dialog", { name: "Plan Dinner" });
-    await expect(quickMealSheet).toBeVisible();
+    await waitForSheetSettled(quickMealSheet);
     await quickMealSheet.getByLabel("Meal name").fill("Leftovers");
     await quickMealSheet
       .getByRole("button", { name: "Create quick meal" })
@@ -57,7 +58,7 @@ test.describe("Mobile Meals", () => {
 
     await safeClick(nav.getByRole("button", { name: "More" }));
     const recipesMoreSheet = page.getByRole("dialog", { name: "More" });
-    await expect(recipesMoreSheet).toBeVisible();
+    await waitForSheetSettled(recipesMoreSheet);
     await safeClick(recipesMoreSheet.getByRole("button", { name: "Recipes" }));
     await expect(recipesMoreSheet).toBeHidden();
     await expect(
@@ -66,7 +67,7 @@ test.describe("Mobile Meals", () => {
 
     await page.getByRole("button", { name: "Add recipe" }).click();
     const addRecipeSheet = page.getByRole("dialog", { name: "Add Recipe" });
-    await expect(addRecipeSheet).toBeVisible();
+    await waitForSheetSettled(addRecipeSheet);
     await addRecipeSheet
       .getByRole("button", { name: "Create manually" })
       .click();
@@ -74,7 +75,7 @@ test.describe("Mobile Meals", () => {
     const createRecipeSheet = page.getByRole("dialog", {
       name: "Create Recipe",
     });
-    await expect(createRecipeSheet).toBeVisible();
+    await waitForSheetSettled(createRecipeSheet);
     await createRecipeSheet.getByLabel("Title").fill("Sunday Pancakes");
     await createRecipeSheet
       .getByRole("textbox", { name: "Ingredient 1" })
@@ -106,7 +107,7 @@ test.describe("Mobile Meals", () => {
       page.getByRole("button", { name: "Add recipe to lunch" }).first(),
     );
     const recipeMealSheet = page.getByRole("dialog", { name: "Plan Lunch" });
-    await expect(recipeMealSheet).toBeVisible();
+    await waitForSheetSettled(recipeMealSheet);
     await recipeMealSheet
       .getByRole("button", { name: "Add recipe to slot" })
       .click();

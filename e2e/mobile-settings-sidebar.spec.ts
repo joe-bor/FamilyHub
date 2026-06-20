@@ -4,6 +4,7 @@ import {
   clearStorage,
   safeClick,
   waitForHydration,
+  waitForSheetSettled,
 } from "./helpers/test-helpers";
 
 test.describe("Mobile menu + More overflow", () => {
@@ -33,7 +34,7 @@ test.describe("Mobile menu + More overflow", () => {
     await safeClick(nav.getByRole("button", { name: /^more$/i }));
 
     const moreSheet = page.getByRole("dialog", { name: /more/i });
-    await expect(moreSheet).toBeVisible();
+    await waitForSheetSettled(moreSheet);
 
     await safeClick(moreSheet.getByRole("button", { name: /^recipes$/i }));
 
