@@ -144,6 +144,81 @@ export async function waitForOfflineCachePersisted(
 }
 
 /**
+ * Read the dehydrated data for a single query from the persisted offline read
+ * cache (IndexedDB), or undefined if the cache, store, key, or query is absent.
+ *
+ * Lets a test gate a reload on a specific value becoming durable. On reload the
+ * query cache rehydrates from this IndexedDB snapshot *before* useFamily's
+ * localStorage `initialData` seed can apply, and useFamily's 5-minute staleTime
+ * then suppresses the corrective background refetch — so reloading before a
+ * just-written value is persisted here resurfaces the stale pre-change snapshot.
+ */
+export async function readPersistedQueryData<T = unknown>(
+  page: Page,
+  queryKey: readonly unknown[],
+): Promise<T | undefined> {
+  return page.evaluate(
+    ({ dbName, storeName, key, targetKey }) =>
+      new Promise<T | undefined>((resolve) => {
+        if (!indexedDB.databases) {
+          resolve(undefined);
+          return;
+        }
+        indexedDB
+          .databases()
+          .then((dbs) => {
+            if (!dbs.some((d) => d.name === dbName)) {
+              resolve(undefined);
+              return;
+            }
+            const req = indexedDB.open(dbName);
+            req.onerror = () => resolve(undefined);
+            req.onsuccess = () => {
+              const db = req.result;
+              if (!db.objectStoreNames.contains(storeName)) {
+                db.close();
+                resolve(undefined);
+                return;
+              }
+              const getReq = db
+                .transaction(storeName, "readonly")
+                .objectStore(storeName)
+                .get(key);
+              getReq.onsuccess = () => {
+                const client = getReq.result as
+                  | {
+                      clientState?: {
+                        queries?: Array<{
+                          queryKey?: unknown;
+                          state?: { data?: unknown };
+                        }>;
+                      };
+                    }
+                  | undefined;
+                const match = client?.clientState?.queries?.find(
+                  (q) => JSON.stringify(q.queryKey) === targetKey,
+                );
+                resolve(match?.state?.data as T | undefined);
+                db.close();
+              };
+              getReq.onerror = () => {
+                resolve(undefined);
+                db.close();
+              };
+            };
+          })
+          .catch(() => resolve(undefined));
+      }),
+    {
+      dbName: OFFLINE_CACHE_DB_NAME,
+      storeName: OFFLINE_CACHE_STORE_NAME,
+      key: OFFLINE_CACHE_KEY,
+      targetKey: JSON.stringify(queryKey),
+    },
+  );
+}
+
+/**
  * Create default test members for seeding
  */
 export function createTestMembers(): FamilyMember[] {
