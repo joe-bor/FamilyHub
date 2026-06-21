@@ -136,3 +136,84 @@ export function diffSnapshots(
 
   return out;
 }
+
+export function mergeLog(
+  log: ActivityItem[],
+  deltas: ActivityItem[],
+): ActivityItem[] {
+  const byKey = new Map(log.map((i) => [i.storeKey, i]));
+  for (const d of deltas) {
+    const existing = byKey.get(d.storeKey);
+    if (!existing) {
+      byKey.set(d.storeKey, d);
+      continue;
+    }
+    if (d.kind === "removed") {
+      // An add then a remove within the window net-cancels — no lingering row
+      // (spec §4.4 / §9 AC). Otherwise the removal wins.
+      if (existing.kind === "added") {
+        byKey.delete(d.storeKey);
+        continue;
+      }
+      byKey.set(d.storeKey, {
+        ...d,
+        kind: "removed",
+        detectedAt: Math.max(existing.detectedAt, d.detectedAt),
+      });
+      continue;
+    }
+    // d is added/edited: a prior "added" stays "added"; otherwise take the delta's kind.
+    // (A prior "removed" re-appearing is emitted by diffSnapshots as "added", so this resolves to "added".)
+    const kind = existing.kind === "added" ? "added" : d.kind;
+    byKey.set(d.storeKey, {
+      ...d,
+      kind,
+      detectedAt: Math.max(existing.detectedAt, d.detectedAt),
+    });
+  }
+  return [...byKey.values()];
+}
+
+export function reconcileLog(
+  log: ActivityItem[],
+  freshKeys: Set<string>,
+  window?: { start: string; end: string },
+): ActivityItem[] {
+  const out: ActivityItem[] = [];
+  for (const i of log) {
+    if (freshKeys.has(i.storeKey)) {
+      out.push(i);
+      continue;
+    }
+    // Absent from `fresh`. A calendar entry whose date is OUTSIDE the current query
+    // window merely aged out of the fetch — it was NOT deleted. Preserve it as-is
+    // (do not drop an `added`, do not demote an `edited`) until normal 48h pruning.
+    // Without this, the window-aware diff's suppression is undone here (§4.4).
+    if (
+      window &&
+      i.module === "calendar" &&
+      i.date &&
+      (i.date < window.start || i.date > window.end)
+    ) {
+      out.push(i);
+      continue;
+    }
+    if (i.kind === "added") {
+      // genuinely absent within the window → drop the phantom
+    } else if (i.kind === "edited") {
+      out.push({ ...i, kind: "removed" });
+    } else {
+      out.push(i); // already removed
+    }
+  }
+  return out;
+}
+
+export function pruneLog(
+  log: ActivityItem[],
+  now: number,
+  maxAgeMs: number,
+): ActivityItem[] {
+  // Inclusive boundary: an entry exactly maxAgeMs old is kept (drops only when strictly older).
+  return log.filter((i) => now - i.detectedAt <= maxAgeMs);
+}
