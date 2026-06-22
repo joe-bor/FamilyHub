@@ -1,4 +1,5 @@
 import { AUTH_TOKEN_STORAGE_KEY, FAMILY_STORAGE_KEY } from "@/lib/constants";
+import { clearHomeActivity } from "@/lib/home-activity/store";
 import { clearOfflineReadCache } from "@/lib/offline/persister";
 import { queryClient } from "@/providers/query-client";
 import {
@@ -69,6 +70,9 @@ export async function handleUnauthorized(): Promise<void> {
 
   // Clear the persisted offline read cache (never rejects).
   await clearOfflineReadCache();
+
+  // Clear the per-device home-activity store + markers (never rejects).
+  await clearHomeActivity();
 
   // Only reload if a token existed (session expiry).
   // Prevents an infinite reload loop on first-visit 401s.
