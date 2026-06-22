@@ -31,6 +31,8 @@ interface AppState {
   isSidebarOpen: boolean;
   mealPlacementDraft: MealPlacementDraft | null;
   recipeCreationDraft: RecipeCreationDraft | null;
+  listDetailIntent: string | null;
+  calendarFocusDate: string | null;
 
   // Actions
   setActiveModule: (module: ModuleType | null) => void;
@@ -41,6 +43,10 @@ interface AppState {
   openSidebar: () => void;
   closeSidebar: () => void;
   toggleSidebar: () => void;
+  openListDetail: (listId: string) => void;
+  consumeListDetailIntent: () => string | null;
+  focusCalendarDate: (date: string) => void;
+  consumeCalendarFocusDate: () => string | null;
 }
 
 export const useAppStore = create<AppState>((set, get) => ({
@@ -49,6 +55,8 @@ export const useAppStore = create<AppState>((set, get) => ({
   isSidebarOpen: false,
   mealPlacementDraft: null,
   recipeCreationDraft: null,
+  listDetailIntent: null,
+  calendarFocusDate: null,
 
   // Actions
   setActiveModule: (module) => set({ activeModule: module }),
@@ -70,4 +78,18 @@ export const useAppStore = create<AppState>((set, get) => ({
   closeSidebar: () => set({ isSidebarOpen: false }),
   toggleSidebar: () =>
     set((state) => ({ isSidebarOpen: !state.isSidebarOpen })),
+  openListDetail: (listId) =>
+    set({ listDetailIntent: listId, activeModule: "lists" }),
+  consumeListDetailIntent: () => {
+    const v = get().listDetailIntent;
+    set({ listDetailIntent: null });
+    return v;
+  },
+  focusCalendarDate: (date) =>
+    set({ calendarFocusDate: date, activeModule: "calendar" }),
+  consumeCalendarFocusDate: () => {
+    const v = get().calendarFocusDate;
+    set({ calendarFocusDate: null });
+    return v;
+  },
 }));

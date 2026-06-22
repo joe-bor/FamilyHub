@@ -39,10 +39,15 @@ import { toast } from "@/components/ui/toaster";
 import { useIsMobile } from "@/hooks";
 import { isOfflineWriteError } from "@/lib/offline/read-only-guard";
 import { buildRRule } from "@/lib/recurrence-utils";
-import { format24hTo12h, formatLocalDate } from "@/lib/time-utils";
+import {
+  format24hTo12h,
+  formatLocalDate,
+  parseLocalDate,
+} from "@/lib/time-utils";
 import type { CalendarEvent, CreateEventRequest } from "@/lib/types";
 import type { EventFormData } from "@/lib/validations";
 import {
+  useAppStore,
   useCalendarActions,
   useCalendarState,
   useCalendarStore,
@@ -125,6 +130,14 @@ export function CalendarModule() {
     openAddEventModal,
     closeAddEventModal,
   } = useCalendarActions();
+
+  const consumeCalendarFocusDate = useAppStore(
+    (s) => s.consumeCalendarFocusDate,
+  );
+  useEffect(() => {
+    const date = consumeCalendarFocusDate();
+    if (date) setDate(parseLocalDate(date));
+  }, [consumeCalendarFocusDate, setDate]);
 
   // Family data for mobile views
   const members = useFamilyMembers();

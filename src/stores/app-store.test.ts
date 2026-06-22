@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 import { type MealType, type ModuleType, useAppStore } from "./app-store";
 
 describe("AppStore", () => {
@@ -130,6 +130,30 @@ describe("AppStore", () => {
 
       expect(useAppStore.getState().activeModule).toBe("chores");
       expect(useAppStore.getState().isSidebarOpen).toBe(true);
+    });
+  });
+
+  describe("navigation intents", () => {
+    beforeEach(() => {
+      useAppStore.setState({
+        listDetailIntent: null,
+        calendarFocusDate: null,
+        activeModule: null,
+      });
+    });
+    it("openListDetail sets the intent + switches to lists, and consume returns then clears it", () => {
+      useAppStore.getState().openListDetail("l1");
+      expect(useAppStore.getState().activeModule).toBe("lists");
+      expect(useAppStore.getState().consumeListDetailIntent()).toBe("l1");
+      expect(useAppStore.getState().consumeListDetailIntent()).toBeNull();
+    });
+    it("focusCalendarDate sets the date + switches to calendar, and consume returns then clears it", () => {
+      useAppStore.getState().focusCalendarDate("2026-07-15");
+      expect(useAppStore.getState().activeModule).toBe("calendar");
+      expect(useAppStore.getState().consumeCalendarFocusDate()).toBe(
+        "2026-07-15",
+      );
+      expect(useAppStore.getState().consumeCalendarFocusDate()).toBeNull();
     });
   });
 
