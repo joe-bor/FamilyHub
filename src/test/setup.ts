@@ -101,6 +101,8 @@ function resetAllStores(): void {
     isSidebarOpen: false,
     mealPlacementDraft: null,
     recipeCreationDraft: null,
+    listDetailIntent: null,
+    calendarFocusDate: null,
   });
 
   // Reset auth store

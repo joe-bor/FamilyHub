@@ -1,9 +1,10 @@
 import { Plus } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useListPreferences, useLists } from "@/api";
 import { OfflineUnavailable, ScreenTransition } from "@/components/shared";
 import { useBackHandler, useIsMobile } from "@/hooks";
 import { cn } from "@/lib/utils";
+import { useAppStore } from "@/stores";
 import { ListCard } from "./lists/list-card";
 import { ListCreateSheet } from "./lists/list-create-sheet";
 import { ListDetailView } from "./lists/list-detail-view";
@@ -13,6 +14,11 @@ export function ListsView() {
   const isMobile = useIsMobile();
   const [selectedListId, setSelectedListId] = useState<string | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
+  const consumeListDetailIntent = useAppStore((s) => s.consumeListDetailIntent);
+  useEffect(() => {
+    const id = consumeListDetailIntent();
+    if (id) setSelectedListId(id);
+  }, [consumeListDetailIntent]);
   const lists = useLists();
   const preferences = useListPreferences();
   useBackHandler(selectedListId !== null, () => setSelectedListId(null));

@@ -261,4 +261,20 @@ describe("HomeDashboard", () => {
       screen.getByRole("button", { name: /april 25th, 2026/i }),
     ).toBeInTheDocument();
   });
+
+  it("renders the activity feed region on mobile", async () => {
+    setViewportWidth(768);
+    render(<HomeDashboard nowOverride={new Date(2026, 5, 21, 12)} />);
+    expect(
+      await screen.findByText(/Since you last opened/i),
+    ).toBeInTheDocument();
+  });
+
+  it("does NOT mount the feed/state-line on desktop", () => {
+    setViewportWidth(1024);
+    render(<HomeDashboard nowOverride={new Date(2026, 5, 21, 12)} />);
+    expect(
+      screen.queryByText(/Since you last opened/i),
+    ).not.toBeInTheDocument();
+  });
 });

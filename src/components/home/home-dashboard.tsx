@@ -3,6 +3,7 @@ import {
   useCreateEvent,
   useDeleteEvent,
   useDeleteInstance,
+  useFamilyMemberMap,
   useFamilyMembers,
   useFamilyName,
   useUpdateEvent,
@@ -15,24 +16,36 @@ import {
   EventDetailModal,
   EventFormModal,
 } from "@/components/calendar";
+import { useIsMobile } from "@/hooks";
+import { resolveFeedSelection } from "@/lib/home-activity/navigation";
+import type { FeedRow } from "@/lib/home-activity/types";
 import { buildRRule } from "@/lib/recurrence-utils";
 import { format24hTo12h, formatLocalDate, getEventKey } from "@/lib/time-utils";
-import type { CreateEventRequest } from "@/lib/types";
+import {
+  type CalendarEvent,
+  type CreateEventRequest,
+  colorMap,
+} from "@/lib/types";
 import type { EventFormData } from "@/lib/validations";
 import {
+  useAppStore,
   useCalendarActions,
   useCalendarState,
   useCalendarStore,
   useEditModalState,
   useEventDetailState,
 } from "@/stores";
+import { ActivityFeed } from "./components/activity-feed";
 import { ComingUp } from "./components/coming-up";
 import { DashboardHeader } from "./components/dashboard-header";
 import { HeroCard } from "./components/hero-card";
 import { MemberChipRow } from "./components/member-chip-row";
+import { StateLine } from "./components/state-line";
 import { TodayList } from "./components/today-list";
+import { useActivityFeed } from "./hooks/use-activity-feed";
 import { useDashboardEvents } from "./hooks/use-dashboard-events";
 import { useDashboardNow } from "./hooks/use-hero-state";
+import { useStateLine } from "./hooks/use-state-line";
 import { deriveHeroState } from "./lib/hero-state";
 
 function getParentId(event: {
@@ -66,7 +79,50 @@ function LoadingDashboard() {
   );
 }
 
+function StateLineSection({ now }: { now: Date }) {
+  const { choresRemaining, dinnerTitle } = useStateLine({ now });
+  return (
+    <StateLine choresRemaining={choresRemaining} dinnerTitle={dinnerTitle} />
+  );
+}
+
+function ActivityFeedSection({
+  now,
+  inWindowEvents,
+  onOpenEvent,
+}: {
+  now: Date;
+  inWindowEvents: CalendarEvent[];
+  onOpenEvent: (e: CalendarEvent) => void;
+}) {
+  const { feed, meaningfulOpenId } = useActivityFeed({
+    nowProvider: () => now.getTime(),
+  });
+  const memberMap = useFamilyMemberMap();
+  const handleSelect = (row: FeedRow) => {
+    const sel = resolveFeedSelection(row, inWindowEvents);
+    const store = useAppStore.getState();
+    if (sel.type === "open-event") onOpenEvent(sel.event);
+    else if (sel.type === "open-list") store.openListDetail(sel.listId);
+    else if (sel.type === "focus-calendar") store.focusCalendarDate(sel.date);
+    else store.setActiveModule(sel.module);
+  };
+  const memberColorOf = (id: string | undefined) => {
+    const member = id ? memberMap.get(id) : undefined;
+    return member ? colorMap[member.color]?.hex : undefined;
+  };
+  return (
+    <ActivityFeed
+      feed={feed}
+      onSelectRow={handleSelect}
+      memberColorOf={memberColorOf}
+      meaningfulOpenId={meaningfulOpenId}
+    />
+  );
+}
+
 export function HomeDashboard({ nowOverride }: { nowOverride?: Date } = {}) {
+  const isMobile = useIsMobile();
   const familyName = useFamilyName();
   const members = useFamilyMembers();
   const liveNow = useDashboardNow();
@@ -297,6 +353,7 @@ export function HomeDashboard({ nowOverride }: { nowOverride?: Date } = {}) {
             now={now}
             onTap={heroEvent ? () => handleEventClick(heroEvent) : undefined}
           />
+          {isMobile && <StateLineSection now={now} />}
           <TodayList
             currentDate={now}
             events={today}
@@ -310,6 +367,13 @@ export function HomeDashboard({ nowOverride }: { nowOverride?: Date } = {}) {
             members={members}
             onSelect={handleEventClick}
           />
+          {isMobile && (
+            <ActivityFeedSection
+              now={now}
+              inWindowEvents={[...today, ...comingUp]}
+              onOpenEvent={handleEventClick}
+            />
+          )}
         </>
       )}
 
