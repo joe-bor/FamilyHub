@@ -9,6 +9,7 @@ import {
   vi,
 } from "vitest";
 import { AUTH_TOKEN_STORAGE_KEY, FAMILY_STORAGE_KEY } from "@/lib/constants";
+import * as activityStore from "@/lib/home-activity/store";
 import * as offlinePersister from "@/lib/offline/persister";
 import { queryClient } from "@/providers/query-client";
 import { server } from "@/test/mocks/server";
@@ -176,5 +177,28 @@ describe("handleUnauthorized (401 session cleanup)", () => {
 
     expect(clearSpy).toHaveBeenCalledTimes(1);
     expect(reload).not.toHaveBeenCalled();
+  });
+
+  it("clears persisted home activity (store + markers) before the 401 reload", async () => {
+    const offlineSpy = vi
+      .spyOn(offlinePersister, "clearOfflineReadCache")
+      .mockResolvedValue(undefined);
+    const activitySpy = vi
+      .spyOn(activityStore, "clearHomeActivity")
+      .mockResolvedValue(undefined);
+    const reload = vi.fn();
+    Object.defineProperty(window, "location", {
+      configurable: true,
+      value: { ...originalLocation, reload },
+    });
+    localStorage.setItem(AUTH_TOKEN_STORAGE_KEY, "token-123"); // token present → real session expiry → reloads
+    await handleUnauthorized();
+    expect(activitySpy).toHaveBeenCalled();
+    expect(offlineSpy.mock.invocationCallOrder[0]).toBeLessThan(
+      activitySpy.mock.invocationCallOrder[0],
+    );
+    expect(activitySpy.mock.invocationCallOrder[0]).toBeLessThan(
+      reload.mock.invocationCallOrder[0],
+    );
   });
 });

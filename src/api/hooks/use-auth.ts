@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { ApiException } from "@/api/client";
 import { authService } from "@/api/services";
 import { AUTH_TOKEN_STORAGE_KEY, FAMILY_STORAGE_KEY } from "@/lib/constants";
+import { clearHomeActivity } from "@/lib/home-activity/store";
 import { clearOfflineReadCache } from "@/lib/offline/persister";
 import type {
   FamilyApiResponse,
@@ -216,6 +217,9 @@ export function useLogout() {
 
     // Clear the persisted offline read cache (never rejects).
     await clearOfflineReadCache();
+
+    // Clear the per-device home-activity store + markers (never rejects).
+    await clearHomeActivity();
 
     // Force page reload to reset all state
     window.location.reload();

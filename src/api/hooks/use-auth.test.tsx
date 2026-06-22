@@ -2,6 +2,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { renderHook } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import * as activityStore from "@/lib/home-activity/store";
 import * as offlinePersister from "@/lib/offline/persister";
 import { useLogout } from "./use-auth";
 
@@ -61,6 +62,31 @@ describe("useLogout", () => {
     // Must be awaited BEFORE the reload to prevent cross-account leakage on
     // shared devices.
     expect(clearSpy.mock.invocationCallOrder[0]).toBeLessThan(
+      reload.mock.invocationCallOrder[0],
+    );
+  });
+
+  it("clears persisted home activity (store + markers) before the logout reload", async () => {
+    const offlineSpy = vi
+      .spyOn(offlinePersister, "clearOfflineReadCache")
+      .mockResolvedValue(undefined);
+    const activitySpy = vi
+      .spyOn(activityStore, "clearHomeActivity")
+      .mockResolvedValue(undefined);
+    const reload = vi.fn();
+    Object.defineProperty(window, "location", {
+      configurable: true,
+      value: { ...originalLocation, reload },
+    });
+    const { result } = renderHook(() => useLogout(), {
+      wrapper: createWrapper(),
+    });
+    await result.current();
+    expect(activitySpy).toHaveBeenCalled();
+    expect(offlineSpy.mock.invocationCallOrder[0]).toBeLessThan(
+      activitySpy.mock.invocationCallOrder[0],
+    );
+    expect(activitySpy.mock.invocationCallOrder[0]).toBeLessThan(
       reload.mock.invocationCallOrder[0],
     );
   });
