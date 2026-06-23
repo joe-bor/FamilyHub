@@ -368,6 +368,11 @@ export function HomeDashboard({ nowOverride }: { nowOverride?: Date } = {}) {
             onSelect={handleEventClick}
           />
           {isMobile && (
+            // `inWindowEvents` is the directly-openable 3-day dashboard set
+            // (`useDashboardEvents`), NOT the feed's 28-day detection window. The
+            // dashboard never fetches full CalendarEvent objects past 3 days, so a
+            // feed row 4–28 days out can't open an event sheet — `resolveFeedSelection`
+            // intentionally falls through to focusing that day instead.
             <ActivityFeedSection
               now={now}
               inWindowEvents={[...today, ...comingUp]}
