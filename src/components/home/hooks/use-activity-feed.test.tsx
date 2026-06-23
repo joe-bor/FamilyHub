@@ -306,6 +306,41 @@ describe("useActivityFeed — orchestration", () => {
     await waitFor(() => expect(completed).toEqual([1, 2])); // mutex preserved order despite the slow save
     expect(state?.snapshot["lists:l1"]?.totalItems).toBe(5); // newest state is final, not overwritten
   });
+
+  it("records hiddenAt when the document becomes hidden", async () => {
+    querySettled = true;
+    events = [];
+    lists = [];
+    const io = makeMemoryIo();
+    renderHook(() => useActivityFeed({ io, nowProvider: () => 7777 }), {
+      wrapper,
+    });
+    // let the cold-start cycle settle so the listener is registered
+    await waitFor(() => expect(io.loadState).toHaveBeenCalled());
+
+    const original = Object.getOwnPropertyDescriptor(
+      document,
+      "visibilityState",
+    );
+    try {
+      Object.defineProperty(document, "visibilityState", {
+        configurable: true,
+        get: () => "hidden",
+      });
+      document.dispatchEvent(new Event("visibilitychange"));
+      // hide branch is synchronous: io.setHiddenAt(now()) → 7777
+      expect(io.getHiddenAt()).toBe(7777);
+    } finally {
+      if (original) {
+        Object.defineProperty(document, "visibilityState", original);
+      } else {
+        Object.defineProperty(document, "visibilityState", {
+          configurable: true,
+          get: () => "visible",
+        });
+      }
+    }
+  });
 });
 
 // minimal in-memory IO double for the hook's injected dependencies
