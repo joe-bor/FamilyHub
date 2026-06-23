@@ -165,6 +165,11 @@ test.describe("Mobile Home Dashboard", () => {
 
     await nav.getByRole("button", { name: "Home" }).click();
     await expect(page).toHaveURL(/\/$/);
-    await expect(page.getByText("Bob homework")).toBeVisible();
+    // Target the agenda entry specifically: the event title now also appears in
+    // the "Since you last opened" activity feed (a just-added event surfaces as a
+    // calendar change), so a bare getByText("Bob homework") is no longer unique.
+    await expect(
+      page.getByRole("button", { name: /today: bob homework details/i }),
+    ).toBeVisible();
   });
 });
