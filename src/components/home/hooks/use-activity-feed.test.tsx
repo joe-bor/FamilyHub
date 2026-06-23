@@ -217,7 +217,7 @@ describe("useActivityFeed — orchestration", () => {
     events = [];
     lists = [];
     const io = makeMemoryIo();
-    const { result, rerender } = renderHook(
+    const { result } = renderHook(
       () => useActivityFeed({ io, nowProvider: () => 1000 }),
       { wrapper },
     );
@@ -249,20 +249,60 @@ describe("useActivityFeed — orchestration", () => {
     expect(listsRefetch).toHaveBeenCalledTimes(1);
     expect(io.loadState).toHaveBeenCalledTimes(1); // detection is blocked on BOTH refetches
     releaseRefetch();
-    await waitFor(() => expect(io.loadState).toHaveBeenCalledTimes(2));
+    // The visible cycle loads + diffs the REFETCHED arrays directly (threaded in via
+    // the refetch return), so the change surfaces in this open cycle — no extra
+    // render needed. Surfacing it can also kick a harmless follow-up auto cycle, so
+    // assert "at least twice" rather than an exact loadState count.
+    await waitFor(() =>
+      expect(result.current.feed.groups[0]?.summary).toContain("Refetched"),
+    );
+    expect(io.loadState.mock.calls.length).toBeGreaterThanOrEqual(2);
+    // Both refetches resolved BEFORE the visible cycle's loadState (the 2nd call).
     expect(eventsRefetch.mock.invocationCallOrder[0]).toBeLessThan(
       io.loadState.mock.invocationCallOrder[1],
     );
     expect(listsRefetch.mock.invocationCallOrder[0]).toBeLessThan(
       io.loadState.mock.invocationCallOrder[1],
     );
+  });
 
-    // The mock query hooks expose the refetched arrays on the next observer render,
-    // matching TanStack Query's post-refetch notification.
-    rerender();
+  it("diffs the REFETCHED data in the visible cycle, not the pre-refetch closure", async () => {
+    // Regression guard for the divider off-by-one: the visibility handler awaits
+    // refetch but the hook has not re-rendered, so a `detect("visible")` that read
+    // the closure would diff STALE data — finding nothing, yet advancing lastSeen —
+    // and the change would only surface (stamped LATER) on a follow-up auto cycle,
+    // reading as "new" for an extra meaningful open. The fix threads the refetch
+    // result into the cycle. Here the visible cycle is deliberately NON-meaningful
+    // (never hidden, same day), so there is NO meaningfulOpenId bump and therefore
+    // NO follow-up re-render/auto cycle — the change can ONLY appear if the visible
+    // cycle itself diffed the refetched arrays.
+    querySettled = true;
+    events = [];
+    lists = [];
+    const io = makeMemoryIo();
+    const { result } = renderHook(
+      () => useActivityFeed({ io, nowProvider: () => 1000 }),
+      { wrapper },
+    );
+    await waitFor(() => expect(io.loadState).toHaveBeenCalled());
+    // A change lands on the server after cold start; only refetch can see it.
+    lists = [
+      {
+        id: "l1",
+        name: "Refetched",
+        kind: "to-do",
+        totalItems: 1,
+        completedItems: 0,
+      },
+    ];
+    // jsdom visibilityState defaults to "visible" → the listener takes the visible
+    // branch. No rerender() — the refetch return value is the only fresh source.
+    document.dispatchEvent(new Event("visibilitychange"));
     await waitFor(() =>
       expect(result.current.feed.groups[0]?.summary).toContain("Refetched"),
     );
+    // Stamped at THIS open's ts (1000), so it will not re-flag on the next open.
+    expect(result.current.feed.groups[0]?.newest).toBe(1000);
   });
 
   it("serializes writes: a slow earlier save cannot overwrite a newer cycle", async () => {

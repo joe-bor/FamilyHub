@@ -59,6 +59,13 @@ const EMPTY_FEED: Feed = { groups: [], dividerAfter: -1, overflow: 0 };
 const EMPTY_EVENTS: CalendarEvent[] = [];
 const EMPTY_LISTS: ListSummary[] = [];
 
+/** Freshly-refetched arrays threaded into a return-to-visible cycle so it diffs the
+ * refreshed data directly, rather than the pre-refetch render's closure. */
+interface FreshData {
+  events: CalendarEvent[];
+  lists: ListSummary[];
+}
+
 /** Overlap of the previous and current detection windows (yyyy-MM-dd strings). */
 function overlapOf(prev: EventWindow, curr: EventWindow): EventWindow {
   return {
@@ -157,9 +164,15 @@ export function useActivityFeed({
   }, []);
 
   // One cycle's critical section. Serialized by `queueRef`, so no other cycle's
-  // load/save can interleave with this one.
+  // load/save can interleave with this one. `override` carries the just-refetched
+  // arrays for a return-to-visible cycle: the visibility handler `await`s the
+  // refetch, but the hook has not re-rendered yet, so the closure's `events`/`lists`
+  // are still pre-refetch. Diffing those would surface nothing while still advancing
+  // `lastSeen`, leaving the real change to be stamped LATER by the follow-up auto
+  // cycle — reading as "new" for an extra open. Threading the refetch result in
+  // makes the open diff fresh data (spec §4: "refetch … then detect").
   const runCycle = useCallback(
-    async (trigger: "auto" | "visible") => {
+    async (trigger: "auto" | "visible", override?: FreshData) => {
       const prior = await io.loadState();
 
       // Gate: never diff partial data. Render whatever is persisted and wait.
@@ -173,7 +186,10 @@ export function useActivityFeed({
       }
 
       const ts = now();
-      const fresh = buildSnapshot(events, lists);
+      const fresh = buildSnapshot(
+        override?.events ?? events,
+        override?.lists ?? lists,
+      );
 
       // First run / long absence → reseed silently (no "added" dump).
       if (!prior || ts - prior.snapshotSavedAt > STALE_RESEED_MS) {
@@ -234,8 +250,8 @@ export function useActivityFeed({
   // gen-skip): cycles are cheap in-memory diffs, and a meaningful-open cycle must
   // never be skipped because a data-change cycle queued right after it.
   const detect = useCallback(
-    (trigger: "auto" | "visible") => {
-      const run = queueRef.current.then(() => runCycle(trigger));
+    (trigger: "auto" | "visible", override?: FreshData) => {
+      const run = queueRef.current.then(() => runCycle(trigger, override));
       queueRef.current = run.catch(() => {}); // keep the chain alive across errors
       return run;
     },
@@ -245,9 +261,20 @@ export function useActivityFeed({
   // Stable handles for the visibility listener so it never re-registers on data change.
   const detectRef = useRef(detect);
   detectRef.current = detect;
-  const refetchRef = useRef<() => Promise<void>>(async () => {});
+  // Returns the refreshed arrays so the return-to-visible cycle can diff them
+  // directly (the hook has not re-rendered post-refetch, so the closure is stale).
+  // Null when either refetch yielded no data — the cycle then falls back to the
+  // closure rather than diffing a half-refreshed pair.
+  const refetchRef = useRef<() => Promise<FreshData | null>>(async () => null);
   refetchRef.current = async () => {
-    await Promise.all([eventsQuery.refetch(), listsQuery.refetch()]);
+    const [e, l] = await Promise.all([
+      eventsQuery.refetch(),
+      listsQuery.refetch(),
+    ]);
+    const freshEvents = e.data?.data;
+    const freshLists = l.data?.data;
+    if (!freshEvents || !freshLists) return null;
+    return { events: freshEvents, lists: freshLists };
   };
 
   // Cold-start + data-change cycles. `detect` changes identity when events/lists/
@@ -263,12 +290,14 @@ export function useActivityFeed({
       if (document.visibilityState === "hidden") {
         io.setHiddenAt(now());
       } else {
-        // Refetch both sources so the NEXT data-change cycle diffs fresh data.
-        // The refreshed arrays surface on the following render (TanStack notifies
-        // the observer); this "visible" cycle still diffs the pre-refetch snapshot,
-        // which matches the plan's freshness model.
-        await refetchRef.current();
-        void detectRef.current("visible");
+        // Refetch both sources, THEN diff the refreshed arrays in this same open
+        // cycle (threaded in via `override`). The hook has not re-rendered yet, so
+        // the closure is still pre-refetch — diffing it would surface nothing while
+        // advancing `lastSeen`, leaving the change to be stamped later and read as
+        // "new" for an extra open. Passing the refetch result keeps the open's diff
+        // and its `lastSeen` advance on the same data (spec §4).
+        const fresh = await refetchRef.current();
+        void detectRef.current("visible", fresh ?? undefined);
       }
     }
     document.addEventListener("visibilitychange", onVisibility);
