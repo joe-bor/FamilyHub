@@ -85,6 +85,25 @@ describe("useActivityFeed", () => {
     expect(result.current.feed.groups).toHaveLength(0);
     expect(io.saveState).not.toHaveBeenCalled();
   });
+
+  it("exposes the unfiltered source events for deep-link resolution", async () => {
+    querySettled = true;
+    events = [
+      {
+        id: "e1",
+        title: "Dentist",
+        date: new Date(2026, 5, 23),
+      } as CalendarEvent,
+    ];
+    lists = [];
+    const io = makeMemoryIo();
+    const { result } = renderHook(
+      () => useActivityFeed({ io, nowProvider: () => 1000 }),
+      { wrapper },
+    );
+    await waitFor(() => expect(result.current.events).toHaveLength(1));
+    expect(result.current.events[0].id).toBe("e1");
+  });
 });
 
 describe("useActivityFeed — orchestration", () => {

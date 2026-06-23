@@ -304,5 +304,7 @@ export function useActivityFeed({
     return () => document.removeEventListener("visibilitychange", onVisibility);
   }, [io, now]);
 
-  return { feed, meaningfulOpenId };
+  // `events` is the unfiltered 28-day source the feed is built from; the dashboard
+  // narrows it to the openable horizon (selectOpenableEvents) for deep-linking.
+  return { feed, meaningfulOpenId, events };
 }

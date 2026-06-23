@@ -17,7 +17,10 @@ import {
   EventFormModal,
 } from "@/components/calendar";
 import { useIsMobile } from "@/hooks";
-import { resolveFeedSelection } from "@/lib/home-activity/navigation";
+import {
+  resolveFeedSelection,
+  selectOpenableEvents,
+} from "@/lib/home-activity/navigation";
 import type { FeedRow } from "@/lib/home-activity/types";
 import { buildRRule } from "@/lib/recurrence-utils";
 import { format24hTo12h, formatLocalDate, getEventKey } from "@/lib/time-utils";
@@ -88,17 +91,22 @@ function StateLineSection({ now }: { now: Date }) {
 
 function ActivityFeedSection({
   now,
-  inWindowEvents,
   onOpenEvent,
 }: {
   now: Date;
-  inWindowEvents: CalendarEvent[];
   onOpenEvent: (e: CalendarEvent) => void;
 }) {
-  const { feed, meaningfulOpenId } = useActivityFeed({
+  const { feed, meaningfulOpenId, events } = useActivityFeed({
     nowProvider: () => now.getTime(),
   });
   const memberMap = useFamilyMemberMap();
+  // The feed is family-wide, so deep-links resolve against the unfiltered openable
+  // set — NOT the member-filtered dashboard agenda, which would downgrade other
+  // members' in-window rows to date-focus when a member is focused (M1).
+  const inWindowEvents = useMemo(
+    () => selectOpenableEvents(events, now),
+    [events, now],
+  );
   const handleSelect = (row: FeedRow) => {
     const sel = resolveFeedSelection(row, inWindowEvents);
     const store = useAppStore.getState();
@@ -368,16 +376,7 @@ export function HomeDashboard({ nowOverride }: { nowOverride?: Date } = {}) {
             onSelect={handleEventClick}
           />
           {isMobile && (
-            // `inWindowEvents` is the directly-openable 3-day dashboard set
-            // (`useDashboardEvents`), NOT the feed's 28-day detection window. The
-            // dashboard never fetches full CalendarEvent objects past 3 days, so a
-            // feed row 4–28 days out can't open an event sheet — `resolveFeedSelection`
-            // intentionally falls through to focusing that day instead.
-            <ActivityFeedSection
-              now={now}
-              inWindowEvents={[...today, ...comingUp]}
-              onOpenEvent={handleEventClick}
-            />
+            <ActivityFeedSection now={now} onOpenEvent={handleEventClick} />
           )}
         </>
       )}
