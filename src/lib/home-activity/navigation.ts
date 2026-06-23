@@ -1,6 +1,29 @@
-import { getEventKey } from "@/lib/time-utils";
+import { addDays } from "date-fns";
+import { formatLocalDate, getEventKey } from "@/lib/time-utils";
 import type { CalendarEvent } from "@/lib/types";
+import { OPENABLE_WINDOW_DAYS } from "./constants";
 import type { FeedRow } from "./types";
+
+/**
+ * The family-wide set of events whose detail sheet a feed row may open directly:
+ * those falling within the openable horizon (today..today+OPENABLE_WINDOW_DAYS).
+ *
+ * This is intentionally NOT the dashboard agenda's member-filtered set: the
+ * activity feed is family-wide, so deep-linking an in-window row must succeed for
+ * any member's event regardless of which member is focused on Home (M1). Events
+ * outside the horizon fall through to focusing their day in resolveFeedSelection.
+ */
+export function selectOpenableEvents(
+  events: CalendarEvent[],
+  now: Date,
+): CalendarEvent[] {
+  const start = formatLocalDate(now);
+  const end = formatLocalDate(addDays(now, OPENABLE_WINDOW_DAYS));
+  return events.filter((e) => {
+    const date = formatLocalDate(e.date);
+    return date >= start && date <= end;
+  });
+}
 
 export type FeedSelection =
   | { type: "open-event"; event: CalendarEvent }

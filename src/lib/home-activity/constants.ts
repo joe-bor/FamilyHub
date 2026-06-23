@@ -4,6 +4,10 @@ export const STALE_RESEED_MS = ACTIVITY_WINDOW_MS; // away longer than the windo
 export const FEED_ENTRY_CAP = 20; // max top-level entries (calendar group counts as one) — bounds length
 export const CALENDAR_SUBROW_CAP = 10; // max sub-rows inside the expanded calendar group
 export const FEED_EVENT_WINDOW_DAYS = 28; // calendar detection window
+// Openable horizon for deep-linking a feed calendar row to its detail sheet:
+// today + the next 2 days (a 3-day inclusive window, matching the dashboard
+// agenda's "today + coming up"). Rows beyond it focus the day instead.
+export const OPENABLE_WINDOW_DAYS = 2;
 export const LAST_SEEN_KEY = "family-hub-activity-last-seen";
 export const HIDDEN_AT_KEY = "family-hub-activity-hidden-at";
 
