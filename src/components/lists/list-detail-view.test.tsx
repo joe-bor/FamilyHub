@@ -132,9 +132,10 @@ describe("ListDetailView options placement", () => {
 
     it("shows an Add item FAB and removes the header Add item button", async () => {
       renderDetail();
-      expect(
-        await screen.findByRole("button", { name: "Add item" }),
-      ).toBeVisible();
+      const addItem = await screen.findByRole("button", { name: "Add item" });
+      // On mobile, "Add item" is the floating action button (fixed-positioned),
+      // not the header-card button — this distinguishes the FAB from the old one.
+      expect(addItem).toHaveClass("fixed");
       // The options control remains available on mobile.
       expect(
         screen.getByRole("button", { name: "List options" }),
@@ -165,6 +166,8 @@ describe("ListDetailView options placement", () => {
         name: "Add item",
       });
       expect(addItem).toHaveLength(1); // header button only, no separate FAB
+      // Desktop keeps the inline header button, never the floating action button.
+      expect(addItem[0]).not.toHaveClass("fixed");
     });
   });
 });
