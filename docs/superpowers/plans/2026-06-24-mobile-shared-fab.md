@@ -288,7 +288,7 @@ vi.mock("@/hooks", async (importOriginal) => {
 });
 ```
 
-Ensure `beforeEach` resets `viewport.isMobile = false;` (add a `beforeEach` if none exists in the relevant `describe`). Then add a new describe:
+**Critical:** add `viewport.isMobile = false;` to the file's **existing top-level `beforeEach`** (the one inside `describe("ListsView hub")`, ~line 123). The global `afterEach` uses `vi.clearAllMocks()`, which does NOT reset a `vi.mock` factory closure over a hoisted object — so without a top-level reset, a mobile test setting `viewport.isMobile = true` leaks into later desktop tests and breaks them. Then add a new describe:
 
 ```tsx
 describe("ListsView create action placement", () => {
@@ -752,7 +752,11 @@ vi.mock("@/hooks", async (importOriginal) => {
 });
 ```
 
-Ensure `viewport.isMobile = false;` is reset in `beforeEach`. Add a describe:
+**Critical (two fixes to the existing file):**
+1. Add `waitFor` to the existing `@/test/test-utils` import — the new tests below use it and the file does not currently import it (compile error otherwise).
+2. Add `viewport.isMobile = false;` to the file's **existing top-level `beforeEach`** (inside `describe("RecipesView")`, ~line 33, alongside the current `vi.restoreAllMocks()`). The global `afterEach` uses `vi.clearAllMocks()`, which does NOT reset a `vi.mock` factory closure — so a mobile test setting `viewport.isMobile = true` would leak into the ~50 existing desktop tests and break them.
+
+Then add a describe:
 
 ```tsx
 describe("RecipesView create action placement", () => {
@@ -931,12 +935,12 @@ import { clearStorage, waitForHydration } from "./helpers/test-helpers";
  * pixels: the FAB's bottom edge sits at or above the nav's top edge.
  */
 test.describe("Mobile creation FAB", () => {
-  test.beforeEach(async ({ page, isMobile }) => {
+  test.beforeEach(async ({ page, request, isMobile }) => {
     test.skip(!isMobile, "Mobile-only tests");
     await page.goto("/");
     await clearStorage(page);
 
-    const registration = await registerFamily(page.request, {
+    const registration = await registerFamily(request, {
       familyName: "FAB E2E Family",
       members: [{ name: "Robin", color: "coral" }],
     });
