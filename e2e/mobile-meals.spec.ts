@@ -1,4 +1,4 @@
-import { expect, type Page, test } from "@playwright/test";
+import { expect, type Locator, type Page, test } from "@playwright/test";
 import { registerFamily, seedBrowserAuth } from "./helpers/api-helpers";
 import {
   clearStorage,
@@ -21,6 +21,22 @@ async function openMealsBoard(page: Page) {
   await expect(
     page.getByRole("heading", { name: "Meals", level: 1, exact: true }),
   ).toBeVisible();
+}
+
+/**
+ * Wait for a Radix dialog's open animation to finish before measuring its
+ * geometry. `data-state="open"` (and visibility) flip at animation frame 0, so
+ * the box is still mid `zoom-in-95`/`slide-in` transform when first visible —
+ * boundingBox would read the off-screen start frame, not the settled position.
+ */
+async function waitForDialogAnimationsSettled(dialog: Locator) {
+  await dialog.evaluate((el) =>
+    Promise.all(
+      el
+        .getAnimations({ subtree: true })
+        .map((animation) => animation.finished.catch(() => undefined)),
+    ).then(() => undefined),
+  );
 }
 
 test.describe("Mobile Meals", () => {
@@ -193,5 +209,79 @@ test.describe("Mobile Meals", () => {
     await expect(
       page.getByRole("button", { name: /open dinner: leftovers/i }),
     ).toBeHidden();
+  });
+
+  test("keeps the occupied-slot collision dialog within narrow viewports", async ({
+    page,
+    request,
+  }) => {
+    test.setTimeout(60000);
+
+    const registration = await registerFamily(request, {
+      familyName: "Collision Crew",
+      members: [{ name: "Pat", color: "teal" }],
+    });
+
+    await seedBrowserAuth(page, registration);
+    await page.reload();
+    await waitForHydration(page);
+
+    await openMealsBoard(page);
+
+    // Occupy a dinner slot so the next placement collides with its primary.
+    await safeClick(
+      page.getByRole("button", { name: "Add dinner meal" }).first(),
+    );
+    const planSheet = page.getByRole("dialog", { name: "Plan Dinner" });
+    await waitForSheetSettled(planSheet);
+    await planSheet.getByLabel("Meal name").fill("Leftovers");
+    await planSheet.getByRole("button", { name: "Create quick meal" }).click();
+    await expect(planSheet).toBeHidden();
+
+    const occupiedSlot = page
+      .getByRole("button", { name: /open dinner: leftovers/i })
+      .first();
+    await expect(occupiedSlot).toBeVisible();
+
+    // Open the editor, choose Replace, then place a new meal — placing onto an
+    // occupied primary raises the shared collision dialog.
+    await safeClick(occupiedSlot);
+    const editorSheet = page.getByRole("dialog", { name: "Dinner Plan" });
+    await waitForSheetSettled(editorSheet);
+    await editorSheet.getByRole("button", { name: "Replace meal" }).click();
+
+    const replaceSheet = page.getByRole("dialog", { name: "Plan Dinner" });
+    await waitForSheetSettled(replaceSheet);
+    await replaceSheet.getByLabel("Meal name").fill("Pasta");
+    await replaceSheet
+      .getByRole("button", { name: "Create quick meal" })
+      .click();
+
+    const collisionDialog = page.getByRole("dialog", {
+      name: "That slot already has a meal",
+    });
+    await expect(collisionDialog).toBeVisible();
+    await waitForDialogAnimationsSettled(collisionDialog);
+
+    // The dialog and all three actions must stay fully on-screen and tappable
+    // across the narrowest supported widths (issue #249).
+    for (const width of [320, 360]) {
+      await page.setViewportSize({ width, height: 800 });
+
+      const dialogBox = await collisionDialog.boundingBox();
+      expect(dialogBox).not.toBeNull();
+      expect(dialogBox!.x).toBeGreaterThanOrEqual(0);
+      expect(dialogBox!.x + dialogBox!.width).toBeLessThanOrEqual(width);
+
+      for (const name of ["Cancel", "Add as extra", "Replace primary"]) {
+        const action = collisionDialog.getByRole("button", { name });
+        await expect(action).toBeVisible();
+        const actionBox = await action.boundingBox();
+        expect(actionBox).not.toBeNull();
+        expect(actionBox!.height).toBeGreaterThanOrEqual(44);
+        expect(actionBox!.x).toBeGreaterThanOrEqual(0);
+        expect(actionBox!.x + actionBox!.width).toBeLessThanOrEqual(width);
+      }
+    }
   });
 });
