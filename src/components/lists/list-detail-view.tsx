@@ -8,6 +8,10 @@ import {
   useUpdateListItem,
   useUpdateListPreferences,
 } from "@/api";
+import {
+  FloatingActionButton,
+  MOBILE_FAB_SCROLL_PADDING,
+} from "@/components/shared";
 import { useIsMobile } from "@/hooks";
 import type { ListItem, ListPreferences } from "@/lib/types";
 import { Button } from "../ui/button";
@@ -102,155 +106,175 @@ export function ListDetailView({
     clearCompleted.isPending;
 
   return (
-    <div className="flex-1 overflow-y-auto p-4 sm:p-6">
-      <div className="mx-auto max-w-2xl space-y-4">
-        <Button type="button" variant="ghost" onClick={onBack} className="px-0">
-          <ArrowLeft className="h-4 w-4" />
-          Back to Lists
-        </Button>
+    <>
+      <div
+        className="flex-1 overflow-y-auto p-4 sm:p-6"
+        style={{
+          paddingBottom: isMobile ? MOBILE_FAB_SCROLL_PADDING : undefined,
+        }}
+      >
+        <div className="mx-auto max-w-2xl space-y-4">
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={onBack}
+            className="px-0"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back to Lists
+          </Button>
 
-        <div className="rounded-lg border border-border bg-card p-4 shadow-sm">
-          <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0">
-              <p className="text-xs font-semibold uppercase text-muted-foreground">
-                {kindLabels[list.kind]}
-              </p>
-              <h2 className="mt-1 break-words text-[22px] font-semibold leading-7 text-foreground">
-                {list.name}
-              </h2>
+          <div className="rounded-lg border border-border bg-card p-4 shadow-sm">
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <p className="text-xs font-semibold uppercase text-muted-foreground">
+                  {kindLabels[list.kind]}
+                </p>
+                <h2 className="mt-1 break-words text-[22px] font-semibold leading-7 text-foreground">
+                  {list.name}
+                </h2>
+              </div>
+              <div className="flex shrink-0 items-center gap-2">
+                {!isMobile && (
+                  <Button
+                    type="button"
+                    onClick={() => setItemSheet({ mode: "create", item: null })}
+                  >
+                    <Plus className="h-4 w-4" />
+                    Add item
+                  </Button>
+                )}
+                {isMobile && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    aria-label="List options"
+                    className="h-11 w-11"
+                    onClick={() => setOptionsOpen(true)}
+                  >
+                    <SlidersHorizontal className="h-5 w-5" />
+                  </Button>
+                )}
+              </div>
             </div>
-            <div className="flex shrink-0 items-center gap-2">
-              <Button
-                type="button"
-                onClick={() => setItemSheet({ mode: "create", item: null })}
-              >
-                <Plus className="h-4 w-4" />
-                Add item
-              </Button>
-              {isMobile && (
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  aria-label="List options"
-                  className="h-11 w-11"
-                  onClick={() => setOptionsOpen(true)}
-                >
-                  <SlidersHorizontal className="h-5 w-5" />
-                </Button>
-              )}
-            </div>
+
+            {!isMobile && (
+              <div className="mt-4">
+                <ListOptionsControls
+                  list={list}
+                  hasPreferences={hasPreferences}
+                  familyShowCompletedDefault={familyShowCompletedDefault}
+                  completedControlsDisabled={completedControlsDisabled}
+                  completedOverrideValue={completedOverrideValue}
+                  completedFallbackMessage={completedFallbackMessage}
+                  clearCompletedDisabled={clearCompletedDisabled}
+                  onUpdateList={(request) => updateList.mutate(request)}
+                  onUpdatePreferences={(request) =>
+                    updatePreferences.mutate(request)
+                  }
+                  onClearCompleted={() => clearCompleted.mutate()}
+                />
+              </div>
+            )}
           </div>
 
-          {!isMobile && (
-            <div className="mt-4">
-              <ListOptionsControls
-                list={list}
-                hasPreferences={hasPreferences}
-                familyShowCompletedDefault={familyShowCompletedDefault}
-                completedControlsDisabled={completedControlsDisabled}
-                completedOverrideValue={completedOverrideValue}
-                completedFallbackMessage={completedFallbackMessage}
-                clearCompletedDisabled={clearCompletedDisabled}
-                onUpdateList={(request) => updateList.mutate(request)}
-                onUpdatePreferences={(request) =>
-                  updatePreferences.mutate(request)
-                }
-                onClearCompleted={() => clearCompleted.mutate()}
-              />
+          {list.items.length === 0 ? (
+            <div className="rounded-lg border border-dashed border-border bg-card p-6 text-center shadow-sm">
+              <h3 className="text-lg font-semibold text-foreground">
+                No items yet
+              </h3>
+              <p className="mx-auto mt-2 max-w-sm text-sm leading-5 text-muted-foreground">
+                Add the first item to get this list moving.
+              </p>
+            </div>
+          ) : visibleItemCount === 0 ? (
+            <div className="rounded-lg border border-border bg-card p-6 text-center shadow-sm">
+              <h3 className="text-lg font-semibold text-foreground">
+                No active items
+              </h3>
+              <p className="mx-auto mt-2 max-w-sm text-sm leading-5 text-muted-foreground">
+                Completed items are hidden for this list.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {sections.map((section) => (
+                <section key={section.id} className="space-y-2">
+                  {section.title && (
+                    <h3 className="px-1 text-sm font-semibold uppercase text-muted-foreground">
+                      {section.title}
+                    </h3>
+                  )}
+                  <div className="space-y-2">
+                    {section.items.map((item) => (
+                      <ListItemRow
+                        key={item.id}
+                        item={item}
+                        onToggle={(completed) =>
+                          updateItem.mutate({
+                            itemId: item.id,
+                            request: {
+                              text: item.text,
+                              completed,
+                              categoryId: item.categoryId,
+                            },
+                          })
+                        }
+                        onEdit={() => setItemSheet({ mode: "edit", item })}
+                        onDelete={() => deleteItem.mutate(item.id)}
+                      />
+                    ))}
+                  </div>
+                </section>
+              ))}
             </div>
           )}
+
+          {isMobile && (
+            <MobileSheet
+              isOpen={optionsOpen}
+              onClose={() => setOptionsOpen(false)}
+              title="List options"
+              initialHeight="half"
+            >
+              <div className="space-y-5">
+                <ListOptionsControls
+                  list={list}
+                  hasPreferences={hasPreferences}
+                  familyShowCompletedDefault={familyShowCompletedDefault}
+                  completedControlsDisabled={completedControlsDisabled}
+                  completedOverrideValue={completedOverrideValue}
+                  completedFallbackMessage={completedFallbackMessage}
+                  clearCompletedDisabled={clearCompletedDisabled}
+                  fullWidthClearButton
+                  onUpdateList={(request) => updateList.mutate(request)}
+                  onUpdatePreferences={(request) =>
+                    updatePreferences.mutate(request)
+                  }
+                  onClearCompleted={() => clearCompleted.mutate()}
+                />
+              </div>
+            </MobileSheet>
+          )}
+
+          <ListItemSheet
+            open={itemSheet !== null}
+            mode={itemSheet?.mode ?? "create"}
+            list={list}
+            item={itemSheet?.item ?? null}
+            onOpenChange={(open) => {
+              if (!open) setItemSheet(null);
+            }}
+          />
         </div>
-
-        {list.items.length === 0 ? (
-          <div className="rounded-lg border border-dashed border-border bg-card p-6 text-center shadow-sm">
-            <h3 className="text-lg font-semibold text-foreground">
-              No items yet
-            </h3>
-            <p className="mx-auto mt-2 max-w-sm text-sm leading-5 text-muted-foreground">
-              Add the first item to get this list moving.
-            </p>
-          </div>
-        ) : visibleItemCount === 0 ? (
-          <div className="rounded-lg border border-border bg-card p-6 text-center shadow-sm">
-            <h3 className="text-lg font-semibold text-foreground">
-              No active items
-            </h3>
-            <p className="mx-auto mt-2 max-w-sm text-sm leading-5 text-muted-foreground">
-              Completed items are hidden for this list.
-            </p>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {sections.map((section) => (
-              <section key={section.id} className="space-y-2">
-                {section.title && (
-                  <h3 className="px-1 text-sm font-semibold uppercase text-muted-foreground">
-                    {section.title}
-                  </h3>
-                )}
-                <div className="space-y-2">
-                  {section.items.map((item) => (
-                    <ListItemRow
-                      key={item.id}
-                      item={item}
-                      onToggle={(completed) =>
-                        updateItem.mutate({
-                          itemId: item.id,
-                          request: {
-                            text: item.text,
-                            completed,
-                            categoryId: item.categoryId,
-                          },
-                        })
-                      }
-                      onEdit={() => setItemSheet({ mode: "edit", item })}
-                      onDelete={() => deleteItem.mutate(item.id)}
-                    />
-                  ))}
-                </div>
-              </section>
-            ))}
-          </div>
-        )}
-
-        {isMobile && (
-          <MobileSheet
-            isOpen={optionsOpen}
-            onClose={() => setOptionsOpen(false)}
-            title="List options"
-            initialHeight="half"
-          >
-            <div className="space-y-5">
-              <ListOptionsControls
-                list={list}
-                hasPreferences={hasPreferences}
-                familyShowCompletedDefault={familyShowCompletedDefault}
-                completedControlsDisabled={completedControlsDisabled}
-                completedOverrideValue={completedOverrideValue}
-                completedFallbackMessage={completedFallbackMessage}
-                clearCompletedDisabled={clearCompletedDisabled}
-                fullWidthClearButton
-                onUpdateList={(request) => updateList.mutate(request)}
-                onUpdatePreferences={(request) =>
-                  updatePreferences.mutate(request)
-                }
-                onClearCompleted={() => clearCompleted.mutate()}
-              />
-            </div>
-          </MobileSheet>
-        )}
-
-        <ListItemSheet
-          open={itemSheet !== null}
-          mode={itemSheet?.mode ?? "create"}
-          list={list}
-          item={itemSheet?.item ?? null}
-          onOpenChange={(open) => {
-            if (!open) setItemSheet(null);
-          }}
-        />
       </div>
-    </div>
+      {isMobile && (
+        <FloatingActionButton
+          label="Add item"
+          onClick={() => setItemSheet({ mode: "create", item: null })}
+        />
+      )}
+    </>
   );
 }
