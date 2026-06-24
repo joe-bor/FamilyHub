@@ -1,9 +1,13 @@
 import { Plus } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useListPreferences, useLists } from "@/api";
-import { OfflineUnavailable, ScreenTransition } from "@/components/shared";
+import {
+  FloatingActionButton,
+  MOBILE_FAB_SCROLL_PADDING,
+  OfflineUnavailable,
+  ScreenTransition,
+} from "@/components/shared";
 import { useBackHandler, useIsMobile } from "@/hooks";
-import { cn } from "@/lib/utils";
 import { useAppStore } from "@/stores";
 import { ListCard } from "./lists/list-card";
 import { ListCreateSheet } from "./lists/list-create-sheet";
@@ -53,24 +57,24 @@ export function ListsView() {
 
     if (lists.isError) {
       return (
-        <div className="flex-1 overflow-y-auto p-4 sm:p-6">
+        <div
+          className="flex-1 overflow-y-auto p-4 sm:p-6"
+          style={{
+            paddingBottom: isMobile ? MOBILE_FAB_SCROLL_PADDING : undefined,
+          }}
+        >
           <div className="mx-auto max-w-2xl space-y-6">
-            <div
-              className={cn(
-                "flex items-center gap-3",
-                isMobile ? "justify-end" : "justify-between",
-              )}
-            >
-              {!isMobile && (
+            {!isMobile && (
+              <div className="flex items-center justify-between gap-3">
                 <h2 className="text-[24px] font-semibold leading-8 text-foreground">
                   My Lists
                 </h2>
-              )}
-              <Button type="button" onClick={() => setCreateOpen(true)}>
-                <Plus className="h-4 w-4" />
-                New List
-              </Button>
-            </div>
+                <Button type="button" onClick={() => setCreateOpen(true)}>
+                  <Plus className="h-4 w-4" />
+                  New List
+                </Button>
+              </div>
+            )}
 
             <div className="rounded-lg border border-border bg-card p-6 shadow-sm">
               <h3 className="text-lg font-semibold text-foreground">
@@ -88,12 +92,6 @@ export function ListsView() {
                 Try again
               </Button>
             </div>
-
-            <ListCreateSheet
-              open={createOpen}
-              onOpenChange={setCreateOpen}
-              onCreated={(id) => setSelectedListId(id)}
-            />
           </div>
         </div>
       );
@@ -108,24 +106,24 @@ export function ListsView() {
     const summaries = lists.data.data;
 
     return (
-      <div className="flex-1 overflow-y-auto p-4 sm:p-6">
+      <div
+        className="flex-1 overflow-y-auto p-4 sm:p-6"
+        style={{
+          paddingBottom: isMobile ? MOBILE_FAB_SCROLL_PADDING : undefined,
+        }}
+      >
         <div className="mx-auto max-w-2xl space-y-6">
-          <div
-            className={cn(
-              "flex items-center gap-3",
-              isMobile ? "justify-end" : "justify-between",
-            )}
-          >
-            {!isMobile && (
+          {!isMobile && (
+            <div className="flex items-center justify-between gap-3">
               <h2 className="text-[24px] font-semibold leading-8 text-foreground">
                 My Lists
               </h2>
-            )}
-            <Button type="button" onClick={() => setCreateOpen(true)}>
-              <Plus className="h-4 w-4" />
-              New List
-            </Button>
-          </div>
+              <Button type="button" onClick={() => setCreateOpen(true)}>
+                <Plus className="h-4 w-4" />
+                New List
+              </Button>
+            </div>
+          )}
 
           {summaries.length === 0 ? (
             <div className="rounded-lg border border-dashed border-border bg-card p-6 text-center shadow-sm">
@@ -156,24 +154,31 @@ export function ListsView() {
               ))}
             </div>
           )}
-
-          <ListCreateSheet
-            open={createOpen}
-            onOpenChange={setCreateOpen}
-            onCreated={(id) => setSelectedListId(id)}
-          />
         </div>
       </div>
     );
   })();
 
   return (
-    <ScreenTransition
-      token={selectedListId ?? "__list__"}
-      mode="slide"
-      direction={selectedListId ? "forward" : "back"}
-    >
-      {body}
-    </ScreenTransition>
+    <>
+      <ScreenTransition
+        token={selectedListId ?? "__list__"}
+        mode="slide"
+        direction={selectedListId ? "forward" : "back"}
+      >
+        {body}
+      </ScreenTransition>
+      {isMobile && selectedListId === null && (
+        <FloatingActionButton
+          label="Create list"
+          onClick={() => setCreateOpen(true)}
+        />
+      )}
+      <ListCreateSheet
+        open={createOpen}
+        onOpenChange={setCreateOpen}
+        onCreated={(id) => setSelectedListId(id)}
+      />
+    </>
   );
 }

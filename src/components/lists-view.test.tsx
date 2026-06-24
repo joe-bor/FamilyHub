@@ -19,6 +19,16 @@ import {
 } from "@/test/test-utils";
 import { ListsView } from "./lists-view";
 
+const viewport = vi.hoisted(() => ({ isMobile: false }));
+
+vi.mock("@/hooks", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/hooks")>();
+  return {
+    ...actual,
+    useIsMobile: () => viewport.isMobile,
+  };
+});
+
 const groceryList: ListDetail = {
   id: "00000000-0000-4000-8000-000000000101",
   name: "Trader Joe's Run",
@@ -121,6 +131,7 @@ describe("ListsView hub", () => {
   setupMswServer();
 
   beforeEach(() => {
+    viewport.isMobile = false;
     seedFamilyStore({
       name: "Test Family",
       members: [{ id: "1", name: "Alice", color: "coral" }],
@@ -462,6 +473,35 @@ describe("ListsView hub", () => {
     expect(
       (await screen.findByRole("button", { name: /Movie Night/i })).className,
     ).toContain("active:scale-[0.97]");
+  });
+
+  describe("ListsView create action placement", () => {
+    beforeEach(() => {
+      viewport.isMobile = false;
+    });
+
+    it("shows a Create list FAB and hides the inline New List on mobile landing", async () => {
+      viewport.isMobile = true;
+      seedMockLists([generalList]);
+      renderWithUser(<ListsView />);
+      expect(
+        await screen.findByRole("button", { name: "Create list" }),
+      ).toBeVisible();
+      expect(
+        screen.queryByRole("button", { name: "New List" }),
+      ).not.toBeInTheDocument();
+    });
+
+    it("keeps the inline New List button and shows no FAB on desktop", async () => {
+      seedMockLists([generalList]);
+      renderWithUser(<ListsView />);
+      expect(
+        await screen.findByRole("button", { name: "New List" }),
+      ).toBeVisible();
+      expect(
+        screen.queryByRole("button", { name: "Create list" }),
+      ).not.toBeInTheDocument();
+    });
   });
 
   it("slides the detail in from the right when a list opens", async () => {
