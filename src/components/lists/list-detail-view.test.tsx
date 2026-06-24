@@ -92,7 +92,7 @@ describe("ListDetailView options placement", () => {
       expect(
         screen.queryByLabelText("Completed items"),
       ).not.toBeInTheDocument();
-      // "Add item" stays in the header.
+      // On mobile, "Add item" is the floating action button, not a header button.
       expect(
         screen.getByRole("button", { name: "Add item" }),
       ).toBeInTheDocument();
@@ -129,6 +129,17 @@ describe("ListDetailView options placement", () => {
         expect(screen.queryByText("Spinach")).not.toBeInTheDocument(),
       );
     });
+
+    it("shows an Add item FAB and removes the header Add item button", async () => {
+      renderDetail();
+      expect(
+        await screen.findByRole("button", { name: "Add item" }),
+      ).toBeVisible();
+      // The options control remains available on mobile.
+      expect(
+        screen.getByRole("button", { name: "List options" }),
+      ).toBeInTheDocument();
+    });
   });
 
   describe("desktop (>=768px)", () => {
@@ -146,6 +157,14 @@ describe("ListDetailView options placement", () => {
       expect(
         screen.queryByRole("button", { name: "List options" }),
       ).not.toBeInTheDocument();
+    });
+
+    it("keeps the inline Add item button and shows no extra FAB", async () => {
+      renderDetail();
+      const addItem = await screen.findAllByRole("button", {
+        name: "Add item",
+      });
+      expect(addItem).toHaveLength(1); // header button only, no separate FAB
     });
   });
 });
