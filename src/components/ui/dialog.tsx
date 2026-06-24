@@ -35,8 +35,12 @@ function DialogContent({
       <DialogOverlay />
       <DialogPrimitive.Content
         className={cn(
-          "fixed left-1/2 top-1/2 z-50 w-full max-w-md -translate-x-1/2 -translate-y-1/2",
-          "bg-card rounded-xl shadow-2xl p-5 sm:p-6 mx-4",
+          // Reserve explicit horizontal gutters in the width itself
+          // (calc(100% - 2rem)) so the centered box keeps a 1rem margin on each
+          // edge at narrow phone widths. Combining w-full with external margins
+          // (mx-4) overflowed because margins don't shrink a full-width box.
+          "fixed left-1/2 top-1/2 z-50 w-[calc(100%-2rem)] max-w-md -translate-x-1/2 -translate-y-1/2",
+          "bg-card rounded-xl shadow-2xl p-5 sm:p-6",
           "duration-200",
           "data-[state=open]:animate-in data-[state=closed]:animate-out",
           "data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
