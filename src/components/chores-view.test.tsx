@@ -430,6 +430,39 @@ describe("ChoresView", () => {
     });
   });
 
+  describe("ChoresView create action placement", () => {
+    beforeEach(() => {
+      viewport.isMobile = false;
+    });
+
+    it("shows a disabled Add recurring chore FAB on mobile that enables once the board loads", async () => {
+      viewport.isMobile = true;
+      seedMockChoresBoard(emptyChoresBoard());
+      renderWithUser(<ChoresView />);
+      // Query synchronously on the initial render: the board is still loading,
+      // so the module-specific canCreate rule should render the FAB disabled.
+      const fab = screen.getByRole("button", { name: "Add recurring chore" });
+      // The floating action button is fixed-positioned; the desktop icon
+      // button is not — this is what distinguishes the FAB from the old control.
+      expect(fab).toHaveClass("fixed");
+      expect(fab).toBeDisabled();
+      // Once the board resolves, canCreate flips true and the FAB enables.
+      await waitFor(() => expect(fab).toBeEnabled());
+    });
+
+    it("renders exactly one Add recurring chore control on desktop, not a FAB", async () => {
+      viewport.isMobile = false;
+      seedMockChoresBoard(emptyChoresBoard());
+      renderWithUser(<ChoresView />);
+      const controls = await screen.findAllByRole("button", {
+        name: "Add recurring chore",
+      });
+      expect(controls).toHaveLength(1);
+      // Desktop keeps the inline icon button, never the floating action button.
+      expect(controls[0]).not.toHaveClass("fixed");
+    });
+  });
+
   it("archives a recurring routine from the row action", async () => {
     let capturedUpdateBody: UpdateChoreTemplateRequest | null = null;
     server.use(

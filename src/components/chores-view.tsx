@@ -15,7 +15,11 @@ import {
   type ChoreScopeKey,
   ChoreScopeSwitcher,
 } from "@/components/chores/chores-scope-switcher";
-import { OfflineUnavailable } from "@/components/shared";
+import {
+  FloatingActionButton,
+  MOBILE_FAB_SCROLL_PADDING,
+  OfflineUnavailable,
+} from "@/components/shared";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/toaster";
 import { useIsMobile } from "@/hooks";
@@ -111,7 +115,12 @@ export function ChoresView() {
 
   return (
     <>
-      <div className="flex-1 overflow-y-auto p-4 sm:p-6">
+      <div
+        className="flex-1 overflow-y-auto p-4 sm:p-6"
+        style={{
+          paddingBottom: isMobile ? MOBILE_FAB_SCROLL_PADDING : undefined,
+        }}
+      >
         <div className="mx-auto max-w-6xl">
           <div className="mb-6 flex items-start justify-between gap-3">
             <div className="space-y-3">
@@ -127,15 +136,17 @@ export function ChoresView() {
                 />
               )}
             </div>
-            <Button
-              type="button"
-              aria-label="Add recurring chore"
-              size="icon"
-              disabled={!canCreate}
-              onClick={() => setCreateOpen(true)}
-            >
-              <Plus className="h-5 w-5" />
-            </Button>
+            {!isMobile && (
+              <Button
+                type="button"
+                aria-label="Add recurring chore"
+                size="icon"
+                disabled={!canCreate}
+                onClick={() => setCreateOpen(true)}
+              >
+                <Plus className="h-5 w-5" />
+              </Button>
+            )}
           </div>
 
           {isLoading && (
@@ -190,6 +201,14 @@ export function ChoresView() {
         isPending={createTemplate.isPending}
         onSubmit={handleCreate}
       />
+
+      {isMobile && (
+        <FloatingActionButton
+          label="Add recurring chore"
+          disabled={!canCreate}
+          onClick={() => setCreateOpen(true)}
+        />
+      )}
     </>
   );
 }
