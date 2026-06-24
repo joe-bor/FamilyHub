@@ -8,7 +8,12 @@ import {
   type RecipeTagFilterOption,
 } from "@/components/recipes/recipe-filter-bar";
 import { RecipeLibraryCard } from "@/components/recipes/recipe-library-card";
-import { OfflineUnavailable, ScreenTransition } from "@/components/shared";
+import {
+  FloatingActionButton,
+  MOBILE_FAB_SCROLL_PADDING,
+  OfflineUnavailable,
+  ScreenTransition,
+} from "@/components/shared";
 import { Button } from "@/components/ui/button";
 import { useBackHandler, useIsMobile } from "@/hooks";
 import { formatRecipeTag } from "@/lib/recipe-tags";
@@ -147,16 +152,15 @@ export function RecipesView() {
     : undefined;
 
   return (
-    <section className="flex-1 overflow-y-auto p-4 sm:p-6">
+    <section
+      className="flex-1 overflow-y-auto p-4 sm:p-6"
+      style={{
+        paddingBottom: isMobile ? MOBILE_FAB_SCROLL_PADDING : undefined,
+      }}
+    >
       <div className="mx-auto flex max-w-3xl flex-col gap-4">
-        <div
-          className={cn(
-            "flex items-start gap-3",
-            isMobile ? "justify-end" : "justify-between",
-          )}
-        >
-          {/* Title is redundant with the mobile header; desktop keeps it. */}
-          {!isMobile && (
+        {!isMobile && (
+          <div className="flex items-start justify-between gap-3">
             <div>
               <h1 className="text-2xl font-semibold text-foreground">
                 Recipes
@@ -165,13 +169,13 @@ export function RecipesView() {
                 Save family favorites and discover what to cook next.
               </p>
             </div>
-          )}
-          {selectedRecipeId === null ? (
-            <Button type="button" onClick={() => setIsCreateSheetOpen(true)}>
-              Add recipe
-            </Button>
-          ) : null}
-        </div>
+            {selectedRecipeId === null ? (
+              <Button type="button" onClick={() => setIsCreateSheetOpen(true)}>
+                Add recipe
+              </Button>
+            ) : null}
+          </div>
+        )}
 
         <ScreenTransition
           token={selectedRecipeId ?? "__list__"}
@@ -382,6 +386,12 @@ export function RecipesView() {
           />
         ) : null}
       </div>
+      {isMobile && selectedRecipeId === null && (
+        <FloatingActionButton
+          label="Add recipe"
+          onClick={() => setIsCreateSheetOpen(true)}
+        />
+      )}
     </section>
   );
 }
