@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, type Page, test } from "@playwright/test";
 import { registerFamily, seedBrowserAuth } from "./helpers/api-helpers";
 import {
   clearStorage,
@@ -6,6 +6,22 @@ import {
   waitForHydration,
   waitForSheetSettled,
 } from "./helpers/test-helpers";
+
+/**
+ * Navigate to the weekly Meals board via the bottom-nav "More" sheet. The active
+ * view is not persisted, so this is re-run after a reload to return to Meals.
+ */
+async function openMealsBoard(page: Page) {
+  const nav = page.getByRole("navigation", { name: /primary/i });
+  await safeClick(nav.getByRole("button", { name: "More" }));
+  const moreSheet = page.getByRole("dialog", { name: "More" });
+  await waitForSheetSettled(moreSheet);
+  await safeClick(moreSheet.getByRole("button", { name: "Meals" }));
+  await expect(moreSheet).toBeHidden();
+  await expect(
+    page.getByRole("heading", { name: "Meals", level: 1, exact: true }),
+  ).toBeVisible();
+}
 
 test.describe("Mobile Meals", () => {
   test.beforeEach(async ({ page, isMobile }) => {
@@ -116,5 +132,66 @@ test.describe("Mobile Meals", () => {
     await expect(
       page.getByRole("button", { name: /open lunch: sunday pancakes/i }),
     ).toBeVisible();
+  });
+
+  test("removes a planned meal and it stays removed after a board reload", async ({
+    page,
+    request,
+  }) => {
+    test.setTimeout(60000);
+
+    const registration = await registerFamily(request, {
+      familyName: "Meal Removers",
+      members: [{ name: "Sam", color: "teal" }],
+    });
+
+    await seedBrowserAuth(page, registration);
+    await page.reload();
+    await waitForHydration(page);
+
+    await openMealsBoard(page);
+
+    // Plan a quick dinner so there is a populated slot to remove.
+    await safeClick(
+      page.getByRole("button", { name: "Add dinner meal" }).first(),
+    );
+    const planSheet = page.getByRole("dialog", { name: "Plan Dinner" });
+    await waitForSheetSettled(planSheet);
+    await planSheet.getByLabel("Meal name").fill("Leftovers");
+    await planSheet.getByRole("button", { name: "Create quick meal" }).click();
+
+    await expect(planSheet).toBeHidden();
+    const plannedMeal = page.getByRole("button", {
+      name: /open dinner: leftovers/i,
+    });
+    await expect(plannedMeal).toBeVisible();
+
+    // Remove it from the editor.
+    await safeClick(plannedMeal.first());
+    const editorSheet = page.getByRole("dialog", { name: "Dinner Plan" });
+    await waitForSheetSettled(editorSheet);
+    await editorSheet.getByRole("button", { name: "Remove meal" }).click();
+
+    // The editor closes only after a successful removal, and the slot is empty.
+    await expect(editorSheet).toBeHidden();
+    await expect(
+      page.getByRole("button", { name: "Add dinner meal" }).first(),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: /open dinner: leftovers/i }),
+    ).toBeHidden();
+
+    // Reload to force a fresh board fetch from the backend. The removal persisted
+    // only if the DELETE used the backend's request-body contract.
+    await page.reload();
+    await waitForHydration(page);
+    await openMealsBoard(page);
+
+    await expect(
+      page.getByRole("button", { name: "Add dinner meal" }).first(),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: /open dinner: leftovers/i }),
+    ).toBeHidden();
   });
 });
