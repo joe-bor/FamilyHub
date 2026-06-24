@@ -116,6 +116,47 @@ function applyCurrentPeriodState(
   };
 }
 
+function findChoreInScope(
+  scope: ChoreScopeBoard,
+  templateId: string,
+): ChoreBoardItem | undefined {
+  for (const group of scope.assignees) {
+    const match = group.chores.find((chore) => chore.templateId === templateId);
+    if (match) return match;
+  }
+  return undefined;
+}
+
+// Synthesize the completion state locally so the board updates the moment a
+// routine is tapped, before the server's canonical response arrives. Reuses the
+// same scope recalculation as the success path so counts and ordering stay
+// consistent. The request scope tells us which board column owns the routine.
+function applyOptimisticCompletion(
+  board: ChoresBoard,
+  scope: ChoreScope,
+  templateId: string,
+  completed: boolean,
+): ChoresBoard {
+  const scopeKey = boardKeyForScope(scope);
+  const existing = findChoreInScope(board[scopeKey], templateId);
+  if (!existing) return board;
+
+  const optimisticItem: ChoreBoardItem = {
+    ...existing,
+    completed,
+    // completedAt is an instant, not a calendar date, so toISOString() is
+    // correct here; the server overwrites it with the canonical value on success.
+    completedAt: completed
+      ? (existing.completedAt ?? new Date().toISOString())
+      : null,
+  };
+
+  return {
+    ...board,
+    [scopeKey]: replaceChoreInScope(board[scopeKey], optimisticItem),
+  };
+}
+
 function removeTemplateFromBoard(
   board: ChoresBoard,
   templateId: string,
@@ -228,6 +269,28 @@ export function useCompleteChoreForCurrentPeriod(
       templateId: string;
       request: UpdateCurrentPeriodCompletionRequest;
     }) => choreService.completeCurrentPeriod(templateId, request),
+    onMutate: async ({ templateId, request }) => {
+      await queryClient.cancelQueries({ queryKey: choreKeys.board() });
+      const previous = queryClient.getQueryData<ApiResponse<ChoresBoard>>(
+        choreKeys.board(),
+      );
+      queryClient.setQueryData<ApiResponse<ChoresBoard>>(
+        choreKeys.board(),
+        (current) =>
+          current
+            ? {
+                ...current,
+                data: applyOptimisticCompletion(
+                  current.data,
+                  request.scope,
+                  templateId,
+                  true,
+                ),
+              }
+            : current,
+      );
+      return { previous };
+    },
     onSuccess: (response) => {
       queryClient.setQueryData<ApiResponse<ChoresBoard>>(
         choreKeys.board(),
@@ -245,7 +308,12 @@ export function useCompleteChoreForCurrentPeriod(
       });
       callbacks?.onSuccess?.(response);
     },
-    onError: (error: ApiException) => {
+    onError: (error: ApiException, _variables, context) => {
+      // Roll the whole board back to the pre-tap snapshot, then let the
+      // stale-period path force a refetch for the canonical server state.
+      if (context?.previous) {
+        queryClient.setQueryData(choreKeys.board(), context.previous);
+      }
       if (isStaleChorePeriodError(error)) {
         queryClient.invalidateQueries({
           queryKey: choreKeys.board(),
@@ -270,6 +338,28 @@ export function useUncompleteChoreForCurrentPeriod(
       templateId: string;
       request: UpdateCurrentPeriodCompletionRequest;
     }) => choreService.uncompleteCurrentPeriod(templateId, request),
+    onMutate: async ({ templateId, request }) => {
+      await queryClient.cancelQueries({ queryKey: choreKeys.board() });
+      const previous = queryClient.getQueryData<ApiResponse<ChoresBoard>>(
+        choreKeys.board(),
+      );
+      queryClient.setQueryData<ApiResponse<ChoresBoard>>(
+        choreKeys.board(),
+        (current) =>
+          current
+            ? {
+                ...current,
+                data: applyOptimisticCompletion(
+                  current.data,
+                  request.scope,
+                  templateId,
+                  false,
+                ),
+              }
+            : current,
+      );
+      return { previous };
+    },
     onSuccess: (response) => {
       queryClient.setQueryData<ApiResponse<ChoresBoard>>(
         choreKeys.board(),
@@ -287,7 +377,12 @@ export function useUncompleteChoreForCurrentPeriod(
       });
       callbacks?.onSuccess?.(response);
     },
-    onError: (error: ApiException) => {
+    onError: (error: ApiException, _variables, context) => {
+      // Roll the whole board back to the pre-tap snapshot, then let the
+      // stale-period path force a refetch for the canonical server state.
+      if (context?.previous) {
+        queryClient.setQueryData(choreKeys.board(), context.previous);
+      }
       if (isStaleChorePeriodError(error)) {
         queryClient.invalidateQueries({
           queryKey: choreKeys.board(),
