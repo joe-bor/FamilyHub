@@ -23,14 +23,26 @@ import {
   renderWithUser,
   screen,
   typeAndWait,
+  waitFor,
 } from "@/test/test-utils";
 import { RecipesView } from "./recipes-view";
+
+const viewport = vi.hoisted(() => ({ isMobile: false }));
+
+vi.mock("@/hooks", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/hooks")>();
+  return {
+    ...actual,
+    useIsMobile: () => viewport.isMobile,
+  };
+});
 
 describe("RecipesView", () => {
   setupMswServer();
 
   beforeEach(() => {
     vi.restoreAllMocks();
+    viewport.isMobile = false;
   });
 
   it("adds a recipe to meals from detail and stores a library handoff draft", async () => {
@@ -990,6 +1002,47 @@ describe("RecipesView", () => {
     expect(
       await screen.findByRole("button", { name: /add recipe/i }),
     ).toBeInTheDocument();
+  });
+
+  describe("RecipesView create action placement", () => {
+    it("shows the Add recipe FAB in the mobile library", async () => {
+      viewport.isMobile = true;
+      seedMockRecipes([testRecipeDetail]);
+      renderWithUser(<RecipesView />);
+      await screen.findByRole("button", {
+        name: `Open recipe: ${testRecipeDetail.title}`,
+      });
+      const fab = screen.getByRole("button", { name: "Add recipe" });
+      expect(fab).toHaveClass("fixed");
+    });
+
+    it("keeps the inline Add recipe button (not a FAB) on the desktop library", async () => {
+      viewport.isMobile = false;
+      seedMockRecipes([testRecipeDetail]);
+      renderWithUser(<RecipesView />);
+      await screen.findByRole("button", {
+        name: `Open recipe: ${testRecipeDetail.title}`,
+      });
+      const controls = screen.getAllByRole("button", { name: "Add recipe" });
+      expect(controls).toHaveLength(1);
+      expect(controls[0]).not.toHaveClass("fixed");
+    });
+
+    it("shows no Add recipe FAB when viewing a recipe on mobile", async () => {
+      viewport.isMobile = true;
+      seedMockRecipes([testRecipeDetail]);
+      const { user } = renderWithUser(<RecipesView />);
+      await user.click(
+        await screen.findByRole("button", {
+          name: `Open recipe: ${testRecipeDetail.title}`,
+        }),
+      );
+      await waitFor(() => {
+        expect(
+          screen.queryByRole("button", { name: "Add recipe" }),
+        ).not.toBeInTheDocument();
+      });
+    });
   });
 
   it("toggles favorite from detail and updates the visible saved state", async () => {
