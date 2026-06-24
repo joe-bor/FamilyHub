@@ -394,6 +394,7 @@ export function MealComposerSheet({
             <Button
               type="button"
               variant="ghost"
+              className="min-h-11"
               onClick={() => setCollisionRequest(null)}
             >
               Cancel
@@ -401,12 +402,14 @@ export function MealComposerSheet({
             <Button
               type="button"
               variant="outline"
+              className="min-h-11"
               onClick={() => resolveCollision("add_as_extra")}
             >
               Add as extra
             </Button>
             <Button
               type="button"
+              className="min-h-11"
               onClick={() => resolveCollision("replace_primary")}
             >
               Replace primary
