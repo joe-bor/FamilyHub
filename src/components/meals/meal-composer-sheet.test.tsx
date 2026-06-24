@@ -144,6 +144,26 @@ describe("MealComposerSheet", () => {
     expect(screen.getByRole("button", { name: "Cancel" })).toBeInTheDocument();
   });
 
+  it("gives the collision actions a >=44px touch target", async () => {
+    const occupiedDinnerSlot = {
+      ...createOccupiedMealsBoard().days[1].slots[2],
+      seededRecipeId: testRecipeDetail.id,
+    };
+    const { user } = renderComposer(occupiedDinnerSlot);
+
+    await user.click(
+      await screen.findByRole("button", { name: "Add recipe to slot" }),
+    );
+    await screen.findByText("That slot already has a meal");
+
+    // min-h-11 == 44px keeps each action tappable when stacked on mobile.
+    for (const name of ["Cancel", "Add as extra", "Replace primary"]) {
+      expect(screen.getByRole("button", { name }).className).toContain(
+        "min-h-11",
+      );
+    }
+  });
+
   it("adds a quick meal as an extra without a collision prompt in extra intent", async () => {
     const occupiedDinner = {
       ...createOccupiedMealsBoard().days[1].slots[2],
