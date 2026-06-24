@@ -1,6 +1,10 @@
 import { expect, test } from "@playwright/test";
 import { registerFamily, seedBrowserAuth } from "./helpers/api-helpers";
-import { clearStorage, waitForHydration } from "./helpers/test-helpers";
+import {
+  clearStorage,
+  waitForHydration,
+  waitForSheetSettled,
+} from "./helpers/test-helpers";
 
 test.describe("Mobile Lists", () => {
   test.beforeEach(async ({ page, isMobile }) => {
@@ -28,10 +32,12 @@ test.describe("Mobile Lists", () => {
     await expect(
       page.getByRole("heading", { name: "Lists", level: 1, exact: true }),
     ).toBeVisible();
-    await page.getByRole("button", { name: "New List" }).click();
-    await page.getByLabel("List name").fill("Trader Joe's Run");
-    await page.getByRole("radio", { name: "Grocery" }).click();
     await page.getByRole("button", { name: "Create list" }).click();
+    const createDialog = page.getByRole("dialog", { name: "New List" });
+    await waitForSheetSettled(createDialog);
+    await createDialog.getByLabel("List name").fill("Trader Joe's Run");
+    await createDialog.getByRole("radio", { name: "Grocery" }).click();
+    await createDialog.getByRole("button", { name: "Create list" }).click();
 
     await expect(
       page.getByRole("heading", { name: "Trader Joe's Run" }),
