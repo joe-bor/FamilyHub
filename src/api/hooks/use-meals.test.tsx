@@ -320,6 +320,60 @@ describe("useMeals", () => {
     ).toBe(true);
   });
 
+  it("clears the primary, extras, and note in the cached board after removal", async () => {
+    const board = structuredClone(emptyBoard);
+    board.days[3].slots[2] = {
+      id: "slot-wednesday-dinner",
+      weekStartDate: "2026-06-07",
+      dayIndex: 3,
+      mealType: "dinner",
+      primary: {
+        id: "entry-primary",
+        role: "primary",
+        sourceType: "quick",
+        recipeId: null,
+        title: "Roast Chicken",
+        imageUrl: null,
+        note: null,
+      },
+      extras: [
+        {
+          id: "entry-extra",
+          role: "extra",
+          sourceType: "quick",
+          recipeId: null,
+          title: "Garlic Bread",
+          imageUrl: null,
+          note: null,
+        },
+      ],
+      note: "Preheat oven to 220C",
+    };
+    seedMockMealsBoard(board);
+    queryClient.setQueryData(mealsKeys.board("2026-06-07"), {
+      data: board,
+    } satisfies ApiResponse<MealBoard>);
+
+    const { result } = renderHook(() => useRemoveMealSlot(), {
+      wrapper: createWrapper(),
+    });
+
+    result.current.mutate({
+      weekStartDate: "2026-06-07",
+      dayIndex: 3,
+      mealType: "dinner",
+    });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+
+    const cachedDinner = queryClient.getQueryData<ApiResponse<MealBoard>>(
+      mealsKeys.board("2026-06-07"),
+    )?.data.days[3].slots[2];
+    expect(cachedDinner?.primary).toBe(null);
+    expect(cachedDinner?.extras).toEqual([]);
+    expect(cachedDinner?.note).toBe(null);
+  });
+
   it("moves a Saturday meal to Sunday of the following week", async () => {
     const saturdayBoard: MealBoard = structuredClone(emptyBoard);
     saturdayBoard.days[6].slots[2] = {

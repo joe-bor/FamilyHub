@@ -33,6 +33,7 @@ import type {
   RecipeSummary,
   RegisterRequest,
   RegisterResponse,
+  RemoveMealSlotRequest,
   UpdateChoreTemplateRequest,
   UpdateCurrentPeriodCompletionRequest,
   UpdateEventRequest,
@@ -839,21 +840,34 @@ export const handlers = [
     );
   }),
 
-  // DELETE /meals/slots - Remove one planned slot
-  http.delete(`${API_BASE}/meals/slots`, ({ request }) => {
-    const url = new URL(request.url);
-    const weekStartDate = url.searchParams.get("weekStartDate");
-    const dayIndexStr = url.searchParams.get("dayIndex");
-    const mealType = url.searchParams.get("mealType") as MealType | null;
+  // DELETE /meals/slots - Remove one planned slot.
+  // Mirrors the released backend: the payload is a validated @RequestBody, not
+  // query parameters. An absent or malformed body is a 400, exactly as
+  // production rejects it.
+  http.delete(`${API_BASE}/meals/slots`, async ({ request }) => {
+    let body: Partial<RemoveMealSlotRequest> | null = null;
+    try {
+      body = (await request.json()) as RemoveMealSlotRequest;
+    } catch {
+      body = null;
+    }
 
-    if (!weekStartDate || !dayIndexStr || !mealType) {
+    const weekStartDate = body?.weekStartDate;
+    const dayIndex = body?.dayIndex;
+    const mealType = body?.mealType;
+
+    if (
+      !weekStartDate ||
+      dayIndex === undefined ||
+      dayIndex === null ||
+      !mealType
+    ) {
       return HttpResponse.json(
         { message: "weekStartDate, dayIndex, and mealType are required" },
         { status: 400 },
       );
     }
 
-    const dayIndex = parseInt(dayIndexStr, 10);
     const board = getMealsBoard(weekStartDate);
     const slot = findMealSlot(board, dayIndex, mealType);
     setMealSlot(board, clearMealSlot(slot));

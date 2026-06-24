@@ -362,6 +362,68 @@ describe("MealsView", () => {
     });
   });
 
+  it("closes the editor only after a successful removal", async () => {
+    const board = createOccupiedMealsBoard();
+    seedMockMealsBoard(board);
+    const onOpenChange = vi.fn();
+    const { user } = renderWithUser(
+      <MealEditorSheet
+        isOpen
+        slotId={{
+          weekStartDate: board.weekStartDate,
+          dayIndex: 1,
+          mealType: "dinner",
+        }}
+        board={board}
+        readOnly={false}
+        onOpenChange={onOpenChange}
+      />,
+    );
+
+    // The editor is not dismissed before the removal is requested.
+    expect(onOpenChange).not.toHaveBeenCalledWith(false);
+
+    await user.click(screen.getByRole("button", { name: "Remove meal" }));
+
+    await waitFor(() => expect(onOpenChange).toHaveBeenCalledWith(false));
+  });
+
+  it("keeps the editor open with an actionable error when removal fails", async () => {
+    const board = createOccupiedMealsBoard();
+    seedMockMealsBoard(board);
+    server.use(
+      http.delete(`${API_BASE}/meals/slots`, () =>
+        HttpResponse.json(
+          { message: "Could not remove meal" },
+          { status: 500 },
+        ),
+      ),
+    );
+    const onOpenChange = vi.fn();
+    const { user } = renderWithUser(
+      <MealEditorSheet
+        isOpen
+        slotId={{
+          weekStartDate: board.weekStartDate,
+          dayIndex: 1,
+          mealType: "dinner",
+        }}
+        board={board}
+        readOnly={false}
+        onOpenChange={onOpenChange}
+      />,
+    );
+
+    await user.click(screen.getByRole("button", { name: "Remove meal" }));
+
+    const alert = await screen.findByRole("alert");
+    expect(alert).toHaveTextContent("Could not remove meal");
+
+    // Failure leaves the editor open and the action retryable.
+    expect(onOpenChange).not.toHaveBeenCalledWith(false);
+    expect(screen.getByRole("button", { name: "Remove meal" })).toBeEnabled();
+  });
+
   it("edits the slot note from the editor", async () => {
     const board = createOccupiedMealsBoard();
     seedMockMealsBoard(board);
