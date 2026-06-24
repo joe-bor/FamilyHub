@@ -492,8 +492,7 @@ Expected: FAIL — on mobile there is currently a header "Add item" button (not 
 - [ ] **Step 3: Update imports** — `src/components/lists/list-detail-view.tsx`
 
 ```tsx
-import { FloatingActionButton } from "@/components/shared";
-import { MOBILE_FAB_SCROLL_PADDING } from "@/components/shared/floating-action-layout";
+import { FloatingActionButton, MOBILE_FAB_SCROLL_PADDING } from "@/components/shared";
 ```
 
 - [ ] **Step 4: Gate the header "Add item" to desktop**
@@ -653,11 +652,10 @@ Expected: FAIL — on mobile the only control is the header icon button (no FAB 
 - [ ] **Step 3: Update imports** — `src/components/chores-view.tsx`
 
 ```tsx
-import { FloatingActionButton, OfflineUnavailable } from "@/components/shared";
-import { MOBILE_FAB_SCROLL_PADDING } from "@/components/shared/floating-action-layout";
+import { FloatingActionButton, MOBILE_FAB_SCROLL_PADDING, OfflineUnavailable } from "@/components/shared";
 ```
 
-(Merge `FloatingActionButton` into the existing `@/components/shared` import.)
+(Merge `FloatingActionButton` and `MOBILE_FAB_SCROLL_PADDING` into the existing `@/components/shared` import.)
 
 - [ ] **Step 4: Gate the header icon button to desktop**
 
@@ -794,11 +792,10 @@ Expected: FAIL — on mobile the inline button currently renders in the header r
 - [ ] **Step 3: Update imports** — `src/components/recipes-view.tsx`
 
 ```tsx
-import { FloatingActionButton, OfflineUnavailable, ScreenTransition } from "@/components/shared";
-import { MOBILE_FAB_SCROLL_PADDING } from "@/components/shared/floating-action-layout";
+import { FloatingActionButton, MOBILE_FAB_SCROLL_PADDING, OfflineUnavailable, ScreenTransition } from "@/components/shared";
 ```
 
-(Merge `FloatingActionButton` into the existing `@/components/shared` import.)
+(Merge `FloatingActionButton` and `MOBILE_FAB_SCROLL_PADDING` into the existing `@/components/shared` import.)
 
 - [ ] **Step 4: Make the header row desktop-only + add scroll padding**
 
