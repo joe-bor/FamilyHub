@@ -1,5 +1,61 @@
 # Changelog
 
+## [0.3.19](https://github.com/joe-bor/FamilyHub/compare/family-hub-v0.3.18...family-hub-v0.3.19) (2026-06-25)
+
+
+### Features
+
+* **chores:** use shared FAB for add chore on mobile ([e451979](https://github.com/joe-bor/FamilyHub/commit/e45197939bb5280401ea3877a71a6189f5861d7e))
+* **fab:** extract shared FloatingActionButton used by calendar ([ff33d39](https://github.com/joe-bor/FamilyHub/commit/ff33d39fbbdbbb74cf5fb725cf399d15767e1dc7))
+* **home:** ActivityFeed component with expand/collapse + divider ([1181986](https://github.com/joe-bor/FamilyHub/commit/11819868612d023fd5ad2fe4675312d9f6e2cf0a))
+* **home:** build coalesced activity feed with divider and cap ([b95671f](https://github.com/joe-bor/FamilyHub/commit/b95671ff4207b4a8bd6244f53e7c38a7b23fceb3))
+* **home:** coalesce, reconcile, and prune the activity change log ([70a98e5](https://github.com/joe-bor/FamilyHub/commit/70a98e5897b05fd91cf50fc082caba2a975fac36))
+* **home:** derive state line (chores remaining + tonight's dinner) ([1bce48c](https://github.com/joe-bor/FamilyHub/commit/1bce48c66d5e2e07f06183cb6fe19233c93b70cd))
+* **home:** diff activity snapshots into added/edited/removed items ([3ae70f6](https://github.com/joe-bor/FamilyHub/commit/3ae70f6e815f66ca869a3736cf77a089d4b0116e))
+* **home:** entity deep-links + mobile-gated state line & activity feed ([730de65](https://github.com/joe-bor/FamilyHub/commit/730de6523e2a816e01949ca98c9f60164724305c))
+* **home:** meaningful-open detection + lastSeen/hiddenAt markers ([a03af73](https://github.com/joe-bor/FamilyHub/commit/a03af731adbcd3088f4106db315f79905a0249e0))
+* **home:** normalize calendar+list data into activity snapshot ([c82ea50](https://github.com/joe-bor/FamilyHub/commit/c82ea50ea873ba82de3d4129ffcbada5f1570979))
+* **home:** orchestration hook wiring diff cycle to queries + storage ([cba897d](https://github.com/joe-bor/FamilyHub/commit/cba897dab4d1bda09c848021a6d18baef78d4c82))
+* **home:** persist activity snapshot+log to a dedicated idb store ([fe587ee](https://github.com/joe-bor/FamilyHub/commit/fe587ee161a31b9e4a98e15933ec98c6b736c881))
+* **home:** StateLine component ([39f1749](https://github.com/joe-bor/FamilyHub/commit/39f17499d36aa13c58bb718c93bcc32d330ed1ec))
+* **lists:** use shared FAB for add item on mobile detail ([4dd9b76](https://github.com/joe-bor/FamilyHub/commit/4dd9b7686d7d8c4adc9885c259682a6a6f1a92f4))
+* **lists:** use shared FAB for create on mobile landing ([52df4f1](https://github.com/joe-bor/FamilyHub/commit/52df4f108642a58d7bb3abe0e2e14656aa039904))
+* **recipes:** use shared FAB for add recipe on mobile ([e5906fe](https://github.com/joe-bor/FamilyHub/commit/e5906fee6fc8644076288c06492341d2fc4dbcef))
+
+
+### Bug Fixes
+
+* **chores:** optimistically update current-period completion ([34c23aa](https://github.com/joe-bor/FamilyHub/commit/34c23aa17ac97f75f04724d97a695b6a30ef905f))
+* **home:** clear persisted activity (store + markers) on logout and 401 ([c7a8213](https://github.com/joe-bor/FamilyHub/commit/c7a8213e3790bf8e70f5106f1c9705fbb57e30fd))
+* **home:** diff refetched data in the return-to-visible cycle ([37461d8](https://github.com/joe-bor/FamilyHub/commit/37461d8333b60b3a109e87ce3b24b8ae3f17c6cf))
+* **home:** resolve feed deep-links against the family-wide openable set ([384f302](https://github.com/joe-bor/FamilyHub/commit/384f30259747a965dac9e5d99defe741581a938a))
+* **meals:** give collision dialog actions a 44px touch target ([caf612b](https://github.com/joe-bor/FamilyHub/commit/caf612bdf0f47dd6eead6f421229d8cda12578c4))
+* **meals:** send the remove-slot payload in the DELETE request body ([fc68807](https://github.com/joe-bor/FamilyHub/commit/fc68807964c6bca4b5a8a55b077644b3ea3f629b))
+* **shared:** make module-switch fade opacity-only so fixed FABs stay anchored ([891bc7e](https://github.com/joe-bor/FamilyHub/commit/891bc7e08bebd3a92eeda139f5aec244f7ce98c4))
+* **ui:** reserve dialog gutters so centered dialogs fit narrow viewports ([e33855a](https://github.com/joe-bor/FamilyHub/commit/e33855a73939d54f69136197fca2b3282f028371))
+
+
+### Documentation
+
+* **fab:** add implementation plan for shared mobile creation FAB ([9ecd8b1](https://github.com/joe-bor/FamilyHub/commit/9ecd8b10a289c7f334ffde945777317c36d574a6))
+* **fab:** add spec for shared mobile creation FAB ([81c8126](https://github.com/joe-bor/FamilyHub/commit/81c81269e3e5c792d54dc63c6fcedda63a077248))
+* **fab:** address plan-review findings before execution ([82e9659](https://github.com/joe-bor/FamilyHub/commit/82e965924d763590835993373eeab0ff4f13278c))
+* **fab:** import FAB scroll-padding token from shared barrel ([9ed9b7b](https://github.com/joe-bor/FamilyHub/commit/9ed9b7b036a1b34c14997cbbd0cebeb2efea2788))
+* **home:** clarify in-window deep-link set is the 3-day dashboard window ([3625eea](https://github.com/joe-bor/FamilyHub/commit/3625eea7b34a6fc34d4ee3dd9c13100316cd382c))
+
+
+### Tests
+
+* **chores:** verify immediate completion feedback and persistence ([e742c90](https://github.com/joe-bor/FamilyHub/commit/e742c90f8e3f9e4a5a6d9f2b6d214ea1c7f4d27c))
+* **e2e:** cover mobile FAB creation flows and nav clearance ([5dde65e](https://github.com/joe-bor/FamilyHub/commit/5dde65e597670854b25559ab7b17f3a261c4654b))
+* **e2e:** cover occupied-slot collision dialog fit on narrow viewports ([52cd297](https://github.com/joe-bor/FamilyHub/commit/52cd2970354a360e0f34ce7612e22bc68a9ca98c))
+* **e2e:** cover Remove meal persisting after a board reload ([a8e2f04](https://github.com/joe-bor/FamilyHub/commit/a8e2f04c1e09e1794ee059ece392f1c01faf2eff))
+* **e2e:** disambiguate Home add-event assertion now that the activity feed surfaces the event ([e4bb75d](https://github.com/joe-bor/FamilyHub/commit/e4bb75df151668c45c712d52bf0c4829db91d446))
+* **e2e:** gate mobile sheet interactions on waitForSheetSettled ([0c25f39](https://github.com/joe-bor/FamilyHub/commit/0c25f397c05b84b147475582908eb4d85665dcae))
+* **e2e:** wait for offline cache to persist timezone before reload ([0e58703](https://github.com/joe-bor/FamilyHub/commit/0e587031fd95eeaf67c729e0fb539ad189c12e27))
+* **home:** cover the visibility hide branch records hiddenAt ([2d92fae](https://github.com/joe-bor/FamilyHub/commit/2d92faec46662c8f4715b7e549e5e0e95b3d3c02))
+* **lists:** assert list-detail Add item is the FAB on mobile ([9e1b064](https://github.com/joe-bor/FamilyHub/commit/9e1b064be7542f257c42625a0159fa54424c32d8))
+
 ## [0.3.18](https://github.com/joe-bor/FamilyHub/compare/family-hub-v0.3.17...family-hub-v0.3.18) (2026-06-19)
 
 
