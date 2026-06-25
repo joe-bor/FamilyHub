@@ -37,10 +37,10 @@ export function ScreenTransition({
             },
             { opacity: 1, transform: "none" },
           ]
-        : [
-            { opacity: 0, transform: "scale(1.012)" },
-            { opacity: 1, transform: "none" },
-          ];
+        : // Opacity-only cross-fade: a transform here (even animating to
+          // `none`) would make this wrapper the containing block for
+          // position: fixed FAB descendants mid-transition. Keep it absent.
+          [{ opacity: 0 }, { opacity: 1 }];
     el.animate(keyframes, {
       duration: mode === "slide" ? 280 : 200,
       easing: "cubic-bezier(0.2, 0, 0, 1)",

@@ -35,9 +35,12 @@ describe("ScreenTransition", () => {
       </ScreenTransition>,
     );
     expect(animateMock).toHaveBeenCalledTimes(1);
-    expect(animateMock.mock.calls[0][0][0]).toMatchObject({
-      transform: "scale(1.012)",
-    });
+    // Opacity-only cross-fade: no transform, so the animating wrapper never
+    // becomes a containing block for position: fixed FABs mid-transition.
+    expect(animateMock.mock.calls[0][0]).toEqual([
+      { opacity: 0 },
+      { opacity: 1 },
+    ]);
   });
   it("slides right on forward, left on back", () => {
     setReduce(false);
