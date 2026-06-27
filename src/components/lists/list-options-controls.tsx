@@ -39,26 +39,31 @@ export function ListOptionsControls({
   return (
     <>
       <div className="grid gap-3 sm:grid-cols-2">
-        {list.kind !== "general" && (
-          <div className="space-y-1">
-            <Label htmlFor="category-mode">Categories</Label>
-            <select
-              id="category-mode"
-              value={list.categoryDisplayMode}
-              onChange={(event) =>
-                onUpdateList({
-                  categoryDisplayMode: event.target
-                    .value as ListCategoryDisplayMode,
-                  showCompletedOverride: list.showCompletedOverride,
-                })
-              }
-              className="h-10 w-full rounded-lg border border-input bg-background px-3 text-[15px] leading-5 shadow-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            >
-              <option value="grouped">Show categories</option>
-              <option value="flat">Hide categories</option>
-            </select>
-          </div>
-        )}
+        <div className="space-y-1">
+          <Label htmlFor="category-mode">Categories</Label>
+          <select
+            id="category-mode"
+            value={list.categoryDisplayMode}
+            onChange={(event) =>
+              onUpdateList({
+                categoryDisplayMode: event.target
+                  .value as ListCategoryDisplayMode,
+                showCompletedOverride: list.showCompletedOverride,
+              })
+            }
+            className="h-10 w-full rounded-lg border border-input bg-background px-3 text-[15px] leading-5 shadow-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            <option value="grouped" disabled={list.categories.length === 0}>
+              Show categories
+            </option>
+            <option value="flat">Hide categories</option>
+          </select>
+          {list.categories.length === 0 && (
+            <p className="text-xs leading-4 text-muted-foreground">
+              Create a category first.
+            </p>
+          )}
+        </div>
 
         <div className="space-y-1">
           <Label htmlFor="completed-items">Completed items</Label>

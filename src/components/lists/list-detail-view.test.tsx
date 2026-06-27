@@ -168,5 +168,63 @@ describe("ListDetailView options placement", () => {
       // Desktop keeps the inline header button, never the floating action button.
       expect(addItem[0]).not.toHaveClass("fixed");
     });
+
+    it("shows category control for a General list when it has categories", async () => {
+      const generalList: ListDetail = {
+        id: LIST_ID,
+        name: "Movie Night",
+        kind: "general",
+        categoryDisplayMode: "grouped",
+        showCompletedOverride: null,
+        categories: [
+          {
+            id: "00000000-0000-4000-8000-000000000301",
+            kind: "general",
+            name: "Watchlist",
+            sortOrder: 0,
+          },
+        ],
+        items: [],
+        createdAt: "2026-05-06T09:00:00",
+        updatedAt: "2026-05-06T09:00:00",
+      };
+      seedMockLists([generalList]);
+      renderDetail();
+
+      await screen.findByRole("heading", { name: "Movie Night" });
+
+      expect(screen.getByLabelText("Categories")).toBeInTheDocument();
+      expect(screen.getByLabelText("Categories")).toHaveValue("grouped");
+    });
+
+    it("shows category control for a General list even when catalog is empty, but disables grouped option", async () => {
+      const generalList: ListDetail = {
+        id: LIST_ID,
+        name: "Movie Night",
+        kind: "general",
+        categoryDisplayMode: "flat",
+        showCompletedOverride: null,
+        categories: [],
+        items: [],
+        createdAt: "2026-05-06T09:00:00",
+        updatedAt: "2026-05-06T09:00:00",
+      };
+      seedMockLists([generalList]);
+      renderDetail();
+
+      await screen.findByRole("heading", { name: "Movie Night" });
+
+      const categorySelect = screen.getByLabelText("Categories");
+      expect(categorySelect).toBeInTheDocument();
+
+      // The grouped option should be disabled since there are no categories
+      const groupedOption = screen
+        .getAllByRole("option", { name: "Show categories" })
+        .find((opt) => opt.closest("select") === categorySelect);
+      expect(groupedOption).toBeDisabled();
+
+      // Explanatory helper text appears
+      expect(screen.getByText("Create a category first.")).toBeInTheDocument();
+    });
   });
 });
