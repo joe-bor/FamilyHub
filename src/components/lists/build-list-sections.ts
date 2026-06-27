@@ -26,7 +26,7 @@ export function buildListSections({
     ? list.items
     : list.items.filter((item) => !item.completed);
 
-  if (list.kind === "general" || list.categoryDisplayMode === "flat") {
+  if (list.categoryDisplayMode === "flat") {
     return [{ id: "all", title: null, items: sortVisibleItems(visibleItems) }];
   }
 

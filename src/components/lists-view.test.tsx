@@ -183,6 +183,27 @@ describe("ListsView hub", () => {
     expect(screen.queryByText("No lists yet")).not.toBeInTheDocument();
   });
 
+  it("shows the correct kind copy in the list creation sheet", async () => {
+    seedMockLists([]);
+
+    const { user } = renderWithUser(<ListsView />);
+
+    await user.click(await screen.findByRole("button", { name: /new list/i }));
+
+    // Exact copy per spec
+    expect(
+      screen.getByText(
+        "Customizable shopping categories with starter examples",
+      ),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText("Customizable planning buckets with starter examples"),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText("Flexible checklist; add categories whenever useful"),
+    ).toBeInTheDocument();
+  });
+
   it("creates a new grocery list through the mobile sheet flow", async () => {
     seedMockLists([]);
 
@@ -240,7 +261,7 @@ describe("ListsView hub", () => {
     expect(screen.queryByText("Uncategorized")).not.toBeInTheDocument();
   });
 
-  it("does not show category controls for general lists", async () => {
+  it("shows category control for general lists with empty catalog and disables grouped option", async () => {
     seedMockLists([generalList]);
 
     const { user } = renderWithUser(<ListsView />);
@@ -249,10 +270,21 @@ describe("ListsView hub", () => {
       await screen.findByRole("button", { name: /Movie Night/i }),
     );
 
-    expect(screen.queryByLabelText("Categories")).not.toBeInTheDocument();
     expect(
       screen.getByRole("heading", { name: "Movie Night" }),
     ).toBeInTheDocument();
+
+    const categorySelect = screen.getByLabelText("Categories");
+    expect(categorySelect).toBeInTheDocument();
+
+    // grouped option disabled when catalog is empty
+    const groupedOption = screen
+      .getAllByRole("option", { name: "Show categories" })
+      .find((opt) => opt.closest("select") === categorySelect);
+    expect(groupedOption).toBeDisabled();
+
+    // helper text
+    expect(screen.getByText("Create a category first.")).toBeInTheDocument();
   });
 
   it("renders list detail and core item actions while preferences are loading", async () => {

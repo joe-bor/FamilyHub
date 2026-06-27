@@ -21,19 +21,19 @@ const kindOptions = [
   {
     value: "grocery",
     label: "Grocery",
-    description: "Shopping categories like Produce, Dairy, and Pantry",
+    description: "Customizable shopping categories with starter examples",
     icon: ShoppingCart,
   },
   {
     value: "to-do",
     label: "To-do",
-    description: "Light buckets like Urgent, Soon, and Later",
+    description: "Customizable planning buckets with starter examples",
     icon: ListTodo,
   },
   {
     value: "general",
     label: "General",
-    description: "A flat checklist without categories",
+    description: "Flexible checklist; add categories whenever useful",
     icon: ClipboardList,
   },
 ] as const;
