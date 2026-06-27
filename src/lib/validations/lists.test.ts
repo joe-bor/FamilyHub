@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { listCreateSchema, listItemSchema } from "./lists";
+import { categoryNameSchema, listCreateSchema, listItemSchema } from "./lists";
 
 describe("listCreateSchema", () => {
   it("trims name and requires a kind", () => {
@@ -46,6 +46,32 @@ describe("listItemSchema", () => {
   it("rejects empty item text", () => {
     expect(() => listItemSchema.parse({ text: "   " })).toThrow(
       "Item text is required",
+    );
+  });
+});
+
+describe("categoryNameSchema", () => {
+  it("trims and accepts a valid category name", () => {
+    expect(categoryNameSchema.parse("  Produce  ")).toBe("Produce");
+  });
+
+  it("accepts a name at exactly 100 characters", () => {
+    const name = "a".repeat(100);
+    expect(categoryNameSchema.parse(name)).toBe(name);
+  });
+
+  it("rejects empty or whitespace-only names", () => {
+    expect(() => categoryNameSchema.parse("")).toThrow(
+      "Category name is required",
+    );
+    expect(() => categoryNameSchema.parse("   ")).toThrow(
+      "Category name is required",
+    );
+  });
+
+  it("rejects names over 100 characters", () => {
+    expect(() => categoryNameSchema.parse("a".repeat(101))).toThrow(
+      "Category name must be 100 characters or less",
     );
   });
 });

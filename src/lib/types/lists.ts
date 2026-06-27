@@ -1,8 +1,44 @@
 import type { ApiResponse } from "./api-response";
 
 export type ListKind = "grocery" | "to-do" | "general";
-export type CategoryAwareListKind = Exclude<ListKind, "general">;
 export type ListCategoryDisplayMode = "grouped" | "flat";
+
+export interface ListCategoryOption {
+  id: string;
+  kind: ListKind;
+  name: string;
+  sortOrder: number;
+}
+
+export interface ListCategoryManagementEntry extends ListCategoryOption {
+  itemCount: number;
+}
+
+export interface ListCategoryCatalog {
+  kind: ListKind;
+  groupedListCount: number;
+  categories: ListCategoryManagementEntry[];
+}
+
+export interface CategoryDeleteResult {
+  uncategorizedItemCount: number;
+  flattenedListCount: number;
+}
+
+export interface CreateListCategoryRequest {
+  kind: ListKind;
+  name: string;
+}
+
+export interface RenameListCategoryRequest {
+  name: string;
+}
+
+export interface ReorderListCategoriesRequest {
+  kind: ListKind;
+  expectedCategoryIds: string[];
+  categoryIds: string[];
+}
 
 export interface ListSummary {
   id: string;
@@ -10,14 +46,6 @@ export interface ListSummary {
   kind: ListKind;
   totalItems: number;
   completedItems: number;
-}
-
-export interface ListCategory {
-  id: string;
-  kind: CategoryAwareListKind;
-  name: string;
-  seeded: boolean;
-  sortOrder: number;
 }
 
 export interface ListItem {
@@ -36,7 +64,7 @@ export interface ListDetail {
   kind: ListKind;
   categoryDisplayMode: ListCategoryDisplayMode;
   showCompletedOverride: boolean | null;
-  categories: ListCategory[];
+  categories: ListCategoryOption[];
   items: ListItem[];
   createdAt: string;
   updatedAt: string;
@@ -80,3 +108,7 @@ export type ListDetailApiResponse = ApiResponse<ListDetail>;
 export type ListItemApiResponse = ApiResponse<ListItem>;
 export type ListPreferencesApiResponse = ApiResponse<ListPreferences>;
 export type ClearCompletedApiResponse = ApiResponse<ClearCompletedResponse>;
+export type ListCategoryCatalogApiResponse = ApiResponse<ListCategoryCatalog>;
+export type ListCategoryManagementEntryApiResponse =
+  ApiResponse<ListCategoryManagementEntry>;
+export type CategoryDeleteResultApiResponse = ApiResponse<CategoryDeleteResult>;

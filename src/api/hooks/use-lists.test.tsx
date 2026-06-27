@@ -13,6 +13,8 @@ import {
 } from "vitest";
 import type {
   ApiResponse,
+  ListCategoryCatalog,
+  ListCategoryManagementEntry,
   ListDetail,
   ListItem,
   ListPreferences,
@@ -20,6 +22,7 @@ import type {
 import {
   API_BASE,
   resetMockLists,
+  seedMockCategoryCatalog,
   seedMockListPreferences,
   seedMockLists,
   server,
@@ -28,11 +31,16 @@ import {
   listsKeys,
   useClearCompleted,
   useCreateList,
+  useCreateListCategory,
   useCreateListItem,
+  useDeleteListCategory,
   useDeleteListItem,
   useList,
+  useListCategories,
   useListPreferences,
   useLists,
+  useRenameListCategory,
+  useReorderListCategories,
   useUpdateList,
   useUpdateListItem,
   useUpdateListPreferences,
@@ -49,7 +57,6 @@ const groceryList: ListDetail = {
       id: "00000000-0000-4000-8000-000000000201",
       kind: "grocery",
       name: "Produce",
-      seeded: true,
       sortOrder: 0,
     },
   ],
@@ -114,7 +121,7 @@ describe("useLists", () => {
     });
   });
 
-  it("returns list details with seeded categories", async () => {
+  it("returns list details with categories", async () => {
     seedMockLists([groceryList]);
 
     const { result } = renderHook(() => useList(groceryList.id), {
@@ -125,7 +132,7 @@ describe("useLists", () => {
       expect(result.current.data?.data.categories[0]).toMatchObject({
         name: "Produce",
         kind: "grocery",
-        seeded: true,
+        sortOrder: 0,
       });
     });
   });
@@ -511,5 +518,584 @@ describe("useLists", () => {
         )?.data.items,
       ).toEqual([]);
     });
+  });
+
+  // ---------------------------------------------------------------------------
+  // Category query key
+  // ---------------------------------------------------------------------------
+
+  it("listsKeys.categories returns correct key shape", () => {
+    expect(listsKeys.categories("grocery")).toEqual([
+      "lists",
+      "categories",
+      "grocery",
+    ]);
+    expect(listsKeys.categories("to-do")).toEqual([
+      "lists",
+      "categories",
+      "to-do",
+    ]);
+  });
+
+  // ---------------------------------------------------------------------------
+  // useListCategories
+  // ---------------------------------------------------------------------------
+
+  it("fetches catalog when enabled is true", async () => {
+    const { result } = renderHook(() => useListCategories("grocery", true), {
+      wrapper: createWrapper(),
+    });
+
+    await waitFor(() => {
+      expect(result.current.isSuccess).toBe(true);
+      expect(result.current.data?.data.kind).toBe("grocery");
+      expect(Array.isArray(result.current.data?.data.categories)).toBe(true);
+    });
+  });
+
+  it("does not fetch catalog when enabled is false", () => {
+    const { result } = renderHook(() => useListCategories("grocery", false), {
+      wrapper: createWrapper(),
+    });
+
+    expect(result.current.fetchStatus).toBe("idle");
+    expect(result.current.data).toBeUndefined();
+  });
+
+  // ---------------------------------------------------------------------------
+  // useCreateListCategory — appends to catalog and same-kind list details
+  // ---------------------------------------------------------------------------
+
+  it("create category appends to same-kind detail categories and to catalog", async () => {
+    const groceryList2: ListDetail = {
+      ...groceryList,
+      id: "00000000-0000-4000-8000-000000000102",
+      name: "Costco Run",
+    };
+
+    seedMockLists([groceryList, groceryList2]);
+    queryClient.setQueryData(listsKeys.detail(groceryList.id), {
+      data: groceryList,
+    } satisfies ApiResponse<ListDetail>);
+    queryClient.setQueryData(listsKeys.detail(groceryList2.id), {
+      data: groceryList2,
+    } satisfies ApiResponse<ListDetail>);
+
+    const catalog: ListCategoryCatalog = {
+      kind: "grocery",
+      groupedListCount: 2,
+      categories: [
+        {
+          id: "00000000-0000-4000-8000-000000000201",
+          kind: "grocery",
+          name: "Produce",
+          sortOrder: 0,
+          itemCount: 0,
+        },
+      ],
+    };
+    queryClient.setQueryData(listsKeys.categories("grocery"), {
+      data: catalog,
+    } satisfies ApiResponse<ListCategoryCatalog>);
+
+    const { result } = renderHook(() => useCreateListCategory(), {
+      wrapper: createWrapper(),
+    });
+
+    result.current.mutate({ kind: "grocery", name: "Bakery" });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+
+    // New category appears in both cached grocery list details
+    const detail1 = queryClient.getQueryData<ApiResponse<ListDetail>>(
+      listsKeys.detail(groceryList.id),
+    );
+    const detail2 = queryClient.getQueryData<ApiResponse<ListDetail>>(
+      listsKeys.detail(groceryList2.id),
+    );
+    expect(detail1?.data.categories.some((c) => c.name === "Bakery")).toBe(
+      true,
+    );
+    expect(detail2?.data.categories.some((c) => c.name === "Bakery")).toBe(
+      true,
+    );
+
+    // New management entry appears in catalog
+    const catalogData = queryClient.getQueryData<
+      ApiResponse<ListCategoryCatalog>
+    >(listsKeys.categories("grocery"));
+    expect(catalogData?.data.categories.some((c) => c.name === "Bakery")).toBe(
+      true,
+    );
+  });
+
+  it("create category does not touch a different kind's detail cache", async () => {
+    const todoList: ListDetail = {
+      id: "00000000-0000-4000-8000-000000000110",
+      name: "My To-Dos",
+      kind: "to-do",
+      categoryDisplayMode: "grouped",
+      showCompletedOverride: null,
+      categories: [
+        {
+          id: "00000000-0000-4000-8000-000000000401",
+          kind: "to-do",
+          name: "Urgent",
+          sortOrder: 0,
+        },
+      ],
+      items: [],
+      createdAt: "2026-05-06T09:00:00",
+      updatedAt: "2026-05-06T09:00:00",
+    };
+
+    seedMockLists([groceryList, todoList]);
+    queryClient.setQueryData(listsKeys.detail(todoList.id), {
+      data: todoList,
+    } satisfies ApiResponse<ListDetail>);
+
+    const { result } = renderHook(() => useCreateListCategory(), {
+      wrapper: createWrapper(),
+    });
+
+    result.current.mutate({ kind: "grocery", name: "Bakery" });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+
+    // To-do detail cache is unchanged
+    const todoDetail = queryClient.getQueryData<ApiResponse<ListDetail>>(
+      listsKeys.detail(todoList.id),
+    );
+    expect(todoDetail?.data.categories).toHaveLength(1);
+    expect(todoDetail?.data.categories[0].name).toBe("Urgent");
+  });
+
+  // ---------------------------------------------------------------------------
+  // useRenameListCategory — updates catalog and same-kind detail categories
+  // ---------------------------------------------------------------------------
+
+  it("rename category updates matching entries in catalog and same-kind details", async () => {
+    const catId = "00000000-0000-4000-8000-000000000201";
+    const groceryList2: ListDetail = {
+      ...groceryList,
+      id: "00000000-0000-4000-8000-000000000102",
+      name: "Costco Run",
+      categories: [
+        { id: catId, kind: "grocery", name: "Produce", sortOrder: 0 },
+      ],
+    };
+    const groceryListWithCat: ListDetail = {
+      ...groceryList,
+      categories: [
+        { id: catId, kind: "grocery", name: "Produce", sortOrder: 0 },
+      ],
+    };
+
+    // Seed MSW catalog with specific IDs so PATCH endpoint can find it
+    seedMockCategoryCatalog("grocery", [
+      { id: catId, kind: "grocery", name: "Produce", sortOrder: 0 },
+    ]);
+    seedMockLists([groceryListWithCat, groceryList2]);
+    queryClient.setQueryData(listsKeys.detail(groceryListWithCat.id), {
+      data: groceryListWithCat,
+    } satisfies ApiResponse<ListDetail>);
+    queryClient.setQueryData(listsKeys.detail(groceryList2.id), {
+      data: groceryList2,
+    } satisfies ApiResponse<ListDetail>);
+
+    const catalog: ListCategoryCatalog = {
+      kind: "grocery",
+      groupedListCount: 2,
+      categories: [
+        {
+          id: catId,
+          kind: "grocery",
+          name: "Produce",
+          sortOrder: 0,
+          itemCount: 2,
+        },
+      ],
+    };
+    queryClient.setQueryData(listsKeys.categories("grocery"), {
+      data: catalog,
+    } satisfies ApiResponse<ListCategoryCatalog>);
+
+    const { result } = renderHook(() => useRenameListCategory(), {
+      wrapper: createWrapper(),
+    });
+
+    result.current.mutate({ categoryId: catId, name: "Fresh Produce" });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+
+    const detail1 = queryClient.getQueryData<ApiResponse<ListDetail>>(
+      listsKeys.detail(groceryListWithCat.id),
+    );
+    const detail2 = queryClient.getQueryData<ApiResponse<ListDetail>>(
+      listsKeys.detail(groceryList2.id),
+    );
+    expect(detail1?.data.categories[0].name).toBe("Fresh Produce");
+    expect(detail2?.data.categories[0].name).toBe("Fresh Produce");
+
+    const catalogData = queryClient.getQueryData<
+      ApiResponse<ListCategoryCatalog>
+    >(listsKeys.categories("grocery"));
+    expect(catalogData?.data.categories[0].name).toBe("Fresh Produce");
+  });
+
+  // ---------------------------------------------------------------------------
+  // useDeleteListCategory — removes category, nulls items, compacts sortOrder
+  // ---------------------------------------------------------------------------
+
+  it("delete middle category removes it, nulls items, compacts sortOrder across two details", async () => {
+    const catA = "00000000-0000-4000-8000-000000000201";
+    const catB = "00000000-0000-4000-8000-000000000202";
+    const catC = "00000000-0000-4000-8000-000000000203";
+
+    const listA: ListDetail = {
+      id: "00000000-0000-4000-8000-000000000101",
+      name: "List A",
+      kind: "grocery",
+      categoryDisplayMode: "grouped",
+      showCompletedOverride: null,
+      categories: [
+        { id: catA, kind: "grocery", name: "Produce", sortOrder: 0 },
+        { id: catB, kind: "grocery", name: "Dairy", sortOrder: 1 },
+        { id: catC, kind: "grocery", name: "Frozen", sortOrder: 2 },
+      ],
+      items: [
+        {
+          id: "item-1",
+          text: "Milk",
+          completed: false,
+          completedAt: null,
+          categoryId: catB,
+          createdAt: "2026-05-06T09:00:00",
+          updatedAt: "2026-05-06T09:00:00",
+        },
+        {
+          id: "item-2",
+          text: "Cheese",
+          completed: false,
+          completedAt: null,
+          categoryId: catB,
+          createdAt: "2026-05-06T09:00:00",
+          updatedAt: "2026-05-06T09:00:00",
+        },
+      ],
+      createdAt: "2026-05-06T09:00:00",
+      updatedAt: "2026-05-06T09:00:00",
+    };
+    const listB: ListDetail = {
+      ...listA,
+      id: "00000000-0000-4000-8000-000000000102",
+      name: "List B",
+      items: [
+        {
+          id: "item-3",
+          text: "Ice cream",
+          completed: false,
+          completedAt: null,
+          categoryId: catB,
+          createdAt: "2026-05-06T09:00:00",
+          updatedAt: "2026-05-06T09:00:00",
+        },
+      ],
+    };
+
+    // Seed MSW catalog so DELETE endpoint can find catB
+    seedMockCategoryCatalog("grocery", [
+      { id: catA, kind: "grocery", name: "Produce", sortOrder: 0 },
+      { id: catB, kind: "grocery", name: "Dairy", sortOrder: 1 },
+      { id: catC, kind: "grocery", name: "Frozen", sortOrder: 2 },
+    ]);
+    seedMockLists([listA, listB]);
+    queryClient.setQueryData(listsKeys.detail(listA.id), {
+      data: listA,
+    } satisfies ApiResponse<ListDetail>);
+    queryClient.setQueryData(listsKeys.detail(listB.id), {
+      data: listB,
+    } satisfies ApiResponse<ListDetail>);
+
+    const catalog: ListCategoryCatalog = {
+      kind: "grocery",
+      groupedListCount: 2,
+      categories: [
+        {
+          id: catA,
+          kind: "grocery",
+          name: "Produce",
+          sortOrder: 0,
+          itemCount: 0,
+        },
+        {
+          id: catB,
+          kind: "grocery",
+          name: "Dairy",
+          sortOrder: 1,
+          itemCount: 3,
+        },
+        {
+          id: catC,
+          kind: "grocery",
+          name: "Frozen",
+          sortOrder: 2,
+          itemCount: 0,
+        },
+      ],
+    };
+    queryClient.setQueryData(listsKeys.categories("grocery"), {
+      data: catalog,
+    } satisfies ApiResponse<ListCategoryCatalog>);
+
+    const { result } = renderHook(() => useDeleteListCategory(), {
+      wrapper: createWrapper(),
+    });
+
+    result.current.mutate({ categoryId: catB, kind: "grocery" });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+
+    // Category removed from both details
+    const d1 = queryClient.getQueryData<ApiResponse<ListDetail>>(
+      listsKeys.detail(listA.id),
+    );
+    const d2 = queryClient.getQueryData<ApiResponse<ListDetail>>(
+      listsKeys.detail(listB.id),
+    );
+
+    expect(d1?.data.categories.map((c) => c.name)).toEqual([
+      "Produce",
+      "Frozen",
+    ]);
+    expect(d2?.data.categories.map((c) => c.name)).toEqual([
+      "Produce",
+      "Frozen",
+    ]);
+
+    // sortOrder is dense (0, 1) after removal
+    expect(d1?.data.categories.map((c) => c.sortOrder)).toEqual([0, 1]);
+    expect(d2?.data.categories.map((c) => c.sortOrder)).toEqual([0, 1]);
+
+    // Items that had catB get null categoryId
+    expect(d1?.data.items.map((i) => i.categoryId)).toEqual([null, null]);
+    expect(d2?.data.items.map((i) => i.categoryId)).toEqual([null]);
+
+    // Catalog also loses catB
+    const catalogData = queryClient.getQueryData<
+      ApiResponse<ListCategoryCatalog>
+    >(listsKeys.categories("grocery"));
+    expect(catalogData?.data.categories.map((c) => c.name)).toEqual([
+      "Produce",
+      "Frozen",
+    ]);
+    expect(catalogData?.data.categories.map((c) => c.sortOrder)).toEqual([
+      0, 1,
+    ]);
+  });
+
+  it("delete last category switches grouped details to flat mode", async () => {
+    const catId = "00000000-0000-4000-8000-000000000201";
+    const listWithOneCategory: ListDetail = {
+      ...groceryList,
+      categories: [
+        { id: catId, kind: "grocery", name: "Produce", sortOrder: 0 },
+      ],
+    };
+
+    // Seed MSW catalog so DELETE endpoint can find catId
+    seedMockCategoryCatalog("grocery", [
+      { id: catId, kind: "grocery", name: "Produce", sortOrder: 0 },
+    ]);
+    seedMockLists([listWithOneCategory]);
+    queryClient.setQueryData(listsKeys.detail(listWithOneCategory.id), {
+      data: listWithOneCategory,
+    } satisfies ApiResponse<ListDetail>);
+
+    const catalog: ListCategoryCatalog = {
+      kind: "grocery",
+      groupedListCount: 1,
+      categories: [
+        {
+          id: catId,
+          kind: "grocery",
+          name: "Produce",
+          sortOrder: 0,
+          itemCount: 0,
+        },
+      ],
+    };
+    queryClient.setQueryData(listsKeys.categories("grocery"), {
+      data: catalog,
+    } satisfies ApiResponse<ListCategoryCatalog>);
+
+    const { result } = renderHook(() => useDeleteListCategory(), {
+      wrapper: createWrapper(),
+    });
+
+    result.current.mutate({ categoryId: catId, kind: "grocery" });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+
+    const detail = queryClient.getQueryData<ApiResponse<ListDetail>>(
+      listsKeys.detail(listWithOneCategory.id),
+    );
+    // No categories remain → mode switches to flat
+    expect(detail?.data.categories).toHaveLength(0);
+    expect(detail?.data.categoryDisplayMode).toBe("flat");
+  });
+
+  it("delete category does not touch a different kind's cached detail", async () => {
+    const catId = "00000000-0000-4000-8000-000000000201";
+    const todoList: ListDetail = {
+      id: "00000000-0000-4000-8000-000000000110",
+      name: "My To-Dos",
+      kind: "to-do",
+      categoryDisplayMode: "grouped",
+      showCompletedOverride: null,
+      categories: [
+        {
+          id: "00000000-0000-4000-8000-000000000401",
+          kind: "to-do",
+          name: "Urgent",
+          sortOrder: 0,
+        },
+      ],
+      items: [],
+      createdAt: "2026-05-06T09:00:00",
+      updatedAt: "2026-05-06T09:00:00",
+    };
+
+    // Seed MSW catalog so DELETE endpoint can find catId in grocery
+    seedMockCategoryCatalog("grocery", [
+      { id: catId, kind: "grocery", name: "Produce", sortOrder: 0 },
+    ]);
+    seedMockLists([groceryList, todoList]);
+    queryClient.setQueryData(listsKeys.detail(todoList.id), {
+      data: todoList,
+    } satisfies ApiResponse<ListDetail>);
+
+    const catalog: ListCategoryCatalog = {
+      kind: "grocery",
+      groupedListCount: 1,
+      categories: [
+        {
+          id: catId,
+          kind: "grocery",
+          name: "Produce",
+          sortOrder: 0,
+          itemCount: 0,
+        },
+      ],
+    };
+    queryClient.setQueryData(listsKeys.categories("grocery"), {
+      data: catalog,
+    } satisfies ApiResponse<ListCategoryCatalog>);
+
+    const { result } = renderHook(() => useDeleteListCategory(), {
+      wrapper: createWrapper(),
+    });
+
+    result.current.mutate({ categoryId: catId, kind: "grocery" });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+
+    // To-do detail cache should be untouched
+    const todoDetail = queryClient.getQueryData<ApiResponse<ListDetail>>(
+      listsKeys.detail(todoList.id),
+    );
+    expect(todoDetail?.data.categories).toHaveLength(1);
+    expect(todoDetail?.data.categories[0].name).toBe("Urgent");
+  });
+
+  // ---------------------------------------------------------------------------
+  // useReorderListCategories — replaces catalog and reorders same-kind details
+  // ---------------------------------------------------------------------------
+
+  it("reorder category updates catalog and same-kind detail category order", async () => {
+    const catA = "00000000-0000-4000-8000-000000000201";
+    const catB = "00000000-0000-4000-8000-000000000202";
+    const catC = "00000000-0000-4000-8000-000000000203";
+
+    const listWithCategories: ListDetail = {
+      ...groceryList,
+      categories: [
+        { id: catA, kind: "grocery", name: "Produce", sortOrder: 0 },
+        { id: catB, kind: "grocery", name: "Dairy", sortOrder: 1 },
+        { id: catC, kind: "grocery", name: "Frozen", sortOrder: 2 },
+      ],
+    };
+
+    // Seed MSW catalog so PUT /lists/categories/order can find and reorder these IDs
+    seedMockCategoryCatalog("grocery", [
+      { id: catA, kind: "grocery", name: "Produce", sortOrder: 0 },
+      { id: catB, kind: "grocery", name: "Dairy", sortOrder: 1 },
+      { id: catC, kind: "grocery", name: "Frozen", sortOrder: 2 },
+    ]);
+    seedMockLists([listWithCategories]);
+    queryClient.setQueryData(listsKeys.detail(listWithCategories.id), {
+      data: listWithCategories,
+    } satisfies ApiResponse<ListDetail>);
+
+    const catalog: ListCategoryCatalog = {
+      kind: "grocery",
+      groupedListCount: 1,
+      categories: [
+        {
+          id: catA,
+          kind: "grocery",
+          name: "Produce",
+          sortOrder: 0,
+          itemCount: 0,
+        },
+        {
+          id: catB,
+          kind: "grocery",
+          name: "Dairy",
+          sortOrder: 1,
+          itemCount: 0,
+        },
+        {
+          id: catC,
+          kind: "grocery",
+          name: "Frozen",
+          sortOrder: 2,
+          itemCount: 0,
+        },
+      ],
+    };
+    queryClient.setQueryData(listsKeys.categories("grocery"), {
+      data: catalog,
+    } satisfies ApiResponse<ListCategoryCatalog>);
+
+    const { result } = renderHook(() => useReorderListCategories(), {
+      wrapper: createWrapper(),
+    });
+
+    result.current.mutate({
+      kind: "grocery",
+      expectedCategoryIds: [catA, catB, catC],
+      categoryIds: [catC, catA, catB],
+    });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+
+    // Catalog reflects new order from server response
+    const catalogData = queryClient.getQueryData<
+      ApiResponse<ListCategoryCatalog>
+    >(listsKeys.categories("grocery"));
+    const catalogIds = catalogData?.data.categories.map((c) => c.id);
+    expect(catalogIds).toEqual([catC, catA, catB]);
+
+    // Detail categories are reordered to match catalog's canonical IDs
+    const detail = queryClient.getQueryData<ApiResponse<ListDetail>>(
+      listsKeys.detail(listWithCategories.id),
+    );
+    expect(detail?.data.categories.map((c) => c.id)).toEqual([
+      catC,
+      catA,
+      catB,
+    ]);
+    expect(detail?.data.categories.map((c) => c.sortOrder)).toEqual([0, 1, 2]);
   });
 });

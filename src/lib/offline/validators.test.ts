@@ -220,6 +220,78 @@ describe("validatePersistedQueryData", () => {
       false,
     );
   });
+
+  it("accepts list detail with category options (no legacy seeded field)", () => {
+    const detailWithCategories: ListDetail = {
+      ...listDetail,
+      categories: [
+        { id: "c-1", kind: "grocery", name: "Produce", sortOrder: 0 },
+        { id: "c-2", kind: "grocery", name: "Dairy", sortOrder: 1 },
+      ],
+    };
+    expect(
+      validatePersistedQueryData(
+        listsKeys.detail("l-1"),
+        wrap(detailWithCategories),
+      ),
+    ).toBe(true);
+  });
+
+  it("accepts list detail with legacy cached category options that include seeded field", () => {
+    // Pre-v1.7.0 cached responses included `seeded: boolean`. The schema must
+    // be lenient about extra fields so old cached data is not dropped on restore.
+    const detailWithLegacyCategories = {
+      ...listDetail,
+      categories: [
+        {
+          id: "c-1",
+          kind: "grocery",
+          name: "Produce",
+          sortOrder: 0,
+          seeded: true, // legacy extra field
+        },
+      ],
+    };
+    expect(
+      validatePersistedQueryData(
+        listsKeys.detail("l-1"),
+        wrap(detailWithLegacyCategories),
+      ),
+    ).toBe(true);
+  });
+
+  it("accepts a grouped General list detail with no categories", () => {
+    const generalDetail: ListDetail = {
+      ...listDetail,
+      kind: "general",
+      categoryDisplayMode: "flat",
+      categories: [],
+    };
+    expect(
+      validatePersistedQueryData(listsKeys.detail("l-1"), wrap(generalDetail)),
+    ).toBe(true);
+  });
+
+  it("rejects list detail whose categories array contains malformed option entries", () => {
+    const badCategories = {
+      ...listDetail,
+      categories: [{ id: 123, kind: "grocery" }], // id must be a non-empty string
+    };
+    expect(
+      validatePersistedQueryData(listsKeys.detail("l-1"), wrap(badCategories)),
+    ).toBe(false);
+  });
+
+  it("rejects the category management catalog query key (not an allowlisted offline key)", () => {
+    // listsKeys.categories("grocery") = ["lists", "categories", "grocery"]
+    // This must NOT be persisted; schemaForQueryKey returns null for it.
+    expect(
+      validatePersistedQueryData(listsKeys.categories("grocery"), wrap({})),
+    ).toBe(false);
+    expect(
+      validatePersistedQueryData(listsKeys.categories("to-do"), wrap({})),
+    ).toBe(false);
+  });
 });
 
 // ---------------------------------------------------------------------------

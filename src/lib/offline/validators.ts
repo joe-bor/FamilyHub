@@ -105,13 +105,26 @@ const listItemSchema = z.object({
   createdAt: z.string(),
   updatedAt: z.string(),
 });
+
+// Structural category-option schema for persisted list-detail.
+// Requires the four fields present on ListCategoryOption; lenient to legacy
+// extra fields such as `seeded` that may exist in cached responses from before
+// the v1.7.0 BE release. We validate structure, not enum membership, so a
+// future new kind does not silently drop a family's offline cache on restore.
+const listCategoryOptionSchema = z.object({
+  id: z.string().min(1),
+  kind: z.string().min(1),
+  name: z.string().min(1),
+  sortOrder: z.number(),
+});
+
 const listDetailSchema = z.object({
   id: z.string().min(1),
   name: z.string(),
   kind: listKindSchema,
   categoryDisplayMode: z.enum(["grouped", "flat"]),
   showCompletedOverride: z.boolean().nullable(),
-  categories: z.array(z.unknown()),
+  categories: z.array(listCategoryOptionSchema),
   items: z.array(listItemSchema),
   createdAt: z.string(),
   updatedAt: z.string(),

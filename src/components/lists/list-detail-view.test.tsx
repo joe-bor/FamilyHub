@@ -31,7 +31,6 @@ const groceryList: ListDetail = {
       id: "00000000-0000-4000-8000-000000000301",
       kind: "grocery",
       name: "Produce",
-      seeded: true,
       sortOrder: 0,
     },
   ],

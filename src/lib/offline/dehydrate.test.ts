@@ -64,6 +64,8 @@ describe("isOfflineReadQueryKey", () => {
       ["photos", "album", "1"],
       ["family", "settings"], // wrong family sub-key
       ["lists", "categories"], // not an allowlisted lists sub-key
+      listsKeys.categories("grocery"), // management catalog must never be persisted
+      listsKeys.categories("to-do"),
       [],
     ];
 
