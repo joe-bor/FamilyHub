@@ -10,11 +10,12 @@ import {
   describe,
   expect,
   it,
+  vi,
 } from "vitest";
+import { listsService } from "@/api/services";
 import type {
   ApiResponse,
   ListCategoryCatalog,
-  ListCategoryManagementEntry,
   ListDetail,
   ListItem,
   ListPreferences,
@@ -943,6 +944,16 @@ describe("useLists", () => {
     // No categories remain → mode switches to flat
     expect(detail?.data.categories).toHaveLength(0);
     expect(detail?.data.categoryDisplayMode).toBe("flat");
+
+    // Cache rule: groupedListCount drops by exactly the server's flattenedListCount.
+    // The single grocery list was grouped, so the DELETE flattens it (count 1).
+    const flattenedListCount = result.current.data?.data.flattenedListCount;
+    expect(flattenedListCount).toBe(1);
+    const catalogAfter = queryClient.getQueryData<
+      ApiResponse<ListCategoryCatalog>
+    >(listsKeys.categories("grocery"));
+    // 1 (seeded) - 1 (flattened) = 0, floored at 0.
+    expect(catalogAfter?.data.groupedListCount).toBe(0);
   });
 
   it("delete category does not touch a different kind's cached detail", async () => {
@@ -1097,5 +1108,139 @@ describe("useLists", () => {
       catB,
     ]);
     expect(detail?.data.categories.map((c) => c.sortOrder)).toEqual([0, 1, 2]);
+  });
+
+  // ---------------------------------------------------------------------------
+  // Offline write guard — category WRITE hooks must reject before mutating
+  // the cache (no service call, cache untouched). Mirrors the item-mutation
+  // offline-guard pattern in src/lib/offline/offline-read-only.test.tsx.
+  // ---------------------------------------------------------------------------
+
+  describe("offline write guard for category mutations", () => {
+    const catId = "00000000-0000-4000-8000-000000000201";
+
+    function setOnline(value: boolean): void {
+      Object.defineProperty(navigator, "onLine", {
+        configurable: true,
+        value,
+      });
+    }
+
+    // Seed one grocery detail + catalog so cache-untouched assertions are meaningful.
+    function seedGroceryCategoryState() {
+      const groceryWithCat: ListDetail = {
+        ...groceryList,
+        categories: [
+          { id: catId, kind: "grocery", name: "Produce", sortOrder: 0 },
+        ],
+      };
+      queryClient.setQueryData(listsKeys.detail(groceryWithCat.id), {
+        data: groceryWithCat,
+      } satisfies ApiResponse<ListDetail>);
+      const catalog: ListCategoryCatalog = {
+        kind: "grocery",
+        groupedListCount: 1,
+        categories: [
+          {
+            id: catId,
+            kind: "grocery",
+            name: "Produce",
+            sortOrder: 0,
+            itemCount: 0,
+          },
+        ],
+      };
+      queryClient.setQueryData(listsKeys.categories("grocery"), {
+        data: catalog,
+      } satisfies ApiResponse<ListCategoryCatalog>);
+      return { groceryWithCat };
+    }
+
+    function expectGroceryStateUnchanged(detailId: string) {
+      const detail = queryClient.getQueryData<ApiResponse<ListDetail>>(
+        listsKeys.detail(detailId),
+      );
+      expect(detail?.data.categories).toHaveLength(1);
+      expect(detail?.data.categories[0]).toMatchObject({
+        id: catId,
+        name: "Produce",
+        sortOrder: 0,
+      });
+      const catalog = queryClient.getQueryData<
+        ApiResponse<ListCategoryCatalog>
+      >(listsKeys.categories("grocery"));
+      expect(catalog?.data.categories).toHaveLength(1);
+      expect(catalog?.data.groupedListCount).toBe(1);
+    }
+
+    beforeEach(() => setOnline(false));
+    afterEach(() => {
+      setOnline(true);
+      vi.restoreAllMocks();
+    });
+
+    it("create rejects offline without calling the service or touching the cache", async () => {
+      const { groceryWithCat } = seedGroceryCategoryState();
+      const createSpy = vi.spyOn(listsService, "createCategory");
+
+      const { result } = renderHook(() => useCreateListCategory(), {
+        wrapper: createWrapper(),
+      });
+
+      result.current.mutate({ kind: "grocery", name: "Bakery" });
+
+      await waitFor(() => expect(result.current.isError).toBe(true));
+      expect(createSpy).not.toHaveBeenCalled();
+      expectGroceryStateUnchanged(groceryWithCat.id);
+    });
+
+    it("rename rejects offline without calling the service or touching the cache", async () => {
+      const { groceryWithCat } = seedGroceryCategoryState();
+      const renameSpy = vi.spyOn(listsService, "renameCategory");
+
+      const { result } = renderHook(() => useRenameListCategory(), {
+        wrapper: createWrapper(),
+      });
+
+      result.current.mutate({ categoryId: catId, name: "Fruit" });
+
+      await waitFor(() => expect(result.current.isError).toBe(true));
+      expect(renameSpy).not.toHaveBeenCalled();
+      expectGroceryStateUnchanged(groceryWithCat.id);
+    });
+
+    it("delete rejects offline without calling the service or touching the cache", async () => {
+      const { groceryWithCat } = seedGroceryCategoryState();
+      const deleteSpy = vi.spyOn(listsService, "deleteCategory");
+
+      const { result } = renderHook(() => useDeleteListCategory(), {
+        wrapper: createWrapper(),
+      });
+
+      result.current.mutate({ categoryId: catId, kind: "grocery" });
+
+      await waitFor(() => expect(result.current.isError).toBe(true));
+      expect(deleteSpy).not.toHaveBeenCalled();
+      expectGroceryStateUnchanged(groceryWithCat.id);
+    });
+
+    it("reorder rejects offline without calling the service or touching the cache", async () => {
+      const { groceryWithCat } = seedGroceryCategoryState();
+      const reorderSpy = vi.spyOn(listsService, "reorderCategories");
+
+      const { result } = renderHook(() => useReorderListCategories(), {
+        wrapper: createWrapper(),
+      });
+
+      result.current.mutate({
+        kind: "grocery",
+        expectedCategoryIds: [catId],
+        categoryIds: [catId],
+      });
+
+      await waitFor(() => expect(result.current.isError).toBe(true));
+      expect(reorderSpy).not.toHaveBeenCalled();
+      expectGroceryStateUnchanged(groceryWithCat.id);
+    });
   });
 });

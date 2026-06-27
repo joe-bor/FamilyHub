@@ -421,8 +421,10 @@ function updateSameKindDetailCategories(
 
 /**
  * Fetch the management catalog for a list kind.
- * Only fetches when `enabled` is true (caller gates on manager-open + online).
- * Never added to the offline persistence allowlist.
+ * Fetches only when the caller-supplied `enabled` flag is true AND the client
+ * is online — the hook ANDs `enabled` with its own internal online status, so
+ * the caller need only gate on intent (e.g. manager-open); the offline guard is
+ * built in here. Never added to the offline persistence allowlist.
  */
 export function useListCategories(kind: ListKind, enabled: boolean) {
   const online = useOnlineStatus();
@@ -675,12 +677,15 @@ export function useReorderListCategories() {
         catalog.categories.map((c, idx) => [c.id, idx]),
       );
 
-      // Reorder same-kind detail categories from the catalog's canonical order
+      // Reorder same-kind detail categories from the catalog's canonical order.
+      // Any id absent from the reorder response sorts to the END (not the front)
+      // so a stale/extra cached category never displaces a server-ordered one.
       updateSameKindDetailCategories(queryClient, kind, (cats) =>
         [...cats]
           .sort(
             (a, b) =>
-              (sortOrderMap.get(a.id) ?? 0) - (sortOrderMap.get(b.id) ?? 0),
+              (sortOrderMap.get(a.id) ?? Number.MAX_SAFE_INTEGER) -
+              (sortOrderMap.get(b.id) ?? Number.MAX_SAFE_INTEGER),
           )
           .map((c, idx) => ({ ...c, sortOrder: idx })),
       );
