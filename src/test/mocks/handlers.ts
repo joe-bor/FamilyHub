@@ -4,17 +4,21 @@ import type {
   AddMemberRequest,
   ApiResponse,
   CalendarEventResponse,
+  CategoryDeleteResult,
   ChoreBoardItem,
   ChoreScopeBoard,
   ChoresBoard,
   ChoreTemplate,
   CreateChoreTemplateRequest,
   CreateEventRequest,
+  CreateListCategoryRequest,
   CreateRecipeRequest,
   DuplicateMealSlotRequest,
   FamilyData,
   FamilyMember,
-  ListCategory,
+  ListCategoryCatalog,
+  ListCategoryManagementEntry,
+  ListCategoryOption,
   ListDetail,
   ListItem,
   ListKind,
@@ -34,6 +38,8 @@ import type {
   RegisterRequest,
   RegisterResponse,
   RemoveMealSlotRequest,
+  RenameListCategoryRequest,
+  ReorderListCategoriesRequest,
   UpdateChoreTemplateRequest,
   UpdateCurrentPeriodCompletionRequest,
   UpdateEventRequest,
@@ -65,9 +71,16 @@ let mockUsers: MockUser[] = [];
 // In-memory storage for persisted family lists (reset between tests)
 let mockLists: ListDetail[] = [];
 let mockListPreferences: ListPreferences = { showCompletedByDefault: true };
+
+// Shared category catalog per kind — every list of a kind derives its categories
+// from here rather than owning a private catalog (matches BE v1.7.0 behaviour).
+let mockCategoryCatalogs: Record<ListKind, ListCategoryOption[]> =
+  createDefaultCategoryCatalogs();
+
 let mockRecipes: RecipeDetail[] = [];
 let mockMealsBoards: Record<string, MealBoard> = {};
 let mockIdCounter = 1000;
+let mockCategoryIdCounter = 2000;
 let mockRecipeIdCounter = 1000;
 let mockMealSlotIdCounter = 1000;
 let mockMealEntryIdCounter = 1000;
@@ -113,68 +126,66 @@ function createEmptyChoresBoard(): ChoresBoard {
   };
 }
 
-const seededCategories: Record<Exclude<ListKind, "general">, ListCategory[]> = {
-  grocery: [
-    {
-      id: "00000000-0000-4000-8000-000000000301",
-      kind: "grocery",
-      name: "Produce",
-      seeded: true,
-      sortOrder: 0,
-    },
-    {
-      id: "00000000-0000-4000-8000-000000000302",
-      kind: "grocery",
-      name: "Dairy",
-      seeded: true,
-      sortOrder: 1,
-    },
-    {
-      id: "00000000-0000-4000-8000-000000000303",
-      kind: "grocery",
-      name: "Pantry",
-      seeded: true,
-      sortOrder: 2,
-    },
-    {
-      id: "00000000-0000-4000-8000-000000000304",
-      kind: "grocery",
-      name: "Frozen",
-      seeded: true,
-      sortOrder: 3,
-    },
-    {
-      id: "00000000-0000-4000-8000-000000000305",
-      kind: "grocery",
-      name: "Household",
-      seeded: true,
-      sortOrder: 4,
-    },
-  ],
-  "to-do": [
-    {
-      id: "00000000-0000-4000-8000-000000000401",
-      kind: "to-do",
-      name: "Urgent",
-      seeded: true,
-      sortOrder: 0,
-    },
-    {
-      id: "00000000-0000-4000-8000-000000000402",
-      kind: "to-do",
-      name: "Soon",
-      seeded: true,
-      sortOrder: 1,
-    },
-    {
-      id: "00000000-0000-4000-8000-000000000403",
-      kind: "to-do",
-      name: "Later",
-      seeded: true,
-      sortOrder: 2,
-    },
-  ],
-};
+function createDefaultCategoryCatalogs(): Record<
+  ListKind,
+  ListCategoryOption[]
+> {
+  return {
+    grocery: [
+      {
+        id: "00000000-0000-4000-8000-000000000301",
+        kind: "grocery",
+        name: "Produce",
+        sortOrder: 0,
+      },
+      {
+        id: "00000000-0000-4000-8000-000000000302",
+        kind: "grocery",
+        name: "Dairy",
+        sortOrder: 1,
+      },
+      {
+        id: "00000000-0000-4000-8000-000000000303",
+        kind: "grocery",
+        name: "Pantry",
+        sortOrder: 2,
+      },
+      {
+        id: "00000000-0000-4000-8000-000000000304",
+        kind: "grocery",
+        name: "Frozen",
+        sortOrder: 3,
+      },
+      {
+        id: "00000000-0000-4000-8000-000000000305",
+        kind: "grocery",
+        name: "Household",
+        sortOrder: 4,
+      },
+    ],
+    "to-do": [
+      {
+        id: "00000000-0000-4000-8000-000000000401",
+        kind: "to-do",
+        name: "Urgent",
+        sortOrder: 0,
+      },
+      {
+        id: "00000000-0000-4000-8000-000000000402",
+        kind: "to-do",
+        name: "Soon",
+        sortOrder: 1,
+      },
+      {
+        id: "00000000-0000-4000-8000-000000000403",
+        kind: "to-do",
+        name: "Later",
+        sortOrder: 2,
+      },
+    ],
+    general: [],
+  };
+}
 
 /**
  * Reset mock data between tests
@@ -253,7 +264,23 @@ export function getMockFamily(): FamilyData | null {
 export function resetMockLists(): void {
   mockLists = [];
   mockListPreferences = { showCompletedByDefault: true };
+  mockCategoryCatalogs = createDefaultCategoryCatalogs();
   mockIdCounter = 1000;
+  mockCategoryIdCounter = 2000;
+}
+
+/**
+ * Seed the mock category catalog for a given kind (overrides the default).
+ * Used in tests that need specific category IDs/names.
+ */
+export function seedMockCategoryCatalog(
+  kind: ListKind,
+  categories: ListCategoryOption[],
+): void {
+  mockCategoryCatalogs[kind] = categories.map((c, idx) => ({
+    ...c,
+    sortOrder: idx,
+  }));
 }
 
 /**
@@ -313,6 +340,11 @@ function createMockId(): string {
   return `00000000-0000-4000-8000-${String(mockIdCounter).padStart(12, "0")}`;
 }
 
+function createMockCategoryId(): string {
+  mockCategoryIdCounter += 1;
+  return `00000000-0000-4000-8000-${String(mockCategoryIdCounter).padStart(12, "0")}`;
+}
+
 function createMockRecipeId(): string {
   mockRecipeIdCounter += 1;
   return `00000000-0000-4000-8000-${String(mockRecipeIdCounter).padStart(12, "0")}`;
@@ -363,8 +395,32 @@ function isBlockedRecipeImportUrl(value: string): boolean {
   }
 }
 
-function categoriesForKind(kind: ListKind): ListCategory[] {
-  return kind === "general" ? [] : seededCategories[kind];
+function categoriesForKind(kind: ListKind): ListCategoryOption[] {
+  return [...mockCategoryCatalogs[kind]];
+}
+
+function buildCatalog(kind: ListKind): ListCategoryCatalog {
+  const categories = mockCategoryCatalogs[kind];
+  const groupedListCount = mockLists.filter(
+    (l) => l.kind === kind && l.categoryDisplayMode === "grouped",
+  ).length;
+  const managementEntries: ListCategoryManagementEntry[] = categories.map(
+    (cat) => ({
+      ...cat,
+      itemCount: mockLists
+        .filter((l) => l.kind === kind)
+        .reduce(
+          (sum, l) =>
+            sum + l.items.filter((item) => item.categoryId === cat.id).length,
+          0,
+        ),
+    }),
+  );
+  return { kind, groupedListCount, categories: managementEntries };
+}
+
+function normalizeForDuplicate(name: string): string {
+  return name.trim().toLowerCase();
 }
 
 function recalculateScopeSummary(scope: ChoreScopeBoard): ChoreScopeBoard {
@@ -1047,6 +1103,271 @@ export const handlers = [
     return HttpResponse.json(
       createApiResponse(newList, "List created successfully"),
       { status: 201 },
+    );
+  }),
+
+  // ---------------------------------------------------------------------------
+  // Category API handlers — must be BEFORE GET /lists/:id so that
+  // /lists/categories is not captured by the :id wildcard.
+  // ---------------------------------------------------------------------------
+
+  // GET /lists/categories?kind={kind} - Management catalog for a kind
+  http.get(`${API_BASE}/lists/categories`, ({ request }) => {
+    const url = new URL(request.url);
+    const kind = url.searchParams.get("kind") as ListKind | null;
+    if (!kind || !["grocery", "to-do", "general"].includes(kind)) {
+      return HttpResponse.json(
+        { message: "kind query parameter is required" },
+        { status: 400 },
+      );
+    }
+    return HttpResponse.json(createApiResponse(buildCatalog(kind)));
+  }),
+
+  // POST /lists/categories - Create a category
+  http.post(`${API_BASE}/lists/categories`, async ({ request }) => {
+    const body = (await request.json()) as CreateListCategoryRequest;
+    const trimmed = body.name?.trim() ?? "";
+    if (!trimmed) {
+      return HttpResponse.json(
+        { message: "Category name is required" },
+        { status: 400 },
+      );
+    }
+    if (trimmed.length > 100) {
+      return HttpResponse.json(
+        { message: "Category name must be 100 characters or less" },
+        { status: 400 },
+      );
+    }
+    const kind = body.kind;
+    const catalog = mockCategoryCatalogs[kind];
+    const normalized = normalizeForDuplicate(trimmed);
+    if (catalog.some((c) => normalizeForDuplicate(c.name) === normalized)) {
+      return HttpResponse.json(
+        { message: "A category with this name already exists for this kind" },
+        { status: 409 },
+      );
+    }
+    const newOption: ListCategoryOption = {
+      id: createMockCategoryId(),
+      kind,
+      name: trimmed,
+      sortOrder: catalog.length,
+    };
+    mockCategoryCatalogs[kind] = [...catalog, newOption];
+
+    const managementEntry: ListCategoryManagementEntry = {
+      ...newOption,
+      itemCount: 0,
+    };
+
+    const locationId = newOption.id;
+    return HttpResponse.json(
+      createApiResponse(managementEntry, "Category created successfully"),
+      {
+        status: 201,
+        headers: { Location: `/api/lists/categories/${locationId}` },
+      },
+    );
+  }),
+
+  // PATCH /lists/categories/:categoryId - Rename a category
+  http.patch(
+    `${API_BASE}/lists/categories/:categoryId`,
+    async ({ params, request }) => {
+      const categoryId = params.categoryId as string;
+      const body = (await request.json()) as RenameListCategoryRequest;
+      const trimmed = body.name?.trim() ?? "";
+      if (!trimmed) {
+        return HttpResponse.json(
+          { message: "Category name is required" },
+          { status: 400 },
+        );
+      }
+      if (trimmed.length > 100) {
+        return HttpResponse.json(
+          { message: "Category name must be 100 characters or less" },
+          { status: 400 },
+        );
+      }
+
+      // Find which kind this category belongs to
+      let foundKind: ListKind | null = null;
+      for (const kind of ["grocery", "to-do", "general"] as ListKind[]) {
+        if (mockCategoryCatalogs[kind].some((c) => c.id === categoryId)) {
+          foundKind = kind;
+          break;
+        }
+      }
+      if (!foundKind) {
+        return HttpResponse.json(
+          { message: `Category with id "${categoryId}" not found` },
+          { status: 404 },
+        );
+      }
+
+      const catalog = mockCategoryCatalogs[foundKind];
+      const normalized = normalizeForDuplicate(trimmed);
+      const duplicate = catalog.find(
+        (c) =>
+          c.id !== categoryId && normalizeForDuplicate(c.name) === normalized,
+      );
+      if (duplicate) {
+        return HttpResponse.json(
+          { message: "A category with this name already exists for this kind" },
+          { status: 409 },
+        );
+      }
+
+      let updated: ListCategoryOption | null = null;
+      mockCategoryCatalogs[foundKind] = catalog.map((c) => {
+        if (c.id !== categoryId) return c;
+        updated = { ...c, name: trimmed };
+        return updated;
+      });
+
+      if (!updated) {
+        return HttpResponse.json(
+          { message: `Category with id "${categoryId}" not found` },
+          { status: 404 },
+        );
+      }
+
+      const managementEntry: ListCategoryManagementEntry = {
+        ...(updated as ListCategoryOption),
+        itemCount: mockLists
+          .filter((l) => l.kind === foundKind)
+          .reduce(
+            (sum, l) =>
+              sum +
+              l.items.filter((item) => item.categoryId === categoryId).length,
+            0,
+          ),
+      };
+
+      return HttpResponse.json(
+        createApiResponse(managementEntry, "Category renamed successfully"),
+      );
+    },
+  ),
+
+  // DELETE /lists/categories/:categoryId - Delete a category
+  http.delete(`${API_BASE}/lists/categories/:categoryId`, ({ params }) => {
+    const categoryId = params.categoryId as string;
+
+    // Find which kind
+    let foundKind: ListKind | null = null;
+    for (const kind of ["grocery", "to-do", "general"] as ListKind[]) {
+      if (mockCategoryCatalogs[kind].some((c) => c.id === categoryId)) {
+        foundKind = kind;
+        break;
+      }
+    }
+    if (!foundKind) {
+      return HttpResponse.json(
+        { message: `Category with id "${categoryId}" not found` },
+        { status: 404 },
+      );
+    }
+
+    // Count items affected
+    const uncategorizedItemCount = mockLists
+      .filter((l) => l.kind === foundKind)
+      .reduce(
+        (sum, l) =>
+          sum + l.items.filter((item) => item.categoryId === categoryId).length,
+        0,
+      );
+
+    // Remove from catalog and compact sortOrder
+    mockCategoryCatalogs[foundKind] = mockCategoryCatalogs[foundKind]
+      .filter((c) => c.id !== categoryId)
+      .map((c, idx) => ({ ...c, sortOrder: idx }));
+
+    const remainingCount = mockCategoryCatalogs[foundKind].length;
+
+    // Null item assignments and flatten lists if catalog is now empty
+    let flattenedListCount = 0;
+    mockLists = mockLists.map((list) => {
+      if (list.kind !== foundKind) return list;
+      const updatedItems = list.items.map((item) =>
+        item.categoryId === categoryId ? { ...item, categoryId: null } : item,
+      );
+      const updatedCategories = list.categories
+        .filter((c) => c.id !== categoryId)
+        .map((c, idx) => ({ ...c, sortOrder: idx }));
+
+      let categoryDisplayMode = list.categoryDisplayMode;
+      if (remainingCount === 0 && categoryDisplayMode === "grouped") {
+        categoryDisplayMode = "flat";
+        flattenedListCount += 1;
+      }
+
+      return {
+        ...list,
+        categories: updatedCategories,
+        items: updatedItems,
+        categoryDisplayMode,
+      };
+    });
+
+    const result: CategoryDeleteResult = {
+      uncategorizedItemCount,
+      flattenedListCount,
+    };
+    return HttpResponse.json(
+      createApiResponse(result, "Category deleted successfully"),
+    );
+  }),
+
+  // PUT /lists/categories/order - Reorder categories
+  http.put(`${API_BASE}/lists/categories/order`, async ({ request }) => {
+    const body = (await request.json()) as ReorderListCategoriesRequest;
+    const kind = body.kind;
+    const catalog = mockCategoryCatalogs[kind];
+
+    // Validate expectedCategoryIds matches current catalog (stale baseline check)
+    const currentIds = catalog.map((c) => c.id).sort();
+    const expectedSorted = [...body.expectedCategoryIds].sort();
+    if (
+      currentIds.length !== expectedSorted.length ||
+      currentIds.some((id, i) => id !== expectedSorted[i])
+    ) {
+      return HttpResponse.json(
+        { message: "expectedCategoryIds does not match current catalog" },
+        { status: 409 },
+      );
+    }
+
+    // Validate categoryIds is a permutation of expectedCategoryIds
+    const expectedSet = new Set(body.expectedCategoryIds);
+    const categoryIdSet = new Set(body.categoryIds);
+    if (
+      body.categoryIds.length !== expectedSet.size ||
+      [...categoryIdSet].some((id) => !expectedSet.has(id))
+    ) {
+      return HttpResponse.json(
+        {
+          message:
+            "categoryIds must be a complete reorder of the current categories",
+        },
+        { status: 400 },
+      );
+    }
+
+    // Build id → option map for reorder
+    const optionMap = new Map(catalog.map((c) => [c.id, c]));
+    mockCategoryCatalogs[kind] = body.categoryIds.map((id, idx) => ({
+      ...(optionMap.get(id) as ListCategoryOption),
+      sortOrder: idx,
+    }));
+
+    return HttpResponse.json(
+      createApiResponse(
+        buildCatalog(kind),
+        "Categories reordered successfully",
+      ),
     );
   }),
 

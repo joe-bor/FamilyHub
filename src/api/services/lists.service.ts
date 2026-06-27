@@ -1,12 +1,19 @@
 import { httpClient } from "@/api/client";
 import type {
+  CategoryDeleteResultApiResponse,
   ClearCompletedApiResponse,
+  CreateListCategoryRequest,
   CreateListItemRequest,
   CreateListRequest,
+  ListCategoryCatalogApiResponse,
+  ListCategoryManagementEntryApiResponse,
   ListDetailApiResponse,
   ListItemApiResponse,
+  ListKind,
   ListPreferencesApiResponse,
   ListSummariesApiResponse,
+  RenameListCategoryRequest,
+  ReorderListCategoriesRequest,
   UpdateListItemRequest,
   UpdateListPreferencesRequest,
   UpdateListRequest,
@@ -72,6 +79,50 @@ export const listsService = {
   ): Promise<ListPreferencesApiResponse> {
     return httpClient.patch<ListPreferencesApiResponse>(
       "/lists/preferences",
+      request,
+    );
+  },
+
+  // ---------------------------------------------------------------------------
+  // Category management (v1.7.0)
+  // ---------------------------------------------------------------------------
+
+  getCategories(kind: ListKind): Promise<ListCategoryCatalogApiResponse> {
+    return httpClient.get<ListCategoryCatalogApiResponse>(
+      `/lists/categories?kind=${kind}`,
+    );
+  },
+
+  createCategory(
+    request: CreateListCategoryRequest,
+  ): Promise<ListCategoryManagementEntryApiResponse> {
+    return httpClient.post<ListCategoryManagementEntryApiResponse>(
+      "/lists/categories",
+      request,
+    );
+  },
+
+  renameCategory(
+    categoryId: string,
+    request: RenameListCategoryRequest,
+  ): Promise<ListCategoryManagementEntryApiResponse> {
+    return httpClient.patch<ListCategoryManagementEntryApiResponse>(
+      `/lists/categories/${categoryId}`,
+      request,
+    );
+  },
+
+  deleteCategory(categoryId: string): Promise<CategoryDeleteResultApiResponse> {
+    return httpClient.delete<CategoryDeleteResultApiResponse>(
+      `/lists/categories/${categoryId}`,
+    );
+  },
+
+  reorderCategories(
+    request: ReorderListCategoriesRequest,
+  ): Promise<ListCategoryCatalogApiResponse> {
+    return httpClient.put<ListCategoryCatalogApiResponse>(
+      "/lists/categories/order",
       request,
     );
   },

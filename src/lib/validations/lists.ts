@@ -26,5 +26,16 @@ export const listItemSchema = z.object({
   categoryId: z.string().uuid().nullable().optional(),
 });
 
+export const categoryNameSchema = z
+  .string()
+  .transform((value) => value.trim())
+  .pipe(
+    z
+      .string()
+      .min(1, "Category name is required")
+      .max(100, "Category name must be 100 characters or less"),
+  );
+
 export type ListCreateFormData = z.infer<typeof listCreateSchema>;
 export type ListItemFormData = z.infer<typeof listItemSchema>;
+export type CategoryNameFormData = z.infer<typeof categoryNameSchema>;

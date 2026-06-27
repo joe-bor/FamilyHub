@@ -13,10 +13,9 @@ const baseList: ListDetail = {
       id: "produce",
       kind: "grocery",
       name: "Produce",
-      seeded: true,
       sortOrder: 0,
     },
-    { id: "dairy", kind: "grocery", name: "Dairy", seeded: true, sortOrder: 1 },
+    { id: "dairy", kind: "grocery", name: "Dairy", sortOrder: 1 },
   ],
   items: [
     {
@@ -52,7 +51,7 @@ const baseList: ListDetail = {
 };
 
 describe("buildListSections", () => {
-  it("groups grocery items by seeded categories and keeps completed items last within a section", () => {
+  it("groups grocery items by categories and keeps completed items last within a section", () => {
     const sections = buildListSections({
       list: baseList,
       showCompleted: true,

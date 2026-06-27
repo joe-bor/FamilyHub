@@ -1,12 +1,21 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { listsService } from "@/api/services";
+import { useOnlineStatus } from "@/hooks";
 import { assertOnlineForWrite } from "@/lib/offline/read-only-guard";
 import type {
+  CreateListCategoryRequest,
   CreateListItemRequest,
   CreateListRequest,
+  ListCategoryCatalogApiResponse,
+  ListCategoryManagementEntry,
+  ListCategoryOption,
+  ListDetail,
   ListDetailApiResponse,
   ListItem,
+  ListKind,
   ListPreferencesApiResponse,
+  RenameListCategoryRequest,
+  ReorderListCategoriesRequest,
   UpdateListItemRequest,
   UpdateListPreferencesRequest,
   UpdateListRequest,
@@ -17,6 +26,8 @@ export const listsKeys = {
   hub: () => [...listsKeys.all, "hub"] as const,
   detail: (id: string) => [...listsKeys.all, "detail", id] as const,
   preferences: () => [...listsKeys.all, "preferences"] as const,
+  categories: (kind: ListKind) =>
+    [...listsKeys.all, "categories", kind] as const,
 };
 
 function updateDetailItems(
@@ -370,6 +381,318 @@ export function useUpdateListPreferences() {
     },
     onSuccess: (response) => {
       queryClient.setQueryData(listsKeys.preferences(), response);
+    },
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Category helpers
+// ---------------------------------------------------------------------------
+
+/**
+ * Apply a transform to the categories array of every cached list-detail that
+ * matches `kind`. Returns the updated set of query data entries.
+ */
+function updateSameKindDetailCategories(
+  queryClient: ReturnType<typeof useQueryClient>,
+  kind: ListKind,
+  update: (categories: ListCategoryOption[]) => ListCategoryOption[],
+): void {
+  const queries = queryClient.getQueriesData<ListDetailApiResponse>({
+    queryKey: listsKeys.all,
+  });
+  for (const [queryKey, data] of queries) {
+    if (!data || queryKey[1] !== "detail" || data.data.kind !== kind) {
+      continue;
+    }
+    queryClient.setQueryData<ListDetailApiResponse>(queryKey, {
+      ...data,
+      data: {
+        ...data.data,
+        categories: update(data.data.categories),
+      },
+    });
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Category hooks
+// ---------------------------------------------------------------------------
+
+/**
+ * Fetch the management catalog for a list kind.
+ * Only fetches when `enabled` is true (caller gates on manager-open + online).
+ * Never added to the offline persistence allowlist.
+ */
+export function useListCategories(kind: ListKind, enabled: boolean) {
+  const online = useOnlineStatus();
+  return useQuery({
+    queryKey: listsKeys.categories(kind),
+    queryFn: () => listsService.getCategories(kind),
+    enabled: enabled && online,
+  });
+}
+
+/**
+ * Create a new category for a list kind.
+ * On success:
+ *   - Appends the returned ListCategoryOption to every cached same-kind list detail.
+ *   - Appends the management entry to the cached catalog.
+ *   - Invalidates same-kind detail queries as a correctness backstop.
+ */
+export function useCreateListCategory() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (request: CreateListCategoryRequest) => {
+      assertOnlineForWrite();
+      return listsService.createCategory(request);
+    },
+    onSuccess: (response, request) => {
+      const { kind } = request;
+      const entry: ListCategoryManagementEntry = response.data;
+      const option: ListCategoryOption = {
+        id: entry.id,
+        kind: entry.kind,
+        name: entry.name,
+        sortOrder: entry.sortOrder,
+      };
+
+      // Append to every same-kind cached detail
+      updateSameKindDetailCategories(queryClient, kind, (cats) => [
+        ...cats,
+        option,
+      ]);
+
+      // Append management entry to catalog
+      queryClient.setQueryData<ListCategoryCatalogApiResponse>(
+        listsKeys.categories(kind),
+        (current) =>
+          current
+            ? {
+                ...current,
+                data: {
+                  ...current.data,
+                  categories: [...current.data.categories, entry],
+                },
+              }
+            : current,
+      );
+
+      // Invalidate same-kind detail queries as correctness backstop
+      queryClient.invalidateQueries({
+        queryKey: listsKeys.all,
+        predicate: (q) =>
+          q.queryKey[1] === "detail" &&
+          queryClient.getQueryData<ListDetailApiResponse>(q.queryKey)?.data
+            .kind === kind,
+      });
+    },
+  });
+}
+
+/**
+ * Rename an existing category.
+ * On success:
+ *   - Replaces matching entries in catalog and same-kind details.
+ *   - Invalidates same-kind detail queries as a correctness backstop.
+ */
+export function useRenameListCategory() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      categoryId,
+      name,
+    }: {
+      categoryId: string;
+      name: string;
+    }) => {
+      assertOnlineForWrite();
+      return listsService.renameCategory(categoryId, {
+        name,
+      } satisfies RenameListCategoryRequest);
+    },
+    onSuccess: (response, { categoryId }) => {
+      const entry: ListCategoryManagementEntry = response.data;
+      const { kind } = entry;
+
+      // Update matching entries in all same-kind detail caches
+      updateSameKindDetailCategories(queryClient, kind, (cats) =>
+        cats.map((c) => (c.id === categoryId ? { ...c, name: entry.name } : c)),
+      );
+
+      // Update in catalog
+      queryClient.setQueryData<ListCategoryCatalogApiResponse>(
+        listsKeys.categories(kind),
+        (current) =>
+          current
+            ? {
+                ...current,
+                data: {
+                  ...current.data,
+                  categories: current.data.categories.map((c) =>
+                    c.id === categoryId ? entry : c,
+                  ),
+                },
+              }
+            : current,
+      );
+
+      // Invalidate same-kind detail queries as correctness backstop
+      queryClient.invalidateQueries({
+        queryKey: listsKeys.all,
+        predicate: (q) =>
+          q.queryKey[1] === "detail" &&
+          queryClient.getQueryData<ListDetailApiResponse>(q.queryKey)?.data
+            .kind === kind,
+      });
+    },
+  });
+}
+
+/**
+ * Delete a category.
+ * On success (immediate local update):
+ *   - Remove category from catalog and same-kind details.
+ *   - Null item `categoryId` for all items that referenced the deleted category.
+ *   - Rewrite remaining `sortOrder` values to dense array indices.
+ *   - Switch list to `flat` mode if no options remain.
+ *   - Decrement `groupedListCount` by the authoritative `flattenedListCount`.
+ *   - Invalidate/refetch the active management catalog (DELETE response doesn't carry compacted catalog).
+ *   - Invalidate same-kind detail queries as correctness backstop.
+ */
+export function useDeleteListCategory() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ categoryId }: { categoryId: string; kind: ListKind }) => {
+      assertOnlineForWrite();
+      return listsService.deleteCategory(categoryId);
+    },
+    onSuccess: (response, { categoryId, kind }) => {
+      const { flattenedListCount } = response.data;
+
+      // Update same-kind detail caches
+      const queries = queryClient.getQueriesData<ListDetailApiResponse>({
+        queryKey: listsKeys.all,
+      });
+      for (const [queryKey, data] of queries) {
+        if (!data || queryKey[1] !== "detail" || data.data.kind !== kind) {
+          continue;
+        }
+        const remaining = data.data.categories
+          .filter((c) => c.id !== categoryId)
+          .map((c, idx) => ({ ...c, sortOrder: idx }));
+
+        const noOptionsLeft = remaining.length === 0;
+        const updatedDetail: ListDetail = {
+          ...data.data,
+          categories: remaining,
+          items: data.data.items.map((item) =>
+            item.categoryId === categoryId
+              ? { ...item, categoryId: null }
+              : item,
+          ),
+          categoryDisplayMode:
+            noOptionsLeft && data.data.categoryDisplayMode === "grouped"
+              ? "flat"
+              : data.data.categoryDisplayMode,
+        };
+        queryClient.setQueryData<ListDetailApiResponse>(queryKey, {
+          ...data,
+          data: updatedDetail,
+        });
+      }
+
+      // Update catalog: remove category, compact sortOrder, decrement groupedListCount
+      queryClient.setQueryData<ListCategoryCatalogApiResponse>(
+        listsKeys.categories(kind),
+        (current) => {
+          if (!current) return current;
+          const remaining = current.data.categories
+            .filter((c) => c.id !== categoryId)
+            .map((c, idx) => ({ ...c, sortOrder: idx }));
+          return {
+            ...current,
+            data: {
+              ...current.data,
+              categories: remaining,
+              groupedListCount: Math.max(
+                0,
+                current.data.groupedListCount - flattenedListCount,
+              ),
+            },
+          };
+        },
+      );
+
+      // Invalidate/refetch the management catalog (DELETE response doesn't carry compacted catalog)
+      queryClient.invalidateQueries({
+        queryKey: listsKeys.categories(kind),
+        refetchType: "active",
+      });
+
+      // Invalidate same-kind detail queries as correctness backstop
+      queryClient.invalidateQueries({
+        queryKey: listsKeys.all,
+        predicate: (q) =>
+          q.queryKey[1] === "detail" &&
+          queryClient.getQueryData<ListDetailApiResponse>(q.queryKey)?.data
+            .kind === kind,
+      });
+    },
+  });
+}
+
+/**
+ * Reorder categories for a list kind.
+ * On success:
+ *   - Replace catalog with the server response.
+ *   - Reorder same-kind detail categories from the catalog's canonical IDs.
+ *   - Invalidate same-kind detail queries as correctness backstop.
+ */
+export function useReorderListCategories() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (request: ReorderListCategoriesRequest) => {
+      assertOnlineForWrite();
+      return listsService.reorderCategories(request);
+    },
+    onSuccess: (response, request) => {
+      const { kind } = request;
+      const catalog = response.data;
+
+      // Replace catalog from response
+      queryClient.setQueryData<ListCategoryCatalogApiResponse>(
+        listsKeys.categories(kind),
+        response,
+      );
+
+      // Build id → sortOrder map from the canonical catalog response
+      const sortOrderMap = new Map(
+        catalog.categories.map((c, idx) => [c.id, idx]),
+      );
+
+      // Reorder same-kind detail categories from the catalog's canonical order
+      updateSameKindDetailCategories(queryClient, kind, (cats) =>
+        [...cats]
+          .sort(
+            (a, b) =>
+              (sortOrderMap.get(a.id) ?? 0) - (sortOrderMap.get(b.id) ?? 0),
+          )
+          .map((c, idx) => ({ ...c, sortOrder: idx })),
+      );
+
+      // Invalidate same-kind detail queries as correctness backstop
+      queryClient.invalidateQueries({
+        queryKey: listsKeys.all,
+        predicate: (q) =>
+          q.queryKey[1] === "detail" &&
+          queryClient.getQueryData<ListDetailApiResponse>(q.queryKey)?.data
+            .kind === kind,
+      });
     },
   });
 }
