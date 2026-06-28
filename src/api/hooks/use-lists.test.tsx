@@ -630,6 +630,48 @@ describe("useLists", () => {
     );
   });
 
+  it("create category preserves the list's categoryDisplayMode (no auto-group)", async () => {
+    // A flat list is the meaningful guard: a naive "auto-group on first
+    // category" bug would flip this to "grouped". The contract is that
+    // creating a category never mutates display mode.
+    const flatGroceryList: ListDetail = {
+      ...groceryList,
+      id: "00000000-0000-4000-8000-000000000120",
+      name: "Flat Pantry",
+      categoryDisplayMode: "flat",
+      categories: [],
+    };
+
+    seedMockLists([flatGroceryList]);
+    queryClient.setQueryData(listsKeys.detail(flatGroceryList.id), {
+      data: flatGroceryList,
+    } satisfies ApiResponse<ListDetail>);
+
+    const { result } = renderHook(() => useCreateListCategory(), {
+      wrapper: createWrapper(),
+    });
+
+    result.current.mutate({ kind: "grocery", name: "Bakery" });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+
+    // The category was added (proves the mutation actually ran on this list)...
+    await waitFor(() => {
+      const detail = queryClient.getQueryData<ApiResponse<ListDetail>>(
+        listsKeys.detail(flatGroceryList.id),
+      );
+      expect(detail?.data.categories.some((c) => c.name === "Bakery")).toBe(
+        true,
+      );
+    });
+
+    // ...but the display mode is unchanged.
+    const detail = queryClient.getQueryData<ApiResponse<ListDetail>>(
+      listsKeys.detail(flatGroceryList.id),
+    );
+    expect(detail?.data.categoryDisplayMode).toBe("flat");
+  });
+
   it("create category does not touch a different kind's detail cache", async () => {
     const todoList: ListDetail = {
       id: "00000000-0000-4000-8000-000000000110",
