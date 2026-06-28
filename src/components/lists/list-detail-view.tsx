@@ -12,11 +12,12 @@ import {
   FloatingActionButton,
   MOBILE_FAB_SCROLL_PADDING,
 } from "@/components/shared";
-import { useIsMobile } from "@/hooks";
+import { useIsMobile, useOnlineStatus } from "@/hooks";
 import type { ListItem, ListPreferences } from "@/lib/types";
 import { Button } from "../ui/button";
 import { MobileSheet } from "../ui/mobile-sheet";
 import { buildListSections } from "./build-list-sections";
+import { CategoryManager } from "./category-manager";
 import { ListItemRow } from "./list-item-row";
 import { ListItemSheet } from "./list-item-sheet";
 import { ListOptionsControls } from "./list-options-controls";
@@ -47,7 +48,9 @@ export function ListDetailView({
   const clearCompleted = useClearCompleted(listId);
   const updatePreferences = useUpdateListPreferences();
   const isMobile = useIsMobile();
+  const isOnline = useOnlineStatus();
   const [optionsOpen, setOptionsOpen] = useState(false);
+  const [managerOpen, setManagerOpen] = useState(false);
   const [itemSheet, setItemSheet] = useState<{
     mode: "create" | "edit";
     item: ListItem | null;
@@ -169,6 +172,8 @@ export function ListDetailView({
                   completedOverrideValue={completedOverrideValue}
                   completedFallbackMessage={completedFallbackMessage}
                   clearCompletedDisabled={clearCompletedDisabled}
+                  onManageCategories={() => setManagerOpen(true)}
+                  categoriesOnline={isOnline}
                   onUpdateList={(request) => updateList.mutate(request)}
                   onUpdatePreferences={(request) =>
                     updatePreferences.mutate(request)
@@ -248,6 +253,10 @@ export function ListDetailView({
                   completedFallbackMessage={completedFallbackMessage}
                   clearCompletedDisabled={clearCompletedDisabled}
                   fullWidthClearButton
+                  // Mobile handoff (close-options-then-open-manager sequencing) is Task 11.
+                  // The button is present but sequencing is not wired here.
+                  onManageCategories={() => setManagerOpen(true)}
+                  categoriesOnline={isOnline}
                   onUpdateList={(request) => updateList.mutate(request)}
                   onUpdatePreferences={(request) =>
                     updatePreferences.mutate(request)
@@ -266,6 +275,13 @@ export function ListDetailView({
             onOpenChange={(open) => {
               if (!open) setItemSheet(null);
             }}
+          />
+
+          {/* Category manager — desktop opens directly; mobile handoff is Task 11 */}
+          <CategoryManager
+            open={managerOpen}
+            onOpenChange={setManagerOpen}
+            kind={list.kind}
           />
         </div>
       </div>
