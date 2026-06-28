@@ -19,6 +19,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import {
+  ApiException,
   useCreateListCategory,
   useDeleteListCategory,
   useListCategories,
@@ -254,18 +255,9 @@ export function CategoryManager({
         );
       });
     } catch (err: unknown) {
-      // Check for 409 (stale baseline)
-      const status =
-        err instanceof Error && "status" in err
-          ? (err as { status?: number }).status
-          : undefined;
-
-      // Also check for ApiError shape
-      const errObj = err as { response?: { status?: number }; status?: number };
-      const httpStatus = errObj?.response?.status ?? errObj?.status ?? status;
-
-      if (httpStatus === 409) {
-        // Refetch from server, exit reorder, explain the change
+      // 409 = stale baseline (concurrent create/delete/reorder changed server
+      // order). Refetch the canonical order, exit reorder, and explain the change.
+      if (ApiException.isApiException(err) && err.status === 409) {
         await categoriesQuery.refetch();
         exitReorder();
         toast({
@@ -429,74 +421,69 @@ export function CategoryManager({
             </div>
           )}
 
-          {categoriesQuery.isSuccess && (
-            <>
-              {categoriesQuery.data.data.categories.length === 0 ? (
-                <div className="rounded-lg border border-dashed border-border p-6 text-center">
-                  <p className="font-medium text-foreground">
-                    No categories yet
-                  </p>
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    Add a category above, or create one while adding an item.
-                  </p>
-                </div>
-              ) : (
-                <>
-                  {/* Reorder mode Save/Cancel bar */}
-                  {isReordering && (
-                    <div className="flex items-center justify-between gap-2 pb-1">
-                      <p className="text-sm font-semibold text-foreground">
-                        Reorder categories
-                      </p>
-                      <div className="flex gap-2">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={handleReorderCancel}
-                          disabled={reorderPending}
-                        >
-                          Cancel
-                        </Button>
-                        <Button
-                          type="button"
-                          size="sm"
-                          onClick={handleReorderSave}
-                          disabled={!isDirty || reorderPending}
-                        >
-                          Save
-                        </Button>
-                      </div>
+          {categoriesQuery.isSuccess &&
+            (categoriesQuery.data.data.categories.length === 0 ? (
+              <div className="rounded-lg border border-dashed border-border p-6 text-center">
+                <p className="font-medium text-foreground">No categories yet</p>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Add a category above, or create one while adding an item.
+                </p>
+              </div>
+            ) : (
+              <>
+                {/* Reorder mode Save/Cancel bar */}
+                {isReordering && (
+                  <div className="flex items-center justify-between gap-2 pb-1">
+                    <p className="text-sm font-semibold text-foreground">
+                      Reorder categories
+                    </p>
+                    <div className="flex gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={handleReorderCancel}
+                        disabled={reorderPending}
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        onClick={handleReorderSave}
+                        disabled={!isDirty || reorderPending}
+                      >
+                        Save
+                      </Button>
                     </div>
-                  )}
+                  </div>
+                )}
 
-                  <CategoryManagerList
-                    categories={categoriesQuery.data.data.categories}
-                    onDeleteRequest={handleDeleteRequest}
-                    onRename={handleRename}
-                    renamingId={renamingId}
-                    onRenameStart={(entry) => {
-                      setRenamingId(entry.id);
-                      setRenameError(null);
-                    }}
-                    onRenameCancel={() => {
-                      setRenamingId(null);
-                      setRenameError(null);
-                    }}
-                    renameError={renameError}
-                    pendingDeleteId={pendingDeleteId}
-                    pendingRenameId={pendingRenameId}
-                    isReordering={isReordering}
-                    onEnterReorder={enterReorder}
-                    baselineEntries={baselineEntries}
-                    draftIds={draftIds}
-                    onDraftIdsChange={setDraftIds}
-                    reorderPending={reorderPending}
-                  />
-                </>
-              )}
-            </>
-          )}
+                <CategoryManagerList
+                  categories={categoriesQuery.data.data.categories}
+                  onDeleteRequest={handleDeleteRequest}
+                  onRename={handleRename}
+                  renamingId={renamingId}
+                  onRenameStart={(entry) => {
+                    setRenamingId(entry.id);
+                    setRenameError(null);
+                  }}
+                  onRenameCancel={() => {
+                    setRenamingId(null);
+                    setRenameError(null);
+                  }}
+                  renameError={renameError}
+                  pendingDeleteId={pendingDeleteId}
+                  pendingRenameId={pendingRenameId}
+                  isReordering={isReordering}
+                  onEnterReorder={enterReorder}
+                  baselineEntries={baselineEntries}
+                  draftIds={draftIds}
+                  onDraftIdsChange={setDraftIds}
+                  reorderPending={reorderPending}
+                />
+              </>
+            ))}
         </>
       )}
     </div>
