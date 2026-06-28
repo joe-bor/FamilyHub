@@ -41,11 +41,9 @@ interface CategoryManagerListProps {
   onRenameCancel: () => void;
   /** Server error message to show adjacent to the active rename input. */
   renameError?: string | null;
-  /**
-   * When non-null, the Add button for this category id is pending.
-   * (Not used here but reserved for parent to gate delete/rename while relevant.)
-   */
+  /** ID of the category whose delete mutation is currently pending. */
   pendingDeleteId?: string | null;
+  /** ID of the category whose rename mutation is currently pending. */
   pendingRenameId?: string | null;
 }
 
@@ -89,6 +87,9 @@ function CategoryRow({
   // When entering rename mode, reset the form with the current name
   // (handled by parent via isRenaming toggling; form defaults update via reset)
   if (isRenaming) {
+    const renameErrorMessage =
+      renameError ?? renameForm.formState.errors.name?.message;
+    const renameErrorId = `rename-error-${entry.id}`;
     return (
       <div className="flex items-start gap-2 rounded-lg border border-border bg-card p-3">
         <form
@@ -100,13 +101,11 @@ function CategoryRow({
             aria-label="Rename category"
             defaultValue={entry.name}
             autoComplete="off"
+            aria-invalid={Boolean(renameErrorMessage)}
+            aria-describedby={renameErrorMessage ? renameErrorId : undefined}
             {...renameForm.register("name")}
           />
-          {(renameError || renameForm.formState.errors.name?.message) && (
-            <FormError
-              message={renameError ?? renameForm.formState.errors.name?.message}
-            />
-          )}
+          <FormError id={renameErrorId} message={renameErrorMessage} />
         </form>
         <Button
           type="submit"

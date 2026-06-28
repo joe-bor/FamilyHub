@@ -47,16 +47,12 @@ interface CategoryManagerProps {
   kind: ListKind;
 }
 
+const ADD_CATEGORY_ERROR_ID = "new-category-name-error";
+
 /**
  * Add-category inline form at the top of the manager content.
  */
-function AddCategoryForm({
-  kind,
-  onAdded,
-}: {
-  kind: ListKind;
-  onAdded: () => void;
-}) {
+function AddCategoryForm({ kind }: { kind: ListKind }) {
   const createCategory = useCreateListCategory();
   const [serverError, setServerError] = useState<string | null>(null);
 
@@ -64,7 +60,6 @@ function AddCategoryForm({
     resolver: zodResolver(addCategoryFormSchema),
     defaultValues: { name: "" },
   });
-  const nameValue = form.watch("name") ?? "";
 
   async function submit(values: { name: string }) {
     setServerError(null);
@@ -74,8 +69,11 @@ function AddCategoryForm({
           { kind, name: values.name },
           {
             onSuccess: () => {
-              form.reset({ name: "" });
-              onAdded();
+              // Clear only the name input on a successful create. setValue writes
+              // through the registered (uncontrolled) input's ref so the cleared
+              // value is reflected in the DOM; skip validation so clearing does
+              // not surface a "required" error.
+              form.setValue("name", "", { shouldValidate: false });
               resolve();
             },
             onError: (err) => reject(err),
@@ -91,6 +89,8 @@ function AddCategoryForm({
     }
   }
 
+  const errorMessage = form.formState.errors.name?.message ?? serverError;
+
   return (
     <form className="space-y-2" onSubmit={form.handleSubmit(submit)}>
       <Label htmlFor="new-category-name">Category name</Label>
@@ -100,8 +100,9 @@ function AddCategoryForm({
           aria-label="Category name"
           autoComplete="off"
           placeholder="New category…"
-          value={nameValue}
-          onChange={(e) => form.setValue("name", e.target.value)}
+          aria-invalid={Boolean(errorMessage)}
+          aria-describedby={errorMessage ? ADD_CATEGORY_ERROR_ID : undefined}
+          {...form.register("name")}
         />
         <Button
           type="submit"
@@ -112,13 +113,10 @@ function AddCategoryForm({
           Add
         </Button>
       </div>
-      {(form.formState.errors.name?.message || serverError) && (
-        <FormError
-          message={
-            form.formState.errors.name?.message ?? serverError ?? undefined
-          }
-        />
-      )}
+      <FormError
+        id={ADD_CATEGORY_ERROR_ID}
+        message={errorMessage ?? undefined}
+      />
     </form>
   );
 }
@@ -257,7 +255,7 @@ export function CategoryManager({
       {online && (
         <>
           {/* Add form */}
-          <AddCategoryForm kind={kind} onAdded={() => {}} />
+          <AddCategoryForm kind={kind} />
 
           {/* Category list */}
           {categoriesQuery.isPending && (
@@ -361,6 +359,7 @@ export function CategoryManager({
           }}
           title={`Delete "${confirmEntry.name}"?`}
           confirmLabel="Delete"
+          pendingLabel="Deleting…"
           destructive
           isPending={pendingDeleteId === confirmEntry.id}
           onConfirm={handleDeleteConfirm}
