@@ -298,6 +298,14 @@ describe("CategoryManager — add category validation", () => {
 
     const error = await screen.findByRole("alert");
     expect(error).toHaveTextContent(/required/i);
+
+    // The error is associated with the input for assistive tech: the input is
+    // marked invalid and points at the error via aria-describedby.
+    const addInput = screen.getByRole("textbox", { name: /category name/i });
+    expect(addInput).toHaveAttribute("aria-invalid", "true");
+    const describedBy = addInput.getAttribute("aria-describedby");
+    expect(describedBy).toBeTruthy();
+    expect(error).toHaveAttribute("id", describedBy);
   });
 
   it("shows max length error for a name over 100 characters", async () => {
@@ -419,6 +427,12 @@ describe("CategoryManager — rename validation", () => {
 
     const error = await screen.findByRole("alert");
     expect(error).toHaveTextContent(/already exists/i);
+
+    // The error is associated with the rename input for assistive tech.
+    expect(renameInput).toHaveAttribute("aria-invalid", "true");
+    const describedBy = renameInput.getAttribute("aria-describedby");
+    expect(describedBy).toBeTruthy();
+    expect(error).toHaveAttribute("id", describedBy);
   });
 });
 

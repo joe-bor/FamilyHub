@@ -20,6 +20,8 @@ interface CategoryConfirmDialogProps {
   children: ReactNode;
   confirmLabel?: string;
   cancelLabel?: string;
+  /** Confirm button text while `isPending`. Defaults to a neutral "Working…". */
+  pendingLabel?: string;
   /** When true, the confirm button uses the destructive variant. */
   destructive?: boolean;
   /** Disables confirm + shows pending state. */
@@ -34,6 +36,7 @@ export function CategoryConfirmDialog({
   children,
   confirmLabel = "Confirm",
   cancelLabel = "Cancel",
+  pendingLabel = "Working…",
   destructive = false,
   isPending = false,
   onConfirm,
@@ -60,7 +63,7 @@ export function CategoryConfirmDialog({
             onClick={onConfirm}
             disabled={isPending}
           >
-            {isPending ? "Deleting…" : confirmLabel}
+            {isPending ? pendingLabel : confirmLabel}
           </Button>
         </DialogFooter>
       </DialogContent>
