@@ -303,7 +303,7 @@ describe("ListDetailView options placement", () => {
       // What we CAN assert: the grocery categories manager is still absent.
     });
 
-    it("desktop opens manager directly without closing Options (no Options sheet on desktop)", async () => {
+    it("desktop opens manager directly and returns focus to Manage categories on close", async () => {
       viewport.isMobile = false;
       const { user } = renderDetail();
       await screen.findByRole("heading", { name: "Trader Joe's Run" });
@@ -312,10 +312,27 @@ describe("ListDetailView options placement", () => {
       expect(screen.queryByRole("button", { name: "List options" })).toBeNull();
 
       // Clicking Manage categories directly opens the manager
+      const manageButton = screen.getByRole("button", {
+        name: /manage categories/i,
+      });
+      await user.click(manageButton);
+      const managerDialog = await screen.findByRole("dialog", {
+        name: /grocery categories/i,
+      });
+
+      // Close the manager via its X button — desktop uses the real Radix Dialog,
+      // so this exercises the real desktopManageButtonRef wiring (returnFocusRef
+      // honoured in DialogContent's onCloseAutoFocus).
       await user.click(
-        screen.getByRole("button", { name: /manage categories/i }),
+        within(managerDialog).getByRole("button", { name: "Close" }),
       );
-      await screen.findByRole("dialog", { name: /grocery categories/i });
+
+      // Focus returns to the real "Manage categories" button.
+      await waitFor(() => {
+        expect(
+          screen.getByRole("button", { name: /manage categories/i }),
+        ).toHaveFocus();
+      });
     });
 
     it("manager returnFocusRef is wired to List options trigger on mobile", async () => {
