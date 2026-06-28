@@ -1,6 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { listsService } from "@/api/services";
-import { useOnlineStatus } from "@/hooks";
+// Import from the specific module, not the "@/hooks" barrel: use-lists.ts is in
+// the @/api graph that src/test/setup.ts preloads. Importing the barrel would
+// eagerly load every hook (and its deps, e.g. @/components/ui/toaster) into the
+// module registry during test setup, defeating vi.mock() of those modules in
+// unrelated hook tests (the documented preload-vs-vi.mock gotcha).
+import { useOnlineStatus } from "@/hooks/use-online-status";
 import { assertOnlineForWrite } from "@/lib/offline/read-only-guard";
 import type {
   CreateListCategoryRequest,
