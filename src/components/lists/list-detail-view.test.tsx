@@ -1,6 +1,8 @@
+import { QueryClient } from "@tanstack/react-query";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { ListDetail } from "@/lib/types";
 import {
+  seedMockCategoryCatalog,
   seedMockListPreferences,
   seedMockLists,
   setupMswServer,
@@ -225,6 +227,93 @@ describe("ListDetailView options placement", () => {
 
       // Explanatory helper text appears
       expect(screen.getByText("Create a category first.")).toBeInTheDocument();
+    });
+  });
+
+  describe("category manager — final delete flattens an open list (desktop)", () => {
+    beforeEach(() => {
+      viewport.isMobile = false;
+    });
+
+    it("re-renders the open list flat after the final category is deleted via the manager", async () => {
+      // The shared catalog for this kind must hold exactly the ONE category the
+      // list uses, so deleting it is the final delete that empties the catalog
+      // and flattens every grouped list of this kind.
+      seedMockCategoryCatalog("grocery", [
+        {
+          id: "00000000-0000-4000-8000-000000000301",
+          kind: "grocery",
+          name: "Produce",
+          sortOrder: 0,
+        },
+      ]);
+
+      // gcTime: Infinity so the list-detail cache survives the delete → invalidate
+      // → refetch convergence we assert against.
+      const queryClient = new QueryClient({
+        defaultOptions: {
+          queries: { retry: false, gcTime: Number.POSITIVE_INFINITY },
+          mutations: { retry: false },
+        },
+      });
+
+      // Single-category grouped list: deleting "Produce" must flatten it.
+      const { user } = renderWithUser(
+        <ListDetailView
+          listId={LIST_ID}
+          preferences={{ showCompletedByDefault: true }}
+          preferencesStatus="ready"
+          onBack={() => {}}
+        />,
+        { queryClient },
+      );
+
+      await screen.findByRole("heading", { name: "Trader Joe's Run" });
+
+      // While grouped, the single category renders a titled section heading.
+      expect(
+        screen.getByRole("heading", { name: "Produce" }),
+      ).toBeInTheDocument();
+      // The assigned item is visible under that category.
+      expect(screen.getByText("Bananas")).toBeInTheDocument();
+
+      // Open the manager from the desktop options controls.
+      await user.click(
+        screen.getByRole("button", { name: /manage categories/i }),
+      );
+
+      // The manager dialog opens (titled "Grocery categories"); delete the
+      // single category from within it.
+      const managerDialog = await screen.findByRole("dialog", {
+        name: /grocery categories/i,
+      });
+      const deleteBtn = await within(managerDialog).findByRole("button", {
+        name: /delete produce/i,
+      });
+      await user.click(deleteBtn);
+
+      // Confirm the delete in the confirmation dialog.
+      const confirmDialog = await screen.findByRole("dialog", {
+        name: /delete "produce"\?/i,
+      });
+      await user.click(
+        within(confirmDialog).getByRole("button", { name: /delete/i }),
+      );
+
+      // After the final-category delete, the open list converges to flat:
+      // the "Produce" category heading disappears…
+      await waitFor(() =>
+        expect(
+          screen.queryByRole("heading", { name: "Produce" }),
+        ).not.toBeInTheDocument(),
+      );
+      // …and the previously-categorized item still shows in the now-flat list.
+      expect(screen.getByText("Bananas")).toBeInTheDocument();
+
+      // The Categories control now reflects flat mode (grouped becomes unavailable
+      // once the catalog is empty).
+      const categorySelect = screen.getByLabelText("Categories");
+      expect(categorySelect).toHaveValue("flat");
     });
   });
 });

@@ -110,11 +110,11 @@ beforeEach(() => {
 // ---------------------------------------------------------------------------
 
 describe("CategoryManager — loading state", () => {
-  it("renders a loading skeleton or text while the catalog is fetching", async () => {
+  it("renders the loading skeleton while the catalog query is pending", async () => {
     server.use(
       http.get(`${API_BASE}/lists/categories`, async () => {
-        // Delay so loading state is visible
-        await new Promise((r) => setTimeout(r, 100));
+        // Delay so the pending/loading state is observable before data arrives
+        await new Promise((r) => setTimeout(r, 200));
         return HttpResponse.json({
           data: {
             kind: "grocery",
@@ -125,17 +125,20 @@ describe("CategoryManager — loading state", () => {
       }),
     );
     renderManager();
-    // Should see loading indicator before data arrives; at minimum the manager
-    // renders without crashing while the request is in-flight
-    const hasLoadingEl =
-      Boolean(screen.queryByText(/loading/i)) ||
-      Boolean(screen.queryByRole("status")) ||
-      document.querySelector('[role="status"]') !== null;
-    // Loading state is rendered (skeleton has role="status") or we're still
-    // transitioning — either way the body is present and the component mounted
-    expect(document.body).toBeInTheDocument();
-    // The manager should not show categories content yet (still loading)
-    void hasLoadingEl; // referenced for clarity, assertion is below
+
+    // The skeleton renders with role="status" and an accessible label while
+    // the catalog request is in-flight.
+    const skeleton = await screen.findByRole("status", {
+      name: /loading categories/i,
+    });
+    expect(skeleton).toBeInTheDocument();
+
+    // Once the (empty) catalog resolves, the skeleton is replaced by the
+    // empty-state copy and the loading status disappears.
+    await screen.findByText(/no categories yet/i);
+    expect(
+      screen.queryByRole("status", { name: /loading categories/i }),
+    ).not.toBeInTheDocument();
   });
 });
 
@@ -469,26 +472,83 @@ describe("CategoryManager — delete confirmation", () => {
 // ---------------------------------------------------------------------------
 
 describe("CategoryManager — delete success toast", () => {
-  it("toasts with authoritative uncategorized item count from server response", async () => {
+  it("toasts the authoritative uncategorized count from the response, not the preflight count", async () => {
+    // Seed Produce with 3 assigned items so the confirmation preflight shows "3 items".
+    const threeItemList: ListDetail = {
+      ...groceryListGrouped,
+      items: [
+        {
+          id: "00000000-0000-4000-8000-000000000201",
+          text: "Apples",
+          completed: false,
+          completedAt: null,
+          categoryId: CAT_A_ID,
+          createdAt: "2026-05-06T09:00:00",
+          updatedAt: "2026-05-06T09:00:00",
+        },
+        {
+          id: "00000000-0000-4000-8000-000000000203",
+          text: "Pears",
+          completed: false,
+          completedAt: null,
+          categoryId: CAT_A_ID,
+          createdAt: "2026-05-06T09:00:00",
+          updatedAt: "2026-05-06T09:00:00",
+        },
+        {
+          id: "00000000-0000-4000-8000-000000000204",
+          text: "Grapes",
+          completed: false,
+          completedAt: null,
+          categoryId: CAT_A_ID,
+          createdAt: "2026-05-06T09:00:00",
+          updatedAt: "2026-05-06T09:00:00",
+        },
+      ],
+    };
+    seedMockLists([threeItemList]);
+
+    // Override DELETE so the AUTHORITATIVE response count (5) differs from the
+    // preflight catalog count (3) — proving the toast uses the response, not preflight.
+    server.use(
+      http.delete(`${API_BASE}/lists/categories/:categoryId`, () => {
+        return HttpResponse.json({
+          data: { uncategorizedItemCount: 5, flattenedListCount: 0 },
+          message: "Category deleted successfully",
+        });
+      }),
+    );
+
     const { user } = renderManager();
     await screen.findByText("Produce");
 
-    const deleteBtn = screen.getAllByRole("button", { name: /delete/i })[0];
+    const deleteBtn = screen.getByRole("button", { name: /delete produce/i });
     await user.click(deleteBtn);
 
+    // Preflight in the confirmation dialog shows the catalog count of 3.
     const dialog = await screen.findByRole("dialog");
+    expect(dialog).toHaveTextContent(/3 items/i);
+
     const confirmBtn = within(dialog).getByRole("button", { name: /delete/i });
     await user.click(confirmBtn);
 
-    // Wait for the toast to be called (via mocked toast function)
+    // The success toast must reflect the authoritative response count (5),
+    // and must NOT report the preflight count (3).
     await waitFor(() => {
       expect(mockToast).toHaveBeenCalledWith(
-        expect.objectContaining({ title: "Category deleted" }),
+        expect.objectContaining({
+          title: "Category deleted",
+          description: expect.stringMatching(/5 items/i),
+        }),
       );
     });
+    const lastCall = mockToast.mock.calls.at(-1)?.[0] as {
+      description?: string;
+    };
+    expect(lastCall.description).not.toMatch(/\b3 items\b/i);
   });
 
-  it("mentions flattenedListCount in toast when final category is deleted", async () => {
+  it("mentions the authoritative flattenedListCount in the toast when the final category is deleted", async () => {
     // Set up single-category catalog so deleting it flattens the grouped list
     seedMockCategoryCatalog("grocery", [
       { id: CAT_A_ID, kind: "grocery", name: "Produce", sortOrder: 0 },
@@ -515,19 +575,20 @@ describe("CategoryManager — delete success toast", () => {
     const { user } = renderManager();
     await screen.findByText("Produce");
 
-    const deleteBtn = screen.getByRole("button", { name: /delete/i });
+    const deleteBtn = screen.getByRole("button", { name: /delete produce/i });
     await user.click(deleteBtn);
 
     const dialog = await screen.findByRole("dialog");
     const confirmBtn = within(dialog).getByRole("button", { name: /delete/i });
     await user.click(confirmBtn);
 
-    // Toast should mention "1 list" switched to flat — use authoritative server response
+    // The MSW handler flattens exactly 1 grouped list — the toast must report
+    // that exact authoritative number ("1 list").
     await waitFor(() => {
       expect(mockToast).toHaveBeenCalledWith(
         expect.objectContaining({
           title: "Category deleted",
-          description: expect.stringMatching(/1 list/i),
+          description: expect.stringMatching(/\b1 list\b/i),
         }),
       );
     });
