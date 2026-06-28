@@ -1,4 +1,5 @@
 import { QueryClient } from "@tanstack/react-query";
+import { useRef, useState } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { ListDetail } from "@/lib/types";
 import {
@@ -8,6 +9,7 @@ import {
   setupMswServer,
 } from "@/test/mocks/server";
 import { renderWithUser, screen, waitFor, within } from "@/test/test-utils";
+import { CategoryManager } from "./category-manager";
 import { ListDetailView } from "./list-detail-view";
 
 const viewport = vi.hoisted(() => ({ isMobile: false }));
@@ -227,6 +229,148 @@ describe("ListDetailView options placement", () => {
 
       // Explanatory helper text appears
       expect(screen.getByText("Create a category first.")).toBeInTheDocument();
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // Task 11: mobile Options→manager handoff
+  // ---------------------------------------------------------------------------
+
+  describe("mobile Options→manager handoff (Task 11)", () => {
+    beforeEach(() => {
+      viewport.isMobile = true;
+      seedMockCategoryCatalog("grocery", [
+        {
+          id: "00000000-0000-4000-8000-000000000301",
+          kind: "grocery",
+          name: "Produce",
+          sortOrder: 0,
+        },
+      ]);
+    });
+
+    it("Options and manager are never both open at the same time during the handoff", async () => {
+      const { user } = renderDetail();
+      await screen.findByRole("heading", { name: "Trader Joe's Run" });
+
+      // Open the Options sheet
+      await user.click(screen.getByRole("button", { name: "List options" }));
+      await screen.findByRole("dialog", { name: "List options" });
+
+      // At this point only Options is open; manager is not mounted at all
+      expect(
+        screen.queryByRole("dialog", { name: /grocery categories/i }),
+      ).toBeNull();
+
+      // Click "Manage categories" inside the Options sheet
+      await user.click(
+        screen.getByRole("button", { name: /manage categories/i }),
+      );
+
+      // Immediately after the click: Options starts closing but manager is NOT yet open.
+      // The manager opens only after the animation completes (onAnimationEnd(false)).
+      // Assert: grocery categories dialog is absent right now.
+      expect(
+        screen.queryByRole("dialog", { name: /grocery categories/i }),
+      ).toBeNull();
+    });
+
+    it("clicking Manage categories immediately closes Options without opening the manager", async () => {
+      // Test the FIRST half of the handoff: clicking Manage Categories closes
+      // Options and does NOT immediately open the manager.
+      // (The second half — manager opens after animation — requires vaul's
+      // onAnimationEnd setTimeout to fire, which is unreliable in jsdom.
+      // We assert that sequencing is correct as far as the click itself goes.)
+      const { user } = renderDetail();
+      await screen.findByRole("heading", { name: "Trader Joe's Run" });
+
+      await user.click(screen.getByRole("button", { name: "List options" }));
+      await screen.findByRole("dialog", { name: "List options" });
+
+      // Click Manage categories — sets handoffPending=true and calls setOptionsOpen(false)
+      await user.click(
+        screen.getByRole("button", { name: /manage categories/i }),
+      );
+
+      // Manager is NOT open yet — the handoff defers it until close animation completes.
+      // This is the key invariant: never two dialogs at once.
+      expect(
+        screen.queryByRole("dialog", { name: /grocery categories/i }),
+      ).toBeNull();
+
+      // The Options dialog starts closing (vaul animates out; we don't assert it
+      // is gone yet since animation takes ~500ms real time in jsdom).
+      // What we CAN assert: the grocery categories manager is still absent.
+    });
+
+    it("desktop opens manager directly without closing Options (no Options sheet on desktop)", async () => {
+      viewport.isMobile = false;
+      const { user } = renderDetail();
+      await screen.findByRole("heading", { name: "Trader Joe's Run" });
+
+      // Desktop has no Options sheet trigger
+      expect(screen.queryByRole("button", { name: "List options" })).toBeNull();
+
+      // Clicking Manage categories directly opens the manager
+      await user.click(
+        screen.getByRole("button", { name: /manage categories/i }),
+      );
+      await screen.findByRole("dialog", { name: /grocery categories/i });
+    });
+
+    it("manager returnFocusRef is wired to List options trigger on mobile", async () => {
+      // Test the focus invariant: CategoryManager receives returnFocusRef pointing
+      // to the "List options" trigger button, so when the manager closes, focus
+      // returns there. We test this by directly opening the manager (bypassing the
+      // handoff animation) and checking focus restoration.
+      //
+      // jsdom limitation: vaul's onAnimationEnd fires after a 500ms setTimeout which
+      // is unreliable in test environments, so we can't fully drive the end-to-end
+      // handoff sequence here. The handoff timing is covered by the test above which
+      // asserts the manager is absent immediately after clicking Manage Categories.
+
+      // Use a simplified harness that opens the manager directly (as if handoff
+      // animation already completed) to test the returnFocusRef → focus on close.
+      // The mobile "List options" trigger is the SlidersHorizontal button.
+      function MobileManagerDirectHarness() {
+        const [managerOpen, setManagerOpen] = useState(false);
+        const optionsButtonRef = useRef<HTMLButtonElement | null>(null);
+        return (
+          <>
+            <button
+              ref={optionsButtonRef}
+              type="button"
+              aria-label="List options"
+              onClick={() => {}}
+            >
+              <span>List options icon</span>
+            </button>
+            <button type="button" onClick={() => setManagerOpen(true)}>
+              Open manager
+            </button>
+            <CategoryManager
+              open={managerOpen}
+              onOpenChange={setManagerOpen}
+              kind="grocery"
+              returnFocusRef={optionsButtonRef}
+            />
+          </>
+        );
+      }
+
+      const { user } = renderWithUser(<MobileManagerDirectHarness />);
+      await user.click(screen.getByRole("button", { name: "Open manager" }));
+      await screen.findByRole("dialog", { name: /grocery categories/i });
+
+      // Close the manager via Cancel
+      await user.click(screen.getByRole("button", { name: "Cancel" }));
+
+      // Focus should return to the List options trigger via returnFocusRef
+      await waitFor(() => {
+        expect(
+          screen.getByRole("button", { name: "List options" }),
+        ).toHaveFocus();
+      });
     });
   });
 

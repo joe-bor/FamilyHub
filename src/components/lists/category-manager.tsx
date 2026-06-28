@@ -15,7 +15,7 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { X } from "lucide-react";
-import { useState } from "react";
+import { type RefObject, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import {
@@ -51,6 +51,11 @@ interface CategoryManagerProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   kind: ListKind;
+  /**
+   * When provided, focus returns to this element when the manager closes.
+   * Forwarded to ResponsiveFormDialog → MobileSheet (mobile) / DialogContent (desktop).
+   */
+  returnFocusRef?: RefObject<HTMLElement | null>;
 }
 
 const ADD_CATEGORY_ERROR_ID = "new-category-name-error";
@@ -134,6 +139,7 @@ export function CategoryManager({
   open,
   onOpenChange,
   kind,
+  returnFocusRef,
 }: CategoryManagerProps) {
   const online = useOnlineStatus();
   const categoriesQuery = useListCategories(kind, open);
@@ -509,6 +515,8 @@ export function CategoryManager({
         }}
         title={`${kindLabel[kind]} categories`}
         dialogClassName="max-w-md max-h-[90dvh] overflow-y-auto"
+        focusTitleOnOpen
+        returnFocusRef={returnFocusRef}
         desktopHeaderRight={
           <Button
             type="button"

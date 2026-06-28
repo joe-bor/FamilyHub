@@ -1,5 +1,5 @@
 import { ArrowLeft, Plus, SlidersHorizontal } from "lucide-react";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import {
   useClearCompleted,
   useDeleteListItem,
@@ -51,6 +51,17 @@ export function ListDetailView({
   const isOnline = useOnlineStatus();
   const [optionsOpen, setOptionsOpen] = useState(false);
   const [managerOpen, setManagerOpen] = useState(false);
+  // Task 11: ref for the mobile "List options" SlidersHorizontal trigger button,
+  // so we can return focus to it after the manager closes on mobile.
+  const optionsButtonRef = useRef<HTMLButtonElement | null>(null);
+  // Task 11: ref for the desktop "Manage categories" button,
+  // so we can return focus to it after the manager closes on desktop.
+  const desktopManageButtonRef = useRef<HTMLButtonElement | null>(null);
+  // Task 11: true while we're mid-handoff (Options closing → manager about to open).
+  // During this window we suppress Options' focus restoration so focus doesn't
+  // bounce back to the trigger before the manager is ready.
+  const [managerHandoffPending, setManagerHandoffPending] = useState(false);
+
   const [itemSheet, setItemSheet] = useState<{
     mode: "create" | "edit";
     item: ListItem | null;
@@ -149,6 +160,7 @@ export function ListDetailView({
                 )}
                 {isMobile && (
                   <Button
+                    ref={optionsButtonRef}
                     type="button"
                     variant="ghost"
                     size="icon"
@@ -174,6 +186,7 @@ export function ListDetailView({
                   clearCompletedDisabled={clearCompletedDisabled}
                   onManageCategories={() => setManagerOpen(true)}
                   categoriesOnline={isOnline}
+                  manageCategoriesButtonRef={desktopManageButtonRef}
                   onUpdateList={(request) => updateList.mutate(request)}
                   onUpdatePreferences={(request) =>
                     updatePreferences.mutate(request)
@@ -242,6 +255,17 @@ export function ListDetailView({
               onClose={() => setOptionsOpen(false)}
               title="List options"
               initialHeight="half"
+              // Task 11: suppress focus restoration during handoff so focus doesn't
+              // bounce back to the trigger before the manager opens
+              restoreFocusOnClose={!managerHandoffPending}
+              // Task 11: when the close animation completes during a handoff,
+              // open the manager and clear the pending flag
+              onAnimationEnd={(open) => {
+                if (!open && managerHandoffPending) {
+                  setManagerHandoffPending(false);
+                  setManagerOpen(true);
+                }
+              }}
             >
               <div className="space-y-5">
                 <ListOptionsControls
@@ -253,9 +277,12 @@ export function ListDetailView({
                   completedFallbackMessage={completedFallbackMessage}
                   clearCompletedDisabled={clearCompletedDisabled}
                   fullWidthClearButton
-                  // Mobile handoff (close-options-then-open-manager sequencing) is Task 11.
-                  // The button is present but sequencing is not wired here.
-                  onManageCategories={() => setManagerOpen(true)}
+                  // Task 11: mobile handoff — set pending flag then close Options;
+                  // the manager opens only after the close animation completes
+                  onManageCategories={() => {
+                    setManagerHandoffPending(true);
+                    setOptionsOpen(false);
+                  }}
                   categoriesOnline={isOnline}
                   onUpdateList={(request) => updateList.mutate(request)}
                   onUpdatePreferences={(request) =>
@@ -277,11 +304,14 @@ export function ListDetailView({
             }}
           />
 
-          {/* Category manager — desktop opens directly; mobile handoff is Task 11 */}
+          {/* Category manager — Task 11: focusTitleOnOpen + returnFocusRef for handoff */}
           <CategoryManager
             open={managerOpen}
             onOpenChange={setManagerOpen}
             kind={list.kind}
+            returnFocusRef={
+              isMobile ? optionsButtonRef : desktopManageButtonRef
+            }
           />
         </div>
       </div>

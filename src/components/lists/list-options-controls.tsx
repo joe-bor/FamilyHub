@@ -1,4 +1,5 @@
 import { Settings, Trash2 } from "lucide-react";
+import type { RefObject } from "react";
 import type {
   ListCategoryDisplayMode,
   ListDetail,
@@ -32,6 +33,11 @@ interface ListOptionsControlsProps {
    * and explanatory copy is shown.
    */
   categoriesOnline?: boolean;
+  /**
+   * When provided, this ref is attached to the "Manage categories" button.
+   * Lets the parent capture the button for returnFocusRef handoff.
+   */
+  manageCategoriesButtonRef?: RefObject<HTMLButtonElement | null>;
   onUpdateList: (request: UpdateListRequest) => void;
   onUpdatePreferences: (request: { showCompletedByDefault: boolean }) => void;
   onClearCompleted: () => void;
@@ -48,6 +54,7 @@ export function ListOptionsControls({
   fullWidthClearButton = false,
   onManageCategories,
   categoriesOnline = true,
+  manageCategoriesButtonRef,
   onUpdateList,
   onUpdatePreferences,
   onClearCompleted,
@@ -82,6 +89,7 @@ export function ListOptionsControls({
           {onManageCategories !== undefined && (
             <div className="pt-1">
               <Button
+                ref={manageCategoriesButtonRef}
                 type="button"
                 variant="outline"
                 size="sm"

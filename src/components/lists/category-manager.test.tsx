@@ -20,6 +20,7 @@
  */
 
 import { HttpResponse, http } from "msw";
+import { useRef } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { ListDetail } from "@/lib/types";
 import {
@@ -30,7 +31,13 @@ import {
   server,
   setupMswServer,
 } from "@/test/mocks/server";
-import { renderWithUser, screen, waitFor, within } from "@/test/test-utils";
+import {
+  render,
+  renderWithUser,
+  screen,
+  waitFor,
+  within,
+} from "@/test/test-utils";
 import { CategoryManager } from "./category-manager";
 
 const mockToast = vi.hoisted(() => vi.fn());
@@ -606,6 +613,34 @@ describe("CategoryManager — delete success toast", () => {
         }),
       );
     });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Task 11: returnFocusRef prop on CategoryManager
+// ---------------------------------------------------------------------------
+
+describe("CategoryManager — returnFocusRef prop (Task 11)", () => {
+  it("accepts a returnFocusRef prop without error", () => {
+    // This test verifies the prop is accepted by the component (type + runtime).
+    // Focus-return behavior is tested in responsive-form-dialog.test.tsx.
+    function HarnessWithRef() {
+      const ref = useRef<HTMLButtonElement>(null);
+      return (
+        <>
+          <button type="button" ref={ref}>
+            Return target
+          </button>
+          <CategoryManager
+            open
+            onOpenChange={() => {}}
+            kind="grocery"
+            returnFocusRef={ref}
+          />
+        </>
+      );
+    }
+    expect(() => render(<HarnessWithRef />)).not.toThrow();
   });
 });
 
