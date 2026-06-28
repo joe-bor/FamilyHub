@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { type RefObject, useRef } from "react";
 import {
   Dialog,
   DialogContent,
@@ -31,6 +32,17 @@ interface ResponsiveFormDialogProps {
    */
   desktopHeaderRight?: ReactNode;
   children: ReactNode;
+  /**
+   * When true, focuses the title element (heading) when the dialog/sheet opens.
+   * Default: false — preserves existing focus-to-content behaviour.
+   */
+  focusTitleOnOpen?: boolean;
+  /**
+   * When provided, focus returns to this element on close.
+   * Forwarded to MobileSheet on mobile; handled via onCloseAutoFocus on desktop.
+   * Default: undefined — returns focus to the opener.
+   */
+  returnFocusRef?: RefObject<HTMLElement | null>;
 }
 
 /**
@@ -48,9 +60,13 @@ export function ResponsiveFormDialog({
   titleClassName,
   desktopHeaderRight,
   children,
+  focusTitleOnOpen = false,
+  returnFocusRef,
 }: ResponsiveFormDialogProps) {
   const isMobile = useIsMobile();
   const isMdOrLarger = useMediaQuery("(min-width: 768px)");
+  // Ref for the DialogTitle element on desktop (so we can focus it on open)
+  const desktopTitleRef = useRef<HTMLHeadingElement | null>(null);
 
   // These dialogs preserve desktop parity from Tailwind's md breakpoint up.
   if (isMobile && !isMdOrLarger) {
@@ -60,6 +76,8 @@ export function ResponsiveFormDialog({
         onClose={() => onOpenChange(false)}
         title={title}
         initialHeight={initialHeight}
+        focusTitleOnOpen={focusTitleOnOpen}
+        returnFocusRef={returnFocusRef}
       >
         {children}
       </MobileSheet>
@@ -68,10 +86,35 @@ export function ResponsiveFormDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className={dialogClassName} aria-describedby={undefined}>
+      <DialogContent
+        className={dialogClassName}
+        aria-describedby={undefined}
+        onOpenAutoFocus={(event) => {
+          if (focusTitleOnOpen && desktopTitleRef.current) {
+            event.preventDefault();
+            desktopTitleRef.current.focus();
+          }
+          // Otherwise, let Radix handle focus naturally (first focusable element)
+        }}
+        onCloseAutoFocus={(event) => {
+          if (returnFocusRef?.current) {
+            event.preventDefault();
+            returnFocusRef.current.focus();
+          }
+          // Otherwise, let Radix restore focus to opener naturally
+        }}
+      >
         <DialogHeader>
           <div className="flex items-center justify-between">
-            <DialogTitle className={titleClassName}>{title}</DialogTitle>
+            <DialogTitle
+              ref={(el) => {
+                desktopTitleRef.current = el;
+              }}
+              tabIndex={focusTitleOnOpen ? -1 : undefined}
+              className={titleClassName}
+            >
+              {title}
+            </DialogTitle>
             {desktopHeaderRight}
           </div>
         </DialogHeader>

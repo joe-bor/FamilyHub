@@ -1,4 +1,10 @@
-import { type ReactNode, useEffect, useRef, useState } from "react";
+import {
+  type ReactNode,
+  type RefObject,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import { Drawer } from "vaul";
 import { useBackHandler } from "@/hooks";
 import { cn } from "@/lib/utils";
@@ -23,6 +29,30 @@ export interface MobileSheetProps {
    * (default) for long or content-heavy forms.
    */
   initialHeight?: MobileSheetHeight;
+  /**
+   * When true, focuses the Drawer.Title (the visible heading) on open instead
+   * of the content container. Useful when the sheet is the destination of a
+   * programmatic handoff (e.g. the category manager opened after Options closes).
+   * Default: false — preserves existing behaviour (content div gets focus).
+   */
+  focusTitleOnOpen?: boolean;
+  /**
+   * When false, the sheet will NOT return focus to the opener element on close.
+   * Useful during handoff sequencing where the caller will manage focus itself.
+   * Default: true — preserves existing behaviour (opener gets focus).
+   */
+  restoreFocusOnClose?: boolean;
+  /**
+   * When provided, focus returns to this element on close instead of the
+   * captured opener. Only honoured when restoreFocusOnClose is true (default).
+   */
+  returnFocusRef?: RefObject<HTMLElement | null>;
+  /**
+   * Forwarded directly to Drawer.Root. Called with the final open state when
+   * the open/close animation completes. Useful for sequencing: the caller can
+   * open the next dialog only after onAnimationEnd(false) fires.
+   */
+  onAnimationEnd?: (open: boolean) => void;
 }
 
 function snapPointsFor(height: MobileSheetHeight) {
@@ -40,8 +70,13 @@ export function MobileSheet({
   headerRight,
   children,
   initialHeight = "full",
+  focusTitleOnOpen = false,
+  restoreFocusOnClose = true,
+  returnFocusRef,
+  onAnimationEnd,
 }: MobileSheetProps) {
   const contentRef = useRef<HTMLDivElement>(null);
+  const titleRef = useRef<HTMLElement | null>(null);
 
   // Snap layout is locked in per open cycle, then follows mid-open
   // initialHeight changes (e.g. recipe chooser -> manual form).
@@ -96,6 +131,7 @@ export function MobileSheet({
       activeSnapPoint={snap}
       setActiveSnapPoint={setSnap}
       fadeFromIndex={0}
+      onAnimationEnd={onAnimationEnd}
     >
       <Drawer.Portal>
         <Drawer.Overlay className="fixed inset-0 z-50 bg-foreground/20 backdrop-blur-sm" />
@@ -105,14 +141,21 @@ export function MobileSheet({
           aria-describedby={undefined}
           onOpenAutoFocus={(event) => {
             event.preventDefault();
-            const content = contentRef.current;
-            if (content && !content.contains(document.activeElement)) {
-              content.focus();
+            if (focusTitleOnOpen) {
+              titleRef.current?.focus();
+            } else {
+              const content = contentRef.current;
+              if (content && !content.contains(document.activeElement)) {
+                content.focus();
+              }
             }
           }}
           onCloseAutoFocus={(event) => {
             event.preventDefault();
-            openerRef.current?.focus();
+            if (restoreFocusOnClose) {
+              const target = returnFocusRef?.current ?? openerRef.current;
+              target?.focus();
+            }
           }}
           className={cn(
             "fixed inset-x-0 bottom-0 z-50 flex flex-col rounded-t-2xl bg-card shadow-2xl outline-none",
@@ -165,7 +208,13 @@ export function MobileSheet({
             >
               Cancel
             </button>
-            <Drawer.Title className="text-[20px] leading-7 font-semibold">
+            <Drawer.Title
+              ref={(el) => {
+                titleRef.current = el;
+              }}
+              tabIndex={-1}
+              className="text-[20px] leading-7 font-semibold outline-none"
+            >
               {title}
             </Drawer.Title>
             {headerRight ?? <div className="w-16" />}
