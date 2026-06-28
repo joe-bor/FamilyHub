@@ -1,12 +1,19 @@
-import { Trash2 } from "lucide-react";
+import { Settings, Trash2 } from "lucide-react";
 import type {
   ListCategoryDisplayMode,
   ListDetail,
+  ListKind,
   UpdateListRequest,
 } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { Button } from "../ui/button";
 import { Label } from "../ui/label";
+
+const kindLabel: Record<ListKind, string> = {
+  grocery: "Grocery",
+  "to-do": "To-do",
+  general: "General",
+};
 
 interface ListOptionsControlsProps {
   list: ListDetail;
@@ -18,6 +25,13 @@ interface ListOptionsControlsProps {
   clearCompletedDisabled: boolean;
   /** Stack the clear-completed action full-width (used inside the mobile sheet). */
   fullWidthClearButton?: boolean;
+  /** Called when the user clicks "Manage categories". Parent opens the manager. */
+  onManageCategories?: () => void;
+  /**
+   * Whether the user is online. When false, "Manage categories" is disabled
+   * and explanatory copy is shown.
+   */
+  categoriesOnline?: boolean;
   onUpdateList: (request: UpdateListRequest) => void;
   onUpdatePreferences: (request: { showCompletedByDefault: boolean }) => void;
   onClearCompleted: () => void;
@@ -32,6 +46,8 @@ export function ListOptionsControls({
   completedFallbackMessage,
   clearCompletedDisabled,
   fullWidthClearButton = false,
+  onManageCategories,
+  categoriesOnline = true,
   onUpdateList,
   onUpdatePreferences,
   onClearCompleted,
@@ -62,6 +78,26 @@ export function ListOptionsControls({
             <p className="text-xs leading-4 text-muted-foreground">
               Create a category first.
             </p>
+          )}
+          {onManageCategories !== undefined && (
+            <div className="pt-1">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={onManageCategories}
+                disabled={!categoriesOnline}
+                aria-label="Manage categories"
+              >
+                <Settings className="h-4 w-4" />
+                Manage categories
+              </Button>
+              <p className="mt-1 text-xs leading-4 text-muted-foreground">
+                {categoriesOnline
+                  ? `Available across all ${kindLabel[list.kind]} lists in your family.`
+                  : "Category management is unavailable while offline."}
+              </p>
+            </div>
           )}
         </div>
 
