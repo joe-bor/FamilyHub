@@ -219,4 +219,29 @@ describe("mobile Options→manager handoff sequencing (Task 11)", () => {
       screen.getByRole("dialog", { name: "List options" }),
     ).toBeInTheDocument();
   });
+
+  it("opens the manager via fallback if the close animation callback never fires", async () => {
+    const { user } = renderDetail();
+    await screen.findByRole("heading", { name: "Trader Joe's Run" });
+
+    await user.click(screen.getByRole("button", { name: "List options" }));
+    await screen.findByRole("dialog", { name: "List options" });
+    await user.click(
+      screen.getByRole("button", { name: /manage categories/i }),
+    );
+
+    expect(screen.queryByRole("dialog", { name: "List options" })).toBeNull();
+    expect(
+      screen.queryByRole("dialog", { name: /grocery categories/i }),
+    ).toBeNull();
+
+    await waitFor(
+      () => {
+        expect(
+          screen.getByRole("dialog", { name: /grocery categories/i }),
+        ).toBeInTheDocument();
+      },
+      { timeout: 1200 },
+    );
+  });
 });

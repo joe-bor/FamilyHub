@@ -1,11 +1,14 @@
 import { QueryClient } from "@tanstack/react-query";
+import { HttpResponse, http } from "msw";
 import { useRef, useState } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { ListDetail } from "@/lib/types";
 import {
+  API_BASE,
   seedMockCategoryCatalog,
   seedMockListPreferences,
   seedMockLists,
+  server,
   setupMswServer,
 } from "@/test/mocks/server";
 import { renderWithUser, screen, waitFor, within } from "@/test/test-utils";
@@ -13,6 +16,7 @@ import { CategoryManager } from "./category-manager";
 import { ListDetailView } from "./list-detail-view";
 
 const viewport = vi.hoisted(() => ({ isMobile: false }));
+const mockToast = vi.hoisted(() => vi.fn());
 
 vi.mock("@/hooks", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/hooks")>();
@@ -21,6 +25,10 @@ vi.mock("@/hooks", async (importOriginal) => {
     useIsMobile: () => viewport.isMobile,
   };
 });
+
+vi.mock("@/components/ui/toaster", () => ({
+  toast: (...args: unknown[]) => mockToast(...args),
+}));
 
 const LIST_ID = "00000000-0000-4000-8000-000000000101";
 
@@ -76,6 +84,7 @@ function renderDetail() {
 }
 
 beforeEach(() => {
+  mockToast.mockClear();
   seedMockLists([groceryList]);
   seedMockListPreferences({ showCompletedByDefault: true });
 });
@@ -229,6 +238,39 @@ describe("ListDetailView options placement", () => {
 
       // Explanatory helper text appears
       expect(screen.getByText("Create a category first.")).toBeInTheDocument();
+    });
+
+    it("toasts the backend message when a stale grouped-mode save rolls back", async () => {
+      const flatList: ListDetail = {
+        ...groceryList,
+        categoryDisplayMode: "flat",
+      };
+      seedMockLists([flatList]);
+      server.use(
+        http.patch(`${API_BASE}/lists/${LIST_ID}`, () =>
+          HttpResponse.json(
+            { message: "Create a category first." },
+            { status: 409 },
+          ),
+        ),
+      );
+
+      const { user } = renderDetail();
+      await screen.findByRole("heading", { name: "Trader Joe's Run" });
+
+      const categorySelect = screen.getByLabelText("Categories");
+      await user.selectOptions(categorySelect, "Show categories");
+
+      await waitFor(() => {
+        expect(mockToast).toHaveBeenCalledWith(
+          expect.objectContaining({
+            title: "List options not saved",
+            description: "Create a category first.",
+            variant: "destructive",
+          }),
+        );
+      });
+      expect(categorySelect).toHaveValue("flat");
     });
   });
 
