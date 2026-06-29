@@ -228,6 +228,124 @@ describe("useLists", () => {
     });
   });
 
+  it("General list opts into grouped mode when its catalog is non-empty", async () => {
+    const cat: import("@/lib/types").ListCategoryOption = {
+      id: "00000000-0000-4000-8000-000000009010",
+      kind: "general",
+      name: "Documents",
+      sortOrder: 0,
+    };
+    const generalList: ListDetail = {
+      id: "00000000-0000-4000-8000-000000009011",
+      name: "My General List",
+      kind: "general",
+      categoryDisplayMode: "flat",
+      showCompletedOverride: null,
+      categories: [cat],
+      items: [],
+      createdAt: "2026-06-22T09:00:00",
+      updatedAt: "2026-06-22T09:00:00",
+    };
+
+    // Seed both the mock server state and the catalog so the handler allows grouped.
+    seedMockLists([generalList]);
+    seedMockCategoryCatalog("general", [cat]);
+    queryClient.setQueryData(listsKeys.detail(generalList.id), {
+      data: generalList,
+    } satisfies ApiResponse<ListDetail>);
+
+    const { result } = renderHook(() => useUpdateList(generalList.id), {
+      wrapper: createWrapper(),
+    });
+
+    result.current.mutate({
+      categoryDisplayMode: "grouped",
+      showCompletedOverride: null,
+    });
+
+    await waitFor(() => {
+      expect(result.current.isSuccess).toBe(true);
+      expect(
+        queryClient.getQueryData<ApiResponse<ListDetail>>(
+          listsKeys.detail(generalList.id),
+        )?.data.categoryDisplayMode,
+      ).toBe("grouped");
+    });
+  });
+
+  it("grouped PATCH returns 409 when the catalog is empty (general)", async () => {
+    const generalList: ListDetail = {
+      id: "00000000-0000-4000-8000-000000009012",
+      name: "Empty General",
+      kind: "general",
+      categoryDisplayMode: "flat",
+      showCompletedOverride: null,
+      categories: [],
+      items: [],
+      createdAt: "2026-06-22T09:00:00",
+      updatedAt: "2026-06-22T09:00:00",
+    };
+
+    seedMockLists([generalList]);
+    // mockCategoryCatalogs["general"] starts empty by default after resetMockLists()
+    queryClient.setQueryData(listsKeys.detail(generalList.id), {
+      data: generalList,
+    } satisfies ApiResponse<ListDetail>);
+
+    const { result } = renderHook(() => useUpdateList(generalList.id), {
+      wrapper: createWrapper(),
+    });
+
+    result.current.mutate({
+      categoryDisplayMode: "grouped",
+      showCompletedOverride: null,
+    });
+
+    await waitFor(() => {
+      expect(result.current.isError).toBe(true);
+    });
+    // The mutation must have failed (409 from the mock); cache must still be flat.
+    expect(
+      queryClient.getQueryData<ApiResponse<ListDetail>>(
+        listsKeys.detail(generalList.id),
+      )?.data.categoryDisplayMode,
+    ).toBe("flat");
+  });
+
+  it("grouped PATCH returns 409 when catalog is empty for grocery (unified rule)", async () => {
+    const emptyGrocery: ListDetail = {
+      ...groceryList,
+      id: "00000000-0000-4000-8000-000000009013",
+      categoryDisplayMode: "flat",
+      categories: [],
+    };
+
+    seedMockLists([emptyGrocery]);
+    // Override the default grocery catalog to be empty.
+    seedMockCategoryCatalog("grocery", []);
+    queryClient.setQueryData(listsKeys.detail(emptyGrocery.id), {
+      data: emptyGrocery,
+    } satisfies ApiResponse<ListDetail>);
+
+    const { result } = renderHook(() => useUpdateList(emptyGrocery.id), {
+      wrapper: createWrapper(),
+    });
+
+    result.current.mutate({
+      categoryDisplayMode: "grouped",
+      showCompletedOverride: null,
+    });
+
+    await waitFor(() => {
+      expect(result.current.isError).toBe(true);
+    });
+    expect(
+      queryClient.getQueryData<ApiResponse<ListDetail>>(
+        listsKeys.detail(emptyGrocery.id),
+      )?.data.categoryDisplayMode,
+    ).toBe("flat");
+  });
+
   it("creates, updates, deletes, and clears list items in the detail cache", async () => {
     seedMockLists([groceryList]);
     queryClient.setQueryData(listsKeys.detail(groceryList.id), {

@@ -1402,10 +1402,13 @@ export const handlers = [
     };
     const existing = mockLists[index];
 
-    if (existing.kind === "general" && body.categoryDisplayMode === "grouped") {
+    if (
+      body.categoryDisplayMode === "grouped" &&
+      mockCategoryCatalogs[existing.kind].length === 0
+    ) {
       return HttpResponse.json(
-        { message: "General lists cannot use grouped category mode." },
-        { status: 400 },
+        { message: "Create a category first." },
+        { status: 409 },
       );
     }
 
