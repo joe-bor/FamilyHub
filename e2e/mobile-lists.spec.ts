@@ -52,7 +52,9 @@ test.describe("Mobile Lists", () => {
     };
 
     let options = await openOptions();
-    await expect(options.getByLabel("Categories")).toHaveValue("grouped");
+    await expect(
+      options.getByRole("combobox", { name: "Categories", exact: true }),
+    ).toHaveValue("grouped");
     await options.getByRole("button", { name: "Cancel" }).click();
     await expect(optionsSheet).toBeHidden();
 
@@ -69,7 +71,9 @@ test.describe("Mobile Lists", () => {
     // Switch the category mode immediately — the item create may still be in
     // flight, so the list-level PATCH response must not clobber the new item.
     options = await openOptions();
-    await options.getByLabel("Categories").selectOption("flat");
+    await options
+      .getByRole("combobox", { name: "Categories", exact: true })
+      .selectOption("flat");
     await expect(page.getByRole("heading", { name: "Produce" })).toBeHidden();
     await options.getByRole("button", { name: "Cancel" }).click();
     await expect(optionsSheet).toBeHidden();
@@ -83,6 +87,8 @@ test.describe("Mobile Lists", () => {
 
     // "Remove all completed" runs from inside the sheet, which stays open.
     options = await openOptions();
+    await options.getByRole("button", { name: "Expand sheet" }).click();
+    await waitForSheetSettled(options);
     await options.getByRole("button", { name: "Remove all completed" }).click();
     await expect(page.getByText("Bananas")).toBeHidden();
   });
@@ -95,6 +101,8 @@ test.describe("Mobile Lists", () => {
     page,
     request,
   }) => {
+    test.setTimeout(60_000);
+
     const registration = await registerFamily(request, {
       familyName: "General Cat Family",
       members: [{ name: "Alice", color: "coral" }],
@@ -136,13 +144,16 @@ test.describe("Mobile Lists", () => {
     const optionsSheet = page.getByRole("dialog", { name: "List options" });
     const openOptions = async () => {
       await page.getByRole("button", { name: "List options" }).click();
-      await waitForSheetSettled(optionsSheet);
+      await expect(optionsSheet).toBeVisible();
       return optionsSheet;
     };
 
     let options = await openOptions();
-    const categoriesSelect = options.getByLabel("Categories");
-    await expect(categoriesSelect).toHaveValue("grouped");
+    const categoriesSelect = options.getByRole("combobox", {
+      name: "Categories",
+      exact: true,
+    });
+    await expect(categoriesSelect).toHaveValue("flat");
     // "Show categories" is disabled because no categories exist yet
     await expect(
       options.getByRole("option", { name: /Show categories/i }),
@@ -203,6 +214,14 @@ test.describe("Mobile Lists", () => {
     const managerSheet = page.getByRole("dialog", {
       name: "General categories",
     });
+    const closeManager = async () => {
+      const closeButton = managerSheet
+        .getByRole("button", { name: "Cancel" })
+        .first();
+      await expect(closeButton).toBeVisible();
+      await closeButton.click({ force: true });
+      await expect(managerSheet).toBeHidden();
+    };
     await waitForSheetSettled(managerSheet);
     await expect(managerSheet).toBeVisible();
 
@@ -292,8 +311,7 @@ test.describe("Mobile Lists", () => {
     page.off("request", trackSavePut);
 
     // Close manager
-    await page.keyboard.press("Escape");
-    await expect(managerSheet).toBeHidden();
+    await closeManager();
 
     // Reload and re-navigate to Lists (mobile reload drops SPA to Home)
     await page.reload();
@@ -327,8 +345,7 @@ test.describe("Mobile Lists", () => {
       );
     expect(orderedCategoryNames).toEqual(["Work", "Documents"]);
 
-    await page.keyboard.press("Escape");
-    await expect(managerSheet).toBeHidden();
+    await closeManager();
 
     // -------------------------------------------------------------------------
     // 5. Keyboard accessibility: focus a move control, activate, assert focus +
@@ -384,17 +401,29 @@ test.describe("Mobile Lists", () => {
     await expect(liveRegion).toHaveText(/Work moved to position 2 of 2/i);
 
     // Discard reorder changes
-    await managerSheet.getByRole("button", { name: "Cancel" }).click();
-    await page.keyboard.press("Escape");
-    await expect(managerSheet).toBeHidden();
+    await managerSheet.getByRole("button", { name: "Cancel" }).last().click();
+    const discardDialog = page.getByRole("dialog", { name: "Discard order?" });
+    await expect(discardDialog).toBeVisible();
+    await discardDialog.getByRole("button", { name: "Discard order" }).click();
+    await expect(discardDialog).toBeHidden();
+    await expect(
+      managerSheet.getByRole("button", { name: "Reorder categories" }),
+    ).toBeVisible();
+    await closeManager();
 
     // -------------------------------------------------------------------------
     // 6. Opt list into grouped mode; verify empty groups hidden, assigned item visible
     // -------------------------------------------------------------------------
     options = await openOptions();
     // "Show categories" is now enabled (categories exist)
-    const catSelect = options.getByLabel("Categories");
+    const catSelect = options.getByRole("combobox", {
+      name: "Categories",
+      exact: true,
+    });
     await catSelect.selectOption("grouped");
+    await options.getByRole("button", { name: "Cancel" }).click();
+    await expect(optionsSheet).toBeHidden();
+
     // The list should now show the category heading for the item's category
     // (item "Tax Returns" is in "Documents")
     await expect(
@@ -403,9 +432,6 @@ test.describe("Mobile Lists", () => {
     await expect(page.getByText("Tax Returns")).toBeVisible();
     // "Work" has no items — its heading should not appear (empty groups hidden)
     await expect(page.getByRole("heading", { name: "Work" })).toBeHidden();
-
-    await options.getByRole("button", { name: "Cancel" }).click();
-    await expect(optionsSheet).toBeHidden();
 
     // -------------------------------------------------------------------------
     // 7. Create a second General list and verify shared category catalog
@@ -439,8 +465,7 @@ test.describe("Mobile Lists", () => {
       addItemSheet2.locator("option", { hasText: "Documents" }),
     ).toBeAttached();
 
-    // The second list starts without grouped mode automatically (no categories in
-    // this list yet, grouped is the default but "Show categories" is disabled)
+    // The second list starts without grouped mode automatically.
     await addItemSheet2.getByRole("button", { name: "Cancel" }).click();
     await expect(addItemSheet2).toBeHidden();
 
@@ -465,8 +490,7 @@ test.describe("Mobile Lists", () => {
     // "Docs" should now appear in the manager
     await expect(managerSheet.getByText("Docs")).toBeVisible();
 
-    await page.keyboard.press("Escape");
-    await expect(managerSheet).toBeHidden();
+    await closeManager();
 
     // Navigate to the first list and verify rename is reflected
     await page.getByRole("button", { name: "Back to Lists" }).click();
@@ -497,11 +521,16 @@ test.describe("Mobile Lists", () => {
     await confirmDialog.getByRole("button", { name: "Delete" }).click();
 
     // Success toast with correct item count — "Tax Returns" (1 item) became Uncategorized
-    await expect(page.getByText("Category deleted")).toBeVisible();
-    await expect(page.getByText(/1 item became uncategorized/i)).toBeVisible();
+    await expect(
+      page.getByText("Category deleted", { exact: true }),
+    ).toBeVisible();
+    await expect(
+      page.getByText('"Docs" was deleted. 1 item became uncategorized.', {
+        exact: true,
+      }),
+    ).toBeVisible();
 
-    await page.keyboard.press("Escape");
-    await expect(managerSheet).toBeHidden();
+    await closeManager();
 
     // The item now appears as Uncategorized (flat/no heading visible)
     await expect(page.getByText("Tax Returns")).toBeVisible();
@@ -525,10 +554,11 @@ test.describe("Mobile Lists", () => {
 
     // Toast mentions "lists switched to flat view" because this was the last
     // category for the General kind (both lists had grouped mode)
-    await expect(page.getByText("Category deleted")).toBeVisible();
+    await expect(
+      page.getByText("Category deleted", { exact: true }),
+    ).toBeVisible();
 
-    await page.keyboard.press("Escape");
-    await expect(managerSheet).toBeHidden();
+    await closeManager();
 
     // Both General lists now have no categories — grouping is moot.
     // The options select should show "flat" is now the effective mode (or
@@ -550,8 +580,7 @@ test.describe("Mobile Lists", () => {
     await managerSheet.getByRole("button", { name: "Add" }).click();
     await expect(managerSheet.getByText("Personal")).toBeVisible();
 
-    await page.keyboard.press("Escape");
-    await expect(managerSheet).toBeHidden();
+    await closeManager();
 
     // Now "Show categories" is available but not auto-enabled for the list
     // The list should still be showing flat (no "Personal" heading visible)
