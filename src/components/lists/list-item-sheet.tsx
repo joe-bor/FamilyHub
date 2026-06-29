@@ -129,6 +129,10 @@ export function ListItemSheet({
       form.setValue("categoryId", response.data.id, { shouldDirty: true });
       setInlineName("");
       setInlineOpen(false);
+      // A prior failed save may have left a recovery/save error showing. The
+      // user has now successfully acted, so clear that stale message rather
+      // than leaving it next to the resolved inline section.
+      setRecoveryError(null);
     } catch (err) {
       const message = ApiException.isApiException(err)
         ? err.message
@@ -152,6 +156,9 @@ export function ListItemSheet({
     try {
       const refetchedResponse = await listsService.getList(list.id);
       refetched = refetchedResponse.data;
+      // Relies on the mutation-level onError (cache rollback to context.previous)
+      // running BEFORE this per-call onError. If that ordering ever changes, this
+      // authoritative detail write could be clobbered by the rollback.
       queryClient.setQueryData(listsKeys.detail(list.id), refetchedResponse);
     } catch {
       // Branch 1: the list itself 404'd during recovery.

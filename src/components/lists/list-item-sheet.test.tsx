@@ -738,4 +738,49 @@ describe("item-save failure after inline category create", () => {
     const selectedOption = select.querySelector("option:checked");
     expect(selectedOption?.textContent).toBe("Snacks");
   });
+
+  it("clears a stale item-save error after a successful inline category create", async () => {
+    const { user } = renderSheet({
+      mode: "edit",
+      item: { ...baseItem, categoryId: null },
+      list: makeList({ items: [{ ...baseItem, categoryId: null }] }),
+    });
+
+    // Fail the item save so a recovery/save error is shown.
+    server.use(
+      http.patch(`${API_BASE}/lists/${LIST_ID}/items/${ITEM_ID}`, () =>
+        HttpResponse.json({ message: "Server error" }, { status: 500 }),
+      ),
+    );
+    await user.click(screen.getByRole("button", { name: /save item/i }));
+
+    // Capture whatever message the failed save surfaced.
+    let staleMessage = "";
+    await waitFor(() => {
+      const alerts = screen.getAllByRole("alert");
+      expect(alerts.length).toBeGreaterThan(0);
+      staleMessage = alerts[alerts.length - 1].textContent ?? "";
+      expect(staleMessage.length).toBeGreaterThan(0);
+    });
+
+    // Now successfully create a category inline.
+    await user.click(screen.getByRole("button", { name: /new category/i }));
+    await user.type(
+      await screen.findByRole("textbox", { name: /category name/i }),
+      "Snacks",
+    );
+    await user.click(screen.getByRole("button", { name: /create category/i }));
+
+    // The new category becomes selected...
+    await waitFor(() => {
+      const select = screen.getByRole("combobox", { name: /category/i });
+      expect(select.querySelector("option:checked")?.textContent).toBe(
+        "Snacks",
+      );
+    });
+
+    // ...and the stale save error is cleared (only the inline-create success
+    // path clears it here — open stays true and no new save is submitted).
+    expect(screen.queryByText(staleMessage)).not.toBeInTheDocument();
+  });
 });
