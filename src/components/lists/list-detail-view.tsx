@@ -166,7 +166,12 @@ export function ListDetailView({
                     size="icon"
                     aria-label="List options"
                     className="h-11 w-11"
-                    onClick={() => setOptionsOpen(true)}
+                    onClick={() => {
+                      // Re-opening Options cancels any in-flight handoff so the
+                      // manager doesn't pop open on a later, unrequested close.
+                      setManagerHandoffPending(false);
+                      setOptionsOpen(true);
+                    }}
                   >
                     <SlidersHorizontal className="h-5 w-5" />
                   </Button>

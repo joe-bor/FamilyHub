@@ -1,5 +1,4 @@
-import type { ReactNode } from "react";
-import { type RefObject, useRef } from "react";
+import { type ReactNode, type RefObject, useRef } from "react";
 import {
   Dialog,
   DialogContent,

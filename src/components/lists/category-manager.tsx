@@ -5,7 +5,8 @@
  *
  * Desktop: rendered in a Dialog via ResponsiveFormDialog.
  * Mobile: rendered in a MobileSheet via ResponsiveFormDialog.
- * (Task 11 will add cross-viewport focus props.)
+ * Cross-viewport focus is handled via focusTitleOnOpen + the optional
+ * returnFocusRef prop, both forwarded to ResponsiveFormDialog (Task 11).
  *
  * Reorder state is OWNED HERE (Task 10):
  *   - isReordering, baselineEntries, baselineIds, draftIds
