@@ -10,6 +10,7 @@ import {
   waitForHydration,
   waitForOfflineCachePersisted,
   waitForServiceWorkerReady,
+  waitForSheetSettled,
 } from "./helpers/test-helpers";
 
 /**
@@ -150,6 +151,130 @@ test.describe("Offline read persistence (Option C)", () => {
     // is absent, and the app shell (nav) survived rather than blanking out.
     await expect(page.getByRole("heading", { name: "Chores" })).toHaveCount(0);
     await expect(page.getByRole("button", { name: /chores/i })).toBeVisible();
+  });
+
+  test("grouped General list: headings and items readable offline; Manage Categories and New Category unavailable", async ({
+    page,
+    context,
+    request,
+  }) => {
+    // Register a family and create a General list with a category and item online.
+    const reg = await registerFamily(request, {
+      familyName: "Offline General",
+      members: [{ name: "Alice", color: "coral" }],
+    });
+
+    // Seed auth and navigate so the app fetches all data.
+    await seedBrowserAuth(page, reg);
+    await page.reload();
+    await waitForHydration(page);
+
+    // Navigate to Lists
+    await page.getByRole("button", { name: "Lists" }).click();
+    await expect(
+      page.getByRole("heading", { name: "Lists", level: 1, exact: true }),
+    ).toBeVisible();
+
+    // Create a General list
+    await page.getByRole("button", { name: "Create list" }).click();
+    const createDialog = page.getByRole("dialog", { name: "New List" });
+    await waitForSheetSettled(createDialog);
+    await createDialog.getByLabel("List name").fill("Offline Test List");
+    await createDialog.getByRole("radio", { name: "General" }).click();
+    await createDialog.getByRole("button", { name: "Create list" }).click();
+
+    await expect(
+      page.getByRole("heading", { name: "Offline Test List" }),
+    ).toBeVisible();
+
+    // Open List options and then Manage categories (desktop controls are inline;
+    // offline test uses desktop Chrome so we look for the inline "Manage categories" button)
+    const manageCategoriesBtn = page.getByRole("button", {
+      name: "Manage categories",
+    });
+    await expect(manageCategoriesBtn).toBeVisible();
+    await manageCategoriesBtn.click();
+
+    // Manager opens as a Radix Dialog on desktop
+    const managerDialog = page.getByRole("dialog", {
+      name: "General categories",
+    });
+    await expect(managerDialog).toBeVisible();
+
+    // Add a category
+    await managerDialog.getByLabel("Category name").fill("Archived");
+    await managerDialog.getByRole("button", { name: "Add" }).click();
+    await expect(managerDialog.getByText("Archived")).toBeVisible();
+
+    // Close manager
+    await managerDialog.getByRole("button", { name: "Close" }).click();
+    await expect(managerDialog).toBeHidden();
+
+    // Add an item assigned to the new category
+    await page.getByRole("button", { name: "Add item" }).click();
+    // On desktop the Add item button opens inline; on this desktop build a dialog
+    // opens. Use whatever the UI presents.
+    const addItemDialog = page.getByRole("dialog", { name: "Add Item" });
+    const itemSheetOrDialog = addItemDialog;
+    await expect(itemSheetOrDialog).toBeVisible();
+
+    await itemSheetOrDialog.getByLabel("Item text").fill("Old Documents");
+    await itemSheetOrDialog
+      .locator("#item-category")
+      .selectOption({ label: "Archived" });
+    await itemSheetOrDialog.getByRole("button", { name: "Save item" }).click();
+    await expect(itemSheetOrDialog).toBeHidden();
+
+    await expect(page.getByText("Old Documents")).toBeVisible();
+
+    // Opt into grouped mode (categories select on desktop)
+    const categoryModeSelect = page.getByLabel("Categories");
+    await categoryModeSelect.selectOption("grouped");
+
+    // The category heading should appear
+    await expect(page.getByRole("heading", { name: "Archived" })).toBeVisible();
+
+    // Wait until the throttled persister has written the cache to IndexedDB.
+    await waitForOfflineCachePersisted(page);
+
+    // Gain SW control so the offline reload is served from precache.
+    await waitForServiceWorkerReady(page);
+
+    // Go offline and reload.
+    await context.setOffline(true);
+    await page.reload();
+    await waitForHydration(page);
+
+    // The app shell must come back (offline banner).
+    await expect(page.getByText(/you're offline/i)).toBeVisible();
+
+    // Navigate back to Lists (the offline-reloaded page starts at Home).
+    await page.getByRole("button", { name: "Lists" }).click();
+
+    // The list card should still be visible from the cached list index.
+    await page.getByRole("button", { name: "Offline Test List" }).click();
+
+    // Category heading and item should render from the cached list detail.
+    await expect(page.getByRole("heading", { name: "Archived" })).toBeVisible();
+    await expect(page.getByText("Old Documents")).toBeVisible();
+
+    // Manage Categories button must be disabled offline.
+    await expect(
+      page.getByRole("button", { name: "Manage categories" }),
+    ).toBeDisabled();
+
+    // "New category" affordance in Add Item must be absent/unavailable offline.
+    await page.getByRole("button", { name: "Add item" }).click();
+    const addItemOffline = page.getByRole("dialog", { name: "Add Item" });
+    await expect(addItemOffline).toBeVisible();
+    // The "+ New category" button is hidden offline; a "Connect to the internet"
+    // message appears instead.
+    await expect(
+      addItemOffline.getByRole("button", { name: "+ New category" }),
+    ).toBeHidden();
+    await expect(
+      addItemOffline.getByText(/connect to the internet/i),
+    ).toBeVisible();
   });
 
   test("cross-account: a second family never sees the first family's cached data", async ({
