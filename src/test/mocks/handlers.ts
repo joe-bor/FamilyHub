@@ -1090,7 +1090,8 @@ export const handlers = [
       id: createMockId(),
       name: body.name.trim(),
       kind: body.kind,
-      categoryDisplayMode: body.kind === "general" ? "flat" : "grouped",
+      categoryDisplayMode:
+        body.kind === "general" || categories.length === 0 ? "flat" : "grouped",
       showCompletedOverride: null,
       categories,
       items: [],
@@ -1294,10 +1295,6 @@ export const handlers = [
       const updatedItems = list.items.map((item) =>
         item.categoryId === categoryId ? { ...item, categoryId: null } : item,
       );
-      const updatedCategories = list.categories
-        .filter((c) => c.id !== categoryId)
-        .map((c, idx) => ({ ...c, sortOrder: idx }));
-
       let categoryDisplayMode = list.categoryDisplayMode;
       if (remainingCount === 0 && categoryDisplayMode === "grouped") {
         categoryDisplayMode = "flat";
@@ -1306,7 +1303,7 @@ export const handlers = [
 
       return {
         ...list,
-        categories: updatedCategories,
+        categories: categoriesForKind(foundKind),
         items: updatedItems,
         categoryDisplayMode,
       };
@@ -1328,11 +1325,10 @@ export const handlers = [
     const catalog = mockCategoryCatalogs[kind];
 
     // Validate expectedCategoryIds matches current catalog (stale baseline check)
-    const currentIds = catalog.map((c) => c.id).sort();
-    const expectedSorted = [...body.expectedCategoryIds].sort();
+    const currentIds = catalog.map((c) => c.id);
     if (
-      currentIds.length !== expectedSorted.length ||
-      currentIds.some((id, i) => id !== expectedSorted[i])
+      currentIds.length !== body.expectedCategoryIds.length ||
+      currentIds.some((id, i) => id !== body.expectedCategoryIds[i])
     ) {
       return HttpResponse.json(
         { message: "expectedCategoryIds does not match current catalog" },
@@ -1381,7 +1377,12 @@ export const handlers = [
       );
     }
 
-    return HttpResponse.json(createApiResponse(list));
+    return HttpResponse.json(
+      createApiResponse({
+        ...list,
+        categories: categoriesForKind(list.kind),
+      }),
+    );
   }),
 
   // PATCH /lists/:id - Update category display mode and completed override
@@ -1416,6 +1417,7 @@ export const handlers = [
       ...existing,
       categoryDisplayMode: body.categoryDisplayMode,
       showCompletedOverride: body.showCompletedOverride,
+      categories: categoriesForKind(existing.kind),
       updatedAt: MOCK_TIMESTAMP,
     };
 
