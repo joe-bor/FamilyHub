@@ -1,5 +1,5 @@
 import { ArrowLeft, Plus, SlidersHorizontal } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ApiException,
   useClearCompleted,
@@ -70,6 +70,20 @@ export function ListDetailView({
     mode: "create" | "edit";
     item: ListItem | null;
   } | null>(null);
+  const list = listQuery.data?.data ?? null;
+  const hasPreferences = preferences !== null;
+  const familyShowCompletedDefault =
+    preferences?.showCompletedByDefault ?? true;
+  const completedControlsDisabled = !hasPreferences;
+  const resolvedShowCompleted =
+    list?.showCompletedOverride ?? familyShowCompletedDefault;
+  const sections = useMemo(() => {
+    if (!list) return [];
+    return buildListSections({
+      list,
+      showCompleted: resolvedShowCompleted,
+    });
+  }, [list, resolvedShowCompleted]);
 
   useEffect(() => {
     if (!managerHandoffPending || optionsOpen) return;
@@ -90,7 +104,7 @@ export function ListDetailView({
     );
   }
 
-  if (!listQuery.data?.data) {
+  if (!list) {
     return (
       <div className="flex-1 p-4">
         <Button type="button" variant="ghost" onClick={onBack}>
@@ -104,17 +118,6 @@ export function ListDetailView({
     );
   }
 
-  const list = listQuery.data.data;
-  const hasPreferences = preferences !== null;
-  const familyShowCompletedDefault =
-    preferences?.showCompletedByDefault ?? true;
-  const completedControlsDisabled = !hasPreferences;
-  const resolvedShowCompleted =
-    list.showCompletedOverride ?? familyShowCompletedDefault;
-  const sections = buildListSections({
-    list,
-    showCompleted: resolvedShowCompleted,
-  });
   const visibleItemCount = sections.reduce(
     (count, section) => count + section.items.length,
     0,
