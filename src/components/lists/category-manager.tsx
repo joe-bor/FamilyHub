@@ -60,6 +60,9 @@ interface CategoryManagerProps {
 }
 
 const ADD_CATEGORY_ERROR_ID = "new-category-name-error";
+const REORDER_ERROR_ID = "category-reorder-error";
+
+type ReorderDiscardIntent = "cancel" | "close";
 
 /**
  * Add-category inline form at the top of the manager content.
@@ -175,6 +178,7 @@ export function CategoryManager({
   const [baselineIds, setBaselineIds] = useState<string[]>([]);
   /** Mutable draft order during reorder. */
   const [draftIds, setDraftIds] = useState<string[]>([]);
+  const [reorderError, setReorderError] = useState<string | null>(null);
 
   /** Whether the reorder PUT is currently in flight. */
   const reorderPending = reorderCategory.isPending;
@@ -186,7 +190,9 @@ export function CategoryManager({
   // ---------------------------------------------------------------------------
   // Dirty-close confirmation (reorder only)
   // ---------------------------------------------------------------------------
-  const [reorderDiscardOpen, setReorderDiscardOpen] = useState(false);
+  const [reorderDiscardIntent, setReorderDiscardIntent] =
+    useState<ReorderDiscardIntent | null>(null);
+  const reorderDiscardOpen = reorderDiscardIntent !== null;
 
   // ---------------------------------------------------------------------------
   // Back handlers — order matters (LIFO):
@@ -197,12 +203,12 @@ export function CategoryManager({
   // In practice only the relevant one is enabled at a time.
   // ---------------------------------------------------------------------------
   useBackHandler(confirmOpen, () => setConfirmEntry(null));
-  useBackHandler(reorderDiscardOpen, () => setReorderDiscardOpen(false));
+  useBackHandler(reorderDiscardOpen, () => setReorderDiscardIntent(null));
   // When reordering with dirty state and no sub-dialog open, hardware back →
   // open the discard confirmation. When clean, just cancel reorder.
   useBackHandler(isReordering && !confirmOpen && !reorderDiscardOpen, () => {
     if (isDirty) {
-      setReorderDiscardOpen(true);
+      setReorderDiscardIntent("close");
     } else {
       exitReorder();
     }
@@ -214,6 +220,7 @@ export function CategoryManager({
 
   function enterReorder() {
     const currentCategories = categoriesQuery.data?.data.categories ?? [];
+    setReorderError(null);
     setBaselineEntries(currentCategories);
     setBaselineIds(currentCategories.map((c) => c.id));
     setDraftIds(currentCategories.map((c) => c.id));
@@ -225,12 +232,13 @@ export function CategoryManager({
     setBaselineEntries([]);
     setBaselineIds([]);
     setDraftIds([]);
-    setReorderDiscardOpen(false);
+    setReorderError(null);
+    setReorderDiscardIntent(null);
   }
 
   function handleReorderCancel() {
     if (isDirty) {
-      setReorderDiscardOpen(true);
+      setReorderDiscardIntent("cancel");
     } else {
       exitReorder();
     }
@@ -246,12 +254,7 @@ export function CategoryManager({
             categoryIds: draftIds,
           },
           {
-            onSuccess: (response) => {
-              // Replace baseline from the canonical server response
-              const newCategories = response.data.categories;
-              setBaselineEntries(newCategories);
-              setBaselineIds(newCategories.map((c) => c.id));
-              setDraftIds(newCategories.map((c) => c.id));
+            onSuccess: () => {
               exitReorder();
               resolve();
             },
@@ -273,8 +276,17 @@ export function CategoryManager({
             "Categories changed elsewhere. Reloaded the latest order.",
           variant: "destructive",
         });
+        return;
       }
-      // Non-409: keep reorder mode + draft (isPending returns to false, Save re-enables)
+      const message = ApiException.isApiException(err)
+        ? err.message
+        : "Could not save category order. Please try again.";
+      setReorderError(message);
+      toast({
+        title: "Order not saved",
+        description: message,
+        variant: "destructive",
+      });
     }
   }
 
@@ -357,6 +369,14 @@ export function CategoryManager({
     );
   }
 
+  const catalog = categoriesQuery.data?.data;
+  const finalCategoryDeleteGroupedCount =
+    confirmEntry &&
+    catalog?.categories.length === 1 &&
+    catalog.categories[0]?.id === confirmEntry.id
+      ? catalog.groupedListCount
+      : 0;
+
   // Build confirmation dialog body with preflight counts
   const confirmBody = confirmEntry ? (
     <p>
@@ -366,6 +386,14 @@ export function CategoryManager({
           {confirmEntry.itemCount}{" "}
           {confirmEntry.itemCount === 1 ? "item" : "items"} across your{" "}
           {kindLabel[kind]} lists will become Uncategorized.
+        </>
+      )}
+      {finalCategoryDeleteGroupedCount > 0 && (
+        <>
+          {" "}
+          {finalCategoryDeleteGroupedCount}{" "}
+          {finalCategoryDeleteGroupedCount === 1 ? "list" : "lists"} will switch
+          to flat view.
         </>
       )}
     </p>
@@ -440,30 +468,36 @@ export function CategoryManager({
               <>
                 {/* Reorder mode Save/Cancel bar */}
                 {isReordering && (
-                  <div className="flex items-center justify-between gap-2 pb-1">
-                    <p className="text-sm font-semibold text-foreground">
-                      Reorder categories
-                    </p>
-                    <div className="flex gap-2">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={handleReorderCancel}
-                        disabled={reorderPending}
-                      >
-                        Cancel
-                      </Button>
-                      <Button
-                        type="button"
-                        size="sm"
-                        onClick={handleReorderSave}
-                        disabled={!isDirty || reorderPending}
-                      >
-                        Save
-                      </Button>
+                  <>
+                    <div className="flex items-center justify-between gap-2 pb-1">
+                      <p className="text-sm font-semibold text-foreground">
+                        Reorder categories
+                      </p>
+                      <div className="flex gap-2">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={handleReorderCancel}
+                          disabled={reorderPending}
+                        >
+                          Cancel
+                        </Button>
+                        <Button
+                          type="button"
+                          size="sm"
+                          onClick={handleReorderSave}
+                          disabled={!isDirty || reorderPending}
+                        >
+                          Save
+                        </Button>
+                      </div>
                     </div>
-                  </div>
+                    <FormError
+                      id={REORDER_ERROR_ID}
+                      message={reorderError ?? undefined}
+                    />
+                  </>
                 )}
 
                 <CategoryManagerList
@@ -486,7 +520,10 @@ export function CategoryManager({
                   onEnterReorder={enterReorder}
                   baselineEntries={baselineEntries}
                   draftIds={draftIds}
-                  onDraftIdsChange={setDraftIds}
+                  onDraftIdsChange={(ids) => {
+                    setReorderError(null);
+                    setDraftIds(ids);
+                  }}
                   reorderPending={reorderPending}
                 />
               </>
@@ -505,7 +542,7 @@ export function CategoryManager({
           if (!newOpen && reorderPending) return;
           // While reordering with dirty state, open discard confirmation instead
           if (!newOpen && isReordering && isDirty) {
-            setReorderDiscardOpen(true);
+            setReorderDiscardIntent("close");
             return;
           }
           // Clean reorder: exit cleanly before closing
@@ -526,7 +563,7 @@ export function CategoryManager({
             onClick={() => {
               if (reorderPending) return;
               if (isReordering && isDirty) {
-                setReorderDiscardOpen(true);
+                setReorderDiscardIntent("close");
                 return;
               }
               if (isReordering) exitReorder();
@@ -564,14 +601,17 @@ export function CategoryManager({
         <CategoryConfirmDialog
           open={reorderDiscardOpen}
           onOpenChange={(newOpen) => {
-            if (!newOpen) setReorderDiscardOpen(false);
+            if (!newOpen) setReorderDiscardIntent(null);
           }}
           title="Discard order?"
           confirmLabel="Discard order"
           cancelLabel="Keep editing"
           onConfirm={() => {
+            const intent = reorderDiscardIntent;
             exitReorder();
-            onOpenChange(false);
+            if (intent === "close") {
+              onOpenChange(false);
+            }
           }}
         >
           <p>Your reorder changes will be lost.</p>
