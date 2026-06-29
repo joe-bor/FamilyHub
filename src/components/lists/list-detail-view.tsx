@@ -1,6 +1,7 @@
 import { ArrowLeft, Plus, SlidersHorizontal } from "lucide-react";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
+  ApiException,
   useClearCompleted,
   useDeleteListItem,
   useList,
@@ -13,9 +14,10 @@ import {
   MOBILE_FAB_SCROLL_PADDING,
 } from "@/components/shared";
 import { useIsMobile, useOnlineStatus } from "@/hooks";
-import type { ListItem, ListPreferences } from "@/lib/types";
+import type { ListItem, ListPreferences, UpdateListRequest } from "@/lib/types";
 import { Button } from "../ui/button";
 import { MobileSheet } from "../ui/mobile-sheet";
+import { toast } from "../ui/toaster";
 import { buildListSections } from "./build-list-sections";
 import { CategoryManager } from "./category-manager";
 import { ListItemRow } from "./list-item-row";
@@ -27,6 +29,8 @@ const kindLabels = {
   "to-do": "To-do",
   general: "General",
 } as const;
+
+const MOBILE_MANAGER_HANDOFF_FALLBACK_MS = 650;
 
 interface ListDetailViewProps {
   listId: string;
@@ -66,6 +70,17 @@ export function ListDetailView({
     mode: "create" | "edit";
     item: ListItem | null;
   } | null>(null);
+
+  useEffect(() => {
+    if (!managerHandoffPending || optionsOpen) return;
+
+    const timeoutId = window.setTimeout(() => {
+      setManagerHandoffPending(false);
+      setManagerOpen(true);
+    }, MOBILE_MANAGER_HANDOFF_FALLBACK_MS);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [managerHandoffPending, optionsOpen]);
 
   if (listQuery.isLoading) {
     return (
@@ -118,6 +133,21 @@ export function ListDetailView({
     !list.items.some((item) => item.completed) ||
     updateItem.isPending ||
     clearCompleted.isPending;
+
+  function handleUpdateList(request: UpdateListRequest) {
+    updateList.mutate(request, {
+      onError: (error) => {
+        const description = ApiException.isApiException(error)
+          ? error.message
+          : "Could not update list options. Please try again.";
+        toast({
+          title: "List options not saved",
+          description,
+          variant: "destructive",
+        });
+      },
+    });
+  }
 
   return (
     <>
@@ -192,7 +222,7 @@ export function ListDetailView({
                   onManageCategories={() => setManagerOpen(true)}
                   categoriesOnline={isOnline}
                   manageCategoriesButtonRef={desktopManageButtonRef}
-                  onUpdateList={(request) => updateList.mutate(request)}
+                  onUpdateList={handleUpdateList}
                   onUpdatePreferences={(request) =>
                     updatePreferences.mutate(request)
                   }
@@ -289,7 +319,7 @@ export function ListDetailView({
                     setOptionsOpen(false);
                   }}
                   categoriesOnline={isOnline}
-                  onUpdateList={(request) => updateList.mutate(request)}
+                  onUpdateList={handleUpdateList}
                   onUpdatePreferences={(request) =>
                     updatePreferences.mutate(request)
                   }
