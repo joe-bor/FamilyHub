@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { type APIRequestContext, expect, test } from "@playwright/test";
 import {
   createCalendarEvent,
   registerFamily,
@@ -10,8 +10,62 @@ import {
   waitForHydration,
   waitForOfflineCachePersisted,
   waitForServiceWorkerReady,
-  waitForSheetSettled,
 } from "./helpers/test-helpers";
+
+const API_BASE = "http://127.0.0.1:8080/api";
+
+async function createGroupedGeneralList(
+  request: APIRequestContext,
+  token: string,
+): Promise<void> {
+  const headers = { Authorization: `Bearer ${token}` };
+
+  const listResponse = await request.post(`${API_BASE}/lists`, {
+    headers,
+    data: { name: "Offline Test List", kind: "general" },
+  });
+  if (!listResponse.ok()) {
+    throw new Error(
+      `Create list failed (${listResponse.status()}): ${await listResponse.text()}`,
+    );
+  }
+  const listJson = (await listResponse.json()) as { data: { id: string } };
+  const listId = listJson.data.id;
+
+  const categoryResponse = await request.post(`${API_BASE}/lists/categories`, {
+    headers,
+    data: { kind: "general", name: "Archived" },
+  });
+  if (!categoryResponse.ok()) {
+    throw new Error(
+      `Create category failed (${categoryResponse.status()}): ${await categoryResponse.text()}`,
+    );
+  }
+  const categoryJson = (await categoryResponse.json()) as {
+    data: { id: string };
+  };
+  const categoryId = categoryJson.data.id;
+
+  const itemResponse = await request.post(`${API_BASE}/lists/${listId}/items`, {
+    headers,
+    data: { text: "Old Documents", categoryId },
+  });
+  if (!itemResponse.ok()) {
+    throw new Error(
+      `Create item failed (${itemResponse.status()}): ${await itemResponse.text()}`,
+    );
+  }
+
+  const updateResponse = await request.patch(`${API_BASE}/lists/${listId}`, {
+    headers,
+    data: { categoryDisplayMode: "grouped", showCompletedOverride: null },
+  });
+  if (!updateResponse.ok()) {
+    throw new Error(
+      `Group list failed (${updateResponse.status()}): ${await updateResponse.text()}`,
+    );
+  }
+}
 
 /**
  * Option C — read-only offline data persistence.
@@ -163,6 +217,7 @@ test.describe("Offline read persistence (Option C)", () => {
       familyName: "Offline General",
       members: [{ name: "Alice", color: "coral" }],
     });
+    await createGroupedGeneralList(request, reg.token);
 
     // Seed auth and navigate so the app fetches all data.
     await seedBrowserAuth(page, reg);
@@ -172,65 +227,15 @@ test.describe("Offline read persistence (Option C)", () => {
     // Navigate to Lists
     await page.getByRole("button", { name: "Lists" }).click();
     await expect(
-      page.getByRole("heading", { name: "Lists", level: 1, exact: true }),
+      page.getByRole("heading", { name: "My Lists", exact: true }),
     ).toBeVisible();
 
-    // Create a General list
-    await page.getByRole("button", { name: "Create list" }).click();
-    const createDialog = page.getByRole("dialog", { name: "New List" });
-    await waitForSheetSettled(createDialog);
-    await createDialog.getByLabel("List name").fill("Offline Test List");
-    await createDialog.getByRole("radio", { name: "General" }).click();
-    await createDialog.getByRole("button", { name: "Create list" }).click();
-
+    await page.getByRole("button", { name: "Offline Test List" }).click();
     await expect(
       page.getByRole("heading", { name: "Offline Test List" }),
     ).toBeVisible();
-
-    // Open List options and then Manage categories (desktop controls are inline;
-    // offline test uses desktop Chrome so we look for the inline "Manage categories" button)
-    const manageCategoriesBtn = page.getByRole("button", {
-      name: "Manage categories",
-    });
-    await expect(manageCategoriesBtn).toBeVisible();
-    await manageCategoriesBtn.click();
-
-    // Manager opens as a Radix Dialog on desktop
-    const managerDialog = page.getByRole("dialog", {
-      name: "General categories",
-    });
-    await expect(managerDialog).toBeVisible();
-
-    // Add a category
-    await managerDialog.getByLabel("Category name").fill("Archived");
-    await managerDialog.getByRole("button", { name: "Add" }).click();
-    await expect(managerDialog.getByText("Archived")).toBeVisible();
-
-    // Close manager
-    await managerDialog.getByRole("button", { name: "Close" }).click();
-    await expect(managerDialog).toBeHidden();
-
-    // Add an item assigned to the new category. The offline-persistence project
-    // runs on desktop Chrome, where "Add item" opens the Add Item dialog.
-    await page.getByRole("button", { name: "Add item" }).click();
-    const addItemDialog = page.getByRole("dialog", { name: "Add Item" });
-    await expect(addItemDialog).toBeVisible();
-
-    await addItemDialog.getByLabel("Item text").fill("Old Documents");
-    await addItemDialog
-      .locator("#item-category")
-      .selectOption({ label: "Archived" });
-    await addItemDialog.getByRole("button", { name: "Save item" }).click();
-    await expect(addItemDialog).toBeHidden();
-
-    await expect(page.getByText("Old Documents")).toBeVisible();
-
-    // Opt into grouped mode (categories select on desktop)
-    const categoryModeSelect = page.getByLabel("Categories");
-    await categoryModeSelect.selectOption("grouped");
-
-    // The category heading should appear
     await expect(page.getByRole("heading", { name: "Archived" })).toBeVisible();
+    await expect(page.getByText("Old Documents")).toBeVisible();
 
     // Wait until the throttled persister has written the cache to IndexedDB.
     await waitForOfflineCachePersisted(page);
