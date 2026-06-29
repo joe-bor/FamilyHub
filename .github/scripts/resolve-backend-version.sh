@@ -4,6 +4,8 @@
 # Defines resolve_backend_version() for sourcing and, when executed directly,
 # fetches the latest GitHub release and prints the bare semver version.
 #
+# Requires `jq` (preinstalled on GitHub Actions `ubuntu-latest`; no preflight).
+#
 # IMPORTANT: no set -e at the top-level/source scope — that would leak into
 # any script that sources this file and break failure-case assertions in tests.
 

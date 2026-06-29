@@ -313,12 +313,19 @@ test.describe("Mobile Lists", () => {
 
     await waitForSheetSettled(managerSheet);
 
-    // Get all category name rows — Work should precede Documents
-    const categoryRows = managerSheet.locator(
-      ".space-y-2 .rounded-lg p.truncate",
-    );
-    await expect(categoryRows.first()).toContainText("Work");
-    await expect(categoryRows.nth(1)).toContainText("Documents");
+    // Verify the saved order persisted: each category row exposes a
+    // "Rename {name}" button, so the sequence of those accessible names reflects
+    // row order. Reading the order by role/name proves persistence without
+    // coupling to layout classes. A wrong order (or a degenerate empty match)
+    // fails this assertion.
+    const orderedCategoryNames = await managerSheet
+      .getByRole("button", { name: /^Rename / })
+      .evaluateAll((buttons) =>
+        buttons.map((b) =>
+          (b.getAttribute("aria-label") ?? "").replace(/^Rename /, ""),
+        ),
+      );
+    expect(orderedCategoryNames).toEqual(["Work", "Documents"]);
 
     await page.keyboard.press("Escape");
     await expect(managerSheet).toBeHidden();
