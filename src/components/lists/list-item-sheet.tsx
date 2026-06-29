@@ -11,7 +11,7 @@ import {
   useUpdateListItem,
 } from "@/api";
 import { useOnlineStatus } from "@/hooks";
-import type { ListCategoryOption, ListDetail, ListItem } from "@/lib/types";
+import type { ListDetail, ListItem } from "@/lib/types";
 import type { ListItemFormData } from "@/lib/validations";
 import { listItemSchema } from "@/lib/validations";
 import { categoryNameSchema } from "@/lib/validations/lists";
@@ -53,18 +53,14 @@ export function ListItemSheet({
   const createCategory = useCreateListCategory();
   const categoryId = form.watch("categoryId") ?? "";
 
-  // ---------------------------------------------------------------------------
-  // Local category list — starts from prop categories and grows when inline
-  // create succeeds within this open cycle. This avoids a network round-trip
-  // to refresh the parent's list prop, while still reflecting the new category
-  // immediately. The parent (ListDetailView) will re-render with updated props
-  // from the cache when the sheet is next opened.
-  // ---------------------------------------------------------------------------
-  const [extraCategories, setExtraCategories] = useState<ListCategoryOption[]>(
-    [],
-  );
-  // Merged view: prop categories + any newly created ones in this session.
-  const allCategories = [...list.categories, ...extraCategories];
+  // The category <select> renders straight from `list.categories`. The parent
+  // (ListDetailView) sources `list` from useList(listId) — a plain query on
+  // listsKeys.detail(id) — and useCreateListCategory.onSuccess writes the new
+  // category into that cache for every same-kind detail. So after an inline
+  // create the parent re-renders and this prop already contains the new
+  // category; selecting it by id (below) renders the right option. We must NOT
+  // also track it locally, or the merged list would double-list it (same id →
+  // duplicate <option> + duplicate React key).
 
   // ---------------------------------------------------------------------------
   // Inline category creation state — lives OUTSIDE form.reset so a partial
@@ -93,7 +89,6 @@ export function ListItemSheet({
       setInlineName("");
       setInlineError(null);
       setRecoveryError(null);
-      setExtraCategories([]);
     }
   }, [open]);
 
@@ -128,15 +123,9 @@ export function ListItemSheet({
         kind: list.kind,
         name: parseResult.data,
       });
-      const newCategoryOption: ListCategoryOption = {
-        id: response.data.id,
-        kind: response.data.kind,
-        name: response.data.name,
-        sortOrder: response.data.sortOrder,
-      };
-      // Track the new category locally so it appears in the select immediately.
-      setExtraCategories((prev) => [...prev, newCategoryOption]);
-      // Select the newly created category and collapse the inline form.
+      // useCreateListCategory.onSuccess has already written the new category
+      // into the cached list detail, which flows back through the parent's
+      // `list` prop. Selecting it by id renders the (now present) option.
       form.setValue("categoryId", response.data.id, { shouldDirty: true });
       setInlineName("");
       setInlineOpen(false);
@@ -183,11 +172,9 @@ export function ListItemSheet({
       }
     }
 
-    // Branch 3: selected category absent from refetched list AND not in local
-    // extra-categories (for a freshly inline-created category that may not yet
-    // be reflected in the server-fetched list).
-    const allKnownCategories = [...refetched.categories, ...extraCategories];
-    const categoryStillPresent = allKnownCategories.some(
+    // Branch 3: selected category absent from the refetched (authoritative)
+    // list categories.
+    const categoryStillPresent = refetched.categories.some(
       (c) => c.id === selectedCategoryId,
     );
     if (!categoryStillPresent) {
@@ -309,7 +296,7 @@ export function ListItemSheet({
             className="h-10 w-full rounded-lg border border-input bg-background px-3 text-[15px] leading-5 shadow-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
             <option value="">Uncategorized</option>
-            {allCategories.map((category) => (
+            {list.categories.map((category) => (
               <option key={category.id} value={category.id}>
                 {category.name}
               </option>

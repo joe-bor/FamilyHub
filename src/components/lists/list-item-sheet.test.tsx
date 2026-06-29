@@ -1,10 +1,21 @@
 /**
  * Tests for ListItemSheet — Task 12: inline category create-and-select + 404 recovery.
  *
+ * The sheet is rendered through `CacheConnectedSheet`, a wrapper that sources
+ * its `list` prop from `useList(listId)` exactly like the real parent
+ * (ListDetailView). This is deliberate: ListItemSheet renders its category
+ * <select> straight from `list.categories` and relies on cache convergence —
+ * useCreateListCategory.onSuccess writes the new category into the cached list
+ * detail, the parent re-renders, and the new option appears. Rendering with a
+ * frozen prop would mask whether the component truly relies on the cache (and
+ * would have hidden a duplicate-option bug). The catalog-backed GET handler
+ * below makes a refetch return the same converged categories the real backend
+ * would, so the optimistic cache write and any invalidation refetch agree.
+ *
  * Coverage:
  *   - Category selection for every list kind (grocery, to-do, general)
  *   - Inline "New category" expands inside sheet; does NOT open a new overlay
- *   - Successful create selects returned ID without touching text/other draft fields
+ *   - Successful create selects returned ID, shows it EXACTLY ONCE, leaves draft intact
  *   - Create failure (400/409) preserves draft + category name + shows error adjacent
  *   - Later item-save failure keeps the created category and selection
  *   - Offline: hides/disables New Category with explanatory copy
@@ -17,6 +28,7 @@
 
 import { HttpResponse, http } from "msw";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { useList } from "@/api";
 import type { ListDetail } from "@/lib/types";
 import {
   API_BASE,
@@ -85,6 +97,93 @@ beforeEach(() => {
 // Helpers
 // ---------------------------------------------------------------------------
 
+/**
+ * Wrapper that mirrors the production parent (ListDetailView): it sources the
+ * `list` prop from `useList(listId)` so cache updates (e.g. an inline category
+ * create writing into the cached detail) re-render the sheet with fresh
+ * `list.categories`. Until the query resolves it falls back to `initialList`
+ * so the sheet renders synchronously.
+ */
+function CacheConnectedSheet({
+  initialList,
+  open,
+  mode,
+  item,
+  onOpenChange,
+}: {
+  initialList: ListDetail;
+  open: boolean;
+  mode: "create" | "edit";
+  item: typeof baseItem | null;
+  onOpenChange: (open: boolean) => void;
+}) {
+  const query = useList(initialList.id);
+  const list = query.data?.data ?? initialList;
+  return (
+    <ListItemSheet
+      open={open}
+      mode={mode}
+      list={list}
+      item={item}
+      onOpenChange={onOpenChange}
+    />
+  );
+}
+
+/**
+ * Install POST /lists/categories + GET /lists/:id overrides that share one
+ * mutable categories array, fully simulating the backend's cache-convergence
+ * contract within the test: a created category is appended to the list, and a
+ * subsequent GET (e.g. the invalidation refetch useCreateListCategory fires)
+ * returns the list WITH that category. Without this, the shared GET handler
+ * returns the frozen seeded categories and a background refetch would drop the
+ * freshly created one — masking real behavior. Scoped via server.use, so no
+ * shared-handler changes leak to other tests.
+ */
+function installConvergingCategoryHandlers(list: ListDetail): void {
+  // Live copy of categories that POST grows and GET reads from.
+  let categories = [...list.categories];
+  let nextId = 9000;
+
+  server.use(
+    http.post(`${API_BASE}/lists/categories`, async ({ request }) => {
+      const body = (await request.json()) as { kind: string; name: string };
+      const trimmed = body.name?.trim() ?? "";
+      if (!trimmed) {
+        return HttpResponse.json(
+          { message: "Category name is required" },
+          { status: 400 },
+        );
+      }
+      if (
+        categories.some(
+          (c) => c.name.trim().toLowerCase() === trimmed.toLowerCase(),
+        )
+      ) {
+        return HttpResponse.json(
+          { message: "A category with this name already exists for this kind" },
+          { status: 409 },
+        );
+      }
+      nextId += 1;
+      const newOption = {
+        id: `00000000-0000-4000-8000-${String(nextId).padStart(12, "0")}`,
+        kind: list.kind,
+        name: trimmed,
+        sortOrder: categories.length,
+      };
+      categories = [...categories, newOption];
+      return HttpResponse.json(
+        { data: { ...newOption, itemCount: 0 } },
+        { status: 201 },
+      );
+    }),
+    http.get(`${API_BASE}/lists/${list.id}`, () =>
+      HttpResponse.json({ data: { ...list, categories } }),
+    ),
+  );
+}
+
 function renderSheet(
   props: {
     open?: boolean;
@@ -92,6 +191,13 @@ function renderSheet(
     list?: ListDetail;
     item?: typeof baseItem | null;
     onOpenChange?: (open: boolean) => void;
+    /**
+     * When true (default) install the POST+GET converging-category handlers so
+     * inline create reflects backend cache convergence. Tests that need their
+     * own GET /lists/:id override (the 404-recovery suite) pass false and seed
+     * MSW themselves BEFORE calling renderSheet.
+     */
+    convergeCategories?: boolean;
   } = {},
 ) {
   const {
@@ -100,13 +206,17 @@ function renderSheet(
     list = makeList(),
     item = null,
     onOpenChange = vi.fn(),
+    convergeCategories = true,
   } = props;
-  seedMockLists([list]);
+  if (convergeCategories) {
+    seedMockLists([list]);
+    installConvergingCategoryHandlers(list);
+  }
   return renderWithUser(
-    <ListItemSheet
+    <CacheConnectedSheet
+      initialList={list}
       open={open}
       mode={mode}
-      list={list}
       item={item}
       onOpenChange={onOpenChange}
     />,
@@ -205,14 +315,17 @@ describe("inline New Category expand/collapse", () => {
     // Submit the inline create
     await user.click(screen.getByRole("button", { name: /create category/i }));
 
-    // Wait for the category to appear in the select (after cache update)
+    // Wait for the category to appear in the select (after cache convergence
+    // flows back through the parent-derived `list` prop).
     await waitFor(() => {
-      const select = screen.getByRole("combobox", { name: /category/i });
-      const options = Array.from(select.querySelectorAll("option")).map(
-        (o) => o.textContent,
-      );
+      const options = screen.getAllByRole("option").map((o) => o.textContent);
       expect(options).toContain("Bulk");
     });
+
+    // CRITICAL: the created category must appear EXACTLY ONCE. This locks in
+    // cache-convergence-only rendering and would fail if the component also
+    // tracked the new category locally (duplicate id → duplicate <option>).
+    expect(screen.getAllByRole("option", { name: "Bulk" })).toHaveLength(1);
 
     // The select should have the new category selected
     await waitFor(() => {
@@ -268,6 +381,11 @@ describe("inline New Category expand/collapse", () => {
   });
 
   it("create failure (400) preserves item draft and category name with error adjacent", async () => {
+    // Seed list + a POST that always 400s. Skip the converging handlers so this
+    // 400 override is the one MSW matches (renderSheet's converging POST would
+    // otherwise be registered last and win).
+    const list = makeList();
+    seedMockLists([list]);
     server.use(
       http.post(`${API_BASE}/lists/categories`, () =>
         HttpResponse.json(
@@ -276,7 +394,7 @@ describe("inline New Category expand/collapse", () => {
         ),
       ),
     );
-    const { user } = renderSheet();
+    const { user } = renderSheet({ list, convergeCategories: false });
     const textInput = screen.getByRole("textbox", { name: /item text/i });
     await user.type(textInput, "Pears");
 
@@ -413,7 +531,8 @@ describe("item-save 404 recovery", () => {
       ),
     );
 
-    // Force GET /lists/:id to return our recovery response
+    // Force GET /lists/:id to return our recovery response. The component calls
+    // listsService.getList itself during recovery and hits this.
     if (recoveryListResponse === null) {
       server.use(
         http.get(`${API_BASE}/lists/${LIST_ID}`, () =>
@@ -426,13 +545,20 @@ describe("item-save 404 recovery", () => {
       );
     }
 
-    const result = renderSheet({
-      mode: "edit",
-      list,
-      item: itemWithCategory,
-    });
-
-    return result;
+    // Render ListItemSheet DIRECTLY (not through CacheConnectedSheet): this
+    // suite needs a static `list` prop until the save fires recovery. The
+    // wrapper's own useList would otherwise consume the recovery GET on mount
+    // and re-render the sheet with the recovery list before any save happens.
+    const onOpenChange = vi.fn();
+    return renderWithUser(
+      <ListItemSheet
+        open={true}
+        mode="edit"
+        list={list}
+        item={itemWithCategory}
+        onOpenChange={onOpenChange}
+      />,
+    );
   }
 
   it("branch 1: refetch returns list 404 → shows list-not-found message, never drops text", async () => {
