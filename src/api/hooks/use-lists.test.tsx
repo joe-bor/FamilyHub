@@ -164,6 +164,24 @@ describe("useLists", () => {
     });
   });
 
+  it("defaults a grocery list to flat mode when its catalog is empty", async () => {
+    seedMockLists([]);
+    seedMockCategoryCatalog("grocery", []);
+
+    const { result } = renderHook(() => useCreateList(), {
+      wrapper: createWrapper(),
+    });
+
+    result.current.mutate({ name: "Empty Grocery", kind: "grocery" });
+
+    await waitFor(() => {
+      expect(result.current.data?.data.name).toBe("Empty Grocery");
+    });
+
+    expect(result.current.data?.data.categoryDisplayMode).toBe("flat");
+    expect(result.current.data?.data.categories).toEqual([]);
+  });
+
   it("reads list preferences from the API", async () => {
     seedMockListPreferences({ showCompletedByDefault: false });
 
@@ -1268,6 +1286,33 @@ describe("useLists", () => {
       catB,
     ]);
     expect(detail?.data.categories.map((c) => c.sortOrder)).toEqual([0, 1, 2]);
+  });
+
+  it("reorder rejects a same-membership expectedCategoryIds baseline in the wrong order", async () => {
+    const catA = "00000000-0000-4000-8000-000000000201";
+    const catB = "00000000-0000-4000-8000-000000000202";
+    const catC = "00000000-0000-4000-8000-000000000203";
+
+    seedMockCategoryCatalog("grocery", [
+      { id: catA, kind: "grocery", name: "Produce", sortOrder: 0 },
+      { id: catB, kind: "grocery", name: "Dairy", sortOrder: 1 },
+      { id: catC, kind: "grocery", name: "Frozen", sortOrder: 2 },
+    ]);
+
+    const { result } = renderHook(() => useReorderListCategories(), {
+      wrapper: createWrapper(),
+    });
+
+    result.current.mutate({
+      kind: "grocery",
+      expectedCategoryIds: [catB, catA, catC],
+      categoryIds: [catB, catC, catA],
+    });
+
+    await waitFor(() => {
+      expect(result.current.isError).toBe(true);
+    });
+    expect(result.current.error).toMatchObject({ status: 409 });
   });
 
   // ---------------------------------------------------------------------------
