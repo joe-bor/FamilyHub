@@ -177,4 +177,46 @@ describe("mobile Options→manager handoff sequencing (Task 11)", () => {
     // (the no-stacking invariant: never two sheets at once).
     expect(screen.queryByRole("dialog", { name: "List options" })).toBeNull();
   });
+
+  it("does NOT open the manager if Options is re-opened before the close animation finishes", async () => {
+    // Race: user clicks Manage (pending=true, Options begins closing), then changes
+    // their mind and re-opens Options before vaul's close animation completes.
+    // The stale onAnimationEnd(false) must NOT pop the manager open afterward,
+    // because re-opening Options clears managerHandoffPending.
+    const { user } = renderDetail();
+    await screen.findByRole("heading", { name: "Trader Joe's Run" });
+
+    // Open Options, then click Manage categories (sets pending, starts closing).
+    await user.click(screen.getByRole("button", { name: "List options" }));
+    await screen.findByRole("dialog", { name: "List options" });
+    await user.click(
+      screen.getByRole("button", { name: /manage categories/i }),
+    );
+
+    // Options closing; manager not open yet.
+    expect(screen.queryByRole("dialog", { name: "List options" })).toBeNull();
+    expect(
+      screen.queryByRole("dialog", { name: /grocery categories/i }),
+    ).toBeNull();
+
+    // User RE-OPENS Options before the animation finishes — this clears pending.
+    await user.click(screen.getByRole("button", { name: "List options" }));
+    await screen.findByRole("dialog", { name: "List options" });
+
+    // Now the (stale) close-animation callback from the earlier close fires.
+    const optionsOnAnimationEnd = animationEndByTitle.get("List options");
+    expect(optionsOnAnimationEnd).toBeDefined();
+    act(() => {
+      optionsOnAnimationEnd?.(false);
+    });
+
+    // The manager must NOT open — the handoff was cancelled by the re-open.
+    expect(
+      screen.queryByRole("dialog", { name: /grocery categories/i }),
+    ).toBeNull();
+    // Options remains open (it's the sheet the user actually wants).
+    expect(
+      screen.getByRole("dialog", { name: "List options" }),
+    ).toBeInTheDocument();
+  });
 });
