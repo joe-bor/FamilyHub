@@ -9,7 +9,7 @@ import {
   MobileSheet,
   type MobileSheetHeight,
 } from "@/components/ui/mobile-sheet";
-import { useIsMobile, useMediaQuery } from "@/hooks";
+import { useIsMobile } from "@/hooks";
 
 interface ResponsiveFormDialogProps {
   open: boolean;
@@ -63,12 +63,12 @@ export function ResponsiveFormDialog({
   returnFocusRef,
 }: ResponsiveFormDialogProps) {
   const isMobile = useIsMobile();
-  const isMdOrLarger = useMediaQuery("(min-width: 768px)");
   // Ref for the DialogTitle element on desktop (so we can focus it on open)
   const desktopTitleRef = useRef<HTMLHeadingElement | null>(null);
 
-  // These dialogs preserve desktop parity from Tailwind's md breakpoint up.
-  if (isMobile && !isMdOrLarger) {
+  // Match the app-wide mobile breakpoint exactly so viewport-specific handoffs
+  // and the rendered chrome choose the same branch.
+  if (isMobile) {
     return (
       <MobileSheet
         isOpen={open}

@@ -317,8 +317,8 @@ describe("PreferencesSheet — breakpoints", () => {
     expect(screen.getByRole("button", { name: "Cancel" })).toBeInTheDocument();
   });
 
-  it("renders the centered dialog at the 768px md breakpoint and up", () => {
-    setViewportWidth(768);
+  it("renders the centered dialog above the 768px app mobile breakpoint", () => {
+    setViewportWidth(769);
     const client = seedClient(baseFamily("America/Chicago"));
 
     render(<PreferencesSheet open onOpenChange={noop} />, {

@@ -34,7 +34,7 @@ function setViewportWidth(width: number) {
 }
 
 describe("ResponsiveFormDialog breakpoint", () => {
-  it("keeps the desktop dialog surface at the 768px md breakpoint", () => {
+  it("uses the mobile sheet surface at the 768px app mobile breakpoint", () => {
     setViewportWidth(768);
 
     render(
@@ -46,11 +46,11 @@ describe("ResponsiveFormDialog breakpoint", () => {
     expect(
       screen.getByRole("dialog", { name: "Family Settings" }),
     ).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Cancel" })).toBeNull();
+    expect(screen.getByRole("button", { name: "Cancel" })).toBeInTheDocument();
   });
 
-  it("uses the mobile sheet surface below the 768px md breakpoint", () => {
-    setViewportWidth(767);
+  it("keeps the desktop dialog surface above the 768px app mobile breakpoint", () => {
+    setViewportWidth(769);
 
     render(
       <ResponsiveFormDialog open onOpenChange={vi.fn()} title="Family Settings">
@@ -61,6 +61,6 @@ describe("ResponsiveFormDialog breakpoint", () => {
     expect(
       screen.getByRole("dialog", { name: "Family Settings" }),
     ).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Cancel" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Cancel" })).toBeNull();
   });
 });
