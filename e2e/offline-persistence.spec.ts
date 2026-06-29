@@ -210,20 +210,18 @@ test.describe("Offline read persistence (Option C)", () => {
     await managerDialog.getByRole("button", { name: "Close" }).click();
     await expect(managerDialog).toBeHidden();
 
-    // Add an item assigned to the new category
+    // Add an item assigned to the new category. The offline-persistence project
+    // runs on desktop Chrome, where "Add item" opens the Add Item dialog.
     await page.getByRole("button", { name: "Add item" }).click();
-    // On desktop the Add item button opens inline; on this desktop build a dialog
-    // opens. Use whatever the UI presents.
     const addItemDialog = page.getByRole("dialog", { name: "Add Item" });
-    const itemSheetOrDialog = addItemDialog;
-    await expect(itemSheetOrDialog).toBeVisible();
+    await expect(addItemDialog).toBeVisible();
 
-    await itemSheetOrDialog.getByLabel("Item text").fill("Old Documents");
-    await itemSheetOrDialog
+    await addItemDialog.getByLabel("Item text").fill("Old Documents");
+    await addItemDialog
       .locator("#item-category")
       .selectOption({ label: "Archived" });
-    await itemSheetOrDialog.getByRole("button", { name: "Save item" }).click();
-    await expect(itemSheetOrDialog).toBeHidden();
+    await addItemDialog.getByRole("button", { name: "Save item" }).click();
+    await expect(addItemDialog).toBeHidden();
 
     await expect(page.getByText("Old Documents")).toBeVisible();
 
