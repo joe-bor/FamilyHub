@@ -561,6 +561,34 @@ describe("item-save 404 recovery", () => {
     );
   }
 
+  async function setupCreateWithPost404(
+    recoveryListResponse: HttpResponse,
+    listForRender?: ListDetail,
+  ) {
+    const list = listForRender ?? makeList();
+    seedMockLists([list]);
+
+    // Force item POST to 404. This simulates a stale selected category being
+    // deleted on another device between opening Add Item and saving.
+    server.use(
+      http.post(`${API_BASE}/lists/${LIST_ID}/items`, () =>
+        HttpResponse.json({ message: "Category not found" }, { status: 404 }),
+      ),
+      http.get(`${API_BASE}/lists/${LIST_ID}`, () => recoveryListResponse),
+    );
+
+    const onOpenChange = vi.fn();
+    return renderWithUser(
+      <ListItemSheet
+        open={true}
+        mode="create"
+        list={list}
+        item={null}
+        onOpenChange={onOpenChange}
+      />,
+    );
+  }
+
   it("branch 1: refetch returns list 404 → shows list-not-found message, never drops text", async () => {
     const { user } = await setupEditWithPatch404(null);
 
@@ -578,6 +606,29 @@ describe("item-save 404 recovery", () => {
     });
 
     // Text still in the field
+    expect(screen.getByRole("textbox", { name: /item text/i })).toHaveValue(
+      "Bananas",
+    );
+  });
+
+  it("branch 1b: refetch failure that is not 404 surfaces the original save error", async () => {
+    const { user } = await setupEditWithPatch404(
+      HttpResponse.json({ message: "Server unavailable" }, { status: 503 }),
+    );
+
+    await user.click(screen.getByRole("button", { name: /save item/i }));
+
+    await waitFor(() => {
+      const alerts = screen.getAllByRole("alert");
+      const messages = alerts.map((a) => a.textContent ?? "");
+      expect(messages.some((m) => /item not found/i.test(m))).toBe(true);
+      expect(
+        messages.some((m) =>
+          /list is no longer available|may have been deleted/i.test(m),
+        ),
+      ).toBe(false);
+    });
+
     expect(screen.getByRole("textbox", { name: /item text/i })).toHaveValue(
       "Bananas",
     );
@@ -647,6 +698,48 @@ describe("item-save 404 recovery", () => {
     // Text must be preserved
     expect(screen.getByRole("textbox", { name: /item text/i })).toHaveValue(
       "Bananas",
+    );
+  });
+
+  it("branch 3 also runs for create mode when the selected category is stale", async () => {
+    const recoveryList: ListDetail = makeList({
+      categories: [
+        // only CAT_B_ID remains; CAT_A_ID (the selected one) is gone
+        { id: CAT_B_ID, kind: "grocery", name: "Dairy", sortOrder: 0 },
+      ],
+      items: [],
+    });
+
+    const { user } = await setupCreateWithPost404(
+      HttpResponse.json({ data: recoveryList }),
+    );
+
+    await user.type(
+      screen.getByRole("textbox", { name: /item text/i }),
+      "Eggs",
+    );
+    await user.selectOptions(
+      screen.getByRole("combobox", { name: /category/i }),
+      CAT_A_ID,
+    );
+    await user.click(screen.getByRole("button", { name: /save item/i }));
+
+    await waitFor(() => {
+      const alerts = screen.getAllByRole("alert");
+      const messages = alerts.map((a) => a.textContent ?? "");
+      expect(
+        messages.some((m) =>
+          /save again|category.*removed|category.*deleted/i.test(m),
+        ),
+      ).toBe(true);
+    });
+
+    await waitFor(() => {
+      const select = screen.getByRole("combobox", { name: /category/i });
+      expect((select as HTMLSelectElement).value).toBe("");
+    });
+    expect(screen.getByRole("textbox", { name: /item text/i })).toHaveValue(
+      "Eggs",
     );
   });
 

@@ -160,11 +160,22 @@ export function ListItemSheet({
       // running BEFORE this per-call onError. If that ordering ever changes, this
       // authoritative detail write could be clobbered by the rollback.
       queryClient.setQueryData(listsKeys.detail(list.id), refetchedResponse);
-    } catch {
-      // Branch 1: the list itself 404'd during recovery.
-      setRecoveryError(
-        "This list is no longer available. It may have been deleted.",
-      );
+    } catch (refetchError) {
+      if (
+        ApiException.isApiException(refetchError) &&
+        refetchError.status === 404
+      ) {
+        // Branch 1: the list itself 404'd during recovery.
+        setRecoveryError(
+          "This list is no longer available. It may have been deleted.",
+        );
+        return;
+      }
+
+      const msg = ApiException.isApiException(originalError)
+        ? originalError.message
+        : "Failed to save item";
+      setRecoveryError(msg);
       return;
     }
 
@@ -251,12 +262,7 @@ export function ListItemSheet({
       },
       {
         onSuccess: () => onOpenChange(false),
-        onError: (error) => {
-          const msg = ApiException.isApiException(error)
-            ? error.message
-            : "Failed to save item";
-          setRecoveryError(msg);
-        },
+        onError: handleItemError,
       },
     );
   }
