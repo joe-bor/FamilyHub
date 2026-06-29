@@ -103,6 +103,7 @@ function renderManager(
 }
 
 beforeEach(() => {
+  mockToast.mockClear();
   setOnline(true);
   seedMockLists([groceryListGrouped]);
   seedMockListPreferences({ showCompletedByDefault: true });
@@ -460,6 +461,41 @@ describe("CategoryManager — delete confirmation", () => {
     const dialog = await screen.findByRole("dialog");
     expect(dialog).toHaveTextContent(/produce/i);
     expect(dialog).toHaveTextContent(/1 item/i);
+  });
+
+  it("warns when deleting the final category will switch grouped lists to flat view", async () => {
+    seedMockCategoryCatalog("grocery", [
+      { id: CAT_A_ID, kind: "grocery", name: "Produce", sortOrder: 0 },
+    ]);
+    seedMockLists([
+      {
+        ...groceryListGrouped,
+        categories: [
+          { id: CAT_A_ID, kind: "grocery", name: "Produce", sortOrder: 0 },
+        ],
+        items: [
+          {
+            id: "00000000-0000-4000-8000-000000000201",
+            text: "Apples",
+            completed: false,
+            completedAt: null,
+            categoryId: CAT_A_ID,
+            createdAt: "2026-05-06T09:00:00",
+            updatedAt: "2026-05-06T09:00:00",
+          },
+        ],
+      },
+    ]);
+
+    const { user } = renderManager();
+    await screen.findByText("Produce");
+
+    await user.click(screen.getByRole("button", { name: /delete produce/i }));
+
+    const dialog = await screen.findByRole("dialog");
+    expect(dialog).toHaveTextContent(/1 item/i);
+    expect(dialog).toHaveTextContent(/1 list/i);
+    expect(dialog).toHaveTextContent(/flat view/i);
   });
 
   it("retains the confirmation context when delete fails", async () => {

@@ -11,7 +11,7 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ChevronDown, ChevronUp, Pencil, Trash2 } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
@@ -159,7 +159,6 @@ function CategoryRow({
         >
           <Input
             aria-label="Rename category"
-            defaultValue={entry.name}
             autoComplete="off"
             aria-invalid={Boolean(renameErrorMessage)}
             aria-describedby={renameErrorMessage ? renameErrorId : undefined}
@@ -312,12 +311,20 @@ export function CategoryManagerList({
     id: string;
     direction: "up" | "down";
   } | null>(null);
+  const handleFocusHandled = useCallback(() => setFocusTarget(null), []);
 
   // Build the current draft-ordered entries from the baseline snapshot
-  const entryMap = new Map(baselineEntries.map((e) => [e.id, e]));
-  const orderedEntries = draftIds
-    .map((id) => entryMap.get(id))
-    .filter((e): e is ListCategoryManagementEntry => Boolean(e));
+  const entryMap = useMemo(
+    () => new Map(baselineEntries.map((e) => [e.id, e])),
+    [baselineEntries],
+  );
+  const orderedEntries = useMemo(
+    () =>
+      draftIds
+        .map((id) => entryMap.get(id))
+        .filter((e): e is ListCategoryManagementEntry => Boolean(e)),
+    [draftIds, entryMap],
+  );
 
   function move(id: string, direction: "up" | "down") {
     const idx = draftIds.indexOf(id);
@@ -379,7 +386,7 @@ export function CategoryManagerList({
             onMoveUp={(id) => move(id, "up")}
             onMoveDown={(id) => move(id, "down")}
             focusTarget={focusTarget}
-            onFocusHandled={() => setFocusTarget(null)}
+            onFocusHandled={handleFocusHandled}
           />
         ))}
       </div>

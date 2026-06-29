@@ -81,6 +81,7 @@ function renderManager(
 }
 
 beforeEach(() => {
+  mockToast.mockClear();
   Object.defineProperty(navigator, "onLine", {
     configurable: true,
     value: true,
@@ -586,6 +587,16 @@ describe("CategoryManagerList — non-409 failure keeps draft", () => {
     const dairyUpIdx = labels.findIndex((l) => /move dairy up/i.test(l));
     const produceUpIdx = labels.findIndex((l) => /move produce up/i.test(l));
     expect(dairyUpIdx).toBeLessThan(produceUpIdx);
+
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      /internal server error|order not saved/i,
+    );
+    expect(mockToast).toHaveBeenCalledWith(
+      expect.objectContaining({
+        title: "Order not saved",
+        variant: "destructive",
+      }),
+    );
   });
 
   it("shows a Retry button (Save remains enabled) after failure", async () => {
@@ -608,6 +619,7 @@ describe("CategoryManagerList — non-409 failure keeps draft", () => {
       const saveBtn = screen.getByRole("button", { name: /^save$/i });
       expect(saveBtn).toBeEnabled();
     });
+    expect(screen.getByRole("alert")).toHaveTextContent(/server error/i);
   });
 });
 
@@ -824,7 +836,7 @@ describe("CategoryManagerList — dirty-close confirmation", () => {
     expect(screen.getByRole("button", { name: /cancel/i })).toBeInTheDocument();
   });
 
-  it("exits reorder and closes manager when Discard order is clicked", async () => {
+  it("exits reorder and keeps the manager open when Discard order confirms Cancel", async () => {
     const onOpenChange = vi.fn();
     const { user } = renderWithUser(
       <CategoryManager
@@ -850,6 +862,36 @@ describe("CategoryManagerList — dirty-close confirmation", () => {
       expect(
         screen.queryByRole("button", { name: /^save$/i }),
       ).not.toBeInTheDocument();
+    });
+    expect(
+      screen.getByRole("button", { name: /reorder/i }),
+    ).toBeInTheDocument();
+    expect(onOpenChange).not.toHaveBeenCalled();
+  });
+
+  it("exits reorder and closes the manager when Discard order confirms a dirty close", async () => {
+    const onOpenChange = vi.fn();
+    const { user } = renderWithUser(
+      <CategoryManager
+        open={true}
+        onOpenChange={onOpenChange}
+        kind="grocery"
+      />,
+    );
+    await screen.findByText("Produce");
+    await user.click(screen.getByRole("button", { name: /reorder/i }));
+
+    await user.click(
+      screen.getByRole("button", { name: /move produce down/i }),
+    );
+    await user.click(screen.getByRole("button", { name: "Close" }));
+
+    await user.click(
+      await screen.findByRole("button", { name: /discard order/i }),
+    );
+
+    await waitFor(() => {
+      expect(onOpenChange).toHaveBeenCalledWith(false);
     });
   });
 });
