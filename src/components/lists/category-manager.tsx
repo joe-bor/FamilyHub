@@ -16,7 +16,7 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { X } from "lucide-react";
-import { type RefObject, useState } from "react";
+import { type RefObject, useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import {
@@ -61,6 +61,7 @@ interface CategoryManagerProps {
 
 const ADD_CATEGORY_ERROR_ID = "new-category-name-error";
 const REORDER_ERROR_ID = "category-reorder-error";
+const NESTED_DIALOG_CLOSE_SETTLE_MS = 100;
 
 type ReorderDiscardIntent = "cancel" | "close";
 
@@ -163,6 +164,7 @@ export function CategoryManager({
   // ---------------------------------------------------------------------------
   const [confirmEntry, setConfirmEntry] =
     useState<ListCategoryManagementEntry | null>(null);
+  const confirmOpenRef = useRef(false);
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
   const confirmOpen = confirmEntry !== null;
 
@@ -192,7 +194,19 @@ export function CategoryManager({
   // ---------------------------------------------------------------------------
   const [reorderDiscardIntent, setReorderDiscardIntent] =
     useState<ReorderDiscardIntent | null>(null);
+  const reorderDiscardIntentRef = useRef<ReorderDiscardIntent | null>(null);
+  const ignoreNextManagerCloseRef = useRef(false);
+  const ignoreNextManagerCloseTimerRef = useRef<number | null>(null);
   const reorderDiscardOpen = reorderDiscardIntent !== null;
+
+  useEffect(
+    () => () => {
+      if (ignoreNextManagerCloseTimerRef.current !== null) {
+        window.clearTimeout(ignoreNextManagerCloseTimerRef.current);
+      }
+    },
+    [],
+  );
 
   // ---------------------------------------------------------------------------
   // Back handlers — order matters (LIFO):
@@ -202,13 +216,13 @@ export function CategoryManager({
   //
   // In practice only the relevant one is enabled at a time.
   // ---------------------------------------------------------------------------
-  useBackHandler(confirmOpen, () => setConfirmEntry(null));
-  useBackHandler(reorderDiscardOpen, () => setReorderDiscardIntent(null));
+  useBackHandler(confirmOpen, closeConfirm);
+  useBackHandler(reorderDiscardOpen, closeReorderDiscard);
   // When reordering with dirty state and no sub-dialog open, hardware back →
   // open the discard confirmation. When clean, just cancel reorder.
   useBackHandler(isReordering && !confirmOpen && !reorderDiscardOpen, () => {
     if (isDirty) {
-      setReorderDiscardIntent("close");
+      openReorderDiscard("close");
     } else {
       exitReorder();
     }
@@ -233,12 +247,43 @@ export function CategoryManager({
     setBaselineIds([]);
     setDraftIds([]);
     setReorderError(null);
+    closeReorderDiscard();
+  }
+
+  function openReorderDiscard(
+    intent: ReorderDiscardIntent,
+    options: { replace?: boolean } = {},
+  ) {
+    if (!options.replace && reorderDiscardIntentRef.current !== null) return;
+    reorderDiscardIntentRef.current = intent;
+    setReorderDiscardIntent(intent);
+  }
+
+  function closeReorderDiscard() {
+    reorderDiscardIntentRef.current = null;
     setReorderDiscardIntent(null);
+  }
+
+  function clearIgnoredManagerClose() {
+    ignoreNextManagerCloseRef.current = false;
+    if (ignoreNextManagerCloseTimerRef.current !== null) {
+      window.clearTimeout(ignoreNextManagerCloseTimerRef.current);
+      ignoreNextManagerCloseTimerRef.current = null;
+    }
+  }
+
+  function armIgnoredManagerClose() {
+    clearIgnoredManagerClose();
+    ignoreNextManagerCloseRef.current = true;
+    ignoreNextManagerCloseTimerRef.current = window.setTimeout(() => {
+      ignoreNextManagerCloseRef.current = false;
+      ignoreNextManagerCloseTimerRef.current = null;
+    }, NESTED_DIALOG_CLOSE_SETTLE_MS);
   }
 
   function handleReorderCancel() {
     if (isDirty) {
-      setReorderDiscardIntent("cancel");
+      openReorderDiscard("cancel", { replace: true });
     } else {
       exitReorder();
     }
@@ -295,6 +340,7 @@ export function CategoryManager({
   // ---------------------------------------------------------------------------
 
   function closeConfirm() {
+    confirmOpenRef.current = false;
     setConfirmEntry(null);
   }
 
@@ -331,6 +377,7 @@ export function CategoryManager({
   }
 
   function handleDeleteRequest(entry: ListCategoryManagementEntry) {
+    confirmOpenRef.current = true;
     setConfirmEntry(entry);
   }
 
@@ -478,6 +525,11 @@ export function CategoryManager({
                           type="button"
                           variant="outline"
                           size="sm"
+                          onPointerDownCapture={() => {
+                            if (isDirty) {
+                              reorderDiscardIntentRef.current = "cancel";
+                            }
+                          }}
                           onClick={handleReorderCancel}
                           disabled={reorderPending}
                         >
@@ -538,11 +590,29 @@ export function CategoryManager({
       <ResponsiveFormDialog
         open={open}
         onOpenChange={(newOpen) => {
+          if (!newOpen && ignoreNextManagerCloseRef.current) {
+            clearIgnoredManagerClose();
+            onOpenChange(true);
+            return;
+          }
+          // Nested confirmation dialogs render outside the mobile drawer. When
+          // they open, Vaul/Radix can report a parent close request even though
+          // the user is answering the nested dialog. Preserve the existing
+          // confirmation intent instead of converting it into a manager close.
+          if (
+            !newOpen &&
+            (confirmOpen ||
+              confirmOpenRef.current ||
+              reorderDiscardOpen ||
+              reorderDiscardIntentRef.current !== null)
+          ) {
+            return;
+          }
           // While reorder PUT is pending, ignore close requests
           if (!newOpen && reorderPending) return;
           // While reordering with dirty state, open discard confirmation instead
           if (!newOpen && isReordering && isDirty) {
-            setReorderDiscardIntent("close");
+            openReorderDiscard("close");
             return;
           }
           // Clean reorder: exit cleanly before closing
@@ -563,7 +633,7 @@ export function CategoryManager({
             onClick={() => {
               if (reorderPending) return;
               if (isReordering && isDirty) {
-                setReorderDiscardIntent("close");
+                openReorderDiscard("close");
                 return;
               }
               if (isReordering) exitReorder();
@@ -601,16 +671,22 @@ export function CategoryManager({
         <CategoryConfirmDialog
           open={reorderDiscardOpen}
           onOpenChange={(newOpen) => {
-            if (!newOpen) setReorderDiscardIntent(null);
+            if (!newOpen) closeReorderDiscard();
           }}
           title="Discard order?"
           confirmLabel="Discard order"
           cancelLabel="Keep editing"
           onConfirm={() => {
             const intent = reorderDiscardIntent;
+            if (intent === "cancel") {
+              armIgnoredManagerClose();
+            }
             exitReorder();
             if (intent === "close") {
+              clearIgnoredManagerClose();
               onOpenChange(false);
+            } else {
+              onOpenChange(true);
             }
           }}
         >

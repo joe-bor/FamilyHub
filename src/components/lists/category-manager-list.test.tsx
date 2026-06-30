@@ -866,7 +866,7 @@ describe("CategoryManagerList — dirty-close confirmation", () => {
     expect(
       screen.getByRole("button", { name: /reorder/i }),
     ).toBeInTheDocument();
-    expect(onOpenChange).not.toHaveBeenCalled();
+    expect(onOpenChange).not.toHaveBeenCalledWith(false);
   });
 
   it("exits reorder and closes the manager when Discard order confirms a dirty close", async () => {
