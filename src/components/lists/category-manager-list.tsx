@@ -141,9 +141,13 @@ function CategoryRow({
     resolver: zodResolver(renameCategoryFormSchema),
     defaultValues: { name: entry.name },
   });
+  const renameValue = renameForm.watch("name");
+  const hasRenameChange = renameValue.trim() !== entry.name;
 
   async function submitRename(values: { name: string }) {
-    await onRename(entry, values.name);
+    const nextName = values.name.trim();
+    if (nextName === entry.name) return;
+    await onRename(entry, nextName);
   }
 
   if (isRenaming) {
@@ -170,7 +174,7 @@ function CategoryRow({
           type="submit"
           form={`rename-form-${entry.id}`}
           size="sm"
-          disabled={isRenamePending}
+          disabled={isRenamePending || !hasRenameChange}
         >
           Save
         </Button>
