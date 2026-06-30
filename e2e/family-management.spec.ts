@@ -3,7 +3,6 @@ import { registerFamily, seedBrowserAuth } from "./helpers/api-helpers";
 import {
   clearStorage,
   waitForCalendarReady,
-  waitForDialogClosed,
   waitForDialogReady,
   waitForHydration,
 } from "./helpers/test-helpers";
@@ -158,9 +157,12 @@ test.describe("Family Member Management", () => {
       page.getByRole("dialog", { name: "Family Settings" }),
     ).toBeHidden();
 
-    // The menu side-sheet is still open behind the modal — close it too.
-    await page.keyboard.press("Escape");
-    await waitForDialogClosed(page);
+    // The menu side-sheet is still open behind the modal. Wait until it is
+    // exposed again, then close the concrete sheet instead of racing a generic
+    // "any dialog hidden" check against the nested sheet's exit animation.
+    await expect(sidebar).toBeVisible();
+    await sidebar.getByRole("button", { name: "Close menu" }).click();
+    await expect(sidebar).toBeHidden();
 
     // Verify we're back to the main app
     await expect(page.getByRole("button", { name: "Add event" })).toBeVisible();

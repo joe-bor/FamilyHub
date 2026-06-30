@@ -289,6 +289,17 @@ export function CategoryManager({
     }
   }
 
+  function handleExplicitClose() {
+    if (reorderPending) return;
+    clearIgnoredManagerClose();
+    if (isReordering && isDirty) {
+      openReorderDiscard("close");
+      return;
+    }
+    if (isReordering) exitReorder();
+    onOpenChange(false);
+  }
+
   async function handleReorderSave() {
     try {
       await new Promise<void>((resolve, reject) => {
@@ -601,10 +612,7 @@ export function CategoryManager({
           // confirmation intent instead of converting it into a manager close.
           if (
             !newOpen &&
-            (confirmOpen ||
-              confirmOpenRef.current ||
-              reorderDiscardOpen ||
-              reorderDiscardIntentRef.current !== null)
+            (confirmOpenRef.current || reorderDiscardIntentRef.current !== null)
           ) {
             return;
           }
@@ -625,20 +633,13 @@ export function CategoryManager({
         dialogClassName="max-w-md max-h-[90dvh] overflow-y-auto"
         focusTitleOnOpen
         returnFocusRef={returnFocusRef}
+        onMobileCancel={handleExplicitClose}
         desktopHeaderRight={
           <Button
             type="button"
             variant="ghost"
             size="icon-sm"
-            onClick={() => {
-              if (reorderPending) return;
-              if (isReordering && isDirty) {
-                openReorderDiscard("close");
-                return;
-              }
-              if (isReordering) exitReorder();
-              onOpenChange(false);
-            }}
+            onClick={handleExplicitClose}
             aria-label="Close"
           >
             <X className="h-5 w-5" />

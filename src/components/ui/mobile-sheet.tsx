@@ -19,6 +19,7 @@ export type MobileSheetHeight = "half" | "full";
 export interface MobileSheetProps {
   isOpen: boolean;
   onClose: () => void;
+  onCancel?: () => void;
   title: string;
   headerRight?: ReactNode;
   children: ReactNode;
@@ -66,6 +67,7 @@ function initialSnapFor(height: MobileSheetHeight) {
 export function MobileSheet({
   isOpen,
   onClose,
+  onCancel,
   title,
   headerRight,
   children,
@@ -206,7 +208,7 @@ export function MobileSheet({
           <div className="flex shrink-0 items-center justify-between border-b border-border px-4 py-3">
             <button
               type="button"
-              onClick={onClose}
+              onClick={onCancel ?? onClose}
               className="rounded-lg px-1 py-1 text-sm font-semibold text-primary"
             >
               Cancel
