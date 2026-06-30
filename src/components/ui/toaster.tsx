@@ -91,7 +91,12 @@ export function Toaster() {
   return (
     <ToastProvider>
       {toasts.map(({ id, title, description, action, variant, open }) => (
-        <Toast key={id} open={open} variant={variant}>
+        <Toast
+          key={id}
+          open={open}
+          variant={variant}
+          interactive={Boolean(action)}
+        >
           <div className="grid gap-1">
             {title && <ToastTitle>{title}</ToastTitle>}
             {description && <ToastDescription>{description}</ToastDescription>}
