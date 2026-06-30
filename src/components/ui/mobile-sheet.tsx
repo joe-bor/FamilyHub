@@ -21,6 +21,15 @@ export interface MobileSheetProps {
   onClose: () => void;
   onCancel?: () => void;
   title: string;
+  /**
+   * When provided, `onPointerDownOutside` calls `e.preventDefault()` while the
+   * ref is `true`, preventing the drawer from being dismissed by spurious
+   * DismissableLayer cascade events that fire when a sibling Radix dialog
+   * closes. Set the ref to `true` when any nested dialog opens and reset it
+   * (in a `useEffect`, so it outlasts child passive-effect cleanups) when no
+   * nested dialog is open.
+   */
+  nestedDialogOpenRef?: RefObject<boolean>;
   headerRight?: ReactNode;
   children: ReactNode;
   /**
@@ -76,6 +85,7 @@ export function MobileSheet({
   restoreFocusOnClose = true,
   returnFocusRef,
   onAnimationEnd,
+  nestedDialogOpenRef,
 }: MobileSheetProps) {
   const contentRef = useRef<HTMLDivElement>(null);
   const titleRef = useRef<HTMLElement | null>(null);
@@ -144,6 +154,11 @@ export function MobileSheet({
           aria-hidden={isOpen ? undefined : true}
           aria-describedby={undefined}
           inert={isOpen ? undefined : true}
+          onPointerDownOutside={(e) => {
+            if (nestedDialogOpenRef?.current) {
+              e.preventDefault();
+            }
+          }}
           onOpenAutoFocus={(event) => {
             event.preventDefault();
             if (focusTitleOnOpen) {

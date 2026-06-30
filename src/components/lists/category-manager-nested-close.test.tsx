@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import type { ReactNode, RefObject } from "react";
 import { describe, expect, it, vi } from "vitest";
 import type { ListDetail } from "@/lib/types";
 import {
@@ -12,6 +12,7 @@ import { CategoryManager } from "./category-manager";
 
 const dialogControls = vi.hoisted(() => ({
   onOpenChange: null as ((open: boolean) => void) | null,
+  mobileNestedDialogOpenRef: null as RefObject<boolean> | null,
 }));
 
 vi.mock("@/components/ui/responsive-form-dialog", () => ({
@@ -20,13 +21,17 @@ vi.mock("@/components/ui/responsive-form-dialog", () => ({
     onOpenChange,
     title,
     children,
+    mobileNestedDialogOpenRef,
   }: {
     open: boolean;
     onOpenChange: (open: boolean) => void;
     title: string;
     children: ReactNode;
+    mobileNestedDialogOpenRef?: RefObject<boolean>;
   }) => {
     dialogControls.onOpenChange = onOpenChange;
+    dialogControls.mobileNestedDialogOpenRef =
+      mobileNestedDialogOpenRef ?? null;
     if (!open) return null;
     return (
       <div role="dialog" aria-label={title}>
@@ -138,7 +143,7 @@ describe("CategoryManager nested confirmation close handling", () => {
     expect(onOpenChange).not.toHaveBeenCalledWith(false);
   });
 
-  it("ignores a late parent sheet close after confirming a reorder Cancel discard", async () => {
+  it("arms nestedDialogOpenRef while reorder discard is open and resets it after cancel-intent confirm", async () => {
     seedMockLists([groceryListGrouped]);
     seedMockListPreferences({ showCompletedByDefault: true });
     seedMockCategoryCatalog("grocery", [
@@ -163,12 +168,12 @@ describe("CategoryManager nested confirmation close handling", () => {
     await user.click(screen.getByRole("button", { name: /^cancel$/i }));
     await screen.findByRole("dialog", { name: "Discard order?" });
 
+    // Ref is armed while the nested discard dialog is open
+    expect(dialogControls.mobileNestedDialogOpenRef?.current).toBe(true);
+
     await user.click(screen.getByRole("button", { name: /discard order/i }));
 
-    act(() => {
-      dialogControls.onOpenChange?.(false);
-    });
-
+    // Manager stays open after cancel-intent discard
     await waitFor(() => {
       expect(screen.queryByRole("button", { name: /^save$/i })).toBeNull();
     });
@@ -176,5 +181,10 @@ describe("CategoryManager nested confirmation close handling", () => {
       screen.getByRole("button", { name: /reorder categories/i }),
     ).toBeInTheDocument();
     expect(onOpenChange).not.toHaveBeenCalledWith(false);
+
+    // Ref is reset to false once no nested dialog is open
+    await waitFor(() => {
+      expect(dialogControls.mobileNestedDialogOpenRef?.current).toBe(false);
+    });
   });
 });
