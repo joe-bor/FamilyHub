@@ -155,6 +155,18 @@ export function MobileSheet({
           aria-describedby={undefined}
           inert={isOpen ? undefined : true}
           onPointerDownOutside={(e) => {
+            const tgt = e.target as Element;
+            // A detached target means the click was inside a nested dialog that
+            // React has already unmounted. Chrome defers the synthetic click
+            // event to a later macrotask, by which time the dialog DOM is gone
+            // and the target reports isConnected=false. Without this guard the
+            // DismissableLayer would treat it as an outside click and close the
+            // drawer. The nestedDialogOpenRef check below handles the case where
+            // the click fires while the dialog is still in the DOM.
+            if (!tgt?.isConnected) {
+              e.preventDefault();
+              return;
+            }
             if (nestedDialogOpenRef?.current) {
               e.preventDefault();
             }
