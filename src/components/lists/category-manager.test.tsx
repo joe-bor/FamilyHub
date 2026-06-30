@@ -420,6 +420,53 @@ describe("CategoryManager — add category success", () => {
 // ---------------------------------------------------------------------------
 
 describe("CategoryManager — rename validation", () => {
+  it("disables rename save until the trimmed name changes", async () => {
+    const { user } = renderManager();
+    await screen.findByText("Produce");
+
+    await user.click(screen.getByRole("button", { name: "Rename Produce" }));
+
+    const renameInput = screen.getByRole("textbox", {
+      name: "Rename category",
+    });
+    const saveButton = screen.getByRole("button", { name: /^save$/i });
+    expect(saveButton).toBeDisabled();
+
+    await user.clear(renameInput);
+    await user.type(renameInput, "  Produce  ");
+    expect(saveButton).toBeDisabled();
+
+    await user.clear(renameInput);
+    await user.type(renameInput, "Fresh Produce");
+    expect(saveButton).toBeEnabled();
+  });
+
+  it("does not submit an unchanged rename from the keyboard", async () => {
+    let renameRequests = 0;
+    server.use(
+      http.patch(`${API_BASE}/lists/categories/:categoryId`, () => {
+        renameRequests++;
+        return HttpResponse.json({
+          data: {
+            id: CAT_A_ID,
+            kind: "grocery",
+            name: "Produce",
+            sortOrder: 0,
+            itemCount: 1,
+          },
+        });
+      }),
+    );
+
+    const { user } = renderManager();
+    await screen.findByText("Produce");
+
+    await user.click(screen.getByRole("button", { name: "Rename Produce" }));
+    await user.keyboard("{Enter}");
+
+    expect(renameRequests).toBe(0);
+  });
+
   it("shows a 409 error adjacent to the rename input on duplicate name", async () => {
     const { user } = renderManager();
     await screen.findByText("Produce");
