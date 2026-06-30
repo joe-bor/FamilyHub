@@ -583,6 +583,10 @@ export function CategoryManager({
       <ResponsiveFormDialog
         open={open}
         onOpenChange={(newOpen) => {
+          // onPointerDownOutside (first guard) blocks the Radix DismissableLayer
+          // cascade before it reaches here; this ref check is a fallback in case
+          // the cascade propagates via a different path (e.g. Drawer.Root).
+          if (!newOpen && nestedDialogOpenRef.current) return;
           if (!newOpen && reorderPending) return;
           if (!newOpen && isReordering && isDirty) {
             openReorderDiscard("close");
