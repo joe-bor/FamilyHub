@@ -36,6 +36,13 @@ interface ResponsiveFormDialogProps {
    * feature-specific close semantics.
    */
   onMobileCancel?: () => void;
+  /**
+   * When provided, forwarded to MobileSheet to block spurious
+   * DismissableLayer cascade dismissals while a nested dialog is closing.
+   * Set the ref to `true` when a nested dialog opens; reset in a `useEffect`
+   * so the reset outlasts the child's passive-effect cleanups.
+   */
+  mobileNestedDialogOpenRef?: RefObject<boolean>;
   children: ReactNode;
   /**
    * When true, focuses the title element (heading) when the dialog/sheet opens.
@@ -65,6 +72,7 @@ export function ResponsiveFormDialog({
   titleClassName,
   desktopHeaderRight,
   onMobileCancel,
+  mobileNestedDialogOpenRef,
   children,
   focusTitleOnOpen = false,
   returnFocusRef,
@@ -85,6 +93,7 @@ export function ResponsiveFormDialog({
         initialHeight={initialHeight}
         focusTitleOnOpen={focusTitleOnOpen}
         returnFocusRef={returnFocusRef}
+        nestedDialogOpenRef={mobileNestedDialogOpenRef}
       >
         {children}
       </MobileSheet>
