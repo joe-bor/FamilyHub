@@ -76,6 +76,26 @@ describe("MobileSheet", () => {
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
+  it("uses the explicit Cancel handler for the header Cancel button when provided", async () => {
+    const onClose = vi.fn();
+    const onCancel = vi.fn();
+    const { user } = renderWithUser(
+      <MobileSheet
+        isOpen
+        onClose={onClose}
+        onCancel={onCancel}
+        title="Test sheet"
+      >
+        <button type="button">Inside</button>
+      </MobileSheet>,
+    );
+
+    await user.click(screen.getByRole("button", { name: "Cancel" }));
+
+    expect(onCancel).toHaveBeenCalledTimes(1);
+    expect(onClose).not.toHaveBeenCalled();
+  });
+
   // ---------------------------------------------------------------------------
   // Task 11: new optional props — must not break existing callers
   // ---------------------------------------------------------------------------

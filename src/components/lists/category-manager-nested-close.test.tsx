@@ -61,6 +61,43 @@ const groceryListGrouped: ListDetail = {
 setupMswServer();
 
 describe("CategoryManager nested confirmation close handling", () => {
+  it("allows a stale parent sheet close callback after delete confirmation settles", async () => {
+    seedMockLists([groceryListGrouped]);
+    seedMockListPreferences({ showCompletedByDefault: true });
+    seedMockCategoryCatalog("grocery", [
+      { id: CAT_A_ID, kind: "grocery", name: "Produce", sortOrder: 0 },
+      { id: CAT_B_ID, kind: "grocery", name: "Dairy", sortOrder: 1 },
+    ]);
+
+    const onOpenChange = vi.fn();
+    const { user } = renderWithUser(
+      <CategoryManager
+        open={true}
+        onOpenChange={onOpenChange}
+        kind="grocery"
+      />,
+    );
+
+    await screen.findByText("Dairy");
+    await user.click(screen.getByRole("button", { name: /delete dairy/i }));
+    await screen.findByRole("dialog", { name: /delete "dairy"\\?/i });
+    const staleParentClose = dialogControls.onOpenChange;
+
+    await user.click(screen.getByRole("button", { name: /^delete$/i }));
+
+    await waitFor(() => {
+      expect(
+        screen.queryByRole("dialog", { name: /delete "dairy"\\?/i }),
+      ).toBeNull();
+    });
+
+    act(() => {
+      staleParentClose?.(false);
+    });
+
+    expect(onOpenChange).toHaveBeenCalledWith(false);
+  });
+
   it("does not convert a reorder Cancel discard into a manager close when the parent sheet reports close", async () => {
     seedMockLists([groceryListGrouped]);
     seedMockListPreferences({ showCompletedByDefault: true });

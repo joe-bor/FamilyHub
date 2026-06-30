@@ -101,7 +101,10 @@ test.describe("Mobile Lists", () => {
     page,
     request,
   }) => {
-    test.setTimeout(60_000);
+    // This intentionally exercises the full released-BE managed-category
+    // workflow. It creates, renames, reorders, reloads, groups, deletes, and
+    // recreates categories, so CI runners need more than the global e2e budget.
+    test.setTimeout(120_000);
 
     const registration = await registerFamily(request, {
       familyName: "General Cat Family",

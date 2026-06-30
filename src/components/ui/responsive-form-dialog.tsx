@@ -30,6 +30,12 @@ interface ResponsiveFormDialogProps {
    * supplies its own title + Cancel chrome, so this is omitted on mobile.
    */
   desktopHeaderRight?: ReactNode;
+  /**
+   * Optional mobile sheet Cancel-button handler. Ambient dismissals still call
+   * onOpenChange(false); use this when the visible Cancel affordance needs
+   * feature-specific close semantics.
+   */
+  onMobileCancel?: () => void;
   children: ReactNode;
   /**
    * When true, focuses the title element (heading) when the dialog/sheet opens.
@@ -58,6 +64,7 @@ export function ResponsiveFormDialog({
   dialogClassName,
   titleClassName,
   desktopHeaderRight,
+  onMobileCancel,
   children,
   focusTitleOnOpen = false,
   returnFocusRef,
@@ -73,6 +80,7 @@ export function ResponsiveFormDialog({
       <MobileSheet
         isOpen={open}
         onClose={() => onOpenChange(false)}
+        onCancel={onMobileCancel}
         title={title}
         initialHeight={initialHeight}
         focusTitleOnOpen={focusTitleOnOpen}
