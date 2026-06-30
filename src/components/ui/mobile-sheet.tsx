@@ -131,6 +131,7 @@ export function MobileSheet({
       activeSnapPoint={snap}
       setActiveSnapPoint={setSnap}
       fadeFromIndex={0}
+      handleOnly={!isExpandable}
       onAnimationEnd={onAnimationEnd}
     >
       <Drawer.Portal>
@@ -138,7 +139,9 @@ export function MobileSheet({
         <Drawer.Content
           ref={contentRef}
           tabIndex={-1}
+          aria-hidden={isOpen ? undefined : true}
           aria-describedby={undefined}
+          inert={isOpen ? undefined : true}
           onOpenAutoFocus={(event) => {
             event.preventDefault();
             if (focusTitleOnOpen) {
