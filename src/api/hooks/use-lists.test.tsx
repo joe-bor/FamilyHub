@@ -1315,6 +1315,33 @@ describe("useLists", () => {
     expect(result.current.error).toMatchObject({ status: 409 });
   });
 
+  it("reorder rejects duplicated categoryIds when the baseline matches", async () => {
+    const catA = "00000000-0000-4000-8000-000000000201";
+    const catB = "00000000-0000-4000-8000-000000000202";
+    const catC = "00000000-0000-4000-8000-000000000203";
+
+    seedMockCategoryCatalog("grocery", [
+      { id: catA, kind: "grocery", name: "Produce", sortOrder: 0 },
+      { id: catB, kind: "grocery", name: "Dairy", sortOrder: 1 },
+      { id: catC, kind: "grocery", name: "Frozen", sortOrder: 2 },
+    ]);
+
+    const { result } = renderHook(() => useReorderListCategories(), {
+      wrapper: createWrapper(),
+    });
+
+    result.current.mutate({
+      kind: "grocery",
+      expectedCategoryIds: [catA, catB, catC],
+      categoryIds: [catA, catA, catB],
+    });
+
+    await waitFor(() => {
+      expect(result.current.isError).toBe(true);
+    });
+    expect(result.current.error).toMatchObject({ status: 400 });
+  });
+
   // ---------------------------------------------------------------------------
   // Offline write guard — category WRITE hooks must reject before mutating
   // the cache (no service call, cache untouched). Mirrors the item-mutation

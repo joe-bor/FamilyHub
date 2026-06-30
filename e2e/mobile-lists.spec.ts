@@ -222,11 +222,7 @@ test.describe("Mobile Lists", () => {
         .getByRole("button", { name: "Cancel" })
         .first();
       await expect(closeButton).toBeVisible();
-      // Dispatch programmatically to bypass coordinate-based routing — a success
-      // toast can overlap the header Cancel button and intercept the click even
-      // with force:true, because Playwright still fires at the button's screen
-      // coordinates and the browser routes to the topmost element there.
-      await closeButton.evaluate((el) => (el as HTMLButtonElement).click());
+      await closeButton.click();
       await expect(managerSheet).toBeHidden();
     };
     await waitForSheetSettled(managerSheet);

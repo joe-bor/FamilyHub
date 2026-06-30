@@ -1341,6 +1341,7 @@ export const handlers = [
     const categoryIdSet = new Set(body.categoryIds);
     if (
       body.categoryIds.length !== expectedSet.size ||
+      categoryIdSet.size !== body.categoryIds.length ||
       [...categoryIdSet].some((id) => !expectedSet.has(id))
     ) {
       return HttpResponse.json(
