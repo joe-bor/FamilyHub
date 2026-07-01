@@ -11,7 +11,10 @@ import {
   createRecipeBackedMealsBoard,
   testWeekStartDate,
 } from "@/test/fixtures/meals";
-import { testRecipeDetail } from "@/test/fixtures/recipes";
+import {
+  importedRecipeDetail,
+  testRecipeDetail,
+} from "@/test/fixtures/recipes";
 import {
   API_BASE,
   getMockMealsBoard,
@@ -219,6 +222,222 @@ describe("MealsView", () => {
     expect(
       (await screen.findAllByRole("button", { name: /add dinner/i }))[0],
     ).toBeEnabled();
+  });
+
+  it("shows Fill empty slots on editable weeks and hides it on past weeks", async () => {
+    seedMockMealsBoard(createEmptyMealsBoard());
+    seedMockMealsBoard(createEmptyMealsBoard("2026-06-14"));
+    seedMockMealsBoard(createEmptyMealsBoard("2026-05-31"));
+    const { user } = renderWithUser(<MealsView />);
+
+    expect(
+      await screen.findByRole("button", { name: "Fill empty slots" }),
+    ).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Next week" }));
+    expect(await screen.findByText("Jun 14 - Jun 20")).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Fill empty slots" }),
+    ).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Previous week" }));
+    await user.click(screen.getByRole("button", { name: "Previous week" }));
+    expect(await screen.findByText("Review only")).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Fill empty slots" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("starts empty-dinners planning and projects a quick draft without saving", async () => {
+    seedMockMealsBoard(createEmptyMealsBoard());
+    const { user } = renderWithUser(<MealsView />);
+
+    await user.click(
+      await screen.findByRole("button", { name: "Fill empty slots" }),
+    );
+    expect(
+      await screen.findByRole("dialog", { name: /fill empty slots/i }),
+    ).toBeInTheDocument();
+    expect(screen.getByLabelText("Empty dinners")).toBeChecked();
+
+    await user.click(screen.getByRole("button", { name: "Start planning" }));
+
+    expect(
+      await screen.findByRole("dialog", { name: "Meal planning" }),
+    ).toBeInTheDocument();
+    expect(screen.getByText("Sunday dinner - 1 of 7")).toBeInTheDocument();
+
+    await user.type(screen.getByLabelText("Meal name"), "Chili");
+    await user.click(
+      screen.getByRole("button", { name: "Add quick meal draft" }),
+    );
+
+    expect(
+      await screen.findByRole("button", {
+        name: "Draft dinner: Chili",
+        hidden: true,
+      }),
+    ).toBeInTheDocument();
+    expect(screen.getByText("Monday dinner - 2 of 7")).toBeInTheDocument();
+    expect(getMockMealsBoard(testWeekStartDate).days[0].slots[2].primary).toBe(
+      null,
+    );
+  });
+
+  it("cancel planning discards local drafts without mutating the persisted board", async () => {
+    seedMockMealsBoard(createEmptyMealsBoard());
+    const { user } = renderWithUser(<MealsView />);
+
+    await user.click(
+      await screen.findByRole("button", { name: "Fill empty slots" }),
+    );
+    await user.click(screen.getByRole("button", { name: "Start planning" }));
+    await user.type(await screen.findByLabelText("Meal name"), "Chili");
+    await user.click(
+      screen.getByRole("button", { name: "Add quick meal draft" }),
+    );
+    expect(
+      await screen.findByRole("button", {
+        name: "Draft dinner: Chili",
+        hidden: true,
+      }),
+    ).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Cancel planning" }));
+
+    expect(
+      screen.queryByRole("dialog", { name: "Meal planning" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", {
+        name: "Draft dinner: Chili",
+        hidden: true,
+      }),
+    ).not.toBeInTheDocument();
+    expect(getMockMealsBoard(testWeekStartDate).days[0].slots[2].primary).toBe(
+      null,
+    );
+  });
+
+  it("selected-days scope queues only Monday and Wednesday empty slots", async () => {
+    seedMockMealsBoard(createEmptyMealsBoard());
+    const { user } = renderWithUser(<MealsView />);
+
+    await user.click(
+      await screen.findByRole("button", { name: "Fill empty slots" }),
+    );
+    await user.click(screen.getByLabelText("Selected days"));
+
+    const startButton = screen.getByRole("button", { name: "Start planning" });
+    expect(startButton).toBeDisabled();
+
+    await user.click(screen.getByLabelText("Monday"));
+    await user.click(screen.getByLabelText("Wednesday"));
+    expect(startButton).toBeEnabled();
+    await user.click(startButton);
+
+    expect(
+      await screen.findByRole("dialog", { name: "Meal planning" }),
+    ).toBeInTheDocument();
+    expect(screen.getByText("Monday breakfast - 1 of 6")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Skip this slot" }));
+    expect(screen.getByText("Monday lunch - 2 of 6")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Skip this slot" }));
+    expect(screen.getByText("Monday dinner - 3 of 6")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Skip this slot" }));
+    expect(
+      screen.getByText("Wednesday breakfast - 4 of 6"),
+    ).toBeInTheDocument();
+  });
+
+  it("starts planning from a blank future week without leaving Meals", async () => {
+    seedMockMealsBoard(createEmptyMealsBoard());
+    const { user } = renderWithUser(<MealsView />);
+
+    await user.click(await screen.findByRole("button", { name: "Next week" }));
+    expect(await screen.findByText("Jun 14 - Jun 20")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Fill empty slots" }));
+    await user.click(screen.getByRole("button", { name: "Start planning" }));
+
+    expect(
+      await screen.findByRole("dialog", { name: "Meal planning" }),
+    ).toBeInTheDocument();
+    expect(screen.getByText("Sunday dinner - 1 of 7")).toBeInTheDocument();
+    expect(screen.getByText("Jun 14 - Jun 20")).toBeInTheDocument();
+  });
+
+  it("projects a recipe-backed draft from candidates without saving early", async () => {
+    seedMockMealsBoard(createEmptyMealsBoard());
+    seedMockRecipes([testRecipeDetail, importedRecipeDetail]);
+    const { user } = renderWithUser(<MealsView />);
+
+    await user.click(
+      await screen.findByRole("button", { name: "Fill empty slots" }),
+    );
+    await user.click(screen.getByRole("button", { name: "Start planning" }));
+    await user.click(
+      await screen.findByRole("button", {
+        name: `Select recipe: ${testRecipeDetail.title}`,
+      }),
+    );
+
+    expect(
+      await screen.findByRole("button", {
+        name: `Draft dinner: ${testRecipeDetail.title}`,
+        hidden: true,
+      }),
+    ).toBeInTheDocument();
+    expect(getMockMealsBoard(testWeekStartDate).days[0].slots[2].primary).toBe(
+      null,
+    );
+  });
+
+  it("skip, remove draft, and change draft update planning state without saving", async () => {
+    seedMockMealsBoard(createEmptyMealsBoard());
+    const { user } = renderWithUser(<MealsView />);
+
+    await user.click(
+      await screen.findByRole("button", { name: "Fill empty slots" }),
+    );
+    await user.click(screen.getByRole("button", { name: "Start planning" }));
+
+    await user.click(screen.getByRole("button", { name: "Skip this slot" }));
+    expect(screen.getByText("Monday dinner - 2 of 7")).toBeInTheDocument();
+
+    await user.type(screen.getByLabelText("Meal name"), "Tacos");
+    await user.click(
+      screen.getByRole("button", { name: "Add quick meal draft" }),
+    );
+    expect(
+      await screen.findByRole("button", {
+        name: "Draft dinner: Tacos",
+        hidden: true,
+      }),
+    ).toBeInTheDocument();
+    expect(getMockMealsBoard(testWeekStartDate).days[1].slots[2].primary).toBe(
+      null,
+    );
+
+    await user.click(screen.getByRole("button", { name: "Review plan" }));
+    expect(screen.getByText("1 meals ready to add")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Change draft" }));
+    expect(screen.getByText("Monday dinner - 2 of 7")).toBeInTheDocument();
+
+    await user.click(
+      screen.getByRole("button", { name: "Remove draft: Tacos" }),
+    );
+    expect(
+      screen.queryByRole("button", {
+        name: "Draft dinner: Tacos",
+        hidden: true,
+      }),
+    ).not.toBeInTheDocument();
+    expect(getMockMealsBoard(testWeekStartDate).days[1].slots[2].primary).toBe(
+      null,
+    );
   });
 
   it("renders occupied slots as meal cards rather than add affordances", async () => {

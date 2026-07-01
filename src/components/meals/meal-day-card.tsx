@@ -1,5 +1,9 @@
 import { parseLocalDate } from "@/lib/time-utils";
 import type { MealDay, MealSlot } from "@/lib/types";
+import type {
+  MealPlanningDraft,
+  MealPlanningTarget,
+} from "./meal-planning-session";
 import { MealSlotCard } from "./meal-slot-card";
 
 function formatDayLabel(date: string) {
@@ -14,6 +18,8 @@ interface MealDayCardProps {
   day: MealDay;
   readOnly: boolean;
   pendingRecipeId?: string | null;
+  planningDrafts?: MealPlanningDraft[];
+  planningTarget?: MealPlanningTarget | null;
   onSelectSlot: (slot: MealSlot) => void;
 }
 
@@ -21,6 +27,8 @@ export function MealDayCard({
   day,
   readOnly,
   pendingRecipeId = null,
+  planningDrafts = [],
+  planningTarget = null,
   onSelectSlot,
 }: MealDayCardProps) {
   return (
@@ -35,6 +43,17 @@ export function MealDayCard({
             slot={slot}
             readOnly={readOnly}
             pendingRecipeId={pendingRecipeId}
+            draft={
+              planningDrafts.find(
+                (draft) =>
+                  draft.target.dayIndex === slot.dayIndex &&
+                  draft.target.mealType === slot.mealType,
+              ) ?? null
+            }
+            isPlanningTarget={
+              planningTarget?.dayIndex === slot.dayIndex &&
+              planningTarget.mealType === slot.mealType
+            }
             onSelectSlot={onSelectSlot}
           />
         ))}
