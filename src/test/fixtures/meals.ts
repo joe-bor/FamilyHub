@@ -94,6 +94,30 @@ export function createOccupiedMealsBoard(): MealBoard {
   return board;
 }
 
+export function createExtrasOnlyMealsBoard(): MealBoard {
+  const board = createEmptyMealsBoard();
+  board.days[4].slots[2] = {
+    id: "slot-extras-only-dinner",
+    weekStartDate: testWeekStartDate,
+    dayIndex: 4,
+    mealType: "dinner",
+    primary: null,
+    extras: [
+      {
+        id: "entry-garlic-bread",
+        role: "extra",
+        sourceType: "quick",
+        recipeId: null,
+        title: "Garlic bread",
+        imageUrl: null,
+        note: null,
+      },
+    ],
+    note: null,
+  };
+  return board;
+}
+
 export function createRecipeBackedMealsBoard(): MealBoard {
   const board = createEmptyMealsBoard();
   board.days[1].slots[2] = {
