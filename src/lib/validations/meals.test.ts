@@ -158,6 +158,13 @@ describe("meal validation", () => {
     ).toBe(false);
   });
 
+  it("exports focused meal plan schemas from the validation barrel", async () => {
+    const validations = await import(".");
+
+    expect(validations.saveMealPlanSchema).toBe(saveMealPlanSchema);
+    expect(validations.saveMealPlanSlotSchema).toBe(saveMealPlanSlotSchema);
+  });
+
   it("rejects focused meal plan saves with more than twenty-one slots", () => {
     const slot = {
       dayIndex: 0,

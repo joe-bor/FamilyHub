@@ -50,6 +50,7 @@ import type {
   UpsertMealSlotRequest,
   UsernameCheckResponse,
 } from "@/lib/types";
+import { saveMealPlanSchema } from "@/lib/validations";
 
 // In-memory storage for mock calendar events (reset between tests)
 // Uses CalendarEventResponse (string dates) to match real API wire format
@@ -800,7 +801,25 @@ export const handlers = [
 
   // POST /meals/plans - Save a focused meal planning session
   http.post(`${API_BASE}/meals/plans`, async ({ request }) => {
-    const body = (await request.json()) as SaveMealPlanRequest;
+    let rawBody: unknown;
+    try {
+      rawBody = await request.json();
+    } catch {
+      return HttpResponse.json(
+        { message: "Invalid meal plan request" },
+        { status: 400 },
+      );
+    }
+
+    const parsedBody = saveMealPlanSchema.safeParse(rawBody);
+    if (!parsedBody.success) {
+      return HttpResponse.json(
+        { message: "Invalid meal plan request" },
+        { status: 400 },
+      );
+    }
+
+    const body = parsedBody.data;
     const board = getMealsBoard(body.weekStartDate);
     const seenTargets = new Set<string>();
     const targets: Array<{

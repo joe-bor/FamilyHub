@@ -19,6 +19,8 @@ export {
   mealTypeSchema,
   moveMealSlotSchema,
   removeMealSlotSchema,
+  saveMealPlanSchema,
+  saveMealPlanSlotSchema,
   toMealEntryRequest,
   type UpsertMealSlotFormData,
   upsertMealSlotSchema,

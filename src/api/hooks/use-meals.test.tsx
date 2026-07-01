@@ -294,6 +294,9 @@ describe("useMeals", () => {
     expect(cached).toEqual(result.current.data);
     expect(cached?.data.days[0].slots[0].primary?.title).toBe("Pancakes");
     expect(cached?.data.days[1].slots[2].extras[0].title).toBe("Guacamole");
+    expect(
+      queryClient.getQueryState(mealsKeys.board("2026-06-07"))?.isInvalidated,
+    ).toBe(true);
   });
 
   it("rejects focused meal plan saves that target the same slot twice", async () => {
