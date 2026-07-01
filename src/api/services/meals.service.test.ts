@@ -1,6 +1,6 @@
 import { HttpResponse, http } from "msw";
 import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
-import type { RemoveMealSlotRequest } from "@/lib/types";
+import type { RemoveMealSlotRequest, SaveMealPlanRequest } from "@/lib/types";
 import { API_BASE, server } from "@/test/mocks/server";
 import { mealsService } from "./meals.service";
 
@@ -61,6 +61,50 @@ describe("mealsService.removeSlot", () => {
 
     await mealsService.removeSlot(request);
 
+    expect(JSON.parse(captured.body)).toEqual(request);
+  });
+});
+
+describe("mealsService.savePlan", () => {
+  function captureSavePlanRequest() {
+    const captured = { body: "", url: "" };
+    server.use(
+      http.post(`${API_BASE}/meals/plans`, async ({ request }) => {
+        captured.url = request.url;
+        captured.body = await request.text();
+        return HttpResponse.json({
+          data: { weekStartDate: "2026-06-07", days: [] },
+          message: "Meal plan saved successfully",
+        });
+      }),
+    );
+    return captured;
+  }
+
+  it("posts the SaveMealPlanRequest to /api/meals/plans", async () => {
+    const captured = captureSavePlanRequest();
+    const request: SaveMealPlanRequest = {
+      weekStartDate: "2026-06-07",
+      slots: [
+        {
+          dayIndex: 1,
+          mealType: "dinner",
+          primary: {
+            sourceType: "quick",
+            recipeId: null,
+            title: "Pasta",
+            imageUrl: null,
+            note: null,
+          },
+          extras: [],
+          note: "Use the red sauce",
+        },
+      ],
+    };
+
+    await mealsService.savePlan(request);
+
+    expect(new URL(captured.url).pathname).toBe("/api/meals/plans");
     expect(JSON.parse(captured.body)).toEqual(request);
   });
 });

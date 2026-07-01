@@ -5,6 +5,7 @@ import type {
   MealSlotApiResponse,
   MoveMealSlotRequest,
   RemoveMealSlotRequest,
+  SaveMealPlanRequest,
   UpsertMealSlotRequest,
 } from "@/lib/types";
 
@@ -17,6 +18,10 @@ export const mealsService = {
 
   upsertSlot(request: UpsertMealSlotRequest): Promise<MealSlotApiResponse> {
     return httpClient.put<MealSlotApiResponse>("/meals/slots", request);
+  },
+
+  savePlan(request: SaveMealPlanRequest): Promise<MealBoardApiResponse> {
+    return httpClient.post<MealBoardApiResponse>("/meals/plans", request);
   },
 
   moveSlot(request: MoveMealSlotRequest): Promise<MealBoardApiResponse> {

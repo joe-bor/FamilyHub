@@ -9,6 +9,7 @@ import {
   describe,
   expect,
   it,
+  vi,
 } from "vitest";
 import type { ApiResponse, MealBoard } from "@/lib/types";
 import { testRecipeDetail } from "@/test/fixtures/recipes";
@@ -25,6 +26,7 @@ import {
   useMealsBoard,
   useMoveMealSlot,
   useRemoveMealSlot,
+  useSaveMealPlan,
   useUpsertMealSlot,
 } from "./use-meals";
 
@@ -228,6 +230,175 @@ describe("useMeals", () => {
         note: testRecipeDetail.note,
       });
     });
+  });
+
+  it("replaces the board cache with the saved focused meal plan response", async () => {
+    seedMockMealsBoard(emptyBoard);
+    queryClient.setQueryData(mealsKeys.board("2026-06-07"), {
+      data: boardWithOccupiedDinner(),
+    } satisfies ApiResponse<MealBoard>);
+
+    const { result } = renderHook(() => useSaveMealPlan(), {
+      wrapper: createWrapper(),
+    });
+
+    result.current.mutate({
+      weekStartDate: "2026-06-07",
+      slots: [
+        {
+          dayIndex: 0,
+          mealType: "breakfast",
+          primary: {
+            sourceType: "quick",
+            recipeId: null,
+            title: "Pancakes",
+            imageUrl: null,
+            note: null,
+          },
+          extras: [],
+          note: null,
+        },
+        {
+          dayIndex: 1,
+          mealType: "dinner",
+          primary: {
+            sourceType: "quick",
+            recipeId: null,
+            title: "Tacos",
+            imageUrl: null,
+            note: null,
+          },
+          extras: [
+            {
+              sourceType: "quick",
+              recipeId: null,
+              title: "Guacamole",
+              imageUrl: null,
+              note: null,
+            },
+          ],
+          note: "Serve family style",
+        },
+      ],
+    });
+
+    await waitFor(() => {
+      expect(result.current.data?.data.days[1].slots[2].primary?.title).toBe(
+        "Tacos",
+      );
+    });
+
+    const cached = queryClient.getQueryData<ApiResponse<MealBoard>>(
+      mealsKeys.board("2026-06-07"),
+    );
+    expect(cached).toEqual(result.current.data);
+    expect(cached?.data.days[0].slots[0].primary?.title).toBe("Pancakes");
+    expect(cached?.data.days[1].slots[2].extras[0].title).toBe("Guacamole");
+  });
+
+  it("rejects focused meal plan saves that target the same slot twice", async () => {
+    seedMockMealsBoard(emptyBoard);
+    const onError = vi.fn<(error: Error) => void>();
+
+    const { result } = renderHook(() => useSaveMealPlan({ onError }), {
+      wrapper: createWrapper(),
+    });
+
+    result.current.mutate({
+      weekStartDate: "2026-06-07",
+      slots: [
+        {
+          dayIndex: 1,
+          mealType: "dinner",
+          primary: {
+            sourceType: "quick",
+            recipeId: null,
+            title: "Pasta",
+            imageUrl: null,
+            note: null,
+          },
+          extras: [],
+          note: null,
+        },
+        {
+          dayIndex: 1,
+          mealType: "dinner",
+          primary: {
+            sourceType: "quick",
+            recipeId: null,
+            title: "Soup",
+            imageUrl: null,
+            note: null,
+          },
+          extras: [],
+          note: null,
+        },
+      ],
+    });
+
+    await waitFor(() => {
+      expect(onError).toHaveBeenCalledWith(expect.any(Error));
+    });
+
+    expect(onError.mock.calls[0][0].message).toBe(
+      "Meal plan contains duplicate target slots.",
+    );
+  });
+
+  it("rejects focused meal plan saves when a target has only extras", async () => {
+    const board = structuredClone(emptyBoard);
+    board.days[4].slots[1] = {
+      id: "slot-thursday-lunch",
+      weekStartDate: "2026-06-07",
+      dayIndex: 4,
+      mealType: "lunch",
+      primary: null,
+      extras: [
+        {
+          id: "entry-extra",
+          role: "extra",
+          sourceType: "quick",
+          recipeId: null,
+          title: "Apple slices",
+          imageUrl: null,
+          note: null,
+        },
+      ],
+      note: null,
+    };
+    seedMockMealsBoard(board);
+    const onError = vi.fn<(error: Error) => void>();
+
+    const { result } = renderHook(() => useSaveMealPlan({ onError }), {
+      wrapper: createWrapper(),
+    });
+
+    result.current.mutate({
+      weekStartDate: "2026-06-07",
+      slots: [
+        {
+          dayIndex: 4,
+          mealType: "lunch",
+          primary: {
+            sourceType: "quick",
+            recipeId: null,
+            title: "Grilled cheese",
+            imageUrl: null,
+            note: null,
+          },
+          extras: [],
+          note: null,
+        },
+      ],
+    });
+
+    await waitFor(() => {
+      expect(onError).toHaveBeenCalledWith(expect.any(Error));
+    });
+
+    expect(onError.mock.calls[0][0].message).toBe(
+      "Some meal slots are no longer empty.",
+    );
   });
 
   it("moves a meal with an explicit lowercase collision mode", async () => {

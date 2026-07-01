@@ -40,6 +40,7 @@ import type {
   RemoveMealSlotRequest,
   RenameListCategoryRequest,
   ReorderListCategoriesRequest,
+  SaveMealPlanRequest,
   UpdateChoreTemplateRequest,
   UpdateCurrentPeriodCompletionRequest,
   UpdateEventRequest,
@@ -622,6 +623,10 @@ function findMealSlot(
   return slot;
 }
 
+function isMealSlotOccupied(slot: MealSlot): boolean {
+  return Boolean(slot.primary) || slot.extras.length > 0;
+}
+
 function setMealSlot(board: MealBoard, updatedSlot: MealSlot): void {
   const day = board.days[updatedSlot.dayIndex];
   day.slots = day.slots.map((slot) =>
@@ -791,6 +796,69 @@ export const handlers = [
     }
 
     return HttpResponse.json(createApiResponse(getMealsBoard(weekStartDate)));
+  }),
+
+  // POST /meals/plans - Save a focused meal planning session
+  http.post(`${API_BASE}/meals/plans`, async ({ request }) => {
+    const body = (await request.json()) as SaveMealPlanRequest;
+    const board = getMealsBoard(body.weekStartDate);
+    const seenTargets = new Set<string>();
+    const targets: Array<{
+      slot: MealSlot;
+      requestSlot: SaveMealPlanRequest["slots"][number];
+    }> = [];
+
+    for (const requestSlot of body.slots) {
+      const targetKey = `${requestSlot.dayIndex}:${requestSlot.mealType}`;
+      if (seenTargets.has(targetKey)) {
+        return HttpResponse.json(
+          { message: "Meal plan contains duplicate target slots." },
+          { status: 400 },
+        );
+      }
+      seenTargets.add(targetKey);
+
+      const slot = findMealSlot(
+        board,
+        requestSlot.dayIndex,
+        requestSlot.mealType,
+      );
+      targets.push({ slot, requestSlot });
+    }
+
+    if (targets.some(({ slot }) => isMealSlotOccupied(slot))) {
+      return HttpResponse.json(
+        { message: "Some meal slots are no longer empty." },
+        { status: 409 },
+      );
+    }
+
+    const updates: MealSlot[] = [];
+    for (const { slot, requestSlot } of targets) {
+      const entries = snapshotRequestedEntries(
+        requestSlot.primary,
+        requestSlot.extras,
+      );
+      if (entries instanceof HttpResponse) return entries;
+
+      const updatedSlot = resolveMealSlotPlacement(
+        slot,
+        entries.primary,
+        entries.extras,
+        requestSlot.note ?? null,
+        null,
+      );
+      if (updatedSlot instanceof HttpResponse) return updatedSlot;
+      updates.push(updatedSlot);
+    }
+
+    for (const updatedSlot of updates) {
+      setMealSlot(board, updatedSlot);
+    }
+
+    return HttpResponse.json(
+      createApiResponse(board, "Meal plan saved successfully"),
+    );
   }),
 
   // PUT /meals/slots - Create or update one slot
