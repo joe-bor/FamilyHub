@@ -107,4 +107,13 @@ describe("mealsService.savePlan", () => {
     expect(new URL(captured.url).pathname).toBe("/api/meals/plans");
     expect(JSON.parse(captured.body)).toEqual(request);
   });
+
+  it("returns 400 from MSW when the meal plan slots payload is empty", async () => {
+    await expect(
+      mealsService.savePlan({
+        weekStartDate: "2026-06-07",
+        slots: [],
+      }),
+    ).rejects.toMatchObject({ status: 400 });
+  });
 });
