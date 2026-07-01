@@ -2,12 +2,15 @@ import { Plus } from "lucide-react";
 import { useState } from "react";
 import type { MealSlot } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import type { MealPlanningDraft } from "./meal-planning-session";
 import { formatMealType } from "./meal-type-utils";
 
 interface MealSlotCardProps {
   slot: MealSlot;
   readOnly: boolean;
   pendingRecipeId?: string | null;
+  draft?: MealPlanningDraft | null;
+  isPlanningTarget?: boolean;
   onSelectSlot: (slot: MealSlot) => void;
 }
 
@@ -15,26 +18,43 @@ export function MealSlotCard({
   slot,
   readOnly,
   pendingRecipeId = null,
+  draft = null,
+  isPlanningTarget = false,
   onSelectSlot,
 }: MealSlotCardProps) {
   const [imgFailed, setImgFailed] = useState(false);
   const label = formatMealType(slot.mealType);
+  const primary = draft
+    ? {
+        title: draft.displayTitle,
+        imageUrl: draft.displayImageUrl,
+        note: draft.displayNote,
+      }
+    : slot.primary;
 
-  if (slot.primary) {
+  if (primary) {
     return (
       <button
         type="button"
         className={cn(
           "w-full rounded-lg border border-border bg-card p-3 text-left shadow-sm transition-colors",
           readOnly ? "cursor-default" : "hover:bg-muted/50",
+          isPlanningTarget
+            ? "border-primary/70 bg-primary/5 ring-2 ring-primary/20"
+            : null,
         )}
-        aria-label={`Open ${slot.mealType}: ${slot.primary.title}`}
+        aria-current={isPlanningTarget ? "true" : undefined}
+        aria-label={
+          draft
+            ? `Draft ${slot.mealType}: ${draft.displayTitle}`
+            : `Open ${slot.mealType}: ${primary.title}`
+        }
         onClick={() => onSelectSlot(slot)}
       >
         <div className="flex items-start gap-3">
-          {slot.primary.imageUrl && !imgFailed ? (
+          {primary.imageUrl && !imgFailed ? (
             <img
-              src={slot.primary.imageUrl}
+              src={primary.imageUrl}
               alt=""
               className="h-14 w-14 rounded-md object-cover"
               onError={() => setImgFailed(true)}
@@ -48,12 +68,17 @@ export function MealSlotCard({
             <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
               {label}
             </p>
+            {draft ? (
+              <span className="mt-1 inline-flex rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">
+                Draft
+              </span>
+            ) : null}
             <p className="truncate text-sm font-semibold text-foreground">
-              {slot.primary.title}
+              {primary.title}
             </p>
-            {slot.primary.note ? (
+            {primary.note ? (
               <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">
-                {slot.primary.note}
+                {primary.note}
               </p>
             ) : null}
             {slot.note ? (
@@ -63,7 +88,7 @@ export function MealSlotCard({
             ) : null}
           </div>
         </div>
-        {slot.extras.length > 0 ? (
+        {!draft && slot.extras.length > 0 ? (
           <div className="mt-3 flex flex-wrap gap-1">
             {slot.extras.slice(0, 2).map((extra) => (
               <span
@@ -86,7 +111,13 @@ export function MealSlotCard({
 
   if (readOnly) {
     return (
-      <div className="rounded-lg border border-dashed border-border bg-muted/30 p-3 text-sm text-muted-foreground">
+      <div
+        className={cn(
+          "rounded-lg border border-dashed border-border bg-muted/30 p-3 text-sm text-muted-foreground",
+          isPlanningTarget ? "border-primary/70 ring-2 ring-primary/20" : null,
+        )}
+        aria-current={isPlanningTarget ? "true" : undefined}
+      >
         <span className="font-medium">{label}</span>
       </div>
     );
@@ -95,7 +126,13 @@ export function MealSlotCard({
   return (
     <button
       type="button"
-      className="flex min-h-20 w-full items-center justify-between rounded-lg border border-dashed border-border bg-background p-3 text-left transition-colors hover:border-primary/50 hover:bg-primary/5"
+      className={cn(
+        "flex min-h-20 w-full items-center justify-between rounded-lg border border-dashed border-border bg-background p-3 text-left transition-colors hover:border-primary/50 hover:bg-primary/5",
+        isPlanningTarget
+          ? "border-primary/70 bg-primary/5 ring-2 ring-primary/20"
+          : null,
+      )}
+      aria-current={isPlanningTarget ? "true" : undefined}
       aria-label={
         pendingRecipeId
           ? `Add recipe to ${slot.mealType}`

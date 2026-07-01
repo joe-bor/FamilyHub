@@ -1,5 +1,9 @@
 import { parseLocalDate } from "@/lib/time-utils";
 import type { MealBoard, MealSlot } from "@/lib/types";
+import type {
+  MealPlanningDraft,
+  MealPlanningTarget,
+} from "./meal-planning-session";
 import { MealSlotCard } from "./meal-slot-card";
 import { formatMealType } from "./meal-type-utils";
 
@@ -15,6 +19,8 @@ interface MealGridProps {
   board: MealBoard;
   readOnly: boolean;
   pendingRecipeId?: string | null;
+  planningDrafts?: MealPlanningDraft[];
+  planningTarget?: MealPlanningTarget | null;
   onSelectSlot: (slot: MealSlot) => void;
 }
 
@@ -22,6 +28,8 @@ export function MealGrid({
   board,
   readOnly,
   pendingRecipeId = null,
+  planningDrafts = [],
+  planningTarget = null,
   onSelectSlot,
 }: MealGridProps) {
   return (
@@ -71,6 +79,17 @@ export function MealGrid({
                       slot={slot}
                       readOnly={readOnly}
                       pendingRecipeId={pendingRecipeId}
+                      draft={
+                        planningDrafts.find(
+                          (draft) =>
+                            draft.target.dayIndex === slot.dayIndex &&
+                            draft.target.mealType === slot.mealType,
+                        ) ?? null
+                      }
+                      isPlanningTarget={
+                        planningTarget?.dayIndex === slot.dayIndex &&
+                        planningTarget.mealType === slot.mealType
+                      }
                       onSelectSlot={onSelectSlot}
                     />
                   </td>
