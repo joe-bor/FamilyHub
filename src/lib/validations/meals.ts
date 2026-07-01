@@ -78,6 +78,19 @@ export const upsertMealSlotSchema = z.object({
   collisionMode: mealCollisionModeSchema.nullable().optional().default(null),
 });
 
+export const saveMealPlanSlotSchema = z.object({
+  dayIndex: z.number().int().min(0).max(6),
+  mealType: mealTypeSchema,
+  primary: mealEntrySchema,
+  extras: z.array(mealEntrySchema).optional().default([]),
+  note: optionalTextSchema,
+});
+
+export const saveMealPlanSchema = z.object({
+  weekStartDate: localDateSchema,
+  slots: z.array(saveMealPlanSlotSchema).min(1).max(21),
+});
+
 export const moveMealSlotSchema = z.object({
   sourceWeekStartDate: localDateSchema,
   sourceDayIndex: z.number().int().min(0).max(6),

@@ -54,6 +54,24 @@ export interface UpsertMealSlotRequest {
   collisionMode: MealCollisionMode | null;
 }
 
+export type MealPlanningScope =
+  | { kind: "empty_dinners" }
+  | { kind: "all_empty_slots" }
+  | { kind: "selected_days"; dayIndexes: number[] };
+
+export interface SaveMealPlanSlotRequest {
+  dayIndex: number;
+  mealType: MealType;
+  primary: MealEntryRequest;
+  extras: MealEntryRequest[];
+  note: string | null;
+}
+
+export interface SaveMealPlanRequest {
+  weekStartDate: string;
+  slots: SaveMealPlanSlotRequest[];
+}
+
 export interface MoveMealSlotRequest {
   sourceWeekStartDate: string;
   sourceDayIndex: number;

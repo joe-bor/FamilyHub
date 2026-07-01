@@ -71,6 +71,7 @@ export {
   useRemoveMember,
   useRenameListCategory,
   useReorderListCategories,
+  useSaveMealPlan,
   useSetupComplete,
   useSyncGoogleCalendar,
   useUncompleteChoreForCurrentPeriod,

@@ -86,6 +86,7 @@ export {
   useMealsBoard,
   useMoveMealSlot,
   useRemoveMealSlot,
+  useSaveMealPlan,
   useUpsertMealSlot,
 } from "./use-meals";
 

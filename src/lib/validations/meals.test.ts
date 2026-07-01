@@ -5,6 +5,8 @@ import {
   mealEntrySchema,
   mealTypeSchema,
   moveMealSlotSchema,
+  saveMealPlanSchema,
+  saveMealPlanSlotSchema,
   toMealEntryRequest,
   upsertMealSlotSchema,
 } from "./meals";
@@ -143,6 +145,75 @@ describe("meal validation", () => {
       moveMealSlotSchema.safeParse({
         ...request,
         collisionMode: null,
+      }).success,
+    ).toBe(false);
+  });
+
+  it("requires focused meal plan saves to include at least one slot", () => {
+    expect(
+      saveMealPlanSchema.safeParse({
+        weekStartDate: "2026-06-07",
+        slots: [],
+      }).success,
+    ).toBe(false);
+  });
+
+  it("rejects focused meal plan saves with more than twenty-one slots", () => {
+    const slot = {
+      dayIndex: 0,
+      mealType: "dinner",
+      primary: {
+        sourceType: "quick",
+        recipeId: null,
+        title: "Pasta",
+        imageUrl: null,
+        note: null,
+      },
+      extras: [],
+      note: null,
+    };
+
+    expect(
+      saveMealPlanSchema.safeParse({
+        weekStartDate: "2026-06-07",
+        slots: Array.from({ length: 22 }, () => slot),
+      }).success,
+    ).toBe(false);
+  });
+
+  it("trims quick meal titles and defaults extras for focused meal plan slots", () => {
+    const slot = saveMealPlanSlotSchema.parse({
+      dayIndex: 2,
+      mealType: "dinner",
+      primary: {
+        sourceType: "quick",
+        recipeId: null,
+        title: "  Tacos  ",
+        imageUrl: null,
+        note: null,
+      },
+      note: "  ",
+    });
+
+    expect(slot.primary.title).toBe("Tacos");
+    expect(slot.extras).toEqual([]);
+    expect(slot.note).toBe(null);
+  });
+
+  it("requires recipe-backed focused meal plan slots to carry a UUID recipe id", () => {
+    expect(
+      saveMealPlanSlotSchema.safeParse({
+        dayIndex: 1,
+        mealType: "lunch",
+        primary: {
+          sourceType: "recipe",
+          recipeId: "recipe-1",
+          title: null,
+          imageUrl: null,
+          note: null,
+        },
+        extras: [],
+        note: null,
       }).success,
     ).toBe(false);
   });

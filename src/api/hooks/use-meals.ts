@@ -6,6 +6,7 @@ import type {
   MealSlotApiResponse,
   MoveMealSlotRequest,
   RemoveMealSlotRequest,
+  SaveMealPlanRequest,
   UpsertMealSlotRequest,
 } from "@/lib/types";
 
@@ -49,6 +50,28 @@ export function useUpsertMealSlot(callbacks?: {
     mutationFn: (request: UpsertMealSlotRequest) =>
       mealsService.upsertSlot(request),
     onSuccess: (response, request) => {
+      invalidateBoard(queryClient, request.weekStartDate);
+      callbacks?.onSuccess?.(response);
+    },
+    onError: (error) => {
+      callbacks?.onError?.(
+        error instanceof Error ? error : new Error(String(error)),
+      );
+    },
+  });
+}
+
+export function useSaveMealPlan(callbacks?: {
+  onSuccess?: (data: MealBoardApiResponse) => void;
+  onError?: (error: Error) => void;
+}) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (request: SaveMealPlanRequest) =>
+      mealsService.savePlan(request),
+    onSuccess: (response, request) => {
+      cacheBoard(queryClient, response);
       invalidateBoard(queryClient, request.weekStartDate);
       callbacks?.onSuccess?.(response);
     },
