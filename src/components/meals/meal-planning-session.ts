@@ -92,13 +92,15 @@ function draftPrimaryEntry(draft: MealPlanningDraft): MealSlotEntry {
   };
 }
 
+function latestDraftsByTarget(drafts: MealPlanningDraft[]) {
+  return new Map(drafts.map((draft) => [targetKey(draft.target), draft]));
+}
+
 export function applyPlanningDraftsToBoard(
   board: MealBoard,
   drafts: MealPlanningDraft[],
 ): MealBoard {
-  const draftsByTarget = new Map(
-    drafts.map((draft) => [targetKey(draft.target), draft]),
-  );
+  const draftsByTarget = latestDraftsByTarget(drafts);
 
   return {
     ...board,
@@ -109,7 +111,7 @@ export function applyPlanningDraftsToBoard(
         if (!draft) {
           return {
             ...slot,
-            extras: [...slot.extras],
+            extras: slot.extras.map((extra) => ({ ...extra })),
             primary: slot.primary ? { ...slot.primary } : null,
           };
         }
@@ -131,7 +133,7 @@ export function toSaveMealPlanRequest(
 ): SaveMealPlanRequest {
   return {
     weekStartDate,
-    slots: drafts.map((draft) => ({
+    slots: Array.from(latestDraftsByTarget(drafts).values()).map((draft) => ({
       dayIndex: draft.target.dayIndex,
       mealType: draft.target.mealType,
       primary: draft.primary,
