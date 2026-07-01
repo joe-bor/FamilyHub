@@ -1,5 +1,66 @@
 # Changelog
 
+## [0.3.20](https://github.com/joe-bor/FamilyHub/compare/family-hub-v0.3.19...family-hub-v0.3.20) (2026-07-01)
+
+
+### Features
+
+* **lists:** add accessible batched category reorder ([48b3758](https://github.com/joe-bor/FamilyHub/commit/48b3758cec036b6a880bffb1f5d8de7e044dcea9))
+* **lists:** add family category manager ([1bd798e](https://github.com/joe-bor/FamilyHub/commit/1bd798ec1179421d8921e717cedeccaa83df0c5e))
+* **lists:** consume managed category catalog contract ([656f7dd](https://github.com/joe-bor/FamilyHub/commit/656f7ddf74bf5afc088525fc060442e74619770c))
+* **lists:** create categories inline without losing item drafts ([09f953f](https://github.com/joe-bor/FamilyHub/commit/09f953f31fd4564821b8b8890060b00eb2660f12))
+* **lists:** enable categories for every list kind ([97207f3](https://github.com/joe-bor/FamilyHub/commit/97207f3f4a2522b9ff49dd06bc1b1b501f432d71))
+
+
+### Bug Fixes
+
+* **lists:** add ref guard to onOpenChange as fallback for cascade ([692ba81](https://github.com/joe-bor/FamilyHub/commit/692ba81ede6fe52c3c144aafabfee666d29dcc1d))
+* **lists:** associate manager form errors and generalize confirm dialog ([d9abbf5](https://github.com/joe-bor/FamilyHub/commit/d9abbf582af7612fb5bdaddda0b3823c6d58868b))
+* **lists:** clear manager handoff pending on options reopen ([1cf8bea](https://github.com/joe-bor/FamilyHub/commit/1cf8bea9c9034ad55682617d8f4345e779ada5c0))
+* **lists:** clear stale item-save error after successful inline create ([574bb95](https://github.com/joe-bor/FamilyHub/commit/574bb952b0202fa5496865e526df5130fbfbf6c6))
+* **lists:** hand off mobile category manager without stacking ([a4250d7](https://github.com/joe-bor/FamilyHub/commit/a4250d71ea88a953edf16bad92dda1791cb500c3))
+* **lists:** harden option saves and manager handoff ([1bdced0](https://github.com/joe-bor/FamilyHub/commit/1bdced06f9124bc5a1175df9514b2cc7b2304763))
+* **lists:** import useOnlineStatus from module path to preserve test mock isolation ([102e750](https://github.com/joe-bor/FamilyHub/commit/102e75002dc6bd8196628dda74fc5cab418edca9))
+* **lists:** prevent unchanged category rename submits ([378802c](https://github.com/joe-bor/FamilyHub/commit/378802cd1142f904962de6a42b7399d4f1cfd348))
+* **lists:** recover stale categories on item create ([0c7563e](https://github.com/joe-bor/FamilyHub/commit/0c7563e6b6f83efc33db466838a0760aad145419))
+* **lists:** rely on cache convergence for inline-created category (no duplicate option) ([42552f3](https://github.com/joe-bor/FamilyHub/commit/42552f3d6f6e046238a1568fee1bd0ff5de23ffa))
+* **lists:** replace timer-based nested-dialog guard with deterministic ref approach ([c6ae05f](https://github.com/joe-bor/FamilyHub/commit/c6ae05f16cfa4be1ef45a3dfd92623e681f47425))
+* **lists:** stabilize mobile category manager drawers ([de14ff9](https://github.com/joe-bor/FamilyHub/commit/de14ff9a5cf08764ccf9f3d13555f9862aa2606c))
+* **lists:** surface category manager failures ([5414d8d](https://github.com/joe-bor/FamilyHub/commit/5414d8d9ce86ba59d47ede88e9904d6a492ed7f7))
+* **ui:** align responsive dialog breakpoint ([e6e5424](https://github.com/joe-bor/FamilyHub/commit/e6e5424b5fea564a56074032e9691a16dc7bbf70))
+* **ui:** let passive toasts pass pointer events ([6f93b24](https://github.com/joe-bor/FamilyHub/commit/6f93b24c5ba067f1f9988471d364a36d24f031c6))
+* **ui:** prevent detached-target pointer-down-outside from closing drawer ([b63ee70](https://github.com/joe-bor/FamilyHub/commit/b63ee707fe67b67ed35666db84833c43978f3c29))
+* **ui:** stabilize nested mobile sheet closes ([7116394](https://github.com/joe-bor/FamilyHub/commit/7116394676e9eb7fe909f3bc857e7ca2cd210cc8))
+
+
+### Performance Improvements
+
+* **lists:** memoize list detail sections ([b02ebb7](https://github.com/joe-bor/FamilyHub/commit/b02ebb7e64fbe2ce491761b07faaeb4c92475adb))
+
+
+### Code Refactoring
+
+* **lists:** canonicalize reorder 409 detection via ApiException guard ([f7aa8b6](https://github.com/joe-bor/FamilyHub/commit/f7aa8b628caaed744fafffb6e8cadd74f991538a))
+
+
+### Documentation
+
+* **readme:** rewrite as product page with fresh screenshots ([f6b286b](https://github.com/joe-bor/FamilyHub/commit/f6b286bb79186184152e544e4f0436592ac6219a))
+
+
+### Tests
+
+* **e2e:** stabilize managed category flows ([0e1f96c](https://github.com/joe-bor/FamilyHub/commit/0e1f96cec31168423ccba2534acafb029a205305))
+* **lists:** align General grouped mock with released 409 contract and cover opt-in ([110533b](https://github.com/joe-bor/FamilyHub/commit/110533be51507d3f72728d5dfd67b84f7f7c6c80))
+* **lists:** align mock category catalog contracts ([8e0acda](https://github.com/joe-bor/FamilyHub/commit/8e0acdae13c7eeadd68dc69785a2bb1dc78c9c02))
+* **lists:** assert category create preserves list display mode ([6df15eb](https://github.com/joe-bor/FamilyHub/commit/6df15ebc632827f44772057a884ffca7e4181b70))
+* **lists:** assert mobile manager opens post-animation and desktop focus return ([5d2b6b2](https://github.com/joe-bor/FamilyHub/commit/5d2b6b29b69d78c3e82d5584fee4698a7e9ffea3))
+* **lists:** cover category cache decrement and offline guards ([2161c2b](https://github.com/joe-bor/FamilyHub/commit/2161c2b87d1e1116abfe9e70974a120c57e0e0ad))
+* **lists:** cover manager offline entry, authoritative delete count, and visible flatten ([8e46234](https://github.com/joe-bor/FamilyHub/commit/8e4623445d234757756e2e3371d76eafdf95207c))
+* **lists:** enforce category reorder validation ([eae33d4](https://github.com/joe-bor/FamilyHub/commit/eae33d43361447ad416f0e748c81e1ec0dc8322a))
+* **lists:** harden reorder-order assertion and CI fail-closed guard ([660e324](https://github.com/joe-bor/FamilyHub/commit/660e324d671fb5606d0f03818901451db0b839bc))
+* **lists:** verify managed categories against released backend ([68b481e](https://github.com/joe-bor/FamilyHub/commit/68b481e1a7fbe9d6915bb9398f71eb1139b72280))
+
 ## [0.3.19](https://github.com/joe-bor/FamilyHub/compare/family-hub-v0.3.18...family-hub-v0.3.19) (2026-06-25)
 
 
