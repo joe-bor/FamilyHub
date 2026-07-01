@@ -130,6 +130,16 @@ describe("applyPlanningDraftsToBoard", () => {
       note: "Prep the sauce ahead",
     });
   });
+
+  it("does not share extras entry objects with the source board", () => {
+    const board = createOccupiedMealsBoard();
+    const projected = applyPlanningDraftsToBoard(board, []);
+    const sourceExtra = board.days[1].slots[2].extras[0];
+    const projectedExtra = projected.days[1].slots[2].extras[0];
+
+    expect(projectedExtra).toEqual(sourceExtra);
+    expect(projectedExtra).not.toBe(sourceExtra);
+  });
 });
 
 describe("toSaveMealPlanRequest", () => {
@@ -168,6 +178,37 @@ describe("toSaveMealPlanRequest", () => {
         },
       ],
     });
+  });
+
+  it("uses the latest draft when duplicate targets are converted to save requests", () => {
+    const firstDraft = createDraft({
+      target: { dayIndex: 5, mealType: "dinner" },
+      primary: quickMeal("First idea"),
+      displayTitle: "First idea",
+      displayImageUrl: null,
+      displayNote: null,
+      note: "Early note",
+    });
+    const latestDraft = createDraft({
+      target: { dayIndex: 5, mealType: "dinner" },
+      primary: quickMeal("Latest idea"),
+      displayTitle: "Latest idea",
+      displayImageUrl: null,
+      displayNote: null,
+      note: "Latest note",
+    });
+
+    expect(
+      toSaveMealPlanRequest(testWeekStartDate, [firstDraft, latestDraft]).slots,
+    ).toEqual([
+      {
+        dayIndex: 5,
+        mealType: "dinner",
+        primary: quickMeal("Latest idea"),
+        extras: [],
+        note: "Latest note",
+      },
+    ]);
   });
 });
 
