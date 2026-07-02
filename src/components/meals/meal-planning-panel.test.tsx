@@ -299,16 +299,20 @@ describe("MealPlanningPanel", () => {
     ).toBeDisabled();
   });
 
-  it("renders review, save, and conflict actions", async () => {
+  it("renders review, save, and conflict actions when remaining drafts can be saved", async () => {
     const draft = draftFor({ dayIndex: 0, mealType: "dinner" });
+    const remainingDraft = draftFor(
+      { dayIndex: 1, mealType: "dinner" },
+      "Soup",
+    );
     const { props, user } = renderPanel({
-      drafts: [draft],
+      drafts: [draft, remainingDraft],
       currentIndex: queue.length,
       conflictedTargets: [draft.target],
       saveError: new Error("Some meal slots are no longer empty."),
     });
 
-    expect(screen.getByText("1 meals ready to add")).toBeInTheDocument();
+    expect(screen.getByText("2 meals ready to add")).toBeInTheDocument();
     expect(screen.getByRole("alert")).toHaveTextContent(
       "Some meal slots are no longer empty.",
     );
@@ -334,5 +338,26 @@ describe("MealPlanningPanel", () => {
 
     const summary = screen.getByRole("list", { name: "Draft meals" });
     expect(within(summary).getByText("Tacos")).toBeInTheDocument();
+    expect(within(summary).getByText("Soup")).toBeInTheDocument();
+  });
+
+  it("disables skip-conflicted when every draft is conflicted", () => {
+    const draft = draftFor({ dayIndex: 0, mealType: "dinner" });
+    const { props } = renderPanel({
+      drafts: [draft],
+      currentIndex: queue.length,
+      conflictedTargets: [draft.target],
+      saveError: new Error("Some meal slots are no longer empty."),
+    });
+
+    expect(
+      screen.getByText("No remaining drafts to save."),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", {
+        name: "Skip conflicted and save remaining",
+      }),
+    ).toBeDisabled();
+    expect(props.onSaveNonConflicted).not.toHaveBeenCalled();
   });
 });

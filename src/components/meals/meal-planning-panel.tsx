@@ -412,6 +412,11 @@ export function MealPlanningPanel({
   function renderConflictSummary() {
     if (conflictedTargets.length === 0) return null;
 
+    const hasNonConflictedDrafts = drafts.some(
+      (draft) =>
+        !conflictedTargets.some((target) => sameTarget(target, draft.target)),
+    );
+
     return (
       <section className="space-y-3 rounded-lg border border-destructive/30 bg-destructive/5 p-3">
         <div>
@@ -423,11 +428,16 @@ export function MealPlanningPanel({
             {conflictedTargets.length === 1 ? "" : "s"} can no longer be saved
             because the slot is no longer empty.
           </p>
+          {!hasNonConflictedDrafts ? (
+            <p className="mt-1 text-sm font-medium text-foreground">
+              No remaining drafts to save.
+            </p>
+          ) : null}
         </div>
         <div className="grid gap-2">
           <Button
             type="button"
-            disabled={isSaving}
+            disabled={isSaving || !hasNonConflictedDrafts}
             onClick={onSaveNonConflicted}
           >
             Skip conflicted and save remaining

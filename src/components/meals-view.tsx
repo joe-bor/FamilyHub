@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useMealsBoard, useRecipes, useSaveMealPlan } from "@/api";
 import { ApiException } from "@/api/client";
 import {
@@ -149,6 +149,9 @@ export function MealsView() {
   const [planningSaveError, setPlanningSaveError] = useState<Error | null>(
     null,
   );
+  const [isResolvingPlanningConflicts, setIsResolvingPlanningConflicts] =
+    useState(false);
+  const submittedPlanningDraftsRef = useRef<MealPlanningDraft[]>([]);
   const board = useMealsBoard(visibleWeekStartDate);
   const recipes = useRecipes();
   const pendingPlacementDraft = useAppStore(
@@ -223,21 +226,29 @@ export function MealsView() {
     setCurrentPlanningIndex(0);
     setConflictedTargets([]);
     setPlanningSaveError(null);
+    setIsResolvingPlanningConflicts(false);
+    submittedPlanningDraftsRef.current = [];
   }
 
   async function handlePlanningSaveError(error: Error) {
     setCurrentPlanningIndex(planningQueue.length);
 
     if (ApiException.isApiException(error) && error.status === 409) {
-      const refreshedBoard = (await board.refetch()).data?.data ?? null;
-      const conflicts = refreshedBoard
-        ? getConflictedDraftTargets(refreshedBoard, planningDrafts)
-        : [];
+      setIsResolvingPlanningConflicts(true);
+      try {
+        const submittedDrafts = submittedPlanningDraftsRef.current;
+        const refreshedBoard = (await board.refetch()).data?.data ?? null;
+        const conflicts = refreshedBoard
+          ? getConflictedDraftTargets(refreshedBoard, submittedDrafts)
+          : [];
 
-      if (conflicts.length > 0) {
-        setConflictedTargets(conflicts);
-        setPlanningSaveError(error);
-        return;
+        if (conflicts.length > 0) {
+          setConflictedTargets(conflicts);
+          setPlanningSaveError(error);
+          return;
+        }
+      } finally {
+        setIsResolvingPlanningConflicts(false);
       }
     }
 
@@ -377,8 +388,10 @@ export function MealsView() {
 
     setPlanningSaveError(null);
     setConflictedTargets([]);
+    const submittedDrafts = [...planningDrafts];
+    submittedPlanningDraftsRef.current = submittedDrafts;
     saveMealPlan.mutate(
-      toSaveMealPlanRequest(visibleWeekStartDate, planningDrafts),
+      toSaveMealPlanRequest(visibleWeekStartDate, submittedDrafts),
     );
   }
 
@@ -386,15 +399,16 @@ export function MealsView() {
     const remainingDrafts = planningDrafts.filter(
       (draft) => !hasTarget(conflictedTargets, draft.target),
     );
-    setPlanningDrafts(remainingDrafts);
-    setConflictedTargets([]);
-    setPlanningSaveError(null);
 
     if (remainingDrafts.length === 0) {
       setCurrentPlanningIndex(planningQueue.length);
       return;
     }
 
+    setPlanningDrafts(remainingDrafts);
+    setConflictedTargets([]);
+    setPlanningSaveError(null);
+    submittedPlanningDraftsRef.current = remainingDrafts;
     saveMealPlan.mutate(
       toSaveMealPlanRequest(visibleWeekStartDate, remainingDrafts),
     );
@@ -583,7 +597,7 @@ export function MealsView() {
           drafts={planningDrafts}
           currentIndex={currentPlanningIndex}
           recipes={recipes.data?.data ?? []}
-          isSaving={saveMealPlan.isPending}
+          isSaving={saveMealPlan.isPending || isResolvingPlanningConflicts}
           saveError={planningSaveError}
           conflictedTargets={conflictedTargets}
           onAddDraft={addPlanningDraft}
