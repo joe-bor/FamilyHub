@@ -16,7 +16,7 @@ import {
 
 const board = createEmptyMealsBoard();
 const queue = buildPlanningQueue(board, { kind: "empty_dinners" });
-const recipes: Array<RecipeSummary & { note: string | null }> = [
+const recipes: RecipeSummary[] = [
   {
     id: testRecipeDetail.id,
     title: testRecipeDetail.title,
@@ -24,7 +24,6 @@ const recipes: Array<RecipeSummary & { note: string | null }> = [
     favorite: true,
     tags: testRecipeDetail.tags,
     updatedAt: testRecipeDetail.updatedAt,
-    note: testRecipeDetail.note,
   },
   {
     id: importedRecipeDetail.id,
@@ -33,7 +32,6 @@ const recipes: Array<RecipeSummary & { note: string | null }> = [
     favorite: false,
     tags: importedRecipeDetail.tags,
     updatedAt: importedRecipeDetail.updatedAt,
-    note: importedRecipeDetail.note,
   },
 ];
 
@@ -130,7 +128,7 @@ describe("MealPlanningPanel", () => {
       target: { dayIndex: 0, mealType: "dinner" },
       displayTitle: testRecipeDetail.title,
       displayImageUrl: testRecipeDetail.imageUrl,
-      displayNote: testRecipeDetail.note,
+      displayNote: null,
       primary: {
         sourceType: "recipe",
         recipeId: testRecipeDetail.id,
@@ -208,6 +206,97 @@ describe("MealPlanningPanel", () => {
 
     await user.click(screen.getByRole("button", { name: "Keep editing" }));
     expect(props.onKeepEditing).toHaveBeenCalledTimes(1);
+  });
+
+  it("mirrors current target and draft controls inside the planning surface", async () => {
+    const draft = draftFor({ dayIndex: 0, mealType: "dinner" });
+    const { props, user } = renderPanel({
+      drafts: [draft],
+      currentIndex: 1,
+    });
+
+    const surface = screen.getByRole("region", {
+      name: "Planning board status",
+    });
+    const draftButton = within(surface).getByRole("button", {
+      name: "Draft dinner: Tacos",
+    });
+    expect(draftButton).toBeInTheDocument();
+    await user.click(draftButton);
+    expect(props.onChangeDraft).toHaveBeenCalledWith(draft.target);
+
+    const currentTarget = within(surface).getByRole("button", {
+      name: "Current dinner target: Monday dinner",
+    });
+    expect(currentTarget).toHaveAttribute("aria-current", "true");
+  });
+
+  it("disables editing controls and sheet cancellation while a save is pending", async () => {
+    const draft = draftFor(
+      { dayIndex: 1, mealType: "dinner" },
+      testRecipeDetail.title,
+    );
+    const { props, user } = renderPanel({
+      drafts: [draft],
+      currentIndex: 1,
+      isSaving: true,
+    });
+
+    expect(screen.getByRole("button", { name: "Update draft" })).toBeDisabled();
+    expect(
+      screen.getByRole("button", { name: "Skip this slot" }),
+    ).toBeDisabled();
+    expect(
+      screen.getByRole("button", {
+        name: `Remove draft: ${testRecipeDetail.title}`,
+      }),
+    ).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Review plan" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Back" })).toBeDisabled();
+    expect(
+      screen.getByRole("button", { name: "Cancel planning" }),
+    ).toBeDisabled();
+    expect(
+      screen.getByRole("button", {
+        name: `Select recipe: ${testRecipeDetail.title}`,
+      }),
+    ).toBeDisabled();
+    expect(
+      screen.getByRole("button", { name: "Show all recipes" }),
+    ).toBeDisabled();
+
+    await user.click(screen.getByRole("button", { name: "Cancel" }));
+    expect(props.onCancel).not.toHaveBeenCalled();
+  });
+
+  it("disables review and conflict controls while a save is pending", () => {
+    const draft = draftFor({ dayIndex: 0, mealType: "dinner" });
+    renderPanel({
+      drafts: [draft],
+      currentIndex: queue.length,
+      isSaving: true,
+      conflictedTargets: [draft.target],
+    });
+
+    expect(screen.getByRole("button", { name: "Saving..." })).toBeDisabled();
+    expect(
+      screen.getByRole("button", {
+        name: "Skip conflicted and save remaining",
+      }),
+    ).toBeDisabled();
+    for (const button of screen.getAllByRole("button", {
+      name: "Keep editing",
+    })) {
+      expect(button).toBeDisabled();
+    }
+    expect(screen.getByRole("button", { name: "Cancel save" })).toBeDisabled();
+    expect(
+      screen.getByRole("button", { name: "Cancel planning" }),
+    ).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Change draft" })).toBeDisabled();
+    expect(
+      screen.getByRole("button", { name: "Remove draft: Tacos" }),
+    ).toBeDisabled();
   });
 
   it("renders review, save, and conflict actions", async () => {
