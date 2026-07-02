@@ -48,6 +48,8 @@ jobs:
         if: always()
         run: docker compose -f docker-compose.e2e.yml down
       - run: npm run build
+      - name: Check bundle size budget
+        run: npm run check:bundle
       - name: Collect Lighthouse reports
         run: npx lhci collect
       - name: Assert Lighthouse thresholds
