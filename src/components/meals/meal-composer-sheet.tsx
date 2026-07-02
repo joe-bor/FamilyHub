@@ -13,7 +13,9 @@ import { MobileSheet } from "@/components/ui/mobile-sheet";
 import { useBackHandler } from "@/hooks";
 import type {
   MealCollisionMode,
+  MealEntryRequest,
   MealSlot,
+  MealSlotEntry,
   RecipeSummary,
   UpsertMealSlotRequest,
 } from "@/lib/types";
@@ -50,6 +52,26 @@ function recipeMatchesQuery(recipe: RecipeSummary, query: string) {
     normalizedTitle.includes(query) ||
     normalizedTags.some((tag) => tag.includes(query))
   );
+}
+
+function existingEntryToRequest(entry: MealSlotEntry): MealEntryRequest {
+  if (entry.sourceType === "recipe" && entry.recipeId) {
+    return {
+      sourceType: "recipe",
+      recipeId: entry.recipeId,
+      title: null,
+      imageUrl: null,
+      note: null,
+    };
+  }
+
+  return {
+    sourceType: "quick",
+    recipeId: null,
+    title: entry.title,
+    imageUrl: entry.imageUrl,
+    note: entry.note,
+  };
 }
 
 function sortedByFavoriteThenRecent(recipes: RecipeSummary[]) {
@@ -134,6 +156,9 @@ export function MealComposerSheet({
     : `Plan ${formatMealType(activeSlot.mealType)}`;
   const trimmedMealName = mealName.trim();
   const seededRecipeId = activeSlot.seededRecipeId ?? null;
+  const existingExtrasForNewPrimary = activeSlot.primary
+    ? []
+    : activeSlot.extras.map(existingEntryToRequest);
 
   function submitRequest(request: UpsertMealSlotRequest) {
     if (isExtraIntent) {
@@ -184,7 +209,7 @@ export function MealComposerSheet({
       // The user's meal-planning note belongs to the slot; the recipe entry
       // snapshot is sourced from the saved recipe (entry note forced to null).
       primary: { sourceType: "recipe", recipeId },
-      extras: [],
+      extras: existingExtrasForNewPrimary,
       note,
       collisionMode: null,
     });
@@ -214,7 +239,7 @@ export function MealComposerSheet({
       mealType: activeSlot.mealType,
       // Quick-meal note belongs to the entry, not the slot (unchanged behavior).
       primary: { sourceType: "quick", title: mealName, imageUrl, note },
-      extras: [],
+      extras: existingExtrasForNewPrimary,
       note: null,
       collisionMode: null,
     });

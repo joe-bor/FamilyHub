@@ -426,7 +426,7 @@ export function MealsView() {
       }
     }
 
-    if (slot.primary && !pendingRecipeId) {
+    if ((slot.primary || slot.extras.length > 0) && !pendingRecipeId) {
       setEditingSlotId({
         weekStartDate: slot.weekStartDate,
         dayIndex: slot.dayIndex,

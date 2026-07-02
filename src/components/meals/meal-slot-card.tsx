@@ -31,8 +31,11 @@ export function MealSlotCard({
         note: draft.displayNote,
       }
     : slot.primary;
+  const hasExtras = !draft && slot.extras.length > 0;
+  const hasExtrasOnly = !primary && hasExtras;
+  const firstExtraTitle = slot.extras[0]?.title;
 
-  if (primary) {
+  if (primary || hasExtrasOnly) {
     return (
       <button
         type="button"
@@ -47,12 +50,16 @@ export function MealSlotCard({
         aria-label={
           draft
             ? `Draft ${slot.mealType}: ${draft.displayTitle}`
-            : `Open ${slot.mealType}: ${primary.title}`
+            : primary
+              ? `Open ${slot.mealType}: ${primary.title}`
+              : firstExtraTitle
+                ? `Open ${slot.mealType}: extras - ${firstExtraTitle}`
+                : `Open ${slot.mealType}: extras`
         }
         onClick={() => onSelectSlot(slot)}
       >
         <div className="flex items-start gap-3">
-          {primary.imageUrl && !imgFailed ? (
+          {primary?.imageUrl && !imgFailed ? (
             <img
               src={primary.imageUrl}
               alt=""
@@ -74,9 +81,9 @@ export function MealSlotCard({
               </span>
             ) : null}
             <p className="truncate text-sm font-semibold text-foreground">
-              {primary.title}
+              {primary?.title ?? "Extras"}
             </p>
-            {primary.note ? (
+            {primary?.note ? (
               <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">
                 {primary.note}
               </p>
@@ -88,7 +95,7 @@ export function MealSlotCard({
             ) : null}
           </div>
         </div>
-        {!draft && slot.extras.length > 0 ? (
+        {hasExtras ? (
           <div className="mt-3 flex flex-wrap gap-1">
             {slot.extras.slice(0, 2).map((extra) => (
               <span
