@@ -1,5 +1,9 @@
 import { expect, type Locator, type Page, test } from "@playwright/test";
-import { registerFamily, seedBrowserAuth } from "./helpers/api-helpers";
+import {
+  createRecipe,
+  registerFamily,
+  seedBrowserAuth,
+} from "./helpers/api-helpers";
 import {
   clearStorage,
   safeClick,
@@ -20,6 +24,37 @@ async function openMealsBoard(page: Page) {
   await expect(moreSheet).toBeHidden();
   await expect(
     page.getByRole("heading", { name: "Meals", level: 1, exact: true }),
+  ).toBeVisible();
+}
+
+async function startDefaultMealPlanning(page: Page) {
+  await safeClick(page.getByRole("button", { name: "Fill empty slots" }));
+
+  const scopeDialog = page.getByRole("dialog", { name: "Fill empty slots" });
+  await waitForSheetSettled(scopeDialog);
+  await expect(scopeDialog.getByLabel("Empty dinners")).toBeChecked();
+  await safeClick(scopeDialog.getByRole("button", { name: "Start planning" }));
+
+  const planningSheet = page.getByRole("dialog", { name: "Meal planning" });
+  await waitForSheetSettled(planningSheet);
+  return planningSheet;
+}
+
+async function addQuickMealDraft(planningSheet: Locator, title: string) {
+  await planningSheet.getByLabel("Meal name").fill(title);
+  await safeClick(
+    planningSheet.getByRole("button", { name: "Add quick meal draft" }),
+  );
+  await expect(
+    planningSheet.getByRole("button", { name: `Draft dinner: ${title}` }),
+  ).toBeVisible();
+}
+
+async function expectDinnerCard(page: Page, title: string) {
+  await expect(
+    page.getByRole("button", {
+      name: new RegExp(`open dinner: ${title}`, "i"),
+    }),
   ).toBeVisible();
 }
 
@@ -45,6 +80,119 @@ test.describe("Mobile Meals", () => {
 
     await page.goto("/");
     await clearStorage(page);
+  });
+
+  test("fills empty dinners in one focused planning session", async ({
+    page,
+    request,
+  }) => {
+    test.setTimeout(60000);
+
+    const registration = await registerFamily(request, {
+      familyName: "Focused Dinner Planners",
+      members: [{ name: "Sam", color: "teal" }],
+    });
+
+    await seedBrowserAuth(page, registration);
+    await page.reload();
+    await waitForHydration(page);
+
+    await openMealsBoard(page);
+
+    const planningSheet = await startDefaultMealPlanning(page);
+    for (const title of ["Tacos", "Leftovers", "Pasta"]) {
+      await addQuickMealDraft(planningSheet, title);
+    }
+
+    await safeClick(planningSheet.getByRole("button", { name: "Review plan" }));
+    await expect(planningSheet.getByText("3 meals ready to add")).toBeVisible();
+    await safeClick(
+      planningSheet.getByRole("button", { name: "Save to week" }),
+    );
+
+    await expect(planningSheet).toBeHidden();
+    for (const title of ["Tacos", "Leftovers", "Pasta"]) {
+      await expectDinnerCard(page, title);
+    }
+
+    await page.reload();
+    await waitForHydration(page);
+    await openMealsBoard(page);
+
+    for (const title of ["Tacos", "Leftovers", "Pasta"]) {
+      await expectDinnerCard(page, title);
+    }
+  });
+
+  test("saves a recipe-backed dinner to a future week from focused planning", async ({
+    page,
+    request,
+  }) => {
+    test.setTimeout(60000);
+
+    const registration = await registerFamily(request, {
+      familyName: "Future Recipe Planners",
+      members: [{ name: "Sam", color: "teal" }],
+    });
+
+    await createRecipe(request, registration.token, {
+      title: "Sheet Pan Chicken",
+      ingredients: ["1 lb chicken thighs", "2 cups chopped vegetables"],
+      instructions: ["Roast everything on a sheet pan until cooked through."],
+      tags: ["Dinner"],
+      favorite: true,
+    });
+
+    await seedBrowserAuth(page, registration);
+    await page.reload();
+    await waitForHydration(page);
+
+    await openMealsBoard(page);
+    await safeClick(page.getByRole("button", { name: "Next week" }));
+
+    const planningSheet = await startDefaultMealPlanning(page);
+    await safeClick(
+      planningSheet.getByRole("button", {
+        name: "Select recipe: Sheet Pan Chicken",
+      }),
+    );
+    await expect(
+      planningSheet.getByRole("button", {
+        name: "Draft dinner: Sheet Pan Chicken",
+      }),
+    ).toBeVisible();
+
+    await safeClick(planningSheet.getByRole("button", { name: "Review plan" }));
+    await safeClick(
+      planningSheet.getByRole("button", { name: "Save to week" }),
+    );
+
+    await expect(planningSheet).toBeHidden();
+    await expectDinnerCard(page, "Sheet Pan Chicken");
+  });
+
+  test("shows past meal weeks as review only on mobile", async ({
+    page,
+    request,
+  }) => {
+    test.setTimeout(60000);
+
+    const registration = await registerFamily(request, {
+      familyName: "Past Meal Reviewers",
+      members: [{ name: "Sam", color: "teal" }],
+    });
+
+    await seedBrowserAuth(page, registration);
+    await page.reload();
+    await waitForHydration(page);
+
+    await openMealsBoard(page);
+    await safeClick(page.getByRole("button", { name: "Previous week" }));
+
+    await expect(page.getByText("Review only")).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: "Fill empty slots" }),
+    ).toBeHidden();
   });
 
   test("plans quick meals and recipe-backed meals from the weekly board", async ({
