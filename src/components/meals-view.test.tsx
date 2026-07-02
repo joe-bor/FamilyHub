@@ -705,6 +705,124 @@ describe("MealsView", () => {
     expect(singleSlotSaveCalls).toBe(0);
   });
 
+  it("keeps save controls disabled while backend conflict resolution is pending", async () => {
+    seedMockMealsBoard(createEmptyMealsBoard());
+    const saveRequests: SaveMealPlanRequest[] = [];
+    let boardRefetchStarted = false;
+    let releaseBoardRefetch: () => void = () => {};
+    const boardRefetchGate = new Promise<void>((resolve) => {
+      releaseBoardRefetch = resolve;
+    });
+    server.use(
+      http.post(`${API_BASE}/meals/plans`, async ({ request }) => {
+        saveRequests.push((await request.json()) as SaveMealPlanRequest);
+        return HttpResponse.json(
+          { message: "Some meal slots are no longer empty." },
+          { status: 409 },
+        );
+      }),
+    );
+    const { user } = renderWithUser(<MealsView />);
+
+    await user.click(
+      await screen.findByRole("button", { name: "Fill empty slots" }),
+    );
+    await user.click(screen.getByRole("button", { name: "Start planning" }));
+    await user.type(screen.getByLabelText("Meal name"), "Chili");
+    await user.click(
+      screen.getByRole("button", { name: "Add quick meal draft" }),
+    );
+
+    seedMockMealsBoard(
+      withOccupiedDinnerSlot(createEmptyMealsBoard(), 0, "Already planned"),
+    );
+    server.use(
+      http.get(`${API_BASE}/meals/board`, async ({ request }) => {
+        boardRefetchStarted = true;
+        await boardRefetchGate;
+        const weekStartDate = new URL(request.url).searchParams.get(
+          "weekStartDate",
+        );
+        return HttpResponse.json({
+          data: getMockMealsBoard(weekStartDate ?? testWeekStartDate),
+        });
+      }),
+    );
+
+    await user.click(screen.getByRole("button", { name: "Review plan" }));
+    await user.click(screen.getByRole("button", { name: "Save to week" }));
+
+    await waitFor(() => {
+      expect(boardRefetchStarted).toBe(true);
+    });
+    const saveButton = screen.getByRole("button", {
+      name: /^(Save to week|Saving...)$/,
+    });
+    expect(saveButton).toBeDisabled();
+
+    await user.click(saveButton);
+    releaseBoardRefetch();
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Some meal slots are no longer empty.",
+    );
+    expect(saveRequests).toHaveLength(1);
+  });
+
+  it("keeps all conflicted drafts when no remaining drafts can be saved", async () => {
+    seedMockMealsBoard(createEmptyMealsBoard());
+    const saveRequests: SaveMealPlanRequest[] = [];
+    server.use(
+      http.post(`${API_BASE}/meals/plans`, async ({ request }) => {
+        saveRequests.push((await request.json()) as SaveMealPlanRequest);
+        return HttpResponse.json(
+          { message: "Some meal slots are no longer empty." },
+          { status: 409 },
+        );
+      }),
+    );
+    const { user } = renderWithUser(<MealsView />);
+
+    await user.click(
+      await screen.findByRole("button", { name: "Fill empty slots" }),
+    );
+    await user.click(screen.getByRole("button", { name: "Start planning" }));
+    await user.type(screen.getByLabelText("Meal name"), "Chili");
+    await user.click(
+      screen.getByRole("button", { name: "Add quick meal draft" }),
+    );
+
+    seedMockMealsBoard(
+      withOccupiedDinnerSlot(createEmptyMealsBoard(), 0, "Already planned"),
+    );
+    await user.click(screen.getByRole("button", { name: "Review plan" }));
+    await user.click(screen.getByRole("button", { name: "Save to week" }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Some meal slots are no longer empty.",
+    );
+    const skipConflicted = screen.getByRole("button", {
+      name: "Skip conflicted and save remaining",
+    });
+    expect(skipConflicted).toBeDisabled();
+    expect(
+      screen.getByText("No remaining drafts to save."),
+    ).toBeInTheDocument();
+
+    await user.click(skipConflicted);
+    expect(saveRequests).toHaveLength(1);
+
+    await user.click(
+      screen.getAllByRole("button", { name: "Keep editing" })[0],
+    );
+
+    expect(screen.getByText("Sunday dinner - 1 of 7")).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Draft dinner: Chili" }),
+    ).toHaveAttribute("aria-current", "true");
+    expect(saveRequests).toHaveLength(1);
+  });
+
   it("cancel save after a backend conflict returns to review and keeps drafts", async () => {
     seedMockMealsBoard(createEmptyMealsBoard());
     const saveRequests: SaveMealPlanRequest[] = [];
