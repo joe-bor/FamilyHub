@@ -18,6 +18,7 @@
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "analyze": "ANALYZE=true npm run build && echo 'Bundle analysis available at .analyze/stats.html'",
+    "check:bundle": "node scripts/check-bundle-size.js",
     "lighthouse": "npm run build && lhci autorun"
   },
   "lint-staged": {
