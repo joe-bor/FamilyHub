@@ -50,10 +50,38 @@ async function addQuickMealDraft(planningSheet: Locator, title: string) {
   ).toBeVisible();
 }
 
+const WEEK_RANGE_PATTERN = /^[A-Z][a-z]{2} \d{1,2} - [A-Z][a-z]{2} \d{1,2}$/;
+
+async function getVisibleWeekRange(page: Page) {
+  const range = page.getByText(WEEK_RANGE_PATTERN).first();
+  await expect(range).toBeVisible();
+
+  const text = (await range.textContent())?.trim();
+  expect(text).toBeTruthy();
+  return text!;
+}
+
+async function expectWeekRangeChanged(page: Page, previousRange: string) {
+  const range = page.getByText(WEEK_RANGE_PATTERN).first();
+  await expect(range).toBeVisible();
+  await expect(range).not.toHaveText(previousRange);
+
+  const text = (await range.textContent())?.trim();
+  expect(text).toBeTruthy();
+  return text!;
+}
+
+async function expectWeekRange(page: Page, weekRange: string) {
+  await expect(
+    page.getByText(weekRange, { exact: true }).first(),
+  ).toBeVisible();
+}
+
 async function expectDinnerCard(page: Page, title: string) {
   await expect(
     page.getByRole("button", {
-      name: new RegExp(`open dinner: ${title}`, "i"),
+      exact: true,
+      name: `Open dinner: ${title}`,
     }),
   ).toBeVisible();
 }
@@ -148,7 +176,12 @@ test.describe("Mobile Meals", () => {
     await waitForHydration(page);
 
     await openMealsBoard(page);
+    const initialWeekRange = await getVisibleWeekRange(page);
     await safeClick(page.getByRole("button", { name: "Next week" }));
+    const futureWeekRange = await expectWeekRangeChanged(
+      page,
+      initialWeekRange,
+    );
 
     const planningSheet = await startDefaultMealPlanning(page);
     await safeClick(
@@ -168,6 +201,7 @@ test.describe("Mobile Meals", () => {
     );
 
     await expect(planningSheet).toBeHidden();
+    await expectWeekRange(page, futureWeekRange);
     await expectDinnerCard(page, "Sheet Pan Chicken");
   });
 
