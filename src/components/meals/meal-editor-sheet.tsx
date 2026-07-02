@@ -99,13 +99,20 @@ export function MealEditorSheet({
   const [mover, setMover] = useState<{ kind: "move" | "duplicate" } | null>(
     null,
   );
-  const [showRecipe, setShowRecipe] = useState(false);
+  const [recipeDetailSlotKey, setRecipeDetailSlotKey] = useState<string | null>(
+    null,
+  );
+  const selectedSlotKey = slotId
+    ? `${slotId.weekStartDate}:${slotId.dayIndex}:${slotId.mealType}`
+    : null;
   // The slot is always read from the live board so saves and collisions stay
   // accurate; local state only ever holds in-progress drafts.
   const liveSlot = board && slotId ? findSlot(board, slotId) : undefined;
   const selectedSlotMissing =
     isOpen && Boolean(board && slotId && !hasSlotContent(liveSlot));
   const recipeId = liveSlot?.primary?.recipeId ?? null;
+  const showRecipe =
+    recipeDetailSlotKey === selectedSlotKey && recipeId !== null;
   const recipe = useRecipe(showRecipe ? recipeId : null);
   const moveSlot = useMoveMealSlot({
     onSuccess: () => onOpenChange(false),
@@ -125,6 +132,16 @@ export function MealEditorSheet({
     setNoteDraft(liveSlot?.note ?? "");
     setIsEditingNote(false);
   }, [slotId?.weekStartDate, slotId?.dayIndex, slotId?.mealType]);
+  useEffect(() => {
+    setRecipeDetailSlotKey((current) =>
+      current === selectedSlotKey ? current : null,
+    );
+  }, [selectedSlotKey]);
+  useEffect(() => {
+    if (!isOpen) {
+      setRecipeDetailSlotKey(null);
+    }
+  }, [isOpen]);
   useEffect(() => {
     if (selectedSlotMissing) {
       onOpenChange(false);
@@ -208,7 +225,7 @@ export function MealEditorSheet({
     const destinationSlot = activeBoard.days[target.dayIndex]?.slots.find(
       (candidate) => candidate.mealType === target.mealType,
     );
-    if (destinationSlot?.primary) {
+    if (hasSlotContent(destinationSlot)) {
       setPendingCollision({ kind, request });
       return;
     }
@@ -243,7 +260,7 @@ export function MealEditorSheet({
           recipe.data?.data ? (
             <RecipeDetailView
               recipe={recipe.data.data}
-              onBack={() => setShowRecipe(false)}
+              onBack={() => setRecipeDetailSlotKey(null)}
             />
           ) : recipe.isLoading ? (
             <p className="text-sm text-muted-foreground">Loading recipe...</p>
@@ -394,7 +411,7 @@ export function MealEditorSheet({
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => setShowRecipe(true)}
+                  onClick={() => setRecipeDetailSlotKey(selectedSlotKey)}
                 >
                   View recipe
                 </Button>
