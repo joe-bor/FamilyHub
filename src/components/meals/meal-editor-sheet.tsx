@@ -80,6 +80,10 @@ function findSlot(board: MealBoard, slotId: MealSlotId): MealSlot | undefined {
   );
 }
 
+function hasSlotContent(slot: MealSlot | undefined): slot is MealSlot {
+  return Boolean(slot?.primary) || (slot?.extras.length ?? 0) > 0;
+}
+
 export function MealEditorSheet({
   isOpen,
   slotId,
@@ -100,7 +104,7 @@ export function MealEditorSheet({
   // accurate; local state only ever holds in-progress drafts.
   const liveSlot = board && slotId ? findSlot(board, slotId) : undefined;
   const selectedSlotMissing =
-    isOpen && Boolean(board && slotId && !liveSlot?.primary);
+    isOpen && Boolean(board && slotId && !hasSlotContent(liveSlot));
   const recipeId = liveSlot?.primary?.recipeId ?? null;
   const recipe = useRecipe(showRecipe ? recipeId : null);
   const moveSlot = useMoveMealSlot({
@@ -133,11 +137,12 @@ export function MealEditorSheet({
     },
   });
 
-  if (!board || !slotId || !liveSlot?.primary) return null;
+  if (!board || !slotId || !hasSlotContent(liveSlot)) return null;
 
   const activeSlot = liveSlot;
   const activeBoard = board;
   const activePrimary = liveSlot.primary;
+  const hasPrimary = activePrimary !== null;
   const actionDisabled =
     readOnly ||
     moveSlot.isPending ||
@@ -155,6 +160,8 @@ export function MealEditorSheet({
     nextExtras: MealSlotEntry[],
     nextNote: string | null,
   ) {
+    if (!activePrimary) return;
+
     const request: UpsertMealSlotRequest = {
       weekStartDate: activeSlot.weekStartDate,
       dayIndex: activeSlot.dayIndex,
@@ -184,7 +191,7 @@ export function MealEditorSheet({
     dayIndex: number;
     mealType: MealSlot["mealType"];
   }) {
-    if (!mover) return;
+    if (!mover || !activePrimary) return;
     const kind = mover.kind;
     setMover(null);
 
@@ -249,12 +256,13 @@ export function MealEditorSheet({
           <div className="space-y-5">
             <div className="rounded-lg border border-border bg-card p-4">
               <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                Primary
+                {hasPrimary ? "Primary" : "Extras"}
               </p>
               <h2 className="mt-1 text-xl font-semibold text-foreground">
-                {activePrimary.title}
+                {activePrimary?.title ??
+                  `${formatMealType(activeSlot.mealType)} extras`}
               </h2>
-              {activePrimary.note ? (
+              {activePrimary?.note ? (
                 <p className="mt-2 text-sm text-muted-foreground">
                   {activePrimary.note}
                 </p>
@@ -267,7 +275,7 @@ export function MealEditorSheet({
                       className="inline-flex items-center gap-1 rounded-full bg-secondary px-2 py-1 text-xs font-medium text-secondary-foreground"
                     >
                       {extra.title}
-                      {!readOnly ? (
+                      {!readOnly && hasPrimary ? (
                         <button
                           type="button"
                           aria-label={`Remove extra: ${extra.title}`}
@@ -283,6 +291,12 @@ export function MealEditorSheet({
                 </div>
               ) : null}
               {readOnly ? (
+                activeSlot.note ? (
+                  <p className="mt-3 text-sm text-muted-foreground">
+                    {activeSlot.note}
+                  </p>
+                ) : null
+              ) : !hasPrimary ? (
                 activeSlot.note ? (
                   <p className="mt-3 text-sm text-muted-foreground">
                     {activeSlot.note}
@@ -355,7 +369,7 @@ export function MealEditorSheet({
               <Button
                 type="button"
                 variant="outline"
-                disabled={actionDisabled}
+                disabled={actionDisabled || !hasPrimary}
                 onClick={() => onAddExtra?.(activeSlot)}
               >
                 Add extra or side
@@ -363,7 +377,7 @@ export function MealEditorSheet({
               <Button
                 type="button"
                 variant="outline"
-                disabled={actionDisabled}
+                disabled={actionDisabled || !hasPrimary}
                 onClick={() => setMover({ kind: "move" })}
               >
                 Move meal
@@ -371,7 +385,7 @@ export function MealEditorSheet({
               <Button
                 type="button"
                 variant="outline"
-                disabled={actionDisabled}
+                disabled={actionDisabled || !hasPrimary}
                 onClick={() => setMover({ kind: "duplicate" })}
               >
                 Duplicate meal

@@ -7,6 +7,7 @@ import type { ApiResponse, MealBoard, SaveMealPlanRequest } from "@/lib/types";
 import { useAppStore } from "@/stores/app-store";
 import {
   createEmptyMealsBoard,
+  createExtrasOnlyMealsBoard,
   createOccupiedMealsBoard,
   createRecipeBackedMealsBoard,
   testWeekStartDate,
@@ -283,6 +284,36 @@ describe("MealsView", () => {
     expect(
       (await screen.findAllByRole("button", { name: /add dinner/i }))[0],
     ).toBeEnabled();
+  });
+
+  it("treats extras-only dinner slots as existing context and opens the editor", async () => {
+    seedMockMealsBoard(createExtrasOnlyMealsBoard());
+    const { user } = renderWithUser(<MealsView />);
+
+    const dayHeading = await screen.findByRole("heading", {
+      name: "Thursday, Jun 11",
+    });
+    const daySection = dayHeading.closest("section");
+    expect(daySection).not.toBeNull();
+    const thursday = within(daySection as HTMLElement);
+
+    const extrasButton = thursday.getByRole("button", {
+      name: /open dinner: extras - garlic bread/i,
+    });
+    expect(
+      thursday.queryByRole("button", { name: "Add dinner meal" }),
+    ).not.toBeInTheDocument();
+    expect(thursday.getByText("Garlic bread")).toBeInTheDocument();
+
+    await user.click(extrasButton);
+
+    const editorDialog = await screen.findByRole("dialog", {
+      name: "Dinner Plan",
+    });
+    expect(within(editorDialog).getByText("Garlic bread")).toBeInTheDocument();
+    expect(
+      screen.queryByRole("dialog", { name: "Plan Dinner" }),
+    ).not.toBeInTheDocument();
   });
 
   it("shows Fill empty slots on editable weeks and hides it on past weeks", async () => {
