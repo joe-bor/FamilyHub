@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { syncFamilyFromStorage } from "@/api/hooks/use-family";
+import { syncFamilyFromStorage } from "@/api/hooks/family-storage";
 import { FAMILY_STORAGE_KEY } from "@/lib/constants";
 import { queryClient } from "@/providers/query-provider";
 

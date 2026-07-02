@@ -2,8 +2,12 @@ import type { UseQueryOptions } from "@tanstack/react-query";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo } from "react";
 import type { ApiException } from "@/api/client";
+import {
+  familyKeys,
+  readFamilyFromStorage,
+  writeFamilyToStorage,
+} from "@/api/hooks/family-storage";
 import { familyService } from "@/api/services";
-import { FAMILY_STORAGE_KEY } from "@/lib/constants";
 import { assertOnlineForWrite } from "@/lib/offline/read-only-guard";
 import type {
   AddMemberRequest,
@@ -17,17 +21,19 @@ import type {
   UpdateMemberRequest,
 } from "@/lib/types";
 import { familyColors } from "@/lib/types";
-import { validateFamilyData } from "@/lib/validations/family";
 import { useIsAuthenticated } from "@/stores";
 
 // ============================================================================
-// Query Keys Factory
+// Query Keys & localStorage Helpers (re-exported from family-storage.ts)
 // ============================================================================
 
-export const familyKeys = {
-  all: ["family"] as const,
-  family: () => [...familyKeys.all, "data"] as const,
-};
+// Defined in a React-free module so family-store.ts can import them without
+// creating an import cycle through @/stores. See family-storage.ts.
+export {
+  familyKeys,
+  readFamilyFromStorage,
+  syncFamilyFromStorage,
+} from "@/api/hooks/family-storage";
 
 // ============================================================================
 // Optimistic Member Helpers
@@ -48,55 +54,6 @@ export const TEMP_MEMBER_ID_PREFIX = "temp-";
  */
 export function isTempMemberId(id: string): boolean {
   return id.startsWith(TEMP_MEMBER_ID_PREFIX);
-}
-
-// ============================================================================
-// localStorage Helpers
-// ============================================================================
-
-/**
- * Write family data to localStorage for:
- * 1. Instant startup on next page load (cache seeding)
- * 2. Cross-tab sync via storage events
- */
-function writeFamilyToStorage(family: FamilyData | null): void {
-  try {
-    if (family === null) {
-      localStorage.removeItem(FAMILY_STORAGE_KEY);
-    } else {
-      // Match Zustand persist format for compatibility
-      const stored = {
-        state: {
-          family,
-          _hasHydrated: true,
-        },
-        version: 0,
-      };
-      localStorage.setItem(FAMILY_STORAGE_KEY, JSON.stringify(stored));
-    }
-  } catch (error) {
-    if (import.meta.env.DEV) {
-      console.error("Failed to write family to localStorage:", error);
-    }
-  }
-}
-
-/**
- * Read family data from localStorage for cache seeding.
- */
-export function readFamilyFromStorage(): FamilyData | null {
-  try {
-    const stored = localStorage.getItem(FAMILY_STORAGE_KEY);
-    if (!stored) return null;
-
-    const parsed = JSON.parse(stored);
-    return validateFamilyData(parsed?.state?.family);
-  } catch (error) {
-    if (import.meta.env.DEV) {
-      console.error("Failed to read family from localStorage:", error);
-    }
-    return null;
-  }
 }
 
 // ============================================================================
@@ -513,22 +470,5 @@ export function useDeleteFamily(callbacks?: DeleteFamilyCallbacks) {
     onError: (error: ApiException) => {
       callbacks?.onError?.(error);
     },
-  });
-}
-
-// ============================================================================
-// Cross-Tab Sync Helper
-// ============================================================================
-
-/**
- * Sync family data from localStorage to query cache.
- * Called by the storage event listener in family-store.ts.
- */
-export function syncFamilyFromStorage(
-  queryClient: ReturnType<typeof useQueryClient>,
-): void {
-  const family = readFamilyFromStorage();
-  queryClient.setQueryData<FamilyApiResponse>(familyKeys.family(), {
-    data: family,
   });
 }
