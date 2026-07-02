@@ -1,6 +1,7 @@
 import type { APIRequestContext, Page } from "@playwright/test";
 import type { CreateEventRequest } from "../../src/lib/types/calendar";
 import type { FamilyColor } from "../../src/lib/types/family";
+import type { CreateRecipeRequest } from "../../src/lib/types/recipes";
 
 const API_BASE = "http://127.0.0.1:8080/api";
 
@@ -93,4 +94,28 @@ export async function createCalendarEvent(
     const body = await response.text();
     throw new Error(`Create event failed (${response.status()}): ${body}`);
   }
+}
+
+/**
+ * Create a recipe through the real backend API using an authenticated token.
+ */
+export async function createRecipe(
+  request: APIRequestContext,
+  token: string,
+  recipe: CreateRecipeRequest,
+): Promise<{ id: string; title: string }> {
+  const response = await request.post(`${API_BASE}/recipes`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    data: recipe,
+  });
+
+  if (!response.ok()) {
+    const body = await response.text();
+    throw new Error(`Create recipe failed (${response.status()}): ${body}`);
+  }
+
+  const json = await response.json();
+  return json.data;
 }
