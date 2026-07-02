@@ -466,6 +466,60 @@ describe("useMeals", () => {
     });
   });
 
+  it.each([
+    ["move", useMoveMealSlot],
+    ["duplicate", useDuplicateMealSlot],
+  ] as const)("rejects %s into an extras-only destination instead of replacing extras", async (_kind, useMutationHook) => {
+    const board = boardWithOccupiedDinner();
+    board.days[2].slots[2] = {
+      id: "slot-tuesday-dinner-extras",
+      weekStartDate: "2026-06-07",
+      dayIndex: 2,
+      mealType: "dinner",
+      primary: null,
+      extras: [
+        {
+          id: "entry-extra",
+          role: "extra",
+          sourceType: "quick",
+          recipeId: null,
+          title: "Garlic bread",
+          imageUrl: null,
+          note: null,
+        },
+      ],
+      note: null,
+    };
+    seedMockMealsBoard(board);
+    const onError = vi.fn<(error: Error) => void>();
+
+    const { result } = renderHook(() => useMutationHook({ onError }), {
+      wrapper: createWrapper(),
+    });
+
+    result.current.mutate({
+      sourceWeekStartDate: "2026-06-07",
+      sourceDayIndex: 1,
+      sourceMealType: "dinner",
+      destinationWeekStartDate: "2026-06-07",
+      destinationDayIndex: 2,
+      destinationMealType: "dinner",
+      collisionMode: "replace_primary",
+    });
+
+    await waitFor(() => {
+      expect(onError).toHaveBeenCalledWith(expect.any(Error));
+    });
+
+    expect(onError.mock.calls[0][0].message).toBe(
+      "Meal slot already has content",
+    );
+    expect(getMockMealsBoard("2026-06-07").days[2].slots[2]).toMatchObject({
+      primary: null,
+      extras: [expect.objectContaining({ title: "Garlic bread" })],
+    });
+  });
+
   it("removes a planned slot and invalidates its board", async () => {
     const board = boardWithOccupiedDinner();
     seedMockMealsBoard(board);

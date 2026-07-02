@@ -140,6 +140,21 @@ describe("MealPlanningPanel", () => {
     });
   });
 
+  it("shows inline feedback instead of drafting an invalid quick meal title", async () => {
+    const { props, user } = renderPanel();
+
+    await user.type(screen.getByLabelText("Meal name"), "A".repeat(161));
+
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "Meal name must be 160 characters or less",
+    );
+    expect(
+      screen.getByRole("button", { name: "Add quick meal draft" }),
+    ).toBeDisabled();
+
+    expect(props.onAddDraft).not.toHaveBeenCalled();
+  });
+
   it("keeps the recipe tray visible across draft choices", async () => {
     function Harness() {
       const [drafts, setDrafts] = useState<MealPlanningDraft[]>([]);

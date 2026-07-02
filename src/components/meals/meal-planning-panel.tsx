@@ -1,9 +1,10 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useId, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { MobileSheet } from "@/components/ui/mobile-sheet";
 import { parseLocalDate } from "@/lib/time-utils";
 import type { MealBoard, MealSlot, RecipeSummary } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { mealEntrySchema, toMealEntryRequest } from "@/lib/validations";
 import type {
   MealPlanningDraft,
   MealPlanningTarget,
@@ -109,6 +110,7 @@ export function MealPlanningPanel({
 }: MealPlanningPanelProps) {
   const [mealName, setMealName] = useState("");
   const [showAll, setShowAll] = useState(false);
+  const mealNameErrorId = useId();
 
   const currentSlot = queue[currentIndex] ?? null;
   const currentTarget = currentSlot
@@ -118,6 +120,17 @@ export function MealPlanningPanel({
   const currentDraft = draftForTarget(drafts, currentTarget);
   const isReviewing = currentIndex >= queue.length;
   const query = normalize(mealName);
+  const quickMealResult = mealEntrySchema.safeParse({
+    sourceType: "quick",
+    recipeId: null,
+    title: mealName,
+    imageUrl: null,
+    note: null,
+  });
+  const quickMealError =
+    mealName.trim().length > 0 && !quickMealResult.success
+      ? quickMealResult.error.issues[0]?.message
+      : null;
 
   useEffect(() => {
     if (!isOpen) return;
@@ -173,21 +186,17 @@ export function MealPlanningPanel({
 
   function addQuickDraft() {
     if (!currentTarget) return;
-    const title = mealName.trim();
-    if (!title) return;
+    if (!quickMealResult.success || quickMealResult.data.sourceType !== "quick")
+      return;
+
+    const primary = toMealEntryRequest(quickMealResult.data);
 
     onAddDraft({
       target: currentTarget,
-      displayTitle: title,
-      displayImageUrl: null,
-      displayNote: null,
-      primary: {
-        sourceType: "quick",
-        recipeId: null,
-        title,
-        imageUrl: null,
-        note: null,
-      },
+      displayTitle: quickMealResult.data.title,
+      displayImageUrl: primary.imageUrl,
+      displayNote: primary.note,
+      primary,
       note: null,
     });
   }
@@ -540,15 +549,28 @@ export function MealPlanningPanel({
                   value={mealName}
                   onChange={(event) => setMealName(event.target.value)}
                   disabled={isSaving}
+                  aria-invalid={quickMealError ? true : undefined}
+                  aria-describedby={
+                    quickMealError ? mealNameErrorId : undefined
+                  }
                   className="h-10 w-full rounded-lg border border-input bg-background px-3 text-sm"
                 />
+                {quickMealError ? (
+                  <p
+                    id={mealNameErrorId}
+                    className="text-sm text-destructive"
+                    role="alert"
+                  >
+                    {quickMealError}
+                  </p>
+                ) : null}
               </label>
 
               <div className="grid gap-2 sm:grid-cols-2">
                 <Button
                   type="button"
                   variant="outline"
-                  disabled={!mealName.trim() || isSaving}
+                  disabled={!quickMealResult.success || isSaving}
                   onClick={addQuickDraft}
                 >
                   {currentDraft ? "Update draft" : "Add quick meal draft"}
