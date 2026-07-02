@@ -322,6 +322,12 @@ describe("MealPlanningPanel", () => {
       }),
     );
     expect(props.onSaveNonConflicted).toHaveBeenCalledTimes(1);
+    expect(
+      screen.queryByRole("button", { name: "Replace primary" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Add as extra" }),
+    ).not.toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "Cancel save" }));
     expect(props.onCancelSave).toHaveBeenCalledTimes(1);
