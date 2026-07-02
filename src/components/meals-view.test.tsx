@@ -104,6 +104,44 @@ function withOccupiedDinnerSlot(
   return withOccupiedMealSlot(board, dayIndex, "dinner", title);
 }
 
+function withExtrasOnlyDinnerSlot(
+  board: MealBoard,
+  dayIndex: number,
+  extraTitle: string,
+): MealBoard {
+  return {
+    ...board,
+    days: board.days.map((day) =>
+      day.dayIndex === dayIndex
+        ? {
+            ...day,
+            slots: day.slots.map((slot) =>
+              slot.mealType === "dinner"
+                ? {
+                    ...slot,
+                    id: `slot-${dayIndex}-dinner-extras`,
+                    primary: null,
+                    extras: [
+                      {
+                        id: `entry-${dayIndex}-dinner-extra`,
+                        role: "extra",
+                        sourceType: "quick",
+                        recipeId: null,
+                        title: extraTitle,
+                        imageUrl: null,
+                        note: null,
+                      },
+                    ],
+                    note: null,
+                  }
+                : slot,
+            ),
+          }
+        : day,
+    ),
+  };
+}
+
 function withSavedMealPlan(
   board: MealBoard,
   request: SaveMealPlanRequest,
@@ -311,6 +349,20 @@ describe("MealsView", () => {
       name: "Dinner Plan",
     });
     expect(within(editorDialog).getByText("Garlic bread")).toBeInTheDocument();
+    expect(
+      within(editorDialog).getByRole("button", { name: "Add extra or side" }),
+    ).toBeDisabled();
+    expect(
+      within(editorDialog).getByRole("button", { name: "Move meal" }),
+    ).toBeDisabled();
+    expect(
+      within(editorDialog).getByRole("button", { name: "Duplicate meal" }),
+    ).toBeDisabled();
+    expect(
+      within(editorDialog).queryByRole("button", {
+        name: /remove extra:/i,
+      }),
+    ).not.toBeInTheDocument();
     expect(
       screen.queryByRole("dialog", { name: "Plan Dinner" }),
     ).not.toBeInTheDocument();
@@ -1025,6 +1077,44 @@ describe("MealsView", () => {
     });
   });
 
+  it.each([
+    ["move", "Move meal", "Move here"],
+    ["duplicate", "Duplicate meal", "Duplicate here"],
+  ])("prompts when trying to %s into an extras-only slot", async (_kind, actionLabel, confirmLabel) => {
+    const board = withExtrasOnlyDinnerSlot(
+      createOccupiedMealsBoard(),
+      2,
+      "Garlic bread",
+    );
+    seedMockMealsBoard(board);
+    const { user } = renderWithUser(
+      <MealEditorSheet
+        isOpen
+        slotId={{
+          weekStartDate: board.weekStartDate,
+          dayIndex: 1,
+          mealType: "dinner",
+        }}
+        board={board}
+        readOnly={false}
+        onOpenChange={vi.fn()}
+      />,
+    );
+
+    await user.click(screen.getByRole("button", { name: actionLabel }));
+    await user.click(screen.getByRole("button", { name: confirmLabel }));
+
+    expect(
+      screen.getByText("That slot already has a meal"),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Replace primary" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Add as extra" }),
+    ).toBeInTheDocument();
+  });
+
   it("removes a planned meal from the editor", async () => {
     const board = createOccupiedMealsBoard();
     seedMockMealsBoard(board);
@@ -1250,6 +1340,68 @@ describe("MealsView", () => {
     expect(
       screen.getByRole("heading", { name: "Instructions" }),
     ).toBeInTheDocument();
+  });
+
+  it("resets recipe detail mode when reopening on an extras-only slot", async () => {
+    const recipeBoard = createRecipeBackedMealsBoard();
+    const extrasBoard = createExtrasOnlyMealsBoard();
+    seedMockRecipes([testRecipeDetail]);
+    const onOpenChange = vi.fn();
+    const recipeSlotId = {
+      weekStartDate: recipeBoard.weekStartDate,
+      dayIndex: 1,
+      mealType: "dinner" as const,
+    };
+    const extrasSlotId = {
+      weekStartDate: extrasBoard.weekStartDate,
+      dayIndex: 4,
+      mealType: "dinner" as const,
+    };
+    const { user, rerender } = renderWithUser(
+      <MealEditorSheet
+        isOpen
+        slotId={recipeSlotId}
+        board={recipeBoard}
+        readOnly={false}
+        onOpenChange={onOpenChange}
+      />,
+    );
+
+    await user.click(screen.getByRole("button", { name: "View recipe" }));
+    expect(
+      await screen.findByRole("heading", { name: testRecipeDetail.title }),
+    ).toBeInTheDocument();
+
+    rerender(
+      <MealEditorSheet
+        isOpen={false}
+        slotId={recipeSlotId}
+        board={recipeBoard}
+        readOnly={false}
+        onOpenChange={onOpenChange}
+      />,
+    );
+    rerender(
+      <MealEditorSheet
+        isOpen
+        slotId={extrasSlotId}
+        board={extrasBoard}
+        readOnly={false}
+        onOpenChange={onOpenChange}
+      />,
+    );
+
+    const editorDialog = await screen.findByRole("dialog", {
+      name: "Dinner Plan",
+    });
+    expect(within(editorDialog).getByText("Dinner extras")).toBeInTheDocument();
+    expect(within(editorDialog).getByText("Garlic bread")).toBeInTheDocument();
+    expect(
+      within(editorDialog).queryByText("Recipe could not be loaded."),
+    ).not.toBeInTheDocument();
+    expect(
+      within(editorDialog).queryByRole("button", { name: "View recipe" }),
+    ).not.toBeInTheDocument();
   });
 
   it("shows no Edit/Add-to-Meals/Favorite buttons in the meal-context recipe detail", async () => {
