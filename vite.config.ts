@@ -109,18 +109,17 @@ export default defineConfig(() => {
     build: {
       rollupOptions: {
         output: {
-          manualChunks: {
-            "react-vendor": ["react", "react-dom"],
-            "query-vendor": ["@tanstack/react-query"],
-            "date-vendor": ["date-fns", "react-day-picker"],
-            "radix-vendor": [
-              "@radix-ui/react-dialog",
-              "@radix-ui/react-popover",
-              "@radix-ui/react-scroll-area",
-              "@radix-ui/react-tabs",
-              "@radix-ui/react-slot",
-              "@radix-ui/react-label",
-            ],
+          manualChunks(id: string) {
+            if (!id.includes("/node_modules/")) return undefined;
+            // React is a pure leaf (imports nothing) so isolating it never
+            // forms a circular chunk. Every other dependency goes into a
+            // single `vendor` chunk — splitting them further (radix/query/date
+            // groups) produces circular-chunk warnings because a general
+            // vendor module and a specific group import each other.
+            if (/\/node_modules\/(react|react-dom|scheduler)\//.test(id)) {
+              return "react-vendor";
+            }
+            return "vendor";
           },
         },
       },
