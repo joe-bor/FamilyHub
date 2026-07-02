@@ -368,6 +368,43 @@ describe("MealsView", () => {
     ).not.toBeInTheDocument();
   });
 
+  it("adds a primary meal to an extras-only slot while preserving extras", async () => {
+    seedMockMealsBoard(createExtrasOnlyMealsBoard());
+    const { user } = renderWithUser(<MealsView />);
+
+    const dayHeading = await screen.findByRole("heading", {
+      name: "Thursday, Jun 11",
+    });
+    const daySection = dayHeading.closest("section");
+    expect(daySection).not.toBeNull();
+    const thursday = within(daySection as HTMLElement);
+
+    await user.click(
+      thursday.getByRole("button", {
+        name: /open dinner: extras - garlic bread/i,
+      }),
+    );
+    await user.click(screen.getByRole("button", { name: "Replace meal" }));
+
+    const composerDialog = await screen.findByRole("dialog", {
+      name: "Plan Dinner",
+    });
+    await user.type(within(composerDialog).getByLabelText("Meal name"), "Soup");
+    await user.click(
+      within(composerDialog).getByRole("button", {
+        name: "Create quick meal",
+      }),
+    );
+
+    await waitFor(() => {
+      const dinner = getMockMealsBoard(testWeekStartDate).days[4].slots[2];
+      expect(dinner.primary?.title).toBe("Soup");
+      expect(dinner.extras.map((extra) => extra.title)).toEqual([
+        "Garlic bread",
+      ]);
+    });
+  });
+
   it("shows Fill empty slots on editable weeks and hides it on past weeks", async () => {
     seedMockMealsBoard(createEmptyMealsBoard());
     seedMockMealsBoard(createEmptyMealsBoard("2026-06-14"));

@@ -706,7 +706,7 @@ function resolveMealSlotPlacement(
 ): MealSlot | HttpResponse {
   const id = slot.id ?? createMockMealSlotId();
 
-  if (!slot.primary && slot.extras.length > 0) {
+  if (!slot.primary && slot.extras.length > 0 && collisionMode !== null) {
     return HttpResponse.json(
       { message: "Meal slot already has content" },
       { status: 409 },
