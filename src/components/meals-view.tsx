@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useMealsBoard, useRecipes, useSaveMealPlan } from "@/api";
+import { ApiException } from "@/api/client";
 import {
   MealComposerSheet,
   type MealSlotSelection,
@@ -172,10 +173,7 @@ export function MealsView() {
   }, [persistedBoard, planningActive, planningDrafts]);
   const saveMealPlan = useSaveMealPlan({
     onSuccess: () => resetPlanningSession(),
-    onError: (error) => {
-      setPlanningSaveError(error);
-      setCurrentPlanningIndex(planningQueue.length);
-    },
+    onError: handlePlanningSaveError,
   });
 
   useEffect(() => {
@@ -225,6 +223,26 @@ export function MealsView() {
     setCurrentPlanningIndex(0);
     setConflictedTargets([]);
     setPlanningSaveError(null);
+  }
+
+  async function handlePlanningSaveError(error: Error) {
+    setCurrentPlanningIndex(planningQueue.length);
+
+    if (ApiException.isApiException(error) && error.status === 409) {
+      const refreshedBoard = (await board.refetch()).data?.data ?? null;
+      const conflicts = refreshedBoard
+        ? getConflictedDraftTargets(refreshedBoard, planningDrafts)
+        : [];
+
+      if (conflicts.length > 0) {
+        setConflictedTargets(conflicts);
+        setPlanningSaveError(error);
+        return;
+      }
+    }
+
+    setConflictedTargets([]);
+    setPlanningSaveError(error);
   }
 
   function startPlanningSession(scope: MealPlanningScope) {

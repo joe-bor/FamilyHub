@@ -3,7 +3,7 @@ import { HttpResponse, http } from "msw";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { mealsKeys } from "@/api";
 import { formatLocalDate, getWeekStartSunday } from "@/lib/time-utils";
-import type { ApiResponse, MealBoard } from "@/lib/types";
+import type { ApiResponse, MealBoard, SaveMealPlanRequest } from "@/lib/types";
 import { useAppStore } from "@/stores/app-store";
 import {
   createEmptyMealsBoard,
@@ -58,9 +58,10 @@ function mockCurrentWeek() {
   vi.stubGlobal("Date", MockDate as DateConstructor);
 }
 
-function withOccupiedDinnerSlot(
+function withOccupiedMealSlot(
   board: MealBoard,
   dayIndex: number,
+  mealType: SaveMealPlanRequest["slots"][number]["mealType"],
   title: string,
 ): MealBoard {
   return {
@@ -70,12 +71,12 @@ function withOccupiedDinnerSlot(
         ? {
             ...day,
             slots: day.slots.map((slot) =>
-              slot.mealType === "dinner"
+              slot.mealType === mealType
                 ? {
                     ...slot,
-                    id: `slot-${dayIndex}-dinner`,
+                    id: `slot-${dayIndex}-${mealType}`,
                     primary: {
-                      id: `entry-${dayIndex}-dinner`,
+                      id: `entry-${dayIndex}-${mealType}`,
                       role: "primary",
                       sourceType: "quick",
                       recipeId: null,
@@ -92,6 +93,30 @@ function withOccupiedDinnerSlot(
         : day,
     ),
   };
+}
+
+function withOccupiedDinnerSlot(
+  board: MealBoard,
+  dayIndex: number,
+  title: string,
+): MealBoard {
+  return withOccupiedMealSlot(board, dayIndex, "dinner", title);
+}
+
+function withSavedMealPlan(
+  board: MealBoard,
+  request: SaveMealPlanRequest,
+): MealBoard {
+  return request.slots.reduce(
+    (nextBoard, slot) =>
+      withOccupiedMealSlot(
+        nextBoard,
+        slot.dayIndex,
+        slot.mealType,
+        slot.primary.title ?? "Recipe meal",
+      ),
+    board,
+  );
 }
 
 describe("MealsView", () => {
@@ -524,10 +549,27 @@ describe("MealsView", () => {
     ).toHaveAttribute("aria-current", "true");
   });
 
-  it("saves focused planning drafts through the meal plan endpoint", async () => {
+  it("saves drafted meals to the week with one batch request", async () => {
     seedMockMealsBoard(createEmptyMealsBoard());
+    const saveRequests: Array<{
+      pathname: string;
+      body: SaveMealPlanRequest;
+    }> = [];
     let singleSlotSaveCalls = 0;
     server.use(
+      http.post(`${API_BASE}/meals/plans`, async ({ request }) => {
+        const body = (await request.json()) as SaveMealPlanRequest;
+        saveRequests.push({
+          pathname: new URL(request.url).pathname,
+          body,
+        });
+        const savedBoard = withSavedMealPlan(
+          getMockMealsBoard(body.weekStartDate),
+          body,
+        );
+        seedMockMealsBoard(savedBoard);
+        return HttpResponse.json({ data: savedBoard });
+      }),
       http.put(`${API_BASE}/meals/slots`, () => {
         singleSlotSaveCalls += 1;
         return HttpResponse.json(
@@ -546,6 +588,11 @@ describe("MealsView", () => {
     await user.click(
       screen.getByRole("button", { name: "Add quick meal draft" }),
     );
+    expect(screen.getByText("Monday dinner - 2 of 7")).toBeInTheDocument();
+    await user.type(screen.getByLabelText("Meal name"), "Tacos");
+    await user.click(
+      screen.getByRole("button", { name: "Add quick meal draft" }),
+    );
     await user.click(screen.getByRole("button", { name: "Review plan" }));
     await user.click(screen.getByRole("button", { name: "Save to week" }));
 
@@ -555,9 +602,163 @@ describe("MealsView", () => {
       ).toBe("Chili");
     });
     expect(
+      getMockMealsBoard(testWeekStartDate).days[1].slots[2].primary?.title,
+    ).toBe("Tacos");
+    expect(
       screen.queryByRole("dialog", { name: "Meal planning" }),
     ).not.toBeInTheDocument();
+    expect(saveRequests).toHaveLength(1);
+    expect(saveRequests[0].pathname).toBe("/api/meals/plans");
+    expect(
+      saveRequests[0].body.slots.map((slot) => slot.primary.title),
+    ).toEqual(["Chili", "Tacos"]);
     expect(singleSlotSaveCalls).toBe(0);
+  });
+
+  it("handles backend 409 save-time conflicts without overwriting and can skip conflicted drafts", async () => {
+    seedMockMealsBoard(createEmptyMealsBoard());
+    const saveRequests: SaveMealPlanRequest[] = [];
+    let singleSlotSaveCalls = 0;
+    server.use(
+      http.post(`${API_BASE}/meals/plans`, async ({ request }) => {
+        const body = (await request.json()) as SaveMealPlanRequest;
+        saveRequests.push(body);
+
+        if (saveRequests.length === 1) {
+          return HttpResponse.json(
+            { message: "Some meal slots are no longer empty." },
+            { status: 409 },
+          );
+        }
+
+        const savedBoard = withSavedMealPlan(
+          getMockMealsBoard(body.weekStartDate),
+          body,
+        );
+        seedMockMealsBoard(savedBoard);
+        return HttpResponse.json({ data: savedBoard });
+      }),
+      http.put(`${API_BASE}/meals/slots`, () => {
+        singleSlotSaveCalls += 1;
+        return HttpResponse.json(
+          { message: "single-slot save should not be used" },
+          { status: 500 },
+        );
+      }),
+    );
+    const { user } = renderWithUser(<MealsView />);
+
+    await user.click(
+      await screen.findByRole("button", { name: "Fill empty slots" }),
+    );
+    await user.click(screen.getByRole("button", { name: "Start planning" }));
+    await user.type(screen.getByLabelText("Meal name"), "Chili");
+    await user.click(
+      screen.getByRole("button", { name: "Add quick meal draft" }),
+    );
+    await user.type(screen.getByLabelText("Meal name"), "Tacos");
+    await user.click(
+      screen.getByRole("button", { name: "Add quick meal draft" }),
+    );
+
+    seedMockMealsBoard(
+      withOccupiedDinnerSlot(createEmptyMealsBoard(), 0, "Already planned"),
+    );
+    await user.click(screen.getByRole("button", { name: "Review plan" }));
+    await user.click(screen.getByRole("button", { name: "Save to week" }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Some meal slots are no longer empty.",
+    );
+    expect(
+      await screen.findByRole("button", {
+        name: "Skip conflicted and save remaining",
+      }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Replace primary" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Add as extra" }),
+    ).not.toBeInTheDocument();
+
+    await user.click(
+      screen.getByRole("button", {
+        name: "Skip conflicted and save remaining",
+      }),
+    );
+
+    await waitFor(() => {
+      const board = getMockMealsBoard(testWeekStartDate);
+      expect(board.days[0].slots[2].primary?.title).toBe("Already planned");
+      expect(board.days[1].slots[2].primary?.title).toBe("Tacos");
+    });
+    expect(
+      screen.queryByRole("dialog", { name: "Meal planning" }),
+    ).not.toBeInTheDocument();
+    expect(saveRequests).toHaveLength(2);
+    expect(saveRequests[1].slots).toHaveLength(1);
+    expect(saveRequests[1].slots[0]).toMatchObject({
+      dayIndex: 1,
+      mealType: "dinner",
+    });
+    expect(singleSlotSaveCalls).toBe(0);
+  });
+
+  it("cancel save after a backend conflict returns to review and keeps drafts", async () => {
+    seedMockMealsBoard(createEmptyMealsBoard());
+    const saveRequests: SaveMealPlanRequest[] = [];
+    server.use(
+      http.post(`${API_BASE}/meals/plans`, async ({ request }) => {
+        saveRequests.push((await request.json()) as SaveMealPlanRequest);
+        return HttpResponse.json(
+          { message: "Some meal slots are no longer empty." },
+          { status: 409 },
+        );
+      }),
+    );
+    const { user } = renderWithUser(<MealsView />);
+
+    await user.click(
+      await screen.findByRole("button", { name: "Fill empty slots" }),
+    );
+    await user.click(screen.getByRole("button", { name: "Start planning" }));
+    await user.type(screen.getByLabelText("Meal name"), "Chili");
+    await user.click(
+      screen.getByRole("button", { name: "Add quick meal draft" }),
+    );
+    await user.type(screen.getByLabelText("Meal name"), "Tacos");
+    await user.click(
+      screen.getByRole("button", { name: "Add quick meal draft" }),
+    );
+
+    seedMockMealsBoard(
+      withOccupiedDinnerSlot(createEmptyMealsBoard(), 0, "Already planned"),
+    );
+    await user.click(screen.getByRole("button", { name: "Review plan" }));
+    await user.click(screen.getByRole("button", { name: "Save to week" }));
+    expect(
+      await screen.findByRole("button", {
+        name: "Skip conflicted and save remaining",
+      }),
+    ).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Cancel save" }));
+
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", {
+        name: "Skip conflicted and save remaining",
+      }),
+    ).not.toBeInTheDocument();
+    expect(screen.getByText("2 meals ready to add")).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Draft dinner: Chili" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Draft dinner: Tacos" }),
+    ).toBeInTheDocument();
+    expect(saveRequests).toHaveLength(1);
   });
 
   it("renders occupied slots as meal cards rather than add affordances", async () => {
