@@ -11,15 +11,13 @@ import type {
 import { formatMealType } from "./meal-type-utils";
 import { RecipeMatchList } from "./recipe-match-list";
 
-type MealPlanningRecipe = RecipeSummary & { note?: string | null };
-
 export interface MealPlanningPanelProps {
   isOpen: boolean;
   board: MealBoard;
   queue: MealSlot[];
   drafts: MealPlanningDraft[];
   currentIndex: number;
-  recipes: MealPlanningRecipe[];
+  recipes: RecipeSummary[];
   isSaving: boolean;
   saveError: Error | null;
   conflictedTargets: MealPlanningTarget[];
@@ -166,11 +164,6 @@ export function MealPlanningPanel({
       ),
     [recipes, query],
   );
-  const recipesById = useMemo(
-    () => new Map(recipes.map((recipe) => [recipe.id, recipe])),
-    [recipes],
-  );
-
   const progressLabel =
     currentSlot !== null
       ? `${dayLabelForTarget(board, currentSlot)} ${currentSlot.mealType} - ${
@@ -206,7 +199,7 @@ export function MealPlanningPanel({
       target: currentTarget,
       displayTitle: recipe.title,
       displayImageUrl: recipe.imageUrl,
-      displayNote: recipesById.get(recipe.id)?.note ?? null,
+      displayNote: null,
       primary: {
         sourceType: "recipe",
         recipeId: recipe.id,
@@ -220,6 +213,84 @@ export function MealPlanningPanel({
 
   function changeDraft(target: MealPlanningTarget) {
     onChangeDraft?.(target);
+  }
+
+  function guardedCancel() {
+    if (isSaving) return;
+    onCancel();
+  }
+
+  function renderPlanningSurface() {
+    if (!currentTarget && drafts.length === 0) return null;
+
+    const sortedDrafts = [...drafts].sort((left, right) => {
+      const leftIndex = queue.findIndex((slot) =>
+        sameTarget(slot, left.target),
+      );
+      const rightIndex = queue.findIndex((slot) =>
+        sameTarget(slot, right.target),
+      );
+      return (
+        (leftIndex < 0 ? Number.MAX_SAFE_INTEGER : leftIndex) -
+        (rightIndex < 0 ? Number.MAX_SAFE_INTEGER : rightIndex)
+      );
+    });
+
+    return (
+      <section
+        aria-label="Planning board status"
+        className="space-y-2 rounded-lg border border-border bg-muted/30 p-3"
+      >
+        <h3 className="text-sm font-semibold text-foreground">
+          Planning board status
+        </h3>
+        <div className="space-y-2">
+          {currentTarget && !currentDraft ? (
+            <button
+              type="button"
+              aria-current="true"
+              aria-label={`Current ${currentTarget.mealType} target: ${dayLabelForTarget(
+                board,
+                currentTarget,
+              )} ${currentTarget.mealType}`}
+              className="w-full rounded-lg border border-primary/50 bg-primary/5 p-3 text-left text-sm font-medium text-foreground"
+              disabled={isSaving}
+              onClick={() => changeDraft(currentTarget)}
+            >
+              Current target: {dayLabelForTarget(board, currentTarget)}{" "}
+              {formatMealType(currentTarget.mealType)}
+            </button>
+          ) : null}
+
+          {sortedDrafts.map((draft) => {
+            const isCurrent =
+              currentTarget !== null && sameTarget(currentTarget, draft.target);
+            return (
+              <button
+                key={targetKey(draft.target)}
+                type="button"
+                aria-current={isCurrent ? "true" : undefined}
+                aria-label={`Draft ${draft.target.mealType}: ${draft.displayTitle}`}
+                className={cn(
+                  "w-full rounded-lg border border-border bg-card p-3 text-left text-sm transition-colors",
+                  isCurrent ? "border-primary/70 bg-primary/5" : null,
+                )}
+                disabled={isSaving}
+                onClick={() => changeDraft(draft.target)}
+              >
+                <span className="block font-semibold text-foreground">
+                  Draft: {draft.displayTitle}
+                </span>
+                <span className="block text-xs text-muted-foreground">
+                  {dayLabelForTarget(board, draft.target)}{" "}
+                  {formatMealType(draft.target.mealType)}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </section>
+    );
   }
 
   function renderRecipeTray() {
@@ -256,6 +327,7 @@ export function MealPlanningPanel({
           type="button"
           variant="ghost"
           className="w-full justify-start"
+          disabled={isSaving}
           onClick={() => setShowAll(true)}
         >
           Show all recipes
@@ -316,6 +388,7 @@ export function MealPlanningPanel({
               <Button
                 type="button"
                 variant="outline"
+                disabled={isSaving}
                 onClick={() => changeDraft(draft.target)}
               >
                 Change draft
@@ -324,6 +397,7 @@ export function MealPlanningPanel({
                 type="button"
                 variant="ghost"
                 aria-label={`Remove draft: ${draft.displayTitle}`}
+                disabled={isSaving}
                 onClick={() => onRemoveDraft(draft.target)}
               >
                 Remove draft
@@ -358,10 +432,20 @@ export function MealPlanningPanel({
           >
             Skip conflicted and save remaining
           </Button>
-          <Button type="button" variant="outline" onClick={onKeepEditing}>
+          <Button
+            type="button"
+            variant="outline"
+            disabled={isSaving}
+            onClick={onKeepEditing}
+          >
             Keep editing
           </Button>
-          <Button type="button" variant="ghost" onClick={onCancelSave}>
+          <Button
+            type="button"
+            variant="ghost"
+            disabled={isSaving}
+            onClick={onCancelSave}
+          >
             Cancel save
           </Button>
         </div>
@@ -370,7 +454,7 @@ export function MealPlanningPanel({
   }
 
   return (
-    <MobileSheet isOpen={isOpen} onClose={onCancel} title="Meal planning">
+    <MobileSheet isOpen={isOpen} onClose={guardedCancel} title="Meal planning">
       <div className="space-y-5">
         {saveError ? (
           <p className="text-sm text-destructive" role="alert">
@@ -380,6 +464,8 @@ export function MealPlanningPanel({
 
         {isReviewing ? (
           <div className="space-y-5">
+            {renderPlanningSurface()}
+
             <section className="space-y-3">
               <div>
                 <h2 className="text-base font-semibold text-foreground">
@@ -402,16 +488,28 @@ export function MealPlanningPanel({
               >
                 {isSaving ? "Saving..." : "Save to week"}
               </Button>
-              <Button type="button" variant="outline" onClick={onKeepEditing}>
+              <Button
+                type="button"
+                variant="outline"
+                disabled={isSaving}
+                onClick={onKeepEditing}
+              >
                 Keep editing
               </Button>
-              <Button type="button" variant="ghost" onClick={onCancel}>
+              <Button
+                type="button"
+                variant="ghost"
+                disabled={isSaving}
+                onClick={guardedCancel}
+              >
                 Cancel planning
               </Button>
             </div>
           </div>
         ) : (
           <div className="space-y-5">
+            {renderPlanningSurface()}
+
             <section className="space-y-3">
               <div>
                 <p className="text-sm font-semibold text-foreground">
@@ -431,6 +529,7 @@ export function MealPlanningPanel({
                 <input
                   value={mealName}
                   onChange={(event) => setMealName(event.target.value)}
+                  disabled={isSaving}
                   className="h-10 w-full rounded-lg border border-input bg-background px-3 text-sm"
                 />
               </label>
@@ -439,12 +538,17 @@ export function MealPlanningPanel({
                 <Button
                   type="button"
                   variant="outline"
-                  disabled={!mealName.trim()}
+                  disabled={!mealName.trim() || isSaving}
                   onClick={addQuickDraft}
                 >
                   {currentDraft ? "Update draft" : "Add quick meal draft"}
                 </Button>
-                <Button type="button" variant="secondary" onClick={onSkip}>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  disabled={isSaving}
+                  onClick={onSkip}
+                >
                   Skip this slot
                 </Button>
               </div>
@@ -455,6 +559,7 @@ export function MealPlanningPanel({
                   variant="ghost"
                   className="w-full justify-start"
                   aria-label={`Remove draft: ${currentDraft.displayTitle}`}
+                  disabled={isSaving}
                   onClick={() => onRemoveDraft(currentDraft.target)}
                 >
                   Remove draft
@@ -462,22 +567,32 @@ export function MealPlanningPanel({
               ) : null}
             </section>
 
-            <div className="space-y-3">{renderRecipeTray()}</div>
+            <fieldset
+              disabled={isSaving}
+              className="m-0 min-w-0 space-y-3 border-0 p-0"
+            >
+              {renderRecipeTray()}
+            </fieldset>
 
             <div className="grid gap-2">
-              <Button type="button" onClick={onReview}>
+              <Button type="button" disabled={isSaving} onClick={onReview}>
                 Review plan
               </Button>
               <div className="grid gap-2 sm:grid-cols-2">
                 <Button
                   type="button"
                   variant="outline"
-                  disabled={currentIndex === 0}
+                  disabled={currentIndex === 0 || isSaving}
                   onClick={onBack}
                 >
                   Back
                 </Button>
-                <Button type="button" variant="ghost" onClick={onCancel}>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  disabled={isSaving}
+                  onClick={guardedCancel}
+                >
                   Cancel planning
                 </Button>
               </div>

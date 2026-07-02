@@ -58,6 +58,42 @@ function mockCurrentWeek() {
   vi.stubGlobal("Date", MockDate as DateConstructor);
 }
 
+function withOccupiedDinnerSlot(
+  board: MealBoard,
+  dayIndex: number,
+  title: string,
+): MealBoard {
+  return {
+    ...board,
+    days: board.days.map((day) =>
+      day.dayIndex === dayIndex
+        ? {
+            ...day,
+            slots: day.slots.map((slot) =>
+              slot.mealType === "dinner"
+                ? {
+                    ...slot,
+                    id: `slot-${dayIndex}-dinner`,
+                    primary: {
+                      id: `entry-${dayIndex}-dinner`,
+                      role: "primary",
+                      sourceType: "quick",
+                      recipeId: null,
+                      title,
+                      imageUrl: null,
+                      note: null,
+                    },
+                    extras: [],
+                    note: null,
+                  }
+                : slot,
+            ),
+          }
+        : day,
+    ),
+  };
+}
+
 describe("MealsView", () => {
   setupMswServer();
 
@@ -275,7 +311,6 @@ describe("MealsView", () => {
     expect(
       await screen.findByRole("button", {
         name: "Draft dinner: Chili",
-        hidden: true,
       }),
     ).toBeInTheDocument();
     expect(screen.getByText("Monday dinner - 2 of 7")).toBeInTheDocument();
@@ -299,7 +334,6 @@ describe("MealsView", () => {
     expect(
       await screen.findByRole("button", {
         name: "Draft dinner: Chili",
-        hidden: true,
       }),
     ).toBeInTheDocument();
 
@@ -311,7 +345,6 @@ describe("MealsView", () => {
     expect(
       screen.queryByRole("button", {
         name: "Draft dinner: Chili",
-        hidden: true,
       }),
     ).not.toBeInTheDocument();
     expect(getMockMealsBoard(testWeekStartDate).days[0].slots[2].primary).toBe(
@@ -386,7 +419,6 @@ describe("MealsView", () => {
     expect(
       await screen.findByRole("button", {
         name: `Draft dinner: ${testRecipeDetail.title}`,
-        hidden: true,
       }),
     ).toBeInTheDocument();
     expect(getMockMealsBoard(testWeekStartDate).days[0].slots[2].primary).toBe(
@@ -413,7 +445,6 @@ describe("MealsView", () => {
     expect(
       await screen.findByRole("button", {
         name: "Draft dinner: Tacos",
-        hidden: true,
       }),
     ).toBeInTheDocument();
     expect(getMockMealsBoard(testWeekStartDate).days[1].slots[2].primary).toBe(
@@ -432,12 +463,101 @@ describe("MealsView", () => {
     expect(
       screen.queryByRole("button", {
         name: "Draft dinner: Tacos",
-        hidden: true,
       }),
     ).not.toBeInTheDocument();
     expect(getMockMealsBoard(testWeekStartDate).days[1].slots[2].primary).toBe(
       null,
     );
+  });
+
+  it("keeps conflict editing focused on the conflicted draft", async () => {
+    seedMockMealsBoard(createEmptyMealsBoard());
+    const queryClient = new QueryClient({
+      defaultOptions: {
+        queries: { retry: false, gcTime: Infinity, staleTime: 0 },
+        mutations: { retry: false },
+      },
+    });
+    const { user } = renderWithUser(<MealsView />, { queryClient });
+
+    await user.click(
+      await screen.findByRole("button", { name: "Fill empty slots" }),
+    );
+    await user.click(screen.getByRole("button", { name: "Start planning" }));
+    await user.type(screen.getByLabelText("Meal name"), "Chili");
+    await user.click(
+      screen.getByRole("button", { name: "Add quick meal draft" }),
+    );
+    expect(
+      await screen.findByRole("button", { name: "Draft dinner: Chili" }),
+    ).toBeInTheDocument();
+
+    seedMockMealsBoard(
+      withOccupiedDinnerSlot(createEmptyMealsBoard(), 0, "Already planned"),
+    );
+    await queryClient.invalidateQueries({
+      queryKey: mealsKeys.board(testWeekStartDate),
+    });
+    await waitFor(() => {
+      const cached = queryClient.getQueryData<ApiResponse<MealBoard>>(
+        mealsKeys.board(testWeekStartDate),
+      );
+      expect(cached?.data.days[0].slots[2].primary?.title).toBe(
+        "Already planned",
+      );
+    });
+
+    await user.click(screen.getByRole("button", { name: "Review plan" }));
+    await user.click(screen.getByRole("button", { name: "Save to week" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Some meal slots are no longer empty.",
+    );
+
+    await user.click(
+      screen.getAllByRole("button", { name: "Keep editing" })[0],
+    );
+
+    expect(screen.getByText("Sunday dinner - 1 of 7")).toBeInTheDocument();
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Draft dinner: Chili" }),
+    ).toHaveAttribute("aria-current", "true");
+  });
+
+  it("saves focused planning drafts through the meal plan endpoint", async () => {
+    seedMockMealsBoard(createEmptyMealsBoard());
+    let singleSlotSaveCalls = 0;
+    server.use(
+      http.put(`${API_BASE}/meals/slots`, () => {
+        singleSlotSaveCalls += 1;
+        return HttpResponse.json(
+          { message: "single-slot save should not be used" },
+          { status: 500 },
+        );
+      }),
+    );
+    const { user } = renderWithUser(<MealsView />);
+
+    await user.click(
+      await screen.findByRole("button", { name: "Fill empty slots" }),
+    );
+    await user.click(screen.getByRole("button", { name: "Start planning" }));
+    await user.type(screen.getByLabelText("Meal name"), "Chili");
+    await user.click(
+      screen.getByRole("button", { name: "Add quick meal draft" }),
+    );
+    await user.click(screen.getByRole("button", { name: "Review plan" }));
+    await user.click(screen.getByRole("button", { name: "Save to week" }));
+
+    await waitFor(() => {
+      expect(
+        getMockMealsBoard(testWeekStartDate).days[0].slots[2].primary?.title,
+      ).toBe("Chili");
+    });
+    expect(
+      screen.queryByRole("dialog", { name: "Meal planning" }),
+    ).not.toBeInTheDocument();
+    expect(singleSlotSaveCalls).toBe(0);
   });
 
   it("renders occupied slots as meal cards rather than add affordances", async () => {

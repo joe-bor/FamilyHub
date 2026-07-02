@@ -316,14 +316,19 @@ export function MealsView() {
   }
 
   function keepEditingPlanningDrafts() {
+    const firstConflictedIndex = conflictedTargets
+      .map((target) => findQueueIndex(planningQueue, target))
+      .find((index) => index >= 0);
     setPlanningSaveError(null);
     setConflictedTargets([]);
-    const nextIndex = findNextQueueIndex(
-      planningQueue,
-      0,
-      planningDrafts,
-      skippedPlanningTargets,
-    );
+    const nextIndex =
+      firstConflictedIndex ??
+      findNextQueueIndex(
+        planningQueue,
+        0,
+        planningDrafts,
+        skippedPlanningTargets,
+      );
     setCurrentPlanningIndex(nextIndex < planningQueue.length ? nextIndex : 0);
   }
 
