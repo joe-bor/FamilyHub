@@ -51,6 +51,22 @@ vi.mock("@/hooks", async (importOriginal) => {
   return { ...actual, useOnlineStatus: () => online };
 });
 
+const mobileSheetCancelLabels = vi.hoisted(
+  () => [] as Array<string | undefined>,
+);
+
+vi.mock("../ui/mobile-sheet", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("../ui/mobile-sheet")>();
+  const React = await import("react");
+  return {
+    ...actual,
+    MobileSheet: (props: Parameters<typeof actual.MobileSheet>[0]) => {
+      mobileSheetCancelLabels.push(props.cancelLabel);
+      return React.createElement(actual.MobileSheet, props);
+    },
+  };
+});
+
 // ---------------------------------------------------------------------------
 // Fixtures
 // ---------------------------------------------------------------------------
@@ -277,6 +293,47 @@ function renderControlledSheet({
   );
 }
 
+function ReopenableCreateSheet({
+  initialList,
+  onOpenChange,
+}: {
+  initialList: ListDetail;
+  onOpenChange: (open: boolean) => void;
+}) {
+  const [open, setOpen] = useState(true);
+  return (
+    <>
+      <button type="button" onClick={() => setOpen(true)}>
+        Open add item sheet
+      </button>
+      <CacheConnectedSheet
+        initialList={initialList}
+        open={open}
+        mode="create"
+        item={null}
+        onOpenChange={(nextOpen) => {
+          onOpenChange(nextOpen);
+          setOpen(nextOpen);
+        }}
+      />
+    </>
+  );
+}
+
+function renderReopenableCreateSheet({
+  list = makeList(),
+  onOpenChange = vi.fn(),
+}: {
+  list?: ListDetail;
+  onOpenChange?: (open: boolean) => void;
+} = {}) {
+  seedMockLists([list]);
+  installConvergingCategoryHandlers(list);
+  return renderWithUser(
+    <ReopenableCreateSheet initialList={list} onOpenChange={onOpenChange} />,
+  );
+}
+
 // ---------------------------------------------------------------------------
 // Item create multi-add flow
 // ---------------------------------------------------------------------------
@@ -324,6 +381,37 @@ describe("item create multi-add flow", () => {
       ).not.toBeInTheDocument();
     });
     expect(onOpenChange).toHaveBeenCalledWith(false);
+  });
+
+  it("reopens a completed create cycle with Cancel on the first reopened render", async () => {
+    const { user } = renderReopenableCreateSheet();
+
+    await user.type(
+      await screen.findByRole("textbox", { name: /item text/i }),
+      "Spinach",
+    );
+    await user.click(screen.getByRole("button", { name: /save item/i }));
+
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: "Done" })).toBeInTheDocument();
+    });
+    await user.click(screen.getByRole("button", { name: "Done" }));
+    await waitFor(() => {
+      expect(
+        screen.queryByRole("dialog", { name: "Add Item" }),
+      ).not.toBeInTheDocument();
+    });
+
+    mobileSheetCancelLabels.length = 0;
+    await user.click(
+      screen.getByRole("button", { name: "Open add item sheet" }),
+    );
+
+    expect(mobileSheetCancelLabels[0]).toBeUndefined();
+    expect(screen.getByRole("button", { name: "Cancel" })).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Done" }),
+    ).not.toBeInTheDocument();
   });
 
   it("keeps typed text and selected category after failed create", async () => {

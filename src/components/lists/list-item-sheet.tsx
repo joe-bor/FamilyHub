@@ -115,6 +115,11 @@ export function ListItemSheet({
   const isPending =
     createItem.isPending || updateItem.isPending || inlinePending;
 
+  function closeSheet() {
+    setHasCreatedItemThisCycle(false);
+    onOpenChange(false);
+  }
+
   // ---------------------------------------------------------------------------
   // Inline category create handler
   // ---------------------------------------------------------------------------
@@ -288,7 +293,7 @@ export function ListItemSheet({
   return (
     <MobileSheet
       isOpen={open}
-      onClose={() => onOpenChange(false)}
+      onClose={closeSheet}
       cancelLabel={
         mode === "create" && hasCreatedItemThisCycle ? "Done" : undefined
       }
