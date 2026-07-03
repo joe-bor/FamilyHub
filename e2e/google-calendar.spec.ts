@@ -53,16 +53,16 @@ test.describe("Google Calendar Integration", () => {
     await expect(page.getByText(/add an email/i)).toBeVisible();
   });
 
-  test("event form has collapsible description field", async ({ page }) => {
+  test("event form has collapsible details field", async ({ page }) => {
     // Open add event modal
     await page.getByRole("button", { name: /add event/i }).click();
 
-    // Description should be collapsed
-    await expect(page.getByText(/add description/i)).toBeVisible();
+    // Details should be collapsed
+    await expect(page.getByText(/add details/i)).toBeVisible();
     await expect(page.getByLabel(/description/i)).not.toBeVisible();
 
     // Expand it
-    await page.getByText(/add description/i).click();
+    await page.getByText(/add details/i).click();
     await expect(page.getByLabel(/description/i)).toBeVisible();
   });
 });
