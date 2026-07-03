@@ -1043,10 +1043,10 @@ describe("EventForm", () => {
         />,
       );
       expect(screen.queryByLabelText(/description/i)).not.toBeInTheDocument();
-      expect(screen.getByText(/add description/i)).toBeInTheDocument();
+      expect(screen.getByText(/add details/i)).toBeInTheDocument();
     });
 
-    it("shows description textarea when 'Add description' is clicked", async () => {
+    it("shows description textarea when 'Add details' is clicked", async () => {
       const { user } = renderWithUser(
         <EventForm
           mode="add"
@@ -1055,7 +1055,7 @@ describe("EventForm", () => {
         />,
       );
 
-      await user.click(screen.getByText(/add description/i));
+      await user.click(screen.getByText(/add details/i));
       expect(screen.getByLabelText(/description/i)).toBeInTheDocument();
     });
 
@@ -1155,6 +1155,70 @@ describe("EventForm", () => {
           screen.getByRole("button", { name: member.name }),
         ).toBeInTheDocument();
       }
+    });
+  });
+
+  describe("location field", () => {
+    it("reveals Location and Description behind Add details", async () => {
+      const { user } = renderWithUser(
+        <EventForm
+          mode="add"
+          defaultValues={{ memberId: testMembers[0].id }}
+          onSubmit={mockOnSubmit}
+          onCancel={mockOnCancel}
+        />,
+      );
+      await waitForMemberSelected(testMembers[0].name);
+
+      expect(screen.queryByLabelText("Location")).not.toBeInTheDocument();
+      await user.click(screen.getByRole("button", { name: /add details/i }));
+      expect(screen.getByLabelText("Location")).toBeInTheDocument();
+      expect(screen.getByLabelText("Description")).toBeInTheDocument();
+    });
+
+    it("submits the entered location", async () => {
+      const { user } = renderWithUser(
+        <EventForm
+          mode="add"
+          defaultValues={{ memberId: testMembers[0].id, title: "Swim class" }}
+          onSubmit={mockOnSubmit}
+          onCancel={mockOnCancel}
+        />,
+      );
+      await waitForMemberSelected(testMembers[0].name);
+
+      await user.click(screen.getByRole("button", { name: /add details/i }));
+      await user.type(screen.getByLabelText("Location"), "YMCA pool");
+      await user.click(screen.getByRole("button", { name: /add event/i }));
+
+      await waitFor(
+        () => {
+          expect(mockOnSubmit).toHaveBeenCalledWith(
+            expect.objectContaining({ location: "YMCA pool" }),
+          );
+        },
+        { timeout: TEST_TIMEOUTS.FORM_SUBMIT },
+      );
+    });
+
+    it("starts expanded in edit mode when location is present", async () => {
+      render(
+        <EventForm
+          mode="edit"
+          defaultValues={{
+            memberId: testMembers[0].id,
+            title: "Dentist",
+            date: "2026-07-01",
+            startTime: "09:30",
+            endTime: "10:30",
+            location: "Smile Dental",
+          }}
+          onSubmit={mockOnSubmit}
+          onCancel={mockOnCancel}
+        />,
+      );
+
+      expect(screen.getByLabelText("Location")).toHaveValue("Smile Dental");
     });
   });
 });

@@ -114,7 +114,7 @@ function EventForm({
     defaultValues: initialValues,
   });
 
-  const [showDescription, setShowDescription] = useState(false);
+  const [showDetails, setShowDetails] = useState(false);
 
   // Watch values for controlled components
   const dateValue = watch("date");
@@ -135,12 +135,12 @@ function EventForm({
     reset(initialValues);
   }, [initialValues, reset]);
 
-  // Auto-expand description if initial value has content
+  // Auto-expand details if initial value has description or location content
   useEffect(() => {
-    if (initialValues.description) {
-      setShowDescription(true);
+    if (initialValues.description || initialValues.location) {
+      setShowDetails(true);
     }
-  }, [initialValues.description]);
+  }, [initialValues.description, initialValues.location]);
 
   const handleFormSubmit = (data: EventFormData) => {
     if (isPending) return;
@@ -402,19 +402,34 @@ function EventForm({
         <FormError message={errors.memberId?.message} />
       </div>
 
-      {/* Description (collapsible) */}
+      {/* Details: Location + Description (collapsible) */}
       <div className="space-y-2">
-        {!showDescription ? (
+        {!showDetails ? (
           <button
             type="button"
-            onClick={() => setShowDescription(true)}
+            onClick={() => setShowDetails(true)}
             className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
           >
             <ChevronDown className="w-3.5 h-3.5" />
-            Add description
+            Add details
           </button>
         ) : (
           <>
+            <div className="space-y-2">
+              <Label htmlFor="location">Location</Label>
+              <Input
+                id="location"
+                {...register("location")}
+                placeholder="Where?"
+                className={cn(
+                  "bg-input",
+                  errors.location && "border-destructive",
+                )}
+                maxLength={255}
+                aria-invalid={!!errors.location}
+              />
+              <FormError message={errors.location?.message} />
+            </div>
             <Label htmlFor="description">Description</Label>
             <textarea
               id="description"
