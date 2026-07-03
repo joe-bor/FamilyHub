@@ -96,6 +96,29 @@ describe("MobileSheet", () => {
     expect(onClose).not.toHaveBeenCalled();
   });
 
+  it("uses a custom header dismiss label when provided", async () => {
+    const onClose = vi.fn();
+    const { user } = renderWithUser(
+      <MobileSheet
+        isOpen
+        onClose={onClose}
+        title="Test sheet"
+        cancelLabel="Done"
+      >
+        <button type="button">Inside</button>
+      </MobileSheet>,
+    );
+
+    expect(screen.getByRole("button", { name: "Done" })).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Cancel" }),
+    ).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Done" }));
+
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
   // ---------------------------------------------------------------------------
   // Task 11: new optional props — must not break existing callers
   // ---------------------------------------------------------------------------

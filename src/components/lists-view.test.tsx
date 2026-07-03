@@ -357,6 +357,13 @@ describe("ListsView hub", () => {
 
     expect(await screen.findByText("Popcorn")).toBeInTheDocument();
 
+    await user.click(screen.getByRole("button", { name: "Done" }));
+    await waitFor(() => {
+      expect(
+        screen.queryByRole("dialog", { name: "Add Item" }),
+      ).not.toBeInTheDocument();
+    });
+
     await user.click(screen.getByRole("button", { name: "Edit" }));
     await user.clear(screen.getByLabelText("Item text"));
     await typeAndWait(user, screen.getByLabelText("Item text"), "Kettle corn");

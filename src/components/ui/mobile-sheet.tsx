@@ -20,6 +20,7 @@ export interface MobileSheetProps {
   isOpen: boolean;
   onClose: () => void;
   onCancel?: () => void;
+  cancelLabel?: string;
   title: string;
   /**
    * When provided, `onPointerDownOutside` calls `e.preventDefault()` while the
@@ -77,6 +78,7 @@ export function MobileSheet({
   isOpen,
   onClose,
   onCancel,
+  cancelLabel = "Cancel",
   title,
   headerRight,
   children,
@@ -238,7 +240,7 @@ export function MobileSheet({
               onClick={onCancel ?? onClose}
               className="rounded-lg px-1 py-1 text-sm font-semibold text-primary"
             >
-              Cancel
+              {cancelLabel}
             </button>
             <Drawer.Title
               ref={(el) => {
