@@ -301,6 +301,41 @@ describe("EventForm", () => {
       );
     });
 
+    it("does not let an off-grid start picker change create equal times near midnight", async () => {
+      const { user } = renderWithUser(
+        <EventForm
+          mode="edit"
+          defaultValues={timedEvent({
+            startTime: "22:59",
+            endTime: "23:59",
+          })}
+          onSubmit={mockOnSubmit}
+          onCancel={mockOnCancel}
+        />,
+      );
+
+      await changeHourWithTimePicker(user, /10:59 PM/i, "11");
+
+      expect(
+        screen.getByRole("button", { name: /10:59 PM/i }),
+      ).toBeInTheDocument();
+      expect(
+        screen.getByRole("button", { name: /11:59 PM/i }),
+      ).toBeInTheDocument();
+
+      const submitted = await submitEditForm(user);
+
+      expect(submitted).toEqual(
+        expect.objectContaining({
+          startTime: "22:59",
+          endTime: "23:59",
+        }),
+      );
+      expect(timeToMinutes(submitted.endTime)).toBeGreaterThan(
+        timeToMinutes(submitted.startTime),
+      );
+    });
+
     it.each([
       { endTime: "09:00", state: "equal to start" },
       { endTime: "08:30", state: "before start" },

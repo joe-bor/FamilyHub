@@ -150,12 +150,16 @@ function EventForm({
   const handleStartTimeChange = (time: string) => {
     const startMinutes = parseTimeToMinutes(time);
     const durationMinutes = getDurationMinutes(startTimeValue, endTimeValue);
+    if (startMinutes === null) return;
+
+    const nextEndMinutes = Math.min(
+      startMinutes + durationMinutes,
+      LAST_MINUTE_OF_DAY,
+    );
+    if (nextEndMinutes <= startMinutes) return;
 
     setValue("startTime", time);
-
-    if (startMinutes !== null) {
-      setValue("endTime", formatMinutesToTime(startMinutes + durationMinutes));
-    }
+    setValue("endTime", formatMinutesToTime(nextEndMinutes));
   };
 
   const handleStartTimeNudge = (deltaMinutes: number) => {
