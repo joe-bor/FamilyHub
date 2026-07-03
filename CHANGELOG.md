@@ -1,5 +1,57 @@
 # Changelog
 
+## [0.3.21](https://github.com/joe-bor/FamilyHub/compare/family-hub-v0.3.20...family-hub-v0.3.21) (2026-07-03)
+
+
+### Features
+
+* **calendar:** add location input behind Add details expander ([d654fe3](https://github.com/joe-bor/FamilyHub/commit/d654fe3d652f581e087bb08a6956d765cd1a7659))
+* **calendar:** preserve event duration when changing start time ([e2e0259](https://github.com/joe-bor/FamilyHub/commit/e2e0259a14080b8db15df4cb0ed9dc2d8d4766ad))
+* **lists:** keep add item sheet open for multi-add ([89517a7](https://github.com/joe-bor/FamilyHub/commit/89517a7dc1ffcb4f920a3c1eb68b5f10c8bcffc7))
+* **meals:** add focused planning save contract ([0596071](https://github.com/joe-bor/FamilyHub/commit/0596071b51c7521da5b749cece47daa8cf6ea583))
+* **meals:** add focused planning session UI ([8a16ab9](https://github.com/joe-bor/FamilyHub/commit/8a16ab9d698a22a78ba6b90f393828b1c795c1ca))
+* **meals:** add planning session helpers ([8dfabc9](https://github.com/joe-bor/FamilyHub/commit/8dfabc96cb3b7b458d2034f13b931a65fc1add9c))
+* **meals:** save focused plans with conflict handling ([8123069](https://github.com/joe-bor/FamilyHub/commit/8123069c7d7dce268d7ca700c1ad727503bf06c6))
+
+
+### Bug Fixes
+
+* **build:** fail bundle check on inline module scripts ([6fd1a49](https://github.com/joe-bor/FamilyHub/commit/6fd1a492179ef99107d359b60a85f4734e035372))
+* **calendar:** keep end nudge after start time ([235de1b](https://github.com/joe-bor/FamilyHub/commit/235de1b06c09930f69ebf4212cbcc0cf889d3e34))
+* **calendar:** keep start nudge valid near midnight ([fb0adc5](https://github.com/joe-bor/FamilyHub/commit/fb0adc53c0fc81843925b19c74d0471aa388c7ed))
+* **calendar:** keep start picker valid near midnight ([285394c](https://github.com/joe-bor/FamilyHub/commit/285394cdce4b71ae0c4c806130bf334034a4e94e))
+* **family:** break import cycle that skipped boot localStorage hydration ([6cfa466](https://github.com/joe-bor/FamilyHub/commit/6cfa466a73cf1c95cb716873831ba978cb24c945))
+* **lists:** reset add item done label on reopen ([4028171](https://github.com/joe-bor/FamilyHub/commit/4028171cf1475974775ac48d789ececa1438e7eb))
+* **meals:** assert future week in planning e2e ([0521021](https://github.com/joe-bor/FamilyHub/commit/052102170f7b3eaf841c7ddd54b572efa6a47123))
+* **meals:** guard extras-only editor edge cases ([3f1dff2](https://github.com/joe-bor/FamilyHub/commit/3f1dff2fc672dd370faa3cb0a6fb7fac4273d502))
+* **meals:** harden planning session projections ([ac8f262](https://github.com/joe-bor/FamilyHub/commit/ac8f262ee65d87014a1a433fdd43de9ab6c40416))
+* **meals:** harden planning session UI states ([c34f8b7](https://github.com/joe-bor/FamilyHub/commit/c34f8b79657898eb82bc9ddd94b59e68d80f48c8))
+* **meals:** preserve drafts during planning conflicts ([8f3416a](https://github.com/joe-bor/FamilyHub/commit/8f3416af4012efbf92a49a5cdbe94650a76515ba))
+* **meals:** preserve extras when adding primary ([d32e0df](https://github.com/joe-bor/FamilyHub/commit/d32e0df39ea357ed8cd9f9156a8b32eb0d9b1f6e))
+* **meals:** render extras-only meal slots as context ([cf0711c](https://github.com/joe-bor/FamilyHub/commit/cf0711ce36deda28a5d483308d336766f63a5bf8))
+* **meals:** tighten focused planning save contract tests ([3d9969a](https://github.com/joe-bor/FamilyHub/commit/3d9969a623669c45de63f1a791875bd8098336f6))
+* **meals:** validate planning drafts and extras collisions ([16d3a3e](https://github.com/joe-bor/FamilyHub/commit/16d3a3e2c021bba7b58e1e1c7712b703472729dd))
+
+
+### Performance Improvements
+
+* **build:** split react and vendor deps out of the entry chunk ([4c1fb8e](https://github.com/joe-bor/FamilyHub/commit/4c1fb8e4bc98394cd334982088a7a399fa3008e5))
+
+
+### Code Refactoring
+
+* **calendar:** drop redundant start-nudge guard and wrap description field ([31364bf](https://github.com/joe-bor/FamilyHub/commit/31364bfba015556daa3b131433680d144a0e03b3))
+
+
+### Tests
+
+* **build:** add zero-dep entry-chunk size budget check ([39e04ef](https://github.com/joe-bor/FamilyHub/commit/39e04efe6a3fa1590bfb756b571a4f1ee6351bf8))
+* **e2e:** cover grocery multi-add and event location quick-capture flows ([fcba991](https://github.com/joe-bor/FamilyHub/commit/fcba991c84b17de79f72b03cae67b4b62c4c29cf))
+* **e2e:** dismiss add-item sheet via Done in managed-categories flow ([897df08](https://github.com/joe-bor/FamilyHub/commit/897df08f84e541cfc8f21babffed1cd7cccb80b7))
+* **e2e:** scope quick-capture location assertion to the detail dialog ([0f7b5f9](https://github.com/joe-bor/FamilyHub/commit/0f7b5f90044eb3b0f5b9557c06aaff7ad21d0eba))
+* **e2e:** update google-calendar spec for Add details rename ([77e7b83](https://github.com/joe-bor/FamilyHub/commit/77e7b8363fd4794524720b1e5694f0ad77d5b9f7))
+* **meals:** cover focused planning session on mobile ([8a69aac](https://github.com/joe-bor/FamilyHub/commit/8a69aacfeddf5600d64befe4864bab4a1e157a31))
+
 ## [0.3.20](https://github.com/joe-bor/FamilyHub/compare/family-hub-v0.3.19...family-hub-v0.3.20) (2026-07-01)
 
 
