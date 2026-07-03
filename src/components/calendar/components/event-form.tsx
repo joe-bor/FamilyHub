@@ -166,17 +166,12 @@ function EventForm({
     const startMinutes = parseTimeToMinutes(startTimeValue);
     if (startMinutes === null) return;
 
-    const durationMinutes = getDurationMinutes(startTimeValue, endTimeValue);
+    // Only clamp the new start here; handleStartTimeChange re-derives the
+    // duration from the same current times and applies the end-clamp + guard.
     const nextStartMinutes = Math.max(
       0,
       Math.min(startMinutes + deltaMinutes, LAST_MINUTE_OF_DAY),
     );
-    const nextEndMinutes = Math.min(
-      nextStartMinutes + durationMinutes,
-      LAST_MINUTE_OF_DAY,
-    );
-
-    if (nextEndMinutes <= nextStartMinutes) return;
 
     handleStartTimeChange(formatMinutesToTime(nextStartMinutes));
   };
@@ -430,24 +425,26 @@ function EventForm({
               />
               <FormError message={errors.location?.message} />
             </div>
-            <Label htmlFor="description">Description</Label>
-            <textarea
-              id="description"
-              {...register("description")}
-              placeholder="Add notes or details..."
-              className={cn(
-                "flex min-h-[88px] w-full resize-y rounded-lg border border-input bg-input px-3 py-2 text-[15px] leading-5 placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50",
-                errors.description && "border-destructive",
+            <div className="space-y-2">
+              <Label htmlFor="description">Description</Label>
+              <textarea
+                id="description"
+                {...register("description")}
+                placeholder="Add notes or details..."
+                className={cn(
+                  "flex min-h-[88px] w-full resize-y rounded-lg border border-input bg-input px-3 py-2 text-[15px] leading-5 placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50",
+                  errors.description && "border-destructive",
+                )}
+                maxLength={2000}
+                aria-invalid={!!errors.description}
+              />
+              {descriptionValue && descriptionValue.length > 1900 && (
+                <p className="text-xs text-muted-foreground text-right">
+                  {descriptionValue.length}/2000
+                </p>
               )}
-              maxLength={2000}
-              aria-invalid={!!errors.description}
-            />
-            {descriptionValue && descriptionValue.length > 1900 && (
-              <p className="text-xs text-muted-foreground text-right">
-                {descriptionValue.length}/2000
-              </p>
-            )}
-            <FormError message={errors.description?.message} />
+              <FormError message={errors.description?.message} />
+            </div>
           </>
         )}
       </div>
