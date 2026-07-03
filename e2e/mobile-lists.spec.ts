@@ -59,14 +59,34 @@ test.describe("Mobile Lists", () => {
     await expect(optionsSheet).toBeHidden();
 
     await page.getByRole("button", { name: "Add item" }).click();
-    await page.getByLabel("Item text").fill("Bananas");
-    await page
-      .getByRole("combobox", { name: "Category" })
-      .selectOption({ label: "Produce" });
-    await page.getByRole("button", { name: "Save item" }).click();
+    const addItemSheet = page.getByRole("dialog", { name: "Add Item" });
+    await waitForSheetSettled(addItemSheet);
+    const itemTextInput = addItemSheet.getByLabel("Item text");
+    const itemCategorySelect = addItemSheet.getByRole("combobox", {
+      name: "Category",
+    });
+    await itemCategorySelect.selectOption({ label: "Produce" });
 
+    for (const itemText of ["Bananas", "Apples", "Carrots"]) {
+      await itemTextInput.fill(itemText);
+      await addItemSheet.getByRole("button", { name: "Save item" }).click();
+      await expect(addItemSheet).toBeVisible();
+      await expect(itemTextInput).toHaveValue("");
+      await expect(itemTextInput).toBeFocused();
+      await expect(itemCategorySelect.locator("option:checked")).toHaveText(
+        "Produce",
+      );
+      await expect(
+        addItemSheet.getByRole("button", { name: "Done" }),
+      ).toBeVisible();
+    }
+
+    await addItemSheet.getByRole("button", { name: "Done" }).click();
+    await expect(addItemSheet).toBeHidden();
     await expect(page.getByRole("heading", { name: "Produce" })).toBeVisible();
     await expect(page.getByText("Bananas")).toBeVisible();
+    await expect(page.getByText("Apples")).toBeVisible();
+    await expect(page.getByText("Carrots")).toBeVisible();
 
     // Switch the category mode immediately — the item create may still be in
     // flight, so the list-level PATCH response must not clobber the new item.

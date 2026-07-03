@@ -27,6 +27,7 @@
  */
 
 import { HttpResponse, http } from "msw";
+import { useState } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { useList } from "@/api";
 import type { ListDetail } from "@/lib/types";
@@ -222,6 +223,179 @@ function renderSheet(
     />,
   );
 }
+
+function ControlledCacheSheet({
+  initialList,
+  mode,
+  item,
+  onOpenChange,
+}: {
+  initialList: ListDetail;
+  mode: "create" | "edit";
+  item: typeof baseItem | null;
+  onOpenChange: (open: boolean) => void;
+}) {
+  const [open, setOpen] = useState(true);
+  return (
+    <CacheConnectedSheet
+      initialList={initialList}
+      open={open}
+      mode={mode}
+      item={item}
+      onOpenChange={(nextOpen) => {
+        onOpenChange(nextOpen);
+        setOpen(nextOpen);
+      }}
+    />
+  );
+}
+
+function renderControlledSheet({
+  mode = "create",
+  list = makeList(),
+  item = null,
+  onOpenChange = vi.fn(),
+  convergeCategories = true,
+}: {
+  mode?: "create" | "edit";
+  list?: ListDetail;
+  item?: typeof baseItem | null;
+  onOpenChange?: (open: boolean) => void;
+  convergeCategories?: boolean;
+} = {}) {
+  if (convergeCategories) {
+    seedMockLists([list]);
+    installConvergingCategoryHandlers(list);
+  }
+  return renderWithUser(
+    <ControlledCacheSheet
+      initialList={list}
+      mode={mode}
+      item={item}
+      onOpenChange={onOpenChange}
+    />,
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Item create multi-add flow
+// ---------------------------------------------------------------------------
+
+describe("item create multi-add flow", () => {
+  it("keeps create sheet open after successful create, clears/refocuses text, preserves category, and flips Cancel to Done", async () => {
+    const onOpenChange = vi.fn();
+    const { user } = renderControlledSheet({ onOpenChange });
+
+    const textInput = await screen.findByRole("textbox", {
+      name: /item text/i,
+    });
+    await user.type(textInput, "Spinach");
+    await user.selectOptions(
+      screen.getByRole("combobox", { name: /category/i }),
+      CAT_A_ID,
+    );
+
+    await user.click(screen.getByRole("button", { name: /save item/i }));
+
+    await waitFor(() => {
+      expect(screen.getByRole("textbox", { name: /item text/i })).toHaveValue(
+        "",
+      );
+    });
+    await waitFor(() => {
+      expect(screen.getByRole("textbox", { name: /item text/i })).toHaveFocus();
+    });
+
+    const select = screen.getByRole("combobox", { name: /category/i });
+    expect((select as HTMLSelectElement).value).toBe(CAT_A_ID);
+    expect(select.querySelector("option:checked")?.textContent).toBe("Produce");
+    expect(screen.getByRole("dialog", { name: "Add Item" })).toBeVisible();
+    expect(screen.getByRole("button", { name: "Done" })).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Cancel" }),
+    ).not.toBeInTheDocument();
+    expect(onOpenChange).not.toHaveBeenCalledWith(false);
+
+    await user.click(screen.getByRole("button", { name: "Done" }));
+
+    await waitFor(() => {
+      expect(
+        screen.queryByRole("dialog", { name: "Add Item" }),
+      ).not.toBeInTheDocument();
+    });
+    expect(onOpenChange).toHaveBeenCalledWith(false);
+  });
+
+  it("keeps typed text and selected category after failed create", async () => {
+    const list = makeList();
+    seedMockLists([list]);
+    server.use(
+      http.post(`${API_BASE}/lists/${LIST_ID}/items`, () =>
+        HttpResponse.json({ message: "Server error" }, { status: 500 }),
+      ),
+    );
+
+    const onOpenChange = vi.fn();
+    const { user } = renderControlledSheet({
+      list,
+      onOpenChange,
+      convergeCategories: false,
+    });
+
+    await user.type(
+      await screen.findByRole("textbox", { name: /item text/i }),
+      "Bread",
+    );
+    await user.selectOptions(
+      screen.getByRole("combobox", { name: /category/i }),
+      CAT_B_ID,
+    );
+
+    await user.click(screen.getByRole("button", { name: /save item/i }));
+
+    await waitFor(() => {
+      expect(screen.getByRole("alert")).toHaveTextContent(/server error/i);
+    });
+    expect(screen.getByRole("textbox", { name: /item text/i })).toHaveValue(
+      "Bread",
+    );
+    expect(screen.getByRole("combobox", { name: /category/i })).toHaveValue(
+      CAT_B_ID,
+    );
+    expect(screen.getByRole("button", { name: "Cancel" })).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Done" }),
+    ).not.toBeInTheDocument();
+    expect(onOpenChange).not.toHaveBeenCalledWith(false);
+  });
+
+  it("still closes edit sheet after successful save", async () => {
+    const list = makeList({ items: [baseItem] });
+    const onOpenChange = vi.fn();
+    const { user } = renderControlledSheet({
+      mode: "edit",
+      list,
+      item: baseItem,
+      onOpenChange,
+    });
+
+    await user.clear(
+      await screen.findByRole("textbox", { name: /item text/i }),
+    );
+    await user.type(
+      screen.getByRole("textbox", { name: /item text/i }),
+      "Kiwi",
+    );
+    await user.click(screen.getByRole("button", { name: /save item/i }));
+
+    await waitFor(() => {
+      expect(
+        screen.queryByRole("dialog", { name: "Edit Item" }),
+      ).not.toBeInTheDocument();
+    });
+    expect(onOpenChange).toHaveBeenCalledWith(false);
+  });
+});
 
 // ---------------------------------------------------------------------------
 // Category selection for all list kinds

@@ -71,6 +71,7 @@ export function ListItemSheet({
   const [inlineName, setInlineName] = useState("");
   const [inlineError, setInlineError] = useState<string | null>(null);
   const [inlinePending, setInlinePending] = useState(false);
+  const [hasCreatedItemThisCycle, setHasCreatedItemThisCycle] = useState(false);
 
   // Recovery error lives in React state so async updates trigger re-renders
   // properly in all environments (including test). form.setError alone may not
@@ -80,6 +81,7 @@ export function ListItemSheet({
 
   // Track the previous value of `open` to detect new item cycles.
   const prevOpenRef = useRef(open);
+  const prevModeRef = useRef(mode);
   useEffect(() => {
     const wasOpen = prevOpenRef.current;
     prevOpenRef.current = open;
@@ -89,8 +91,17 @@ export function ListItemSheet({
       setInlineName("");
       setInlineError(null);
       setRecoveryError(null);
+      setHasCreatedItemThisCycle(false);
     }
   }, [open]);
+
+  useEffect(() => {
+    const previousMode = prevModeRef.current;
+    prevModeRef.current = mode;
+    if (open && previousMode !== mode) {
+      setHasCreatedItemThisCycle(false);
+    }
+  }, [mode, open]);
 
   useEffect(() => {
     if (open) {
@@ -261,7 +272,14 @@ export function ListItemSheet({
         categoryId: values.categoryId ?? null,
       },
       {
-        onSuccess: () => onOpenChange(false),
+        onSuccess: () => {
+          setHasCreatedItemThisCycle(true);
+          form.reset({
+            text: "",
+            categoryId: selectedCategoryId,
+          });
+          window.setTimeout(() => form.setFocus("text"), 0);
+        },
         onError: handleItemError,
       },
     );
@@ -271,6 +289,9 @@ export function ListItemSheet({
     <MobileSheet
       isOpen={open}
       onClose={() => onOpenChange(false)}
+      cancelLabel={
+        mode === "create" && hasCreatedItemThisCycle ? "Done" : undefined
+      }
       title={mode === "edit" ? "Edit Item" : "Add Item"}
       initialHeight="half"
       headerRight={
