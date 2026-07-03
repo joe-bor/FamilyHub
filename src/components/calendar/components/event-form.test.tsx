@@ -434,6 +434,63 @@ describe("EventForm", () => {
       );
     });
 
+    it.each([
+      {
+        startTime: "09:00",
+        endTime: "09:15",
+        startDisplay: /9:00 AM/i,
+        endDisplay: /9:15 AM/i,
+      },
+      {
+        startTime: "23:45",
+        endTime: "23:59",
+        startDisplay: /11:45 PM/i,
+        endDisplay: /11:59 PM/i,
+      },
+    ])("does not let an end nudge move $endTime at or before $startTime", async ({
+      startTime,
+      endTime,
+      startDisplay,
+      endDisplay,
+    }) => {
+      const { user } = renderWithUser(
+        <EventForm
+          mode="edit"
+          defaultValues={timedEvent({
+            startTime,
+            endTime,
+          })}
+          onSubmit={mockOnSubmit}
+          onCancel={mockOnCancel}
+        />,
+      );
+
+      await user.click(
+        screen.getByRole("button", {
+          name: "End time earlier by 15 minutes",
+        }),
+      );
+
+      expect(
+        screen.getByRole("button", { name: startDisplay }),
+      ).toBeInTheDocument();
+      expect(
+        screen.getByRole("button", { name: endDisplay }),
+      ).toBeInTheDocument();
+
+      const submitted = await submitEditForm(user);
+
+      expect(submitted).toEqual(
+        expect.objectContaining({
+          startTime,
+          endTime,
+        }),
+      );
+      expect(timeToMinutes(submitted.endTime)).toBeGreaterThan(
+        timeToMinutes(submitted.startTime),
+      );
+    });
+
     it("renders accessible 44px nudge controls for both time fields", () => {
       render(
         <EventForm
