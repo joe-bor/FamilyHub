@@ -100,8 +100,11 @@ test.describe("Quick Capture Friction", () => {
     // Open the event's detail view and confirm the location renders.
     const eventCard = page.getByRole("button", { name: /swim class/i }).first();
     await safeClick(eventCard);
-    await expect(page.getByRole("dialog")).toBeVisible();
+    // Scope to the detail dialog: the calendar event card also renders the
+    // location, so a page-wide getByText would be strict-mode ambiguous.
+    const detailDialog = page.getByRole("dialog");
+    await expect(detailDialog).toBeVisible();
 
-    await expect(page.getByText("YMCA pool")).toBeVisible();
+    await expect(detailDialog.getByText("YMCA pool")).toBeVisible();
   });
 });
