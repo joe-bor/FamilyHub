@@ -30,6 +30,13 @@ describe("resolveEntryChunk", () => {
       <script type="module" src="/assets/b.js"></script>`;
     expect(() => resolveEntryChunk(html)).toThrow(/multiple module-script/i);
   });
+
+  it("throws when an inline module script is present alongside the entry", () => {
+    const html = `
+      <script type="module">console.log("inline module")</script>
+      <script type="module" src="/assets/index-ABC123.js"></script>`;
+    expect(() => resolveEntryChunk(html)).toThrow(/multiple module-script/i);
+  });
 });
 
 describe("checkGzipBudget", () => {

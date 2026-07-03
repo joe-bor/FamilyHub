@@ -19,23 +19,31 @@ export const MAX_ENTRY_GZIP_BYTES = 92160; // 90 * 1024
  * @returns {string}
  */
 export function resolveEntryChunk(html) {
-  const matches = [
+  const moduleScriptTags = [
     ...html.matchAll(/<script\b[^>]*\btype=["']module["'][^>]*>/gi),
-  ]
-    .map((m) => /\bsrc=["']([^"']+)["']/i.exec(m[0])?.[1])
-    .filter((src) => typeof src === "string");
+  ].map((m) => m[0]);
 
-  if (matches.length === 0) {
+  if (moduleScriptTags.length === 0) {
     throw new Error(
       "check-bundle-size: no module-script tag found in index.html",
     );
   }
-  if (matches.length > 1) {
+  if (moduleScriptTags.length > 1) {
+    const srcs = moduleScriptTags.map(
+      (tag) => /\bsrc=["']([^"']+)["']/i.exec(tag)?.[1] ?? "<inline>",
+    );
     throw new Error(
-      `check-bundle-size: expected one module-script tag, found multiple module-script tags: ${matches.join(", ")}`,
+      `check-bundle-size: expected one module-script tag, found multiple module-script tags: ${srcs.join(", ")}`,
     );
   }
-  return /** @type {string} */ (matches[0]);
+
+  const entry = /\bsrc=["']([^"']+)["']/i.exec(moduleScriptTags[0])?.[1];
+  if (!entry) {
+    throw new Error(
+      "check-bundle-size: module-script tag is missing src in index.html",
+    );
+  }
+  return entry;
 }
 
 /**
