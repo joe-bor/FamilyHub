@@ -10,8 +10,22 @@ import {
   typeAndWait,
   waitFor,
   waitForMemberSelected,
+  within,
 } from "@/test/test-utils";
 import { EventForm } from "./event-form";
+
+type TestUser = ReturnType<typeof renderWithUser>["user"];
+
+function getWheelColumn(index: number) {
+  const wheelColumns = document.body.querySelectorAll(".scrollbar-hide");
+  const wheelColumn = wheelColumns[index];
+
+  if (!wheelColumn) {
+    throw new Error(`Time picker wheel column ${index} was not rendered`);
+  }
+
+  return wheelColumn as HTMLElement;
+}
 
 describe("EventForm", () => {
   const mockOnSubmit = vi.fn();
@@ -19,11 +33,56 @@ describe("EventForm", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    class ResizeObserverMock {
+      observe = vi.fn();
+      unobserve = vi.fn();
+      disconnect = vi.fn();
+    }
+
+    vi.stubGlobal("ResizeObserver", ResizeObserverMock);
     seedFamilyStore({
       name: "Test Family",
       members: testMembers,
     });
   });
+
+  const timedEvent = (
+    overrides: Partial<Parameters<typeof EventForm>[0]["defaultValues"]> = {},
+  ) => ({
+    title: "Existing Meeting",
+    date: "2026-01-15",
+    startTime: "09:00",
+    endTime: "10:00",
+    memberId: testMembers[0].id,
+    ...overrides,
+  });
+
+  async function changeHourWithTimePicker(
+    user: TestUser,
+    triggerName: RegExp,
+    hourLabel: string,
+  ) {
+    await user.click(screen.getAllByRole("button", { name: triggerName })[0]);
+    await user.click(
+      within(getWheelColumn(0)).getAllByRole("button", {
+        name: hourLabel,
+      })[0],
+    );
+    await user.click(screen.getByRole("button", { name: "OK" }));
+  }
+
+  async function submitEditForm(user: TestUser) {
+    await user.click(screen.getByRole("button", { name: /save changes/i }));
+
+    await waitFor(
+      () => {
+        expect(mockOnSubmit).toHaveBeenCalledTimes(1);
+      },
+      { timeout: TEST_TIMEOUTS.FORM_SUBMIT },
+    );
+
+    return mockOnSubmit.mock.calls[0][0];
+  }
 
   describe("Add Mode", () => {
     it("renders with smart defaults", () => {
@@ -176,6 +235,182 @@ describe("EventForm", () => {
           memberId: testMembers[1].id,
         }),
       );
+    });
+  });
+
+  describe("Time Changes", () => {
+    it("preserves duration when changing the start time with the picker", async () => {
+      const { user } = renderWithUser(
+        <EventForm
+          mode="edit"
+          defaultValues={timedEvent()}
+          onSubmit={mockOnSubmit}
+          onCancel={mockOnCancel}
+        />,
+      );
+
+      await changeHourWithTimePicker(user, /9:00 AM/i, "11");
+
+      expect(
+        screen.getByRole("button", { name: /11:00 AM/i }),
+      ).toBeInTheDocument();
+      expect(
+        screen.getByRole("button", { name: /12:00 PM/i }),
+      ).toBeInTheDocument();
+
+      await expect(submitEditForm(user)).resolves.toEqual(
+        expect.objectContaining({
+          startTime: "11:00",
+          endTime: "12:00",
+        }),
+      );
+    });
+
+    it("clamps the preserved end time to 23:59 when changing the start time", async () => {
+      const { user } = renderWithUser(
+        <EventForm
+          mode="edit"
+          defaultValues={timedEvent({
+            startTime: "21:00",
+            endTime: "22:30",
+          })}
+          onSubmit={mockOnSubmit}
+          onCancel={mockOnCancel}
+        />,
+      );
+
+      await changeHourWithTimePicker(user, /9:00 PM/i, "11");
+
+      expect(
+        screen.getByRole("button", { name: /11:00 PM/i }),
+      ).toBeInTheDocument();
+      expect(
+        screen.getByRole("button", { name: /11:59 PM/i }),
+      ).toBeInTheDocument();
+
+      await expect(submitEditForm(user)).resolves.toEqual(
+        expect.objectContaining({
+          startTime: "23:00",
+          endTime: "23:59",
+        }),
+      );
+    });
+
+    it.each([
+      { endTime: "09:00", state: "equal to start" },
+      { endTime: "08:30", state: "before start" },
+    ])("uses a one-hour duration when the current end time is $state", async ({
+      endTime,
+    }) => {
+      const { user } = renderWithUser(
+        <EventForm
+          mode="edit"
+          defaultValues={timedEvent({ endTime })}
+          onSubmit={mockOnSubmit}
+          onCancel={mockOnCancel}
+        />,
+      );
+
+      await changeHourWithTimePicker(user, /9:00 AM/i, "11");
+
+      expect(
+        screen.getByRole("button", { name: /11:00 AM/i }),
+      ).toBeInTheDocument();
+      expect(
+        screen.getByRole("button", { name: /12:00 PM/i }),
+      ).toBeInTheDocument();
+
+      await expect(submitEditForm(user)).resolves.toEqual(
+        expect.objectContaining({
+          startTime: "11:00",
+          endTime: "12:00",
+        }),
+      );
+    });
+
+    it("shifts both start and end times when nudging the start later", async () => {
+      const { user } = renderWithUser(
+        <EventForm
+          mode="edit"
+          defaultValues={timedEvent()}
+          onSubmit={mockOnSubmit}
+          onCancel={mockOnCancel}
+        />,
+      );
+
+      await user.click(
+        screen.getByRole("button", {
+          name: "Start time later by 15 minutes",
+        }),
+      );
+
+      expect(
+        screen.getByRole("button", { name: /9:15 AM/i }),
+      ).toBeInTheDocument();
+      expect(
+        screen.getByRole("button", { name: /10:15 AM/i }),
+      ).toBeInTheDocument();
+
+      await expect(submitEditForm(user)).resolves.toEqual(
+        expect.objectContaining({
+          startTime: "09:15",
+          endTime: "10:15",
+        }),
+      );
+    });
+
+    it("shifts only the end time when nudging the end later", async () => {
+      const { user } = renderWithUser(
+        <EventForm
+          mode="edit"
+          defaultValues={timedEvent()}
+          onSubmit={mockOnSubmit}
+          onCancel={mockOnCancel}
+        />,
+      );
+
+      await user.click(
+        screen.getByRole("button", {
+          name: "End time later by 15 minutes",
+        }),
+      );
+
+      expect(
+        screen.getByRole("button", { name: /9:00 AM/i }),
+      ).toBeInTheDocument();
+      expect(
+        screen.getByRole("button", { name: /10:15 AM/i }),
+      ).toBeInTheDocument();
+
+      await expect(submitEditForm(user)).resolves.toEqual(
+        expect.objectContaining({
+          startTime: "09:00",
+          endTime: "10:15",
+        }),
+      );
+    });
+
+    it("renders accessible 44px nudge controls for both time fields", () => {
+      render(
+        <EventForm
+          mode="edit"
+          defaultValues={timedEvent()}
+          onSubmit={mockOnSubmit}
+          onCancel={mockOnCancel}
+        />,
+      );
+
+      for (const label of [
+        "Start time earlier by 15 minutes",
+        "Start time later by 15 minutes",
+        "End time earlier by 15 minutes",
+        "End time later by 15 minutes",
+      ]) {
+        const button = screen.getByRole("button", { name: label });
+
+        expect(button.className).toContain("h-11");
+        expect(button.className).toContain("w-11");
+      }
     });
   });
 
