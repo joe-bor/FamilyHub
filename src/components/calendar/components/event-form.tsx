@@ -64,16 +64,6 @@ function getDurationMinutes(startTime?: string, endTime?: string): number {
   return endMinutes - startMinutes;
 }
 
-function shiftTimeByMinutes(
-  time: string | undefined,
-  deltaMinutes: number,
-): string | undefined {
-  const minutes = parseTimeToMinutes(time);
-  if (minutes === null) return undefined;
-
-  return formatMinutesToTime(minutes + deltaMinutes);
-}
-
 function EventForm({
   mode,
   defaultValues,
@@ -188,10 +178,17 @@ function EventForm({
   };
 
   const handleEndTimeNudge = (deltaMinutes: number) => {
-    const nextEndTime = shiftTimeByMinutes(endTimeValue, deltaMinutes);
-    if (!nextEndTime) return;
+    const startMinutes = parseTimeToMinutes(startTimeValue);
+    const endMinutes = parseTimeToMinutes(endTimeValue);
+    if (startMinutes === null || endMinutes === null) return;
 
-    setValue("endTime", nextEndTime);
+    const nextEndMinutes = Math.max(
+      0,
+      Math.min(endMinutes + deltaMinutes, LAST_MINUTE_OF_DAY),
+    );
+    if (nextEndMinutes <= startMinutes) return;
+
+    setValue("endTime", formatMinutesToTime(nextEndMinutes));
   };
 
   const toggleAllDay = () => {
