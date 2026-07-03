@@ -169,10 +169,22 @@ function EventForm({
   };
 
   const handleStartTimeNudge = (deltaMinutes: number) => {
-    const nextStartTime = shiftTimeByMinutes(startTimeValue, deltaMinutes);
-    if (!nextStartTime) return;
+    const startMinutes = parseTimeToMinutes(startTimeValue);
+    if (startMinutes === null) return;
 
-    handleStartTimeChange(nextStartTime);
+    const durationMinutes = getDurationMinutes(startTimeValue, endTimeValue);
+    const nextStartMinutes = Math.max(
+      0,
+      Math.min(startMinutes + deltaMinutes, LAST_MINUTE_OF_DAY),
+    );
+    const nextEndMinutes = Math.min(
+      nextStartMinutes + durationMinutes,
+      LAST_MINUTE_OF_DAY,
+    );
+
+    if (nextEndMinutes <= nextStartMinutes) return;
+
+    handleStartTimeChange(formatMinutesToTime(nextStartMinutes));
   };
 
   const handleEndTimeNudge = (deltaMinutes: number) => {
