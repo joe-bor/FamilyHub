@@ -27,6 +27,11 @@ function getWheelColumn(index: number) {
   return wheelColumn as HTMLElement;
 }
 
+function timeToMinutes(time: string) {
+  const [hours, minutes] = time.split(":").map(Number);
+  return hours * 60 + minutes;
+}
+
 describe("EventForm", () => {
   const mockOnSubmit = vi.fn();
   const mockOnCancel = vi.fn();
@@ -356,6 +361,45 @@ describe("EventForm", () => {
           startTime: "09:15",
           endTime: "10:15",
         }),
+      );
+    });
+
+    it("does not let a start nudge create equal times near midnight", async () => {
+      const { user } = renderWithUser(
+        <EventForm
+          mode="edit"
+          defaultValues={timedEvent({
+            startTime: "23:45",
+            endTime: "23:59",
+          })}
+          onSubmit={mockOnSubmit}
+          onCancel={mockOnCancel}
+        />,
+      );
+
+      await user.click(
+        screen.getByRole("button", {
+          name: "Start time later by 15 minutes",
+        }),
+      );
+
+      expect(
+        screen.getByRole("button", { name: /11:45 PM/i }),
+      ).toBeInTheDocument();
+      expect(
+        screen.getByRole("button", { name: /11:59 PM/i }),
+      ).toBeInTheDocument();
+
+      const submitted = await submitEditForm(user);
+
+      expect(submitted).toEqual(
+        expect.objectContaining({
+          startTime: "23:45",
+          endTime: "23:59",
+        }),
+      );
+      expect(timeToMinutes(submitted.endTime)).toBeGreaterThan(
+        timeToMinutes(submitted.startTime),
       );
     });
 
