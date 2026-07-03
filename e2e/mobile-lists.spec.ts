@@ -211,8 +211,11 @@ test.describe("Mobile Lists", () => {
       addItemSheet.locator("option", { hasText: "Documents" }),
     ).toBeAttached();
 
-    // Save the item (draft text still present)
+    // Save the item (draft text still present). Multi-add keeps the create
+    // sheet open after a successful add, so dismiss it via the "Done" label
+    // that replaces "Cancel" once an item has been added this session.
     await addItemSheet.getByRole("button", { name: "Save item" }).click();
+    await addItemSheet.getByRole("button", { name: "Done" }).click();
     await expect(addItemSheet).toBeHidden();
 
     // Item is visible
