@@ -18,7 +18,7 @@ interface TimePickerProps {
 }
 
 const HOURS = Array.from({ length: 12 }, (_, i) => i + 1); // 1-12
-const MINUTES = Array.from({ length: 60 }, (_, i) => i); // 0-59
+const MINUTES = Array.from({ length: 12 }, (_, i) => i * 5); // 0-55, every 5 minutes
 const PERIODS = ["AM", "PM"] as const;
 
 const ITEM_HEIGHT = 40;
@@ -307,6 +307,14 @@ function TimePicker({
   const [minute, setMinute] = useState(parsed.minute);
   const [period, setPeriod] = useState<"AM" | "PM">(parsed.period);
 
+  const minuteOptions = useMemo(() => {
+    if (!open || MINUTES.includes(parsed.minute)) {
+      return MINUTES;
+    }
+
+    return [...MINUTES, parsed.minute].sort((a, b) => a - b);
+  }, [open, parsed.minute]);
+
   // Sync internal state when value prop changes
   useEffect(() => {
     if (value) {
@@ -371,7 +379,7 @@ function TimePicker({
           {/* Minutes */}
           <WheelColumn
             key={`minute-${mountKey}`}
-            items={MINUTES}
+            items={minuteOptions}
             value={minute}
             onChange={setMinute}
             formatItem={(m) => m.toString().padStart(2, "0")}

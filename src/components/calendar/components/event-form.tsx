@@ -1,6 +1,6 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { format } from "date-fns";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, Minus, Plus } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useFamilyMembers } from "@/api";
@@ -25,6 +25,53 @@ interface EventFormProps {
   isPending?: boolean;
   showRecurrencePicker?: boolean;
   hideCancelButton?: boolean;
+}
+
+const DEFAULT_DURATION_MINUTES = 60;
+const LAST_MINUTE_OF_DAY = 23 * 60 + 59;
+const NUDGE_MINUTES = 15;
+const TIME_PATTERN = /^([01]?[0-9]|2[0-3]):([0-5][0-9])$/;
+
+function parseTimeToMinutes(time?: string): number | null {
+  if (!time) return null;
+
+  const match = TIME_PATTERN.exec(time);
+  if (!match) return null;
+
+  return Number(match[1]) * 60 + Number(match[2]);
+}
+
+function formatMinutesToTime(minutes: number): string {
+  const clampedMinutes = Math.max(0, Math.min(minutes, LAST_MINUTE_OF_DAY));
+  const hours = Math.floor(clampedMinutes / 60);
+  const mins = clampedMinutes % 60;
+
+  return `${hours.toString().padStart(2, "0")}:${mins.toString().padStart(2, "0")}`;
+}
+
+function getDurationMinutes(startTime?: string, endTime?: string): number {
+  const startMinutes = parseTimeToMinutes(startTime);
+  const endMinutes = parseTimeToMinutes(endTime);
+
+  if (
+    startMinutes === null ||
+    endMinutes === null ||
+    endMinutes <= startMinutes
+  ) {
+    return DEFAULT_DURATION_MINUTES;
+  }
+
+  return endMinutes - startMinutes;
+}
+
+function shiftTimeByMinutes(
+  time: string | undefined,
+  deltaMinutes: number,
+): string | undefined {
+  const minutes = parseTimeToMinutes(time);
+  if (minutes === null) return undefined;
+
+  return formatMinutesToTime(minutes + deltaMinutes);
 }
 
 function EventForm({
@@ -108,6 +155,31 @@ function EventForm({
   const handleFormSubmit = (data: EventFormData) => {
     if (isPending) return;
     onSubmit(data);
+  };
+
+  const handleStartTimeChange = (time: string) => {
+    const startMinutes = parseTimeToMinutes(time);
+    const durationMinutes = getDurationMinutes(startTimeValue, endTimeValue);
+
+    setValue("startTime", time);
+
+    if (startMinutes !== null) {
+      setValue("endTime", formatMinutesToTime(startMinutes + durationMinutes));
+    }
+  };
+
+  const handleStartTimeNudge = (deltaMinutes: number) => {
+    const nextStartTime = shiftTimeByMinutes(startTimeValue, deltaMinutes);
+    if (!nextStartTime) return;
+
+    handleStartTimeChange(nextStartTime);
+  };
+
+  const handleEndTimeNudge = (deltaMinutes: number) => {
+    const nextEndTime = shiftTimeByMinutes(endTimeValue, deltaMinutes);
+    if (!nextEndTime) return;
+
+    setValue("endTime", nextEndTime);
   };
 
   const toggleAllDay = () => {
@@ -235,25 +307,71 @@ function EventForm({
 
       {/* Start/End Time */}
       {!isAllDayValue && (
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div className="space-y-2">
             <Label>Start Time</Label>
-            <TimePicker
-              value={startTimeValue}
-              onChange={(time) => setValue("startTime", time)}
-              placeholder="Start time"
-              error={!!errors.startTime}
-            />
+            <div className="flex items-center gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="icon-lg"
+                className="h-11 w-11 shrink-0 bg-input"
+                aria-label="Start time earlier by 15 minutes"
+                onClick={() => handleStartTimeNudge(-NUDGE_MINUTES)}
+              >
+                <Minus className="h-4 w-4" aria-hidden="true" />
+              </Button>
+              <TimePicker
+                value={startTimeValue}
+                onChange={handleStartTimeChange}
+                placeholder="Start time"
+                error={!!errors.startTime}
+                className="h-11 min-w-0 flex-1"
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="icon-lg"
+                className="h-11 w-11 shrink-0 bg-input"
+                aria-label="Start time later by 15 minutes"
+                onClick={() => handleStartTimeNudge(NUDGE_MINUTES)}
+              >
+                <Plus className="h-4 w-4" aria-hidden="true" />
+              </Button>
+            </div>
             <FormError message={errors.startTime?.message} />
           </div>
           <div className="space-y-2">
             <Label>End Time</Label>
-            <TimePicker
-              value={endTimeValue}
-              onChange={(time) => setValue("endTime", time)}
-              placeholder="End time"
-              error={!!errors.endTime}
-            />
+            <div className="flex items-center gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="icon-lg"
+                className="h-11 w-11 shrink-0 bg-input"
+                aria-label="End time earlier by 15 minutes"
+                onClick={() => handleEndTimeNudge(-NUDGE_MINUTES)}
+              >
+                <Minus className="h-4 w-4" aria-hidden="true" />
+              </Button>
+              <TimePicker
+                value={endTimeValue}
+                onChange={(time) => setValue("endTime", time)}
+                placeholder="End time"
+                error={!!errors.endTime}
+                className="h-11 min-w-0 flex-1"
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="icon-lg"
+                className="h-11 w-11 shrink-0 bg-input"
+                aria-label="End time later by 15 minutes"
+                onClick={() => handleEndTimeNudge(NUDGE_MINUTES)}
+              >
+                <Plus className="h-4 w-4" aria-hidden="true" />
+              </Button>
+            </div>
             <FormError message={errors.endTime?.message} />
           </div>
         </div>
