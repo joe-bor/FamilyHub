@@ -1,5 +1,6 @@
 import { httpClient } from "@/api/client";
 import type {
+  BulkCreateListItemsRequest,
   CategoryDeleteResultApiResponse,
   ClearCompletedApiResponse,
   CreateListCategoryRequest,
@@ -9,6 +10,7 @@ import type {
   ListCategoryManagementEntryApiResponse,
   ListDetailApiResponse,
   ListItemApiResponse,
+  ListItemsApiResponse,
   ListKind,
   ListPreferencesApiResponse,
   ListSummariesApiResponse,
@@ -56,6 +58,16 @@ export const listsService = {
   ): Promise<ListItemApiResponse> {
     return httpClient.patch<ListItemApiResponse>(
       `/lists/${listId}/items/${itemId}`,
+      request,
+    );
+  },
+
+  createItemsBulk(
+    listId: string,
+    request: BulkCreateListItemsRequest,
+  ): Promise<ListItemsApiResponse> {
+    return httpClient.post<ListItemsApiResponse>(
+      `/lists/${listId}/items/bulk`,
       request,
     );
   },

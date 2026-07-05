@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { categoryNameSchema, listCreateSchema, listItemSchema } from "./lists";
+import {
+  bulkCreateListItemsSchema,
+  categoryNameSchema,
+  listCreateSchema,
+  listItemSchema,
+} from "./lists";
 
 describe("listCreateSchema", () => {
   it("trims name and requires a kind", () => {
@@ -47,6 +52,35 @@ describe("listItemSchema", () => {
     expect(() => listItemSchema.parse({ text: "   " })).toThrow(
       "Item text is required",
     );
+  });
+});
+
+describe("bulkCreateListItemsSchema", () => {
+  it("accepts a valid single row", () => {
+    expect(
+      bulkCreateListItemsSchema.parse({ items: [{ text: "2 eggs" }] }),
+    ).toEqual({
+      items: [{ text: "2 eggs" }],
+    });
+  });
+
+  it("rejects an empty items array", () => {
+    expect(() => bulkCreateListItemsSchema.parse({ items: [] })).toThrow();
+  });
+
+  it("rejects more than 100 items", () => {
+    const items = Array.from({ length: 101 }, (_, i) => ({
+      text: `Item ${i}`,
+    }));
+    expect(() => bulkCreateListItemsSchema.parse({ items })).toThrow();
+  });
+
+  it("rejects a blank text in any row", () => {
+    expect(() =>
+      bulkCreateListItemsSchema.parse({
+        items: [{ text: "2 eggs" }, { text: "   " }],
+      }),
+    ).toThrow();
   });
 });
 

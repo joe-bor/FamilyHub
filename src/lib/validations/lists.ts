@@ -36,6 +36,21 @@ export const categoryNameSchema = z
       .max(100, "Category name must be 100 characters or less"),
   );
 
+export const bulkCreateListItemsSchema = z.object({
+  items: z
+    .array(
+      z.object({
+        text: z.string().trim().min(1).max(100),
+        categoryId: z.string().uuid().nullable().optional(),
+      }),
+    )
+    .min(1)
+    .max(100),
+});
+
 export type ListCreateFormData = z.infer<typeof listCreateSchema>;
 export type ListItemFormData = z.infer<typeof listItemSchema>;
 export type CategoryNameFormData = z.infer<typeof categoryNameSchema>;
+export type BulkCreateListItemsFormData = z.infer<
+  typeof bulkCreateListItemsSchema
+>;

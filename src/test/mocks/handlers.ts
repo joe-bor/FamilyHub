@@ -1571,6 +1571,49 @@ export const handlers = [
     );
   }),
 
+  // POST /lists/:id/items/bulk - Append multiple items in one request
+  http.post(`${API_BASE}/lists/:id/items/bulk`, async ({ params, request }) => {
+    const index = mockLists.findIndex(
+      (candidate) => candidate.id === params.id,
+    );
+    if (index === -1) {
+      return HttpResponse.json(
+        { message: `List with id "${params.id}" not found` },
+        { status: 404 },
+      );
+    }
+
+    const body = (await request.json()) as {
+      items: Array<{ text: string; categoryId?: string | null }>;
+    };
+    const list = mockLists[index];
+    const createdItems: ListItem[] = body.items.map((row) => ({
+      id: createMockId(),
+      text: row.text.trim(),
+      completed: false,
+      completedAt: null,
+      categoryId: row.categoryId ?? null,
+      createdAt: MOCK_TIMESTAMP,
+      updatedAt: MOCK_TIMESTAMP,
+    }));
+    const updated: ListDetail = {
+      ...list,
+      items: [...list.items, ...createdItems],
+      updatedAt: MOCK_TIMESTAMP,
+    };
+
+    mockLists = [
+      ...mockLists.slice(0, index),
+      updated,
+      ...mockLists.slice(index + 1),
+    ];
+
+    return HttpResponse.json(
+      createApiResponse(createdItems, "List items added successfully"),
+      { status: 201 },
+    );
+  }),
+
   // PATCH /lists/:listId/items/:itemId - Update text/category/completed state
   http.patch(
     `${API_BASE}/lists/:listId/items/:itemId`,

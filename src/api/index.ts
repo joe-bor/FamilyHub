@@ -27,6 +27,7 @@ export {
   syncFamilyFromStorage,
   TEMP_MEMBER_ID_PREFIX,
   useAddMember,
+  useBulkCreateListItems,
   useCalendarEvent,
   useCalendarEvents,
   useCheckUsername,

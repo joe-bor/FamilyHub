@@ -30,6 +30,7 @@ import {
 } from "@/test/mocks/server";
 import {
   listsKeys,
+  useBulkCreateListItems,
   useClearCompleted,
   useCreateList,
   useCreateListCategory,
@@ -655,6 +656,145 @@ describe("useLists", () => {
         )?.data.items,
       ).toEqual([]);
     });
+  });
+
+  // ---------------------------------------------------------------------------
+  // useBulkCreateListItems
+  // ---------------------------------------------------------------------------
+
+  it("appends bulk-created items after existing items and refreshes the hub", async () => {
+    const seededList: ListDetail = {
+      ...groceryList,
+      items: [
+        {
+          id: "00000000-0000-4000-8000-000000009101",
+          text: "Existing item 1",
+          completed: false,
+          completedAt: null,
+          categoryId: null,
+          createdAt: "2026-05-06T09:00:00",
+          updatedAt: "2026-05-06T09:00:00",
+        },
+        {
+          id: "00000000-0000-4000-8000-000000009102",
+          text: "Existing item 2",
+          completed: false,
+          completedAt: null,
+          categoryId: null,
+          createdAt: "2026-05-06T09:00:00",
+          updatedAt: "2026-05-06T09:00:00",
+        },
+      ],
+    };
+    seedMockLists([seededList]);
+    queryClient.setQueryData(listsKeys.detail(seededList.id), {
+      data: seededList,
+    } satisfies ApiResponse<ListDetail>);
+    // Seed the hub query so it exists in the cache and its invalidation can be observed.
+    queryClient.setQueryData(listsKeys.hub(), {
+      data: [
+        {
+          id: seededList.id,
+          name: seededList.name,
+          kind: seededList.kind,
+          totalItems: seededList.items.length,
+          completedItems: 0,
+        },
+      ],
+    });
+
+    const createdItems: ListItem[] = [
+      {
+        id: "00000000-0000-4000-8000-000000009103",
+        text: "2 eggs",
+        completed: false,
+        completedAt: null,
+        categoryId: null,
+        createdAt: "2026-05-06T09:30:00",
+        updatedAt: "2026-05-06T09:30:00",
+      },
+      {
+        id: "00000000-0000-4000-8000-000000009104",
+        text: "1 cup flour",
+        completed: false,
+        completedAt: null,
+        categoryId: null,
+        createdAt: "2026-05-06T09:30:00",
+        updatedAt: "2026-05-06T09:30:00",
+      },
+    ];
+    server.use(
+      http.post(`${API_BASE}/lists/:id/items/bulk`, () => {
+        return HttpResponse.json({
+          data: createdItems,
+          message: "List items added successfully",
+        });
+      }),
+    );
+
+    const { result } = renderHook(() => useBulkCreateListItems(seededList.id), {
+      wrapper: createWrapper(),
+    });
+
+    result.current.mutate({
+      items: [{ text: "2 eggs" }, { text: "1 cup flour" }],
+    });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+
+    const detail = queryClient.getQueryData<ApiResponse<ListDetail>>(
+      listsKeys.detail(seededList.id),
+    );
+    expect(detail?.data.items.map((item) => item.text)).toEqual([
+      "Existing item 1",
+      "Existing item 2",
+      "2 eggs",
+      "1 cup flour",
+    ]);
+
+    expect(queryClient.getQueryState(listsKeys.hub())?.isInvalidated).toBe(
+      true,
+    );
+  });
+
+  it("rejects offline without calling the service or touching the detail cache", async () => {
+    seedMockLists([groceryList]);
+    queryClient.setQueryData(listsKeys.detail(groceryList.id), {
+      data: groceryList,
+    } satisfies ApiResponse<ListDetail>);
+
+    Object.defineProperty(navigator, "onLine", {
+      configurable: true,
+      value: false,
+    });
+    const createSpy = vi.spyOn(listsService, "createItemsBulk");
+
+    try {
+      const { result } = renderHook(
+        () => useBulkCreateListItems(groceryList.id),
+        { wrapper: createWrapper() },
+      );
+
+      result.current.mutate({ items: [{ text: "2 eggs" }] });
+
+      await waitFor(() => expect(result.current.isError).toBe(true));
+
+      expect(createSpy).not.toHaveBeenCalled();
+      expect(
+        queryClient.getQueryData<ApiResponse<ListDetail>>(
+          listsKeys.detail(groceryList.id),
+        )?.data.items,
+      ).toEqual([]);
+    } finally {
+      // Restore online state even if an assertion throws, so later tests in
+      // this suite (whose afterEach does not reset navigator.onLine) are not
+      // left offline.
+      Object.defineProperty(navigator, "onLine", {
+        configurable: true,
+        value: true,
+      });
+      vi.restoreAllMocks();
+    }
   });
 
   // ---------------------------------------------------------------------------

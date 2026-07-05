@@ -8,6 +8,7 @@ import { listsService } from "@/api/services";
 import { useOnlineStatus } from "@/hooks/use-online-status";
 import { assertOnlineForWrite } from "@/lib/offline/read-only-guard";
 import type {
+  BulkCreateListItemsRequest,
   CreateListCategoryRequest,
   CreateListItemRequest,
   CreateListRequest,
@@ -211,6 +212,33 @@ export function useCreateListItem(listId: string) {
           updateDetailItems(previous, (items) =>
             replaceCreatedItem(items, context?.temporaryId, response.data),
           ),
+      );
+      queryClient.invalidateQueries({ queryKey: listsKeys.hub() });
+    },
+  });
+}
+
+/**
+ * Append a batch of items to a list from a single confirmed action (e.g.
+ * "add reviewed recipe ingredients to a grocery list"). Unlike
+ * {@link useCreateListItem}, there is no optimistic `onMutate` — the request
+ * already represents user-reviewed, final rows, so the cache is updated from
+ * the authoritative response instead of an interim optimistic guess.
+ */
+export function useBulkCreateListItems(listId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (request: BulkCreateListItemsRequest) => {
+      // Read-only offline: reject before any cache change.
+      assertOnlineForWrite();
+      return listsService.createItemsBulk(listId, request);
+    },
+    onSuccess: (response) => {
+      queryClient.setQueryData<ListDetailApiResponse>(
+        listsKeys.detail(listId),
+        (current) =>
+          updateDetailItems(current, (items) => [...items, ...response.data]),
       );
       queryClient.invalidateQueries({ queryKey: listsKeys.hub() });
     },

@@ -89,6 +89,10 @@ export interface CreateListItemRequest {
   categoryId?: string | null;
 }
 
+export interface BulkCreateListItemsRequest {
+  items: CreateListItemRequest[];
+}
+
 export interface UpdateListItemRequest {
   text: string;
   completed: boolean;
@@ -106,6 +110,7 @@ export interface ClearCompletedResponse {
 export type ListSummariesApiResponse = ApiResponse<ListSummary[]>;
 export type ListDetailApiResponse = ApiResponse<ListDetail>;
 export type ListItemApiResponse = ApiResponse<ListItem>;
+export type ListItemsApiResponse = ApiResponse<ListItem[]>;
 export type ListPreferencesApiResponse = ApiResponse<ListPreferences>;
 export type ClearCompletedApiResponse = ApiResponse<ClearCompletedResponse>;
 export type ListCategoryCatalogApiResponse = ApiResponse<ListCategoryCatalog>;
