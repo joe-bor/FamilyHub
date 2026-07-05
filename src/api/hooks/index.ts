@@ -63,6 +63,7 @@ export {
 
 export {
   listsKeys,
+  useBulkCreateListItems,
   useClearCompleted,
   useCreateList,
   useCreateListCategory,
