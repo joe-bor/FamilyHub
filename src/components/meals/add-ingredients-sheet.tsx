@@ -31,6 +31,12 @@ interface AddIngredientsSheetProps {
   /** Task 6 seam: reflects the append mutation being in flight. */
   isSubmitting?: boolean;
   /**
+   * Task 6 seam: an extra disable condition owned by the container (e.g. no
+   * target grocery list chosen yet). OR-ed with the sheet's own guards
+   * (offline / nothing selected / submitting). Purely presentational.
+   */
+  confirmDisabled?: boolean;
+  /**
    * Task 6 seam: an optional slot for the list picker/create affordance the
    * next task renders above the confirm action.
    */
@@ -111,6 +117,7 @@ export function AddIngredientsSheet({
   onOpenChange,
   onConfirm,
   isSubmitting = false,
+  confirmDisabled = false,
   listPicker,
 }: AddIngredientsSheetProps) {
   const queryClient = useQueryClient();
@@ -250,7 +257,8 @@ export function AddIngredientsSheet({
   }
 
   const anySelected = hasSelectedRow(model);
-  const addDisabled = !online || isSubmitting || !anySelected;
+  const addDisabled =
+    !online || isSubmitting || confirmDisabled || !anySelected;
 
   function handleConfirm() {
     // Belt-and-suspenders: the button is disabled when nothing is selected, but

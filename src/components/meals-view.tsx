@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useMealsBoard, useRecipes, useSaveMealPlan } from "@/api";
 import { ApiException } from "@/api/client";
+import { AddIngredientsContainer } from "@/components/meals/add-ingredients-container";
 import {
   MealComposerSheet,
   type MealSlotSelection,
@@ -11,6 +12,7 @@ import {
   type MealSlotId,
 } from "@/components/meals/meal-editor-sheet";
 import { MealGrid } from "@/components/meals/meal-grid";
+import { hasRecipeBackedEntry } from "@/components/meals/meal-ingredient-extraction";
 import { MealPlanningPanel } from "@/components/meals/meal-planning-panel";
 import { MealPlanningScopeDialog } from "@/components/meals/meal-planning-scope-dialog";
 import {
@@ -134,6 +136,7 @@ export function MealsView() {
   const [placementDraft, setPlacementDraft] =
     useState<MealPlacementDraft | null>(null);
   const [scopeOpen, setScopeOpen] = useState(false);
+  const [addIngredientsOpen, setAddIngredientsOpen] = useState(false);
   const [planningScope, setPlanningScope] = useState<MealPlanningScope | null>(
     null,
   );
@@ -163,6 +166,12 @@ export function MealsView() {
   const readOnly = isPastWeek(visibleWeekStartDate);
   const showGrid = useMediaQuery("(min-width: 1024px)");
   const persistedBoard = board.data?.data ?? null;
+  // "Add ingredients" is offered only when the visible, editable week has at
+  // least one recipe-backed planned meal to extract ingredients from.
+  const canAddIngredients =
+    !readOnly &&
+    persistedBoard !== null &&
+    hasRecipeBackedEntry(persistedBoard);
   const planningActive = planningScope !== null;
   const currentPlanningTarget =
     planningActive && currentPlanningIndex < planningQueue.length
@@ -468,12 +477,22 @@ export function MealsView() {
             setVisibleWeekStartDate(weekStartDate);
             setSelectedSlot(null);
             setEditingSlotId(null);
+            setAddIngredientsOpen(false);
             resetPlanningSession();
           }}
         />
 
         {persistedBoard && !readOnly ? (
-          <div className="flex justify-end">
+          <div className="flex flex-wrap justify-end gap-2">
+            {canAddIngredients ? (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setAddIngredientsOpen(true)}
+              >
+                Add ingredients
+              </Button>
+            ) : null}
             <Button
               type="button"
               variant="outline"
@@ -588,6 +607,14 @@ export function MealsView() {
         onStart={startPlanningSession}
         onOpenChange={setScopeOpen}
       />
+
+      {persistedBoard ? (
+        <AddIngredientsContainer
+          isOpen={addIngredientsOpen}
+          board={persistedBoard}
+          onOpenChange={setAddIngredientsOpen}
+        />
+      ) : null}
 
       {planningActive && persistedBoard ? (
         <MealPlanningPanel
