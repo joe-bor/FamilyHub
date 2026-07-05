@@ -1,6 +1,10 @@
 import type { APIRequestContext, Page } from "@playwright/test";
 import type { CreateEventRequest } from "../../src/lib/types/calendar";
 import type { FamilyColor } from "../../src/lib/types/family";
+import type {
+  MealType,
+  UpsertMealSlotRequest,
+} from "../../src/lib/types/meals";
 import type { CreateRecipeRequest } from "../../src/lib/types/recipes";
 
 const API_BASE = "http://127.0.0.1:8080/api";
@@ -118,4 +122,56 @@ export async function createRecipe(
 
   const json = await response.json();
   return json.data;
+}
+
+/**
+ * Plan a meal into a specific slot of a week via the real backend
+ * `PUT /meals/slots` (the same endpoint the composer/planning UI drives).
+ *
+ * Seeding meals through the API keeps the ingredients-to-grocery E2E focused on
+ * the review → append journey rather than re-walking the multi-step planning
+ * flow (already covered by mobile-meals.spec.ts). `dayIndex` is 0=Sunday..6=Sat,
+ * matching the board contract and the weekday labels in the review sheet.
+ */
+export async function planMealSlot(
+  request: APIRequestContext,
+  token: string,
+  slot: {
+    weekStartDate: string;
+    dayIndex: number;
+    mealType: MealType;
+    /** recipe-backed when recipeId is set; a quick meal otherwise. */
+    recipeId?: string;
+    title: string;
+  },
+): Promise<void> {
+  const body: UpsertMealSlotRequest = {
+    weekStartDate: slot.weekStartDate,
+    dayIndex: slot.dayIndex,
+    mealType: slot.mealType,
+    primary: {
+      sourceType: slot.recipeId ? "recipe" : "quick",
+      recipeId: slot.recipeId ?? null,
+      title: slot.title,
+      imageUrl: null,
+      note: null,
+    },
+    extras: [],
+    note: null,
+    collisionMode: null,
+  };
+
+  const response = await request.put(`${API_BASE}/meals/slots`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    data: body,
+  });
+
+  if (!response.ok()) {
+    const responseBody = await response.text();
+    throw new Error(
+      `Plan meal slot failed (${response.status()}): ${responseBody}`,
+    );
+  }
 }
