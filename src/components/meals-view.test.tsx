@@ -3,7 +3,12 @@ import { HttpResponse, http } from "msw";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { mealsKeys } from "@/api";
 import { formatLocalDate, getWeekStartSunday } from "@/lib/time-utils";
-import type { ApiResponse, MealBoard, SaveMealPlanRequest } from "@/lib/types";
+import type {
+  ApiResponse,
+  ListDetail,
+  MealBoard,
+  SaveMealPlanRequest,
+} from "@/lib/types";
 import { useAppStore } from "@/stores/app-store";
 import {
   createEmptyMealsBoard,
@@ -19,6 +24,7 @@ import {
 import {
   API_BASE,
   getMockMealsBoard,
+  seedMockLists,
   seedMockMealsBoard,
   seedMockRecipes,
   server,
@@ -1854,5 +1860,431 @@ describe("MealsView", () => {
         updated.days[4].slots[1].extras.map((extra) => extra.title),
       ).toEqual(["Salad"]);
     });
+  });
+
+  // ---------------------------------------------------------------------------
+  // Task 6: "Add ingredients" → grocery-list picker/create + bulk append
+  // ---------------------------------------------------------------------------
+
+  function groceryList(overrides: Partial<ListDetail> = {}): ListDetail {
+    return {
+      id: "list-grocery-1",
+      name: "Groceries",
+      kind: "grocery",
+      categoryDisplayMode: "flat",
+      showCompletedOverride: null,
+      categories: [],
+      items: [],
+      createdAt: "2026-06-01T00:00:00",
+      updatedAt: "2026-06-01T00:00:00",
+      ...overrides,
+    };
+  }
+
+  function toDoList(overrides: Partial<ListDetail> = {}): ListDetail {
+    return {
+      id: "list-todo-1",
+      name: "Errands",
+      kind: "to-do",
+      categoryDisplayMode: "flat",
+      showCompletedOverride: null,
+      categories: [],
+      items: [],
+      createdAt: "2026-06-01T00:00:00",
+      updatedAt: "2026-06-01T00:00:00",
+      ...overrides,
+    };
+  }
+
+  it("shows Add ingredients on an editable week with a recipe-backed meal and hides it on past weeks", async () => {
+    // Current week (editable) with a recipe-backed dinner.
+    seedMockMealsBoard(createRecipeBackedMealsBoard());
+    // Past week board so navigating back is review-only.
+    seedMockMealsBoard(createEmptyMealsBoard("2026-05-31"));
+    seedMockRecipes([testRecipeDetail]);
+    const { user } = renderWithUser(<MealsView />);
+
+    // Editable week: the action is present alongside Fill empty slots.
+    expect(
+      await screen.findByRole("button", { name: "Add ingredients" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Fill empty slots" }),
+    ).toBeInTheDocument();
+
+    // Navigate to a past week: review-only, so Add ingredients disappears.
+    await user.click(screen.getByRole("button", { name: "Previous week" }));
+    expect(await screen.findByText("Review only")).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Add ingredients" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("hides Add ingredients when the visible week has no recipe-backed meals", async () => {
+    // Only a quick meal + empty slots: nothing recipe-backed to extract.
+    seedMockMealsBoard(
+      withOccupiedDinnerSlot(createEmptyMealsBoard(), 1, "Leftovers"),
+    );
+    renderWithUser(<MealsView />);
+
+    // The board renders (quick meal visible) but the action is absent.
+    expect(await screen.findByText("Leftovers")).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Add ingredients" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("defaults to the only grocery list and appends selected rows once, then offers View list", async () => {
+    seedMockMealsBoard(createRecipeBackedMealsBoard());
+    seedMockRecipes([testRecipeDetail]);
+    // Exactly one grocery list (plus a to-do list that must never be offered).
+    seedMockLists([groceryList(), toDoList()]);
+
+    const bulkRequests: Array<{ id: string; texts: string[] }> = [];
+    server.use(
+      http.post(
+        `${API_BASE}/lists/:id/items/bulk`,
+        async ({ params, request }) => {
+          const body = (await request.json()) as {
+            items: Array<{ text: string }>;
+          };
+          bulkRequests.push({
+            id: params.id as string,
+            texts: body.items.map((i) => i.text),
+          });
+          const createdItems = body.items.map((row, index) => ({
+            id: `created-${index}`,
+            text: row.text,
+            completed: false,
+            completedAt: null,
+            categoryId: null,
+            createdAt: "2026-06-07T00:00:00",
+            updatedAt: "2026-06-07T00:00:00",
+          }));
+          return HttpResponse.json(
+            { data: createdItems, message: "ok" },
+            { status: 201 },
+          );
+        },
+      ),
+    );
+
+    const queryClient = new QueryClient({
+      defaultOptions: {
+        queries: { retry: false, gcTime: Infinity, staleTime: 0 },
+        mutations: { retry: false },
+      },
+    });
+    // Prime the list-detail cache as if the user had opened this list before,
+    // so the bulk hook's write-through cache update is exercised and observable.
+    queryClient.setQueryData(["lists", "detail", "list-grocery-1"], {
+      data: groceryList(),
+      message: "ok",
+    });
+    const { user } = renderWithUser(<MealsView />, { queryClient });
+
+    await user.click(
+      await screen.findByRole("button", { name: "Add ingredients" }),
+    );
+
+    // The review sheet resolves the recipe's verbatim ingredient rows.
+    expect(
+      await screen.findByDisplayValue("Salmon fillets"),
+    ).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /add to list/i }));
+
+    // Exactly one bulk POST, targeting the only grocery list, with the rows.
+    await waitFor(() => expect(bulkRequests).toHaveLength(1));
+    expect(bulkRequests[0].id).toBe("list-grocery-1");
+    expect(bulkRequests[0].texts).toEqual([
+      "Salmon fillets",
+      "Asparagus",
+      "Lemon",
+    ]);
+
+    // Success surfaces a "View list" affordance.
+    const viewList = await screen.findByRole("button", { name: /view list/i });
+    expect(viewList).toBeInTheDocument();
+
+    // The list-detail cache gained the appended items.
+    await waitFor(() => {
+      const cached = queryClient.getQueryData<ApiResponse<ListDetail>>([
+        "lists",
+        "detail",
+        "list-grocery-1",
+      ]);
+      expect(cached?.data.items.map((i) => i.text)).toEqual([
+        "Salmon fillets",
+        "Asparagus",
+        "Lemon",
+      ]);
+    });
+
+    // Clicking View list navigates to that list.
+    await user.click(viewList);
+    expect(useAppStore.getState().activeModule).toBe("lists");
+    expect(useAppStore.getState().consumeListDetailIntent()).toBe(
+      "list-grocery-1",
+    );
+  });
+
+  it("appends to the grocery list the user picks when several exist", async () => {
+    seedMockMealsBoard(createRecipeBackedMealsBoard());
+    seedMockRecipes([testRecipeDetail]);
+    // Several grocery lists → no auto-select; the picker drives the target.
+    seedMockLists([
+      groceryList({ id: "list-grocery-1", name: "Groceries" }),
+      groceryList({ id: "list-grocery-2", name: "Costco run" }),
+    ]);
+
+    const bulkRequests: Array<{ id: string; texts: string[] }> = [];
+    server.use(
+      http.post(
+        `${API_BASE}/lists/:id/items/bulk`,
+        async ({ params, request }) => {
+          const body = (await request.json()) as {
+            items: Array<{ text: string }>;
+          };
+          bulkRequests.push({
+            id: params.id as string,
+            texts: body.items.map((i) => i.text),
+          });
+          return HttpResponse.json(
+            { data: [], message: "ok" },
+            { status: 201 },
+          );
+        },
+      ),
+    );
+
+    const { user } = renderWithUser(<MealsView />);
+
+    await user.click(
+      await screen.findByRole("button", { name: "Add ingredients" }),
+    );
+    expect(
+      await screen.findByDisplayValue("Salmon fillets"),
+    ).toBeInTheDocument();
+
+    // With several lists a picker renders (no auto-select). "Add to list" is
+    // blocked until a target is chosen.
+    const picker = await screen.findByRole("combobox", {
+      name: /grocery list/i,
+    });
+    expect(screen.getByRole("button", { name: /add to list/i })).toBeDisabled();
+
+    // Pick the SECOND grocery list.
+    await user.selectOptions(picker, "list-grocery-2");
+    await user.click(screen.getByRole("button", { name: /add to list/i }));
+
+    // Exactly one bulk POST, targeting the user's chosen (second) list.
+    await waitFor(() => expect(bulkRequests).toHaveLength(1));
+    expect(bulkRequests[0].id).toBe("list-grocery-2");
+    expect(bulkRequests[0].texts).toEqual([
+      "Salmon fillets",
+      "Asparagus",
+      "Lemon",
+    ]);
+    expect(
+      await screen.findByRole("button", { name: /view list/i }),
+    ).toBeInTheDocument();
+  });
+
+  it("lets the user create a grocery list when none exists, then append into it", async () => {
+    seedMockMealsBoard(createRecipeBackedMealsBoard());
+    seedMockRecipes([testRecipeDetail]);
+    // No grocery lists at all (only a to-do list, which is not a valid target).
+    seedMockLists([toDoList()]);
+
+    const createRequests: Array<{ name: string; kind: string }> = [];
+    const bulkRequests: Array<{ id: string; texts: string[] }> = [];
+    server.use(
+      http.post(`${API_BASE}/lists`, async ({ request }) => {
+        const body = (await request.json()) as { name: string; kind: string };
+        createRequests.push(body);
+        const created = groceryList({
+          id: "list-grocery-new",
+          name: body.name,
+        });
+        return HttpResponse.json(
+          { data: created, message: "created" },
+          { status: 201 },
+        );
+      }),
+      http.post(
+        `${API_BASE}/lists/:id/items/bulk`,
+        async ({ params, request }) => {
+          const body = (await request.json()) as {
+            items: Array<{ text: string }>;
+          };
+          bulkRequests.push({
+            id: params.id as string,
+            texts: body.items.map((i) => i.text),
+          });
+          const createdItems = body.items.map((row, index) => ({
+            id: `created-${index}`,
+            text: row.text,
+            completed: false,
+            completedAt: null,
+            categoryId: null,
+            createdAt: "2026-06-07T00:00:00",
+            updatedAt: "2026-06-07T00:00:00",
+          }));
+          return HttpResponse.json(
+            { data: createdItems, message: "ok" },
+            { status: 201 },
+          );
+        },
+      ),
+    );
+
+    const { user } = renderWithUser(<MealsView />);
+
+    await user.click(
+      await screen.findByRole("button", { name: "Add ingredients" }),
+    );
+
+    // With no grocery list, the sheet offers a create-grocery-list affordance.
+    expect(
+      await screen.findByDisplayValue("Salmon fillets"),
+    ).toBeInTheDocument();
+    const nameField = await screen.findByLabelText(/grocery list name/i);
+    await user.type(nameField, "Weekly groceries");
+    await user.click(
+      screen.getByRole("button", { name: /create grocery list/i }),
+    );
+
+    // The grocery list was created with the right kind.
+    await waitFor(() => expect(createRequests).toHaveLength(1));
+    expect(createRequests[0]).toMatchObject({
+      name: "Weekly groceries",
+      kind: "grocery",
+    });
+
+    // Then the bulk append targets the freshly created list.
+    await user.click(screen.getByRole("button", { name: /add to list/i }));
+    await waitFor(() => expect(bulkRequests).toHaveLength(1));
+    expect(bulkRequests[0].id).toBe("list-grocery-new");
+    expect(bulkRequests[0].texts).toEqual([
+      "Salmon fillets",
+      "Asparagus",
+      "Lemon",
+    ]);
+    expect(
+      await screen.findByRole("button", { name: /view list/i }),
+    ).toBeInTheDocument();
+  });
+
+  it("does not present a failed append as success", async () => {
+    seedMockMealsBoard(createRecipeBackedMealsBoard());
+    seedMockRecipes([testRecipeDetail]);
+    seedMockLists([groceryList()]);
+
+    let bulkCalls = 0;
+    server.use(
+      http.post(`${API_BASE}/lists/:id/items/bulk`, () => {
+        bulkCalls += 1;
+        return HttpResponse.json(
+          { message: "Could not add items" },
+          { status: 500 },
+        );
+      }),
+    );
+
+    const { user } = renderWithUser(<MealsView />);
+
+    await user.click(
+      await screen.findByRole("button", { name: "Add ingredients" }),
+    );
+    expect(
+      await screen.findByDisplayValue("Salmon fillets"),
+    ).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /add to list/i }));
+
+    // The failure is surfaced.
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      /could not add items|couldn't add|failed/i,
+    );
+    // No success affordance.
+    expect(
+      screen.queryByRole("button", { name: /view list/i }),
+    ).not.toBeInTheDocument();
+    // The reviewed selection is retained (rows still present, retryable).
+    expect(screen.getByDisplayValue("Salmon fillets")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /add to list/i })).toBeEnabled();
+    expect(bulkCalls).toBe(1);
+  });
+
+  it("create-then-fail keeps the created list selected and retries into it without re-creating", async () => {
+    seedMockMealsBoard(createRecipeBackedMealsBoard());
+    seedMockRecipes([testRecipeDetail]);
+    seedMockLists([]); // no grocery list yet → create path
+
+    let createCalls = 0;
+    const bulkTargets: string[] = [];
+    server.use(
+      // The created list intentionally is NOT added to the GET /lists mock; the
+      // append target is driven by createList.onSuccess (selectedListId), not a
+      // hub refetch. This is what lets the retry reuse the created list without
+      // re-creating it.
+      http.post(`${API_BASE}/lists`, async ({ request }) => {
+        createCalls += 1;
+        const body = (await request.json()) as { name: string; kind: string };
+        return HttpResponse.json(
+          {
+            data: groceryList({ id: "list-grocery-new", name: body.name }),
+            message: "created",
+          },
+          { status: 201 },
+        );
+      }),
+      http.post(`${API_BASE}/lists/:id/items/bulk`, async ({ params }) => {
+        bulkTargets.push(params.id as string);
+        // First append fails; the retry (second) succeeds.
+        if (bulkTargets.length === 1) {
+          return HttpResponse.json(
+            { message: "Could not add items" },
+            { status: 500 },
+          );
+        }
+        return HttpResponse.json({ data: [], message: "ok" }, { status: 201 });
+      }),
+    );
+
+    const { user } = renderWithUser(<MealsView />);
+
+    await user.click(
+      await screen.findByRole("button", { name: "Add ingredients" }),
+    );
+    await screen.findByDisplayValue("Salmon fillets");
+    await user.type(
+      await screen.findByLabelText(/grocery list name/i),
+      "Weekly groceries",
+    );
+    await user.click(
+      screen.getByRole("button", { name: /create grocery list/i }),
+    );
+    await waitFor(() => expect(createCalls).toBe(1));
+
+    // First append fails.
+    await user.click(screen.getByRole("button", { name: /add to list/i }));
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      /could not add items|couldn't add|failed/i,
+    );
+    expect(
+      screen.queryByRole("button", { name: /view list/i }),
+    ).not.toBeInTheDocument();
+
+    // Retry: same created list is targeted, no second list is created.
+    await user.click(screen.getByRole("button", { name: /add to list/i }));
+    await waitFor(() =>
+      expect(
+        screen.getByRole("button", { name: /view list/i }),
+      ).toBeInTheDocument(),
+    );
+    expect(createCalls).toBe(1);
+    expect(bulkTargets).toEqual(["list-grocery-new", "list-grocery-new"]);
   });
 });
