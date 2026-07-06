@@ -567,6 +567,13 @@ describe("CalendarModule", () => {
   });
 
   describe("Date Navigation", () => {
+    const expectedDailyLabel = (date: Date) =>
+      date.toLocaleDateString("en-US", {
+        weekday: "short",
+        month: "short",
+        day: "numeric",
+      });
+
     it("navigates to previous day when Previous button clicked", async () => {
       seedMockEvents([]);
       seedCalendarStore({ calendarView: "daily" });
@@ -584,11 +591,7 @@ describe("CalendarModule", () => {
       await user.click(screen.getByRole("button", { name: /previous/i }));
 
       // Date label should update to yesterday
-      const expectedLabel = yesterday.toLocaleDateString("en-US", {
-        weekday: "short",
-        month: "short",
-        day: "numeric",
-      });
+      const expectedLabel = expectedDailyLabel(yesterday);
 
       await waitFor(() => {
         expect(screen.getByText(expectedLabel)).toBeInTheDocument();
@@ -610,11 +613,7 @@ describe("CalendarModule", () => {
 
       await user.click(screen.getByRole("button", { name: /next/i }));
 
-      const expectedLabel = tomorrow.toLocaleDateString("en-US", {
-        weekday: "short",
-        month: "short",
-        day: "numeric",
-      });
+      const expectedLabel = expectedDailyLabel(tomorrow);
 
       await waitFor(() => {
         expect(screen.getByText(expectedLabel)).toBeInTheDocument();
@@ -639,11 +638,7 @@ describe("CalendarModule", () => {
       await user.click(screen.getByRole("button", { name: /today/i }));
 
       const today = new Date();
-      const expectedLabel = today.toLocaleDateString("en-US", {
-        weekday: "short",
-        month: "short",
-        day: "numeric",
-      });
+      const expectedLabel = expectedDailyLabel(today);
 
       await waitFor(() => {
         expect(screen.getByText(expectedLabel)).toBeInTheDocument();

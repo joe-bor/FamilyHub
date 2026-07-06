@@ -43,13 +43,13 @@ export function FamilyFilterPills() {
 
   return (
     <div
-      className="flex items-center gap-1.5"
+      className="flex flex-wrap items-center gap-1.5"
       data-testid="family-filter-pills"
     >
       <button
         onClick={handleToggleAll}
         className={cn(
-          "min-h-11 px-2.5 py-1 rounded-full text-xs font-medium transition-all border",
+          "flex min-h-11 items-center px-2.5 py-1 rounded-full text-xs font-medium transition-all border",
           allSelected
             ? "bg-foreground text-background border-foreground"
             : noneSelected
