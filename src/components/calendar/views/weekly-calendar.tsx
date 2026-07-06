@@ -11,7 +11,6 @@ import { type CalendarEvent, colorMap, getFamilyMember } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { CalendarEventCard } from "../components/calendar-event";
 import type { FilterState } from "../components/calendar-filter";
-import { CalendarNavigation } from "../components/calendar-navigation";
 import {
   CurrentTimeIndicator,
   useAutoScrollToNow,
@@ -22,10 +21,6 @@ interface WeeklyCalendarProps {
   currentDate: Date;
   onEventClick?: (event: CalendarEvent) => void;
   filter: FilterState;
-  onPrevious: () => void;
-  onNext: () => void;
-  onToday: () => void;
-  isViewingToday: boolean;
 }
 
 const ROW_HEIGHT = 80; // px per hour
@@ -49,10 +44,6 @@ export function WeeklyCalendar({
   currentDate,
   onEventClick,
   filter,
-  onPrevious,
-  onNext,
-  onToday,
-  isViewingToday,
 }: WeeklyCalendarProps) {
   const familyMembers = useFamilyMembers();
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -123,21 +114,6 @@ export function WeeklyCalendar({
     };
   }, [events, weekDays, filter.selectedMembers, filter.showAllDayEvents]);
 
-  const formatWeekLabel = () => {
-    const startOfWeek = weekDays[0];
-    const endOfWeek = weekDays[6];
-    const startMonth = startOfWeek.toLocaleDateString("en-US", {
-      month: "short",
-    });
-    const endMonth = endOfWeek.toLocaleDateString("en-US", { month: "short" });
-    const year = endOfWeek.getFullYear();
-
-    if (startMonth === endMonth) {
-      return `${startMonth} ${startOfWeek.getDate()} - ${endOfWeek.getDate()}, ${year}`;
-    }
-    return `${startMonth} ${startOfWeek.getDate()} - ${endMonth} ${endOfWeek.getDate()}, ${year}`;
-  };
-
   const formatDayName = (date: Date) => {
     return date.toLocaleDateString("en-US", { weekday: "short" });
   };
@@ -184,17 +160,6 @@ export function WeeklyCalendar({
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden bg-background">
-      {/* Navigation header */}
-      <div className="border-b border-border bg-card shrink-0">
-        <CalendarNavigation
-          label={formatWeekLabel()}
-          onPrevious={onPrevious}
-          onNext={onNext}
-          onToday={onToday}
-          isViewingToday={isViewingToday}
-        />
-      </div>
-
       {/* Days header */}
       <div
         className="grid border-b border-border bg-card shrink-0"

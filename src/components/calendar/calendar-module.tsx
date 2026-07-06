@@ -20,6 +20,7 @@ import {
 import type { ApiException } from "@/api/client";
 import {
   AddEventButton,
+  CalendarNavigation,
   CalendarViewSwitcher,
   DailyCalendar,
   type EditScope,
@@ -27,6 +28,7 @@ import {
   EventDetailModal,
   EventFormModal,
   FamilyFilterPills,
+  getContextLabel,
   MobileDailyView,
   MobileMonthlyView,
   MobileToolbar,
@@ -391,13 +393,6 @@ export function CalendarModule() {
     filter,
   };
 
-  const navigationProps = {
-    onPrevious: goToPrevious,
-    onNext: goToNext,
-    onToday: goToToday,
-    isViewingToday,
-  };
-
   const renderCalendarView = () => {
     // Show loading state
     if (isLoading) {
@@ -465,21 +460,20 @@ export function CalendarModule() {
 
     switch (calendarView) {
       case "daily":
-        return <DailyCalendar {...commonProps} {...navigationProps} />;
+        return <DailyCalendar {...commonProps} />;
       case "weekly":
-        return <WeeklyCalendar {...commonProps} {...navigationProps} />;
+        return <WeeklyCalendar {...commonProps} />;
       case "monthly":
         return (
           <MonthlyCalendar
             {...commonProps}
-            {...navigationProps}
             onDateSelect={selectDateAndSwitchToDaily}
           />
         );
       case "schedule":
         return <ScheduleCalendar {...commonProps} />;
       default:
-        return <WeeklyCalendar {...commonProps} {...navigationProps} />;
+        return <WeeklyCalendar {...commonProps} />;
     }
   };
 
@@ -489,8 +483,15 @@ export function CalendarModule() {
       {isMobile ? (
         <MobileToolbar members={members} />
       ) : (
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 px-4 py-3 bg-card border-b border-border">
+        <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 px-4 py-2 bg-card border-b border-border">
           <CalendarViewSwitcher />
+          <CalendarNavigation
+            label={getContextLabel(calendarView, currentDate)}
+            onPrevious={goToPrevious}
+            onNext={goToNext}
+            onToday={goToToday}
+            isViewingToday={isViewingToday}
+          />
           <FamilyFilterPills />
         </div>
       )}
