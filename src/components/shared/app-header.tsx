@@ -1,4 +1,4 @@
-import { Cloud, Menu, Sun } from "lucide-react";
+import { Menu } from "lucide-react";
 import { useFamilyMembers, useFamilyName } from "@/api";
 import { getContextLabel } from "@/components/calendar/utils/context-label";
 import { Button } from "@/components/ui/button";
@@ -98,60 +98,48 @@ export function AppHeader() {
     );
   }
 
-  // Desktop: unchanged — Menu left + family name + date/time, weather, dots.
+  // Desktop: one compact row — Menu, family name, date/time inline, member
+  // dots right. No weather chip until a real weather feature exists.
   return (
     <header
       className={cn(
         "shrink-0 border-b border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/85",
-        "flex items-center justify-between",
-        "px-6 py-4",
+        "flex min-h-14 items-center justify-between gap-4",
+        "px-6 py-2",
       )}
     >
-      <div className="flex items-center gap-4">
+      <div className="flex min-w-0 items-center gap-3">
         <Button
           variant="ghost"
           size="icon"
           aria-label="Menu"
-          className="text-muted-foreground hover:text-foreground"
+          className="h-11 w-11 text-muted-foreground hover:text-foreground"
           onClick={openSidebar}
         >
           <Menu className="h-5 w-5" />
         </Button>
-        <div>
-          <h1 className="text-[22px] leading-7 font-semibold text-foreground">
-            {familyName || "Family Hub"}
-          </h1>
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <span>{formatDate(currentDate)}</span>
-            <span>•</span>
-            <span>{formatTime(new Date())}</span>
-          </div>
+        <h1 className="truncate text-lg leading-7 font-semibold text-foreground">
+          {familyName || "Family Hub"}
+        </h1>
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <span>{formatDate(currentDate)}</span>
+          <span>•</span>
+          <span>{formatTime(new Date())}</span>
         </div>
       </div>
 
-      <div className="flex items-center gap-6">
-        {/* Weather - future: real widget */}
-        <div className="flex items-center gap-2 text-muted-foreground">
-          <div className="relative">
-            <Sun className="h-5 w-5 text-yellow-500" />
-            <Cloud className="h-4 w-4 text-gray-400 absolute -bottom-1 -right-1" />
-          </div>
-          <span className="text-sm font-medium">72°</span>
+      {/* Family member indicators - used for calendar filtering */}
+      {familyMembers.length > 0 && (
+        <div className="flex shrink-0 items-center gap-1.5">
+          {familyMembers.slice(0, 6).map((member) => (
+            <div
+              key={member.id}
+              className={`w-3 h-3 rounded-full ${colorMap[member.color].bg}`}
+              title={member.name}
+            />
+          ))}
         </div>
-
-        {/* Family member indicators - used for calendar filtering */}
-        {familyMembers.length > 0 && (
-          <div className="flex items-center gap-1.5">
-            {familyMembers.slice(0, 6).map((member) => (
-              <div
-                key={member.id}
-                className={`w-3 h-3 rounded-full ${colorMap[member.color].bg}`}
-                title={member.name}
-              />
-            ))}
-          </div>
-        )}
-      </div>
+      )}
     </header>
   );
 }

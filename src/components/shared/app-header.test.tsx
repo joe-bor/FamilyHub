@@ -10,13 +10,15 @@ import {
 } from "@/test/test-utils";
 import { AppHeader } from "./app-header";
 
+const isMobileMock = vi.fn(() => true);
 vi.mock("@/hooks", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/hooks")>();
-  return { ...actual, useIsMobile: () => true };
+  return { ...actual, useIsMobile: () => isMobileMock() };
 });
 
 describe("AppHeader (mobile)", () => {
   beforeEach(() => {
+    isMobileMock.mockReturnValue(true);
     seedFamilyStore({
       name: "Test Family",
       members: [{ id: "m1", name: "Alice", color: "coral" }],
@@ -101,5 +103,26 @@ describe("AppHeader (mobile)", () => {
     expect(current.getFullYear()).toBe(now.getFullYear());
     expect(current.getMonth()).toBe(now.getMonth());
     expect(current.getDate()).toBe(now.getDate());
+  });
+});
+
+describe("AppHeader (desktop)", () => {
+  beforeEach(() => {
+    isMobileMock.mockReturnValue(false);
+    seedFamilyStore({
+      name: "Test Family",
+      members: [{ id: "m1", name: "Alice", color: "coral" }],
+    });
+  });
+
+  it("renders the family name and member dots", () => {
+    render(<AppHeader />);
+    expect(screen.getByText("Test Family")).toBeInTheDocument();
+    expect(screen.getByTitle("Alice")).toBeInTheDocument();
+  });
+
+  it("does not render the fake weather chip", () => {
+    render(<AppHeader />);
+    expect(screen.queryByText(/72°/)).not.toBeInTheDocument();
   });
 });
