@@ -21,9 +21,9 @@ export function CalendarNavigation({
     <div className="flex items-center justify-center gap-2">
       <Button
         variant="ghost"
-        size="icon"
+        size="icon-lg"
         onClick={onPrevious}
-        className="h-11 w-11 text-muted-foreground hover:text-foreground"
+        className="text-muted-foreground hover:text-foreground"
         aria-label="Previous"
       >
         <ChevronLeft className="h-5 w-5" />
@@ -49,9 +49,9 @@ export function CalendarNavigation({
 
       <Button
         variant="ghost"
-        size="icon"
+        size="icon-lg"
         onClick={onNext}
-        className="h-11 w-11 text-muted-foreground hover:text-foreground"
+        className="text-muted-foreground hover:text-foreground"
         aria-label="Next"
       >
         <ChevronRight className="h-5 w-5" />
