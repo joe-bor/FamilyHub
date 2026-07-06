@@ -125,4 +125,13 @@ describe("AppHeader (desktop)", () => {
     render(<AppHeader />);
     expect(screen.queryByText(/72°/)).not.toBeInTheDocument();
   });
+
+  it("opens the sidebar when the Menu button is clicked", async () => {
+    const { user } = renderWithUser(<AppHeader />);
+    expect(useAppStore.getState().isSidebarOpen).toBe(false);
+
+    await user.click(screen.getByRole("button", { name: /menu/i }));
+
+    expect(useAppStore.getState().isSidebarOpen).toBe(true);
+  });
 });

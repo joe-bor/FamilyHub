@@ -104,16 +104,16 @@ export function AppHeader() {
     <header
       className={cn(
         "shrink-0 border-b border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/85",
-        "flex min-h-14 items-center justify-between gap-4",
+        "flex items-center justify-between gap-4",
         "px-6 py-2",
       )}
     >
       <div className="flex min-w-0 items-center gap-3">
         <Button
           variant="ghost"
-          size="icon"
+          size="icon-lg"
           aria-label="Menu"
-          className="h-11 w-11 text-muted-foreground hover:text-foreground"
+          className="text-muted-foreground hover:text-foreground"
           onClick={openSidebar}
         >
           <Menu className="h-5 w-5" />
@@ -121,7 +121,7 @@ export function AppHeader() {
         <h1 className="truncate text-lg leading-7 font-semibold text-foreground">
           {familyName || "Family Hub"}
         </h1>
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+        <div className="flex shrink-0 items-center gap-2 whitespace-nowrap text-sm text-muted-foreground">
           <span>{formatDate(currentDate)}</span>
           <span>•</span>
           <span>{formatTime(new Date())}</span>
@@ -134,7 +134,7 @@ export function AppHeader() {
           {familyMembers.slice(0, 6).map((member) => (
             <div
               key={member.id}
-              className={`w-3 h-3 rounded-full ${colorMap[member.color].bg}`}
+              className={cn("h-3 w-3 rounded-full", colorMap[member.color].bg)}
               title={member.name}
             />
           ))}
