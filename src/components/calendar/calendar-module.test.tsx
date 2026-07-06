@@ -585,10 +585,9 @@ describe("CalendarModule", () => {
 
       // Date label should update to yesterday
       const expectedLabel = yesterday.toLocaleDateString("en-US", {
-        weekday: "long",
-        month: "long",
+        weekday: "short",
+        month: "short",
         day: "numeric",
-        year: "numeric",
       });
 
       await waitFor(() => {
@@ -612,10 +611,9 @@ describe("CalendarModule", () => {
       await user.click(screen.getByRole("button", { name: /next/i }));
 
       const expectedLabel = tomorrow.toLocaleDateString("en-US", {
-        weekday: "long",
-        month: "long",
+        weekday: "short",
+        month: "short",
         day: "numeric",
-        year: "numeric",
       });
 
       await waitFor(() => {
@@ -642,15 +640,31 @@ describe("CalendarModule", () => {
 
       const today = new Date();
       const expectedLabel = today.toLocaleDateString("en-US", {
-        weekday: "long",
-        month: "long",
+        weekday: "short",
+        month: "short",
         day: "numeric",
-        year: "numeric",
       });
 
       await waitFor(() => {
         expect(screen.getByText(expectedLabel)).toBeInTheDocument();
       });
+    });
+
+    it("renders date navigation in the toolbar for the schedule view", async () => {
+      seedMockEvents([]);
+      seedCalendarStore({ calendarView: "schedule" });
+
+      renderWithUser(<CalendarModule />);
+
+      await waitFor(() => {
+        expect(screen.queryByText("Loading events...")).not.toBeInTheDocument();
+      });
+
+      expect(
+        screen.getByRole("button", { name: /previous/i }),
+      ).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: /next/i })).toBeInTheDocument();
+      expect(screen.getByText("Upcoming")).toBeInTheDocument();
     });
   });
 

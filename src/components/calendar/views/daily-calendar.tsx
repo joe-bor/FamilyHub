@@ -12,7 +12,6 @@ import { type CalendarEvent, colorMap, getFamilyMember } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { CalendarEventCard } from "../components/calendar-event";
 import type { FilterState } from "../components/calendar-filter";
-import { CalendarNavigation } from "../components/calendar-navigation";
 import {
   CurrentTimeIndicator,
   useAutoScrollToNow,
@@ -23,10 +22,6 @@ interface DailyCalendarProps {
   currentDate: Date;
   onEventClick?: (event: CalendarEvent) => void;
   filter: FilterState;
-  onPrevious: () => void;
-  onNext: () => void;
-  onToday: () => void;
-  isViewingToday: boolean;
 }
 
 const START_HOUR = CALENDAR_START_HOUR;
@@ -119,10 +114,6 @@ export function DailyCalendar({
   currentDate,
   onEventClick,
   filter,
-  onPrevious,
-  onNext,
-  onToday,
-  isViewingToday,
 }: DailyCalendarProps) {
   const familyMembers = useFamilyMembers();
   const today = new Date();
@@ -133,15 +124,6 @@ export function DailyCalendar({
 
   const isToday = (date: Date) => {
     return date.toDateString() === today.toDateString();
-  };
-
-  const formatDateLabel = (date: Date) => {
-    return date.toLocaleDateString("en-US", {
-      weekday: "long",
-      month: "long",
-      day: "numeric",
-      year: "numeric",
-    });
   };
 
   // Memoize filtered and sorted events for the day
@@ -195,17 +177,6 @@ export function DailyCalendar({
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden bg-background">
-      {/* Navigation header */}
-      <div className="border-b border-border bg-card shrink-0">
-        <CalendarNavigation
-          label={formatDateLabel(currentDate)}
-          onPrevious={onPrevious}
-          onNext={onNext}
-          onToday={onToday}
-          isViewingToday={isViewingToday}
-        />
-      </div>
-
       {/* Day info header */}
       <div className="flex border-b border-border bg-card shrink-0">
         <div className="w-12 sm:w-16 shrink-0" />

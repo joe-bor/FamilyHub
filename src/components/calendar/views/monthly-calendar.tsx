@@ -15,7 +15,6 @@ import {
 import { cn } from "@/lib/utils";
 import { GoogleBadge, isGoogleEvent } from "../components/calendar-event";
 import type { FilterState } from "../components/calendar-filter";
-import { CalendarNavigation } from "../components/calendar-navigation";
 
 interface MonthlyCalendarProps {
   events: CalendarEvent[];
@@ -23,10 +22,6 @@ interface MonthlyCalendarProps {
   onEventClick?: (event: CalendarEvent) => void;
   filter: FilterState;
   onDateSelect?: (date: Date) => void;
-  onPrevious: () => void;
-  onNext: () => void;
-  onToday: () => void;
-  isViewingToday: boolean;
 }
 
 interface DayData {
@@ -40,10 +35,6 @@ export function MonthlyCalendar({
   onEventClick,
   filter,
   onDateSelect,
-  onPrevious,
-  onNext,
-  onToday,
-  isViewingToday,
 }: MonthlyCalendarProps) {
   const familyMembers = useFamilyMembers();
   const isMobile = useIsMobile();
@@ -137,23 +128,8 @@ export function MonthlyCalendar({
     return date.getMonth() === currentDate.getMonth();
   };
 
-  const formatMonthLabel = () => {
-    return currentDate.toLocaleDateString("en-US", {
-      month: "long",
-      year: "numeric",
-    });
-  };
-
   return (
     <div className="flex-1 flex flex-col min-h-0 bg-background p-4 overflow-auto">
-      <CalendarNavigation
-        label={formatMonthLabel()}
-        onPrevious={onPrevious}
-        onNext={onNext}
-        onToday={onToday}
-        isViewingToday={isViewingToday}
-      />
-
       {/* Weekday headers */}
       <div className="grid grid-cols-7 gap-0.5 sm:gap-1 mb-2 shrink-0">
         {weekDays.map((day) => (

@@ -49,7 +49,7 @@ export function FamilyFilterPills() {
       <button
         onClick={handleToggleAll}
         className={cn(
-          "px-2.5 py-1 rounded-full text-xs font-medium transition-all border",
+          "min-h-11 px-2.5 py-1 rounded-full text-xs font-medium transition-all border",
           allSelected
             ? "bg-foreground text-background border-foreground"
             : noneSelected
@@ -63,7 +63,7 @@ export function FamilyFilterPills() {
       <button
         onClick={toggleAllDayEvents}
         className={cn(
-          "flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium transition-all border",
+          "flex min-h-11 items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium transition-all border",
           filter.showAllDayEvents
             ? "bg-primary/10 text-primary border-primary/30"
             : "bg-muted/50 text-muted-foreground border-border hover:bg-muted",
@@ -85,7 +85,7 @@ export function FamilyFilterPills() {
             key={member.id}
             onClick={() => toggleMember(member.id)}
             className={cn(
-              "flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-medium transition-all",
+              "flex min-h-11 items-center gap-1.5 px-2 py-1 rounded-full text-xs font-medium transition-all",
               isSelected
                 ? `${colors?.bg} text-white shadow-sm`
                 : "bg-muted text-muted-foreground hover:bg-muted/80 opacity-50",
