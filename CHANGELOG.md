@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.3.22](https://github.com/joe-bor/FamilyHub/compare/family-hub-v0.3.21...family-hub-v0.3.22) (2026-07-06)
+
+
+### Features
+
+* **lists:** add bulk item append contract and hook ([116332b](https://github.com/joe-bor/FamilyHub/commit/116332b06e2cf446b4d9b79cb74d7dec95510c79))
+* **meals:** add ingredients review sheet ([48e99e4](https://github.com/joe-bor/FamilyHub/commit/48e99e491e9f85b9dd688580da1f3bbf769ac6fe))
+* **meals:** add ingredients-to-grocery-list action and append flow ([7f82ba9](https://github.com/joe-bor/FamilyHub/commit/7f82ba9ace1d8d5d18b226153c553f4cb10a6a39))
+* **meals:** add recipe-ingredient extraction helpers ([4b8aad8](https://github.com/joe-bor/FamilyHub/commit/4b8aad82bea7be15957c801cea3b899e05430457))
+* **meals:** guard bulk append with the shared item schema (100-item cap) ([95f4533](https://github.com/joe-bor/FamilyHub/commit/95f453350cddcf762df2064f76b1c3f09345c4c0))
+
+
+### Bug Fixes
+
+* **meals:** harden ingredients review flow ([d8c7c9a](https://github.com/joe-bor/FamilyHub/commit/d8c7c9a64dfb2e1db2c256eda0cdbb109a6a47f7))
+
+
+### Tests
+
+* **meals:** e2e for ingredients-to-grocery-list append ([814f43a](https://github.com/joe-bor/FamilyHub/commit/814f43a4214f6343fb31da635c1ca7a10f2b97dd))
+
 ## [0.3.21](https://github.com/joe-bor/FamilyHub/compare/family-hub-v0.3.20...family-hub-v0.3.21) (2026-07-03)
 
 
