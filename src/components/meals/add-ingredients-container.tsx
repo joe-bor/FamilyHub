@@ -4,8 +4,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { BulkCreateListItemsRequest, MealBoard } from "@/lib/types";
+import { bulkCreateListItemsSchema } from "@/lib/validations";
 import { useAppStore } from "@/stores";
 import { AddIngredientsSheet } from "./add-ingredients-sheet";
+
+// Mirrors the shared schema's `.max(100)` cap so we can surface honest,
+// cap-specific copy before firing the request (the BE enforces the same bound).
+const MAX_BULK_ITEMS = 100;
+const CAP_ERROR = `You can add up to ${MAX_BULK_ITEMS} items at once. Deselect some rows and try again.`;
 
 interface AddIngredientsContainerProps {
   isOpen: boolean;
@@ -46,6 +52,9 @@ export function AddIngredientsContainer({
   // The list a successful append landed in. Presence of this is the ONLY
   // success signal — set exclusively from the mutation's success path.
   const [appendedListId, setAppendedListId] = useState<string | null>(null);
+  // Client-side guard failure (e.g. the >100-item cap) surfaced BEFORE any
+  // request fires. Retained across renders until the user retries.
+  const [validationError, setValidationError] = useState<string | null>(null);
 
   // Default to the only grocery list once lists resolve. Never override an
   // explicit user pick or a just-created list.
@@ -63,6 +72,7 @@ export function AddIngredientsContainer({
     setSelectedListId(null);
     setNewListName("");
     setAppendedListId(null);
+    setValidationError(null);
   }, [isOpen]);
 
   const createList = useCreateList({
@@ -85,6 +95,21 @@ export function AddIngredientsContainer({
     if (appendedListId !== null) return;
     if (!selectedListId) return;
     if (request.items.length === 0) return;
+
+    // Client-side guard with the SHARED schema (BE enforces the same bound):
+    // reject before any network call so an over-cap payload never leaves the
+    // client. The dominant real failure is the >100-item cap on a fully
+    // recipe-planned week; give honest, actionable copy for it.
+    const parsed = bulkCreateListItemsSchema.safeParse(request);
+    if (!parsed.success) {
+      setValidationError(
+        request.items.length > MAX_BULK_ITEMS
+          ? CAP_ERROR
+          : "Some items couldn't be added. Check your rows and try again.",
+      );
+      return;
+    }
+    setValidationError(null);
 
     bulkCreate.mutate(request, {
       onSuccess: () => {
@@ -120,16 +145,24 @@ export function AddIngredientsContainer({
       );
     }
 
+    // The client-side guard failure takes precedence over a prior request
+    // error — it's the reason nothing was sent this time.
+    const errorMessage = validationError
+      ? validationError
+      : bulkCreate.isError
+        ? bulkCreate.error instanceof Error
+          ? bulkCreate.error.message
+          : "Couldn't add ingredients to your list. Try again."
+        : null;
+
     return (
       <div className="space-y-3">
-        {bulkCreate.isError ? (
+        {errorMessage ? (
           <p
             className="rounded-lg border border-destructive/40 bg-destructive/5 px-3 py-2 text-sm text-destructive"
             role="alert"
           >
-            {bulkCreate.error instanceof Error
-              ? bulkCreate.error.message
-              : "Couldn't add ingredients to your list. Try again."}
+            {errorMessage}
           </p>
         ) : null}
 
