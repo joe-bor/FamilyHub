@@ -2287,4 +2287,49 @@ describe("MealsView", () => {
     expect(createCalls).toBe(1);
     expect(bulkTargets).toEqual(["list-grocery-new", "list-grocery-new"]);
   });
+
+  it("blocks an over-cap append (>100 items) with an honest error and fires no request", async () => {
+    // A recipe with 101 ingredients: the review model selects one row each, so
+    // the built payload exceeds the shared schema's 100-item cap.
+    const overCapIngredients = Array.from(
+      { length: 101 },
+      (_, index) => `Ingredient ${index + 1}`,
+    );
+    seedMockMealsBoard(createRecipeBackedMealsBoard());
+    seedMockRecipes([{ ...testRecipeDetail, ingredients: overCapIngredients }]);
+    seedMockLists([groceryList()]);
+
+    let bulkCalls = 0;
+    server.use(
+      http.post(`${API_BASE}/lists/:id/items/bulk`, () => {
+        bulkCalls += 1;
+        return HttpResponse.json({ data: [], message: "ok" }, { status: 201 });
+      }),
+    );
+
+    const { user } = renderWithUser(<MealsView />);
+
+    await user.click(
+      await screen.findByRole("button", { name: "Add ingredients" }),
+    );
+    // Confirm the review model actually loaded the over-cap ingredient set.
+    expect(
+      await screen.findByDisplayValue("Ingredient 101"),
+    ).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /add to list/i }));
+
+    // The client-side guard surfaces the honest cap message.
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      /up to 100 items at once/i,
+    );
+    // No request left the client, and no success affordance appeared.
+    expect(bulkCalls).toBe(0);
+    expect(
+      screen.queryByRole("button", { name: /view list/i }),
+    ).not.toBeInTheDocument();
+    // The selection is retained and the action stays retryable.
+    expect(screen.getByDisplayValue("Ingredient 101")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /add to list/i })).toBeEnabled();
+  });
 });
