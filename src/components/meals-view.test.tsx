@@ -148,6 +148,14 @@ function withExtrasOnlyDinnerSlot(
   };
 }
 
+function setNavigatorOnline(value: boolean): void {
+  Object.defineProperty(navigator, "onLine", {
+    configurable: true,
+    value,
+  });
+  window.dispatchEvent(new Event(value ? "online" : "offline"));
+}
+
 function withSavedMealPlan(
   board: MealBoard,
   request: SaveMealPlanRequest,
@@ -175,6 +183,7 @@ describe("MealsView", () => {
   });
 
   afterEach(() => {
+    setNavigatorOnline(true);
     vi.unstubAllGlobals();
   });
 
@@ -2174,6 +2183,54 @@ describe("MealsView", () => {
     expect(
       await screen.findByRole("button", { name: /view list/i }),
     ).toBeInTheDocument();
+  });
+
+  it("disables grocery list creation while offline and sends no create request", async () => {
+    setNavigatorOnline(false);
+    seedMockMealsBoard(createRecipeBackedMealsBoard());
+    seedMockRecipes([testRecipeDetail]);
+    seedMockLists([]);
+
+    let createCalls = 0;
+    server.use(
+      http.post(`${API_BASE}/lists`, () => {
+        createCalls += 1;
+        return HttpResponse.json(
+          {
+            data: groceryList({ id: "list-grocery-new" }),
+            message: "created",
+          },
+          { status: 201 },
+        );
+      }),
+    );
+
+    const { user } = renderWithUser(<MealsView />);
+
+    await user.click(
+      await screen.findByRole("button", { name: "Add ingredients" }),
+    );
+    expect(
+      await screen.findByDisplayValue("Salmon fillets"),
+    ).toBeInTheDocument();
+
+    await user.type(
+      await screen.findByLabelText(/grocery list name/i),
+      "Weekly groceries",
+    );
+
+    const createButton = screen.getByRole("button", {
+      name: /create grocery list/i,
+    });
+    expect(createButton).toBeDisabled();
+    expect(
+      screen.getByText(
+        "You're offline. Review your ingredients now and add them to your list when you're back online.",
+      ),
+    ).toBeInTheDocument();
+
+    await user.click(createButton);
+    expect(createCalls).toBe(0);
   });
 
   it("does not present a failed append as success", async () => {

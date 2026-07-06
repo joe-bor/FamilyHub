@@ -1,5 +1,5 @@
 import { useQueryClient } from "@tanstack/react-query";
-import { type ReactNode, useMemo, useState } from "react";
+import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { recipesKeys } from "@/api/hooks/use-recipes";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -138,13 +138,27 @@ export function AddIngredientsSheet({
   const [model, setModel] = useState<ReviewModel>(() =>
     buildReviewModel(board, resolutionsById),
   );
-  const [syncedKey, setSyncedKey] = useState(resolutionKey);
-  if (!isLoading && resolutionKey !== syncedKey) {
-    setModel((current) =>
-      mergeReviewModel(current, buildReviewModel(board, resolutionsById)),
-    );
-    setSyncedKey(resolutionKey);
-  }
+  const [syncedKey, setSyncedKey] = useState<string | null>(null);
+  const wasOpenRef = useRef(false);
+
+  useEffect(() => {
+    if (!isOpen) {
+      wasOpenRef.current = false;
+      return;
+    }
+    if (isLoading) return;
+
+    const isFreshOpen = !wasOpenRef.current;
+    const resolutionChanged = syncedKey !== resolutionKey;
+    if (isFreshOpen || resolutionChanged) {
+      const freshModel = buildReviewModel(board, resolutionsById);
+      setModel((current) =>
+        isFreshOpen ? freshModel : mergeReviewModel(current, freshModel),
+      );
+      setSyncedKey(resolutionKey);
+    }
+    wasOpenRef.current = true;
+  }, [board, isLoading, isOpen, resolutionKey, resolutionsById, syncedKey]);
 
   function editRecipeRow(groupKey: string, rowId: string, text: string) {
     setModel((current) => ({
