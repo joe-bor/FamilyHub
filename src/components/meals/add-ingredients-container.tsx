@@ -3,6 +3,7 @@ import { useBulkCreateListItems, useCreateList, useLists } from "@/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useOnlineStatus } from "@/hooks/use-online-status";
 import type { BulkCreateListItemsRequest, MealBoard } from "@/lib/types";
 import { bulkCreateListItemsSchema } from "@/lib/validations";
 import { useAppStore } from "@/stores";
@@ -41,6 +42,7 @@ export function AddIngredientsContainer({
 }: AddIngredientsContainerProps) {
   const openListDetail = useAppStore((state) => state.openListDetail);
   const lists = useLists();
+  const online = useOnlineStatus();
 
   const groceryLists = useMemo(
     () => (lists.data?.data ?? []).filter((list) => list.kind === "grocery"),
@@ -181,14 +183,17 @@ export function AddIngredientsContainer({
                 type="button"
                 variant="outline"
                 disabled={
-                  newListName.trim().length === 0 || createList.isPending
+                  !online ||
+                  newListName.trim().length === 0 ||
+                  createList.isPending
                 }
-                onClick={() =>
+                onClick={() => {
+                  if (!online) return;
                   createList.mutate({
                     name: newListName.trim(),
                     kind: "grocery",
-                  })
-                }
+                  });
+                }}
               >
                 Create grocery list
               </Button>

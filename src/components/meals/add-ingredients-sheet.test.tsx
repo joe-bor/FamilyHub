@@ -422,4 +422,57 @@ describe("AddIngredientsSheet", () => {
     // Only the recipe ingredients — the blank manual row is dropped.
     expect(texts).toEqual(["Salmon fillets", "Asparagus", "Lemon"]);
   });
+
+  it("starts a fresh review model each time the sheet opens", async () => {
+    const board = boardWithRecipeAndQuick();
+    const onConfirm = vi.fn();
+    const onOpenChange = vi.fn();
+    const { user, rerender } = renderWithUser(
+      <AddIngredientsSheet
+        isOpen
+        board={board}
+        onOpenChange={onOpenChange}
+        onConfirm={onConfirm}
+      />,
+    );
+
+    const salmon = await screen.findByDisplayValue("Salmon fillets");
+    await user.clear(salmon);
+    await user.type(salmon, "2 salmon fillets");
+
+    const asparagusRow = screen
+      .getByDisplayValue("Asparagus")
+      .closest("li") as HTMLElement;
+    await user.click(
+      within(asparagusRow).getByRole("button", { name: /remove/i }),
+    );
+
+    expect(screen.getByDisplayValue("2 salmon fillets")).toBeInTheDocument();
+    expect(screen.queryByDisplayValue("Asparagus")).not.toBeInTheDocument();
+
+    rerender(
+      <AddIngredientsSheet
+        isOpen={false}
+        board={board}
+        onOpenChange={onOpenChange}
+        onConfirm={onConfirm}
+      />,
+    );
+    rerender(
+      <AddIngredientsSheet
+        isOpen
+        board={board}
+        onOpenChange={onOpenChange}
+        onConfirm={onConfirm}
+      />,
+    );
+
+    expect(
+      await screen.findByDisplayValue("Salmon fillets"),
+    ).toBeInTheDocument();
+    expect(screen.getByDisplayValue("Asparagus")).toBeInTheDocument();
+    expect(
+      screen.queryByDisplayValue("2 salmon fillets"),
+    ).not.toBeInTheDocument();
+  });
 });
