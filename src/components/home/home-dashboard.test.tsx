@@ -1,10 +1,13 @@
 import { HttpResponse, http } from "msw";
 import { afterEach, beforeEach } from "vitest";
+import type { ListDetail } from "@/lib/types";
+import { useAppStore } from "@/stores";
 import { createTestEventResponse, testMembers } from "@/test/fixtures";
 import {
   API_BASE,
   resetMockEvents,
   seedMockEvents,
+  seedMockLists,
   server,
   setupMswServer,
 } from "@/test/mocks/server";
@@ -16,6 +19,28 @@ import {
   waitForMemberSelected,
 } from "@/test/test-utils";
 import { HomeDashboard } from "./home-dashboard";
+
+const groceryList: ListDetail = {
+  id: "grocery-1",
+  name: "Groceries",
+  kind: "grocery",
+  categoryDisplayMode: "grouped",
+  showCompletedOverride: null,
+  categories: [],
+  items: [
+    {
+      id: "item-1",
+      text: "Milk",
+      completed: false,
+      completedAt: null,
+      categoryId: null,
+      createdAt: "2026-06-21T09:00:00",
+      updatedAt: "2026-06-21T09:00:00",
+    },
+  ],
+  createdAt: "2026-06-21T09:00:00",
+  updatedAt: "2026-06-21T09:00:00",
+};
 
 function setViewportWidth(width: number) {
   Object.defineProperty(window, "innerWidth", {
@@ -196,7 +221,6 @@ describe("HomeDashboard", () => {
   });
 
   it("clears stale delete errors before opening a different event detail", async () => {
-    setViewportWidth(1024);
     server.use(
       http.delete(`${API_BASE}/calendar/events/:id`, () =>
         HttpResponse.json({ message: "Delete failed" }, { status: 500 }),
@@ -235,7 +259,7 @@ describe("HomeDashboard", () => {
       await screen.findByText("Failed to delete event. Please try again."),
     ).toBeInTheDocument();
 
-    await user.click(screen.getByRole("button", { name: /close/i }));
+    await user.click(screen.getByRole("button", { name: /back/i }));
     await user.click(screen.getByRole("button", { name: /school pickup/i }));
 
     expect(
@@ -270,11 +294,88 @@ describe("HomeDashboard", () => {
     ).toBeInTheDocument();
   });
 
-  it("does NOT mount the feed/state-line on desktop", () => {
+  it("renders the large-screen home dashboard on desktop without mobile feed", async () => {
     setViewportWidth(1024);
+    seedMockEvents([
+      createTestEventResponse({
+        id: "today",
+        title: "Swim lesson",
+        date: "2026-06-21",
+        startTime: "1:00 PM",
+        endTime: "2:00 PM",
+        memberId: testMembers[0].id,
+      }),
+    ]);
+
     render(<HomeDashboard nowOverride={new Date(2026, 5, 21, 12)} />);
+
+    expect(
+      await screen.findByTestId("large-home-dashboard"),
+    ).toBeInTheDocument();
+    expect(screen.getByText("Swim lesson")).toBeInTheDocument();
     expect(
       screen.queryByText(/Since you last opened/i),
     ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /add event/i }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("routes large-screen event taps to Calendar instead of opening inline detail", async () => {
+    setViewportWidth(1024);
+    seedMockEvents([
+      createTestEventResponse({
+        id: "swim",
+        title: "Swim lesson",
+        date: "2026-06-21",
+        startTime: "1:00 PM",
+        endTime: "2:00 PM",
+        memberId: testMembers[0].id,
+      }),
+    ]);
+
+    const { user } = renderWithUser(
+      <HomeDashboard nowOverride={new Date(2026, 5, 21, 12)} />,
+    );
+
+    await user.click(
+      await screen.findByRole("button", { name: /up next: swim lesson/i }),
+    );
+
+    expect(useAppStore.getState().activeModule).toBe("calendar");
+    expect(useAppStore.getState().calendarEventIntent).toEqual({
+      date: "2026-06-21",
+      eventKey: "swim",
+    });
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
+  it("routes large-screen state strip taps to Chores, Meals, and Lists", async () => {
+    setViewportWidth(1024);
+    seedMockLists([groceryList]);
+    const { user } = renderWithUser(
+      <HomeDashboard nowOverride={new Date(2026, 5, 21, 12)} />,
+    );
+
+    await user.click(
+      await screen.findByRole("button", { name: /open chores/i }),
+    );
+    expect(useAppStore.getState().activeModule).toBe("chores");
+
+    useAppStore.getState().setActiveModule(null);
+    await user.click(
+      await screen.findByRole("button", { name: /open meals/i }),
+    );
+    expect(useAppStore.getState().activeModule).toBe("meals");
+    expect(useAppStore.getState().mealSlotIntent).toMatchObject({
+      mealType: "dinner",
+    });
+
+    useAppStore.getState().setActiveModule(null);
+    await user.click(
+      await screen.findByRole("button", { name: /open lists/i }),
+    );
+    expect(useAppStore.getState().activeModule).toBe("lists");
+    expect(useAppStore.getState().listDetailIntent).toBe("grocery-1");
   });
 });
