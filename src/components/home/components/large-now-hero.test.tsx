@@ -33,6 +33,34 @@ describe("LargeNowHero", () => {
     expect(screen.getByText(/Community pool/)).toBeInTheDocument();
   });
 
+  it("gives the section a static label so it isn't double-announced with the button", () => {
+    render(
+      <LargeNowHero
+        state={{ kind: "UP_NEXT", event }}
+        member={member}
+        now={new Date(2026, 6, 5, 8, 30)}
+        onOpenEvent={vi.fn()}
+      />,
+    );
+
+    expect(
+      screen.getByRole("region", { name: "Home status" }),
+    ).toBeInTheDocument();
+  });
+
+  it("uses middot separators in the meta copy, matching the mobile hero", () => {
+    render(
+      <LargeNowHero
+        state={{ kind: "UP_NEXT", event }}
+        member={member}
+        now={new Date(2026, 6, 5, 8, 30)}
+        onOpenEvent={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByText(/Up next · in 30 min/i)).toBeInTheDocument();
+  });
+
   it("routes event taps through the callback", async () => {
     const onOpenEvent = vi.fn();
     const { user } = renderWithUser(

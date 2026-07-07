@@ -128,4 +128,18 @@ describe("EventDetailModal", () => {
     });
     expect(mockClose).toHaveBeenCalledTimes(1);
   });
+
+  it("shows the delete error banner when deleteError is set", () => {
+    render(<EventDetailModal {...defaultProps} deleteError="Delete failed" />);
+    expect(
+      screen.getByText("Failed to delete event. Please try again."),
+    ).toBeInTheDocument();
+  });
+
+  it("does not show the delete error banner when deleteError is undefined", () => {
+    render(<EventDetailModal {...defaultProps} deleteError={undefined} />);
+    expect(
+      screen.queryByText("Failed to delete event. Please try again."),
+    ).not.toBeInTheDocument();
+  });
 });

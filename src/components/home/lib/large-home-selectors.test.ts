@@ -139,7 +139,7 @@ describe("large home selectors", () => {
   it("selects a small tomorrow/near-future peek", () => {
     const tomorrow = new Date(2026, 6, 6);
     const dayAfter = new Date(2026, 6, 7);
-    const items = selectTomorrowPeek(
+    const peek = selectTomorrowPeek(
       [
         event({
           id: "t1",
@@ -169,7 +169,12 @@ describe("large home selectors", () => {
       now,
     );
 
-    expect(items.map((e) => e.title)).toEqual(["Camp", "Lunch", "Dentist"]);
+    expect(peek.items.map((e) => e.title)).toEqual([
+      "Camp",
+      "Lunch",
+      "Dentist",
+    ]);
+    expect(peek.isTomorrow).toBe(true);
   });
 
   it("derives chores remaining, done, empty, and unavailable states", () => {
@@ -336,7 +341,7 @@ describe("large home selectors", () => {
   it("falls back to earliest upcoming events when tomorrow has none", () => {
     const laterThisWeek = new Date(2026, 6, 8);
     const evenLater = new Date(2026, 6, 10);
-    const items = selectTomorrowPeek(
+    const peek = selectTomorrowPeek(
       [
         event({
           id: "l2",
@@ -354,11 +359,12 @@ describe("large home selectors", () => {
       now,
     );
 
-    expect(items.map((e) => e.title)).toEqual([
+    expect(peek.items.map((e) => e.title)).toEqual([
       "Later This Week",
       "Even Later",
     ]);
-    expect(items.length).toBeLessThanOrEqual(3);
+    expect(peek.items.length).toBeLessThanOrEqual(3);
+    expect(peek.isTomorrow).toBe(false);
   });
 
   it("derives singular labels for exactly one remaining chore and one grocery item", () => {

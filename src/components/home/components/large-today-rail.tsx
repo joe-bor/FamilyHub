@@ -1,4 +1,5 @@
 import { format } from "date-fns";
+import { getEventKey } from "@/lib/time-utils";
 import type { CalendarEvent, FamilyMember } from "@/lib/types";
 import { colorMap, getFamilyMember } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -48,12 +49,14 @@ export function LargeTodayRail({
   currentDate,
   todayItems,
   tomorrowItems,
+  isTomorrow = true,
   members,
   onSelect,
 }: {
   currentDate: Date;
   todayItems: CalendarEvent[];
   tomorrowItems: CalendarEvent[];
+  isTomorrow?: boolean;
   members: FamilyMember[];
   onSelect: (event: CalendarEvent) => void;
 }) {
@@ -72,7 +75,7 @@ export function LargeTodayRail({
           <div className="space-y-1">
             {todayItems.map((event) => (
               <EventRow
-                key={event.id ?? `${event.title}-${event.startTime}`}
+                key={getEventKey(event)}
                 event={event}
                 members={members}
                 onSelect={onSelect}
@@ -89,12 +92,12 @@ export function LargeTodayRail({
       {tomorrowItems.length > 0 && (
         <section className="border-t border-border/70 pt-5">
           <h3 className="mb-3 text-base font-semibold leading-6 text-foreground/70">
-            Tomorrow
+            {isTomorrow ? "Tomorrow" : "Coming up"}
           </h3>
           <div className="space-y-1">
             {tomorrowItems.map((event) => (
               <EventRow
-                key={event.id ?? `${event.title}-${event.startTime}`}
+                key={getEventKey(event)}
                 event={event}
                 members={members}
                 onSelect={onSelect}
