@@ -30,3 +30,24 @@ export function getEventDateTime(
 export function formatEventTimeForDisplay(time: string): string {
   return TIME_24H_REGEX.test(time) ? format24hTo12h(time) : time;
 }
+
+/** Comparator ordering events by start time only, earliest first. */
+export function compareByStartDateTime(
+  left: CalendarEvent,
+  right: CalendarEvent,
+): number {
+  return (
+    getEventDateTime(left, "start").getTime() -
+    getEventDateTime(right, "start").getTime()
+  );
+}
+
+/** Comparator ordering all-day events before timed events, then by start time. */
+export function compareAllDayFirst(
+  left: CalendarEvent,
+  right: CalendarEvent,
+): number {
+  if (left.isAllDay && !right.isAllDay) return -1;
+  if (!left.isAllDay && right.isAllDay) return 1;
+  return compareByStartDateTime(left, right);
+}

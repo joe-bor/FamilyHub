@@ -9,9 +9,15 @@ import type {
   ChoresBoard,
   ListSummary,
   MealBoard,
+  MealDay,
+  MealSlot,
   MealType,
 } from "@/lib/types";
-import { getEventDateTime } from "./event-time";
+import {
+  compareAllDayFirst,
+  compareByStartDateTime,
+  getEventDateTime,
+} from "./event-time";
 
 export type SummaryStatus =
   | "loading"
@@ -42,6 +48,12 @@ export interface HomeStateSummary {
   target: HomeSummaryTarget;
 }
 
+/**
+ * Rest-of-day agenda items, excluding the hero by event KEY (recurring-safe:
+ * matches on id, or recurringEventId+date for expanded instances) so the same
+ * recurring instance isn't duplicated. All-day events always survive the
+ * ended-filter regardless of `now`; timed events are dropped once ended.
+ */
 export function selectRestOfDayItems(
   todayEvents: CalendarEvent[],
   heroEvent: CalendarEvent | null,
@@ -56,17 +68,16 @@ export function selectRestOfDayItems(
       if (event.isAllDay) return true;
       return getEventDateTime(event, "end") > now;
     })
-    .sort((left, right) => {
-      if (left.isAllDay && !right.isAllDay) return -1;
-      if (!left.isAllDay && right.isAllDay) return 1;
-      return (
-        getEventDateTime(left, "start").getTime() -
-        getEventDateTime(right, "start").getTime()
-      );
-    })
+    .sort(compareAllDayFirst)
     .slice(0, limit);
 }
 
+/**
+ * Small look-ahead into tomorrow. Assumes `comingUpEvents` already excludes
+ * today. Falls back to the earliest upcoming events (beyond tomorrow) when
+ * tomorrow itself has nothing scheduled, so the peek is never empty while
+ * later events exist.
+ */
 export function selectTomorrowPeek(
   comingUpEvents: CalendarEvent[],
   currentDate: Date,
@@ -76,24 +87,15 @@ export function selectTomorrowPeek(
 
   const tomorrowItems = comingUpEvents
     .filter((event) => isSameDay(event.date, tomorrow))
-    .sort(
-      (left, right) =>
-        getEventDateTime(left, "start").getTime() -
-        getEventDateTime(right, "start").getTime(),
-    )
+    .sort(compareByStartDateTime)
     .slice(0, limit);
 
   if (tomorrowItems.length > 0) return tomorrowItems;
 
-  return [...comingUpEvents]
-    .sort(
-      (left, right) =>
-        getEventDateTime(left, "start").getTime() -
-        getEventDateTime(right, "start").getTime(),
-    )
-    .slice(0, limit);
+  return [...comingUpEvents].sort(compareByStartDateTime).slice(0, limit);
 }
 
+/** Summaries always carry a routing target, even when loading or unavailable. */
 export function deriveChoresSummary({
   board,
   isLoading,
@@ -146,22 +148,35 @@ export function deriveChoresSummary({
   };
 }
 
-export function getTodayDinnerTarget(
+/** Locates today's day entry and dinner slot in a single pass over the board. */
+function findTodayDinnerSlot(
   board: MealBoard,
   today: Date,
-): MealSlotTarget | null {
+): { day: MealDay; slot: MealSlot } | null {
   const todayKey = formatLocalDate(today);
   const day = board.days.find((candidate) => candidate.date === todayKey);
   const slot = day?.slots.find((candidate) => candidate.mealType === "dinner");
   if (!day || !slot) return null;
 
+  return { day, slot };
+}
+
+/** Routing target for today's dinner slot, or null when today isn't on the board. */
+export function getTodayDinnerTarget(
+  board: MealBoard,
+  today: Date,
+): MealSlotTarget | null {
+  const found = findTodayDinnerSlot(board, today);
+  if (!found) return null;
+
   return {
     weekStartDate: board.weekStartDate,
-    dayIndex: day.dayIndex,
+    dayIndex: found.day.dayIndex,
     mealType: "dinner",
   };
 }
 
+/** Summaries always carry a routing target, even when loading or unavailable. */
 export function deriveMealsSummary({
   board,
   today,
@@ -196,10 +211,15 @@ export function deriveMealsSummary({
     };
   }
 
-  const target = getTodayDinnerTarget(board, today) ?? fallbackTarget;
-  const todayKey = formatLocalDate(today);
-  const day = board.days.find((candidate) => candidate.date === todayKey);
-  const dinner = day?.slots.find((slot) => slot.mealType === "dinner");
+  const found = findTodayDinnerSlot(board, today);
+  const target: MealSlotTarget = found
+    ? {
+        weekStartDate: board.weekStartDate,
+        dayIndex: found.day.dayIndex,
+        mealType: "dinner",
+      }
+    : fallbackTarget;
+  const dinner = found?.slot;
   const title = dinner?.primary?.title ?? dinner?.extras[0]?.title ?? null;
 
   if (title) {
@@ -219,6 +239,7 @@ export function deriveMealsSummary({
   };
 }
 
+/** Summaries always carry a routing target, even when loading or unavailable. */
 export function deriveListsSummary({
   lists,
   isLoading,
