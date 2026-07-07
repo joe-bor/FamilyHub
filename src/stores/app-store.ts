@@ -135,11 +135,21 @@ export const useAppStore = create<AppState>((set, get) => ({
     set({ mealSlotIntent: null });
     return v;
   },
+  // Registers/clears an explicit idle-return blocker for create/edit surfaces
+  // that don't render a Radix dialog or vaul drawer (those block automatically
+  // — see hasBlockingSurface in use-large-screen-home-idle-return.ts). See the
+  // meals-view active-flow effect for the reference usage.
   setIdleReturnBlocked: (key, blocked) =>
     set((state) => {
+      const isBlocked = key in state.idleReturnBlockers;
+      // No-op guard: redundant calls must not clone the record or notify.
+      if (blocked === isBlocked) return state;
       const next = { ...state.idleReturnBlockers };
       if (blocked) next[key] = true;
       else delete next[key];
       return { idleReturnBlockers: next };
     }),
 }));
+
+// Idle-return blocker keys live here so producers and tests can't drift.
+export const IDLE_BLOCKER_MEALS_FLOW = "meals-active-flow";

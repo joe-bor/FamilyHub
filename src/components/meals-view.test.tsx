@@ -9,7 +9,7 @@ import type {
   MealBoard,
   SaveMealPlanRequest,
 } from "@/lib/types";
-import { useAppStore } from "@/stores/app-store";
+import { IDLE_BLOCKER_MEALS_FLOW, useAppStore } from "@/stores/app-store";
 import {
   createEmptyMealsBoard,
   createExtrasOnlyMealsBoard,
@@ -241,7 +241,7 @@ describe("MealsView", () => {
     await user.click(dinnerButtons[0]);
 
     expect(useAppStore.getState().idleReturnBlockers).toEqual({
-      "meals-active-flow": true,
+      [IDLE_BLOCKER_MEALS_FLOW]: true,
     });
   });
 
