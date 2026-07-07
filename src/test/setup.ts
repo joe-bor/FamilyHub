@@ -103,6 +103,8 @@ function resetAllStores(): void {
     recipeCreationDraft: null,
     listDetailIntent: null,
     calendarFocusDate: null,
+    calendarEventIntent: null,
+    mealSlotIntent: null,
   });
 
   // Reset auth store

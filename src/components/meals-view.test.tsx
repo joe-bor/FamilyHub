@@ -2389,4 +2389,41 @@ describe("MealsView", () => {
     expect(screen.getByDisplayValue("Ingredient 101")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /add to list/i })).toBeEnabled();
   });
+
+  describe("large Home meal slot intent", () => {
+    it("opens an empty dinner slot from a large Home meal intent", async () => {
+      seedMockMealsBoard(createEmptyMealsBoard());
+      useAppStore.getState().focusMealSlot({
+        weekStartDate: testWeekStartDate,
+        dayIndex: 0,
+        mealType: "dinner",
+      });
+
+      renderWithUser(<MealsView />);
+
+      expect(
+        await screen.findByRole("dialog", { name: /plan dinner/i }),
+      ).toBeInTheDocument();
+      expect(useAppStore.getState().mealSlotIntent).toBeNull();
+    });
+
+    it("opens an occupied dinner slot from a large Home meal intent", async () => {
+      seedMockMealsBoard(
+        withOccupiedDinnerSlot(createEmptyMealsBoard(), 0, "Tacos"),
+      );
+      useAppStore.getState().focusMealSlot({
+        weekStartDate: testWeekStartDate,
+        dayIndex: 0,
+        mealType: "dinner",
+      });
+
+      renderWithUser(<MealsView />);
+
+      const editorDialog = await screen.findByRole("dialog", {
+        name: /dinner plan/i,
+      });
+      expect(within(editorDialog).getByText("Tacos")).toBeInTheDocument();
+      expect(useAppStore.getState().mealSlotIntent).toBeNull();
+    });
+  });
 });
