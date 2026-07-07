@@ -1,7 +1,18 @@
 import type { APIRequestContext, Page } from "@playwright/test";
 import type { CreateEventRequest } from "../../src/lib/types/calendar";
+import type {
+  ChoreTemplate,
+  CreateChoreTemplateRequest,
+  UpdateCurrentPeriodCompletionRequest,
+} from "../../src/lib/types/chores";
 import type { FamilyColor } from "../../src/lib/types/family";
 import type {
+  CreateListItemRequest,
+  CreateListRequest,
+  ListDetail,
+} from "../../src/lib/types/lists";
+import type {
+  MealSlot,
   MealType,
   UpsertMealSlotRequest,
 } from "../../src/lib/types/meals";
@@ -172,6 +183,112 @@ export async function planMealSlot(
     const responseBody = await response.text();
     throw new Error(
       `Plan meal slot failed (${response.status()}): ${responseBody}`,
+    );
+  }
+}
+
+/**
+ * Create a chore template through the real backend API using an authenticated token.
+ */
+export async function createChoreTemplate(
+  request: APIRequestContext,
+  token: string,
+  chore: CreateChoreTemplateRequest,
+): Promise<ChoreTemplate> {
+  const response = await request.post(`${API_BASE}/chores/templates`, {
+    headers: { Authorization: `Bearer ${token}` },
+    data: chore,
+  });
+  if (!response.ok()) {
+    throw new Error(
+      `Create chore failed (${response.status()}): ${await response.text()}`,
+    );
+  }
+  const json = await response.json();
+  return json.data;
+}
+
+/**
+ * Mark a chore template's current period as complete through the real backend API.
+ */
+export async function completeCurrentChore(
+  request: APIRequestContext,
+  token: string,
+  templateId: string,
+  completion: UpdateCurrentPeriodCompletionRequest,
+): Promise<void> {
+  const response = await request.put(
+    `${API_BASE}/chores/templates/${templateId}/current-period-completion`,
+    {
+      headers: { Authorization: `Bearer ${token}` },
+      data: completion,
+    },
+  );
+  if (!response.ok()) {
+    throw new Error(
+      `Complete chore failed (${response.status()}): ${await response.text()}`,
+    );
+  }
+}
+
+/**
+ * Upsert a meal slot through the real backend API using an authenticated token.
+ */
+export async function upsertMealSlot(
+  request: APIRequestContext,
+  token: string,
+  slot: UpsertMealSlotRequest,
+): Promise<MealSlot> {
+  const response = await request.put(`${API_BASE}/meals/slots`, {
+    headers: { Authorization: `Bearer ${token}` },
+    data: slot,
+  });
+  if (!response.ok()) {
+    throw new Error(
+      `Upsert meal failed (${response.status()}): ${await response.text()}`,
+    );
+  }
+  const json = await response.json();
+  return json.data;
+}
+
+/**
+ * Create a list through the real backend API using an authenticated token.
+ */
+export async function createList(
+  request: APIRequestContext,
+  token: string,
+  list: CreateListRequest,
+): Promise<ListDetail> {
+  const response = await request.post(`${API_BASE}/lists`, {
+    headers: { Authorization: `Bearer ${token}` },
+    data: list,
+  });
+  if (!response.ok()) {
+    throw new Error(
+      `Create list failed (${response.status()}): ${await response.text()}`,
+    );
+  }
+  const json = await response.json();
+  return json.data;
+}
+
+/**
+ * Create a list item through the real backend API using an authenticated token.
+ */
+export async function createListItem(
+  request: APIRequestContext,
+  token: string,
+  listId: string,
+  item: CreateListItemRequest,
+): Promise<void> {
+  const response = await request.post(`${API_BASE}/lists/${listId}/items`, {
+    headers: { Authorization: `Bearer ${token}` },
+    data: item,
+  });
+  if (!response.ok()) {
+    throw new Error(
+      `Create list item failed (${response.status()}): ${await response.text()}`,
     );
   }
 }
