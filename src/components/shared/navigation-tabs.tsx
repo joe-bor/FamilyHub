@@ -2,6 +2,7 @@ import {
   BookOpenText,
   Calendar,
   CheckSquare,
+  Home,
   ImageIcon,
   ListTodo,
   UtensilsCrossed,
@@ -12,13 +13,20 @@ import { type ModuleType, useAppStore } from "@/stores";
 // Keep TabType export for backward compatibility
 export type TabType = ModuleType;
 
-const tabs = [
-  { id: "calendar" as ModuleType, label: "Calendar", icon: Calendar },
-  { id: "lists" as ModuleType, label: "Lists", icon: ListTodo },
-  { id: "chores" as ModuleType, label: "Chores", icon: CheckSquare },
-  { id: "meals" as ModuleType, label: "Meals", icon: UtensilsCrossed },
-  { id: "recipes" as ModuleType, label: "Recipes", icon: BookOpenText },
-  { id: "photos" as ModuleType, label: "Photos", icon: ImageIcon },
+type DesktopNavItem = {
+  id: ModuleType | null;
+  label: string;
+  icon: typeof Home;
+};
+
+const tabs: DesktopNavItem[] = [
+  { id: null, label: "Home", icon: Home },
+  { id: "calendar", label: "Calendar", icon: Calendar },
+  { id: "lists", label: "Lists", icon: ListTodo },
+  { id: "chores", label: "Chores", icon: CheckSquare },
+  { id: "meals", label: "Meals", icon: UtensilsCrossed },
+  { id: "recipes", label: "Recipes", icon: BookOpenText },
+  { id: "photos", label: "Photos", icon: ImageIcon },
 ];
 
 export function NavigationTabs() {
@@ -33,8 +41,10 @@ export function NavigationTabs() {
 
         return (
           <button
-            key={tab.id}
+            key={tab.label}
+            type="button"
             onClick={() => setActiveModule(tab.id)}
+            aria-current={isActive ? "page" : undefined}
             className={cn(
               "flex flex-col items-center gap-1 px-2 py-3 rounded-xl w-16 transition-colors",
               isActive

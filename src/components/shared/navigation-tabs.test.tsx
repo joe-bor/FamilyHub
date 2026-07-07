@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { useAppStore } from "@/stores";
-import { render, screen } from "@/test/test-utils";
+import { render, renderWithUser, screen } from "@/test/test-utils";
 import { NavigationTabs } from "./navigation-tabs";
 
 describe("NavigationTabs", () => {
@@ -23,5 +23,25 @@ describe("NavigationTabs", () => {
     expect(
       screen.getByRole("button", { name: /^recipes$/i }),
     ).toBeInTheDocument();
+  });
+
+  it("renders Home as a first-class desktop destination", () => {
+    useAppStore.setState({ activeModule: "calendar", isSidebarOpen: false });
+    render(<NavigationTabs />);
+
+    expect(screen.getByRole("button", { name: /^home$/i })).toBeInTheDocument();
+  });
+
+  it("marks Home active and switches to activeModule null", async () => {
+    useAppStore.setState({ activeModule: "calendar", isSidebarOpen: false });
+    const { user } = renderWithUser(<NavigationTabs />);
+
+    await user.click(screen.getByRole("button", { name: /^home$/i }));
+
+    expect(useAppStore.getState().activeModule).toBeNull();
+    expect(screen.getByRole("button", { name: /^home$/i })).toHaveAttribute(
+      "aria-current",
+      "page",
+    );
   });
 });
