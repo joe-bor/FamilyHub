@@ -46,6 +46,7 @@ interface AppState {
   calendarFocusDate: string | null;
   calendarEventIntent: CalendarEventIntent | null;
   mealSlotIntent: MealSlotIntent | null;
+  idleReturnBlockers: Record<string, true>;
 
   // Actions
   setActiveModule: (module: ModuleType | null) => void;
@@ -64,6 +65,7 @@ interface AppState {
   clearCalendarEventIntent: () => void;
   focusMealSlot: (intent: MealSlotIntent) => void;
   consumeMealSlotIntent: () => MealSlotIntent | null;
+  setIdleReturnBlocked: (key: string, blocked: boolean) => void;
 }
 
 export const useAppStore = create<AppState>((set, get) => ({
@@ -76,6 +78,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   calendarFocusDate: null,
   calendarEventIntent: null,
   mealSlotIntent: null,
+  idleReturnBlockers: {},
 
   // Actions
   setActiveModule: (module) => set({ activeModule: module }),
@@ -132,4 +135,11 @@ export const useAppStore = create<AppState>((set, get) => ({
     set({ mealSlotIntent: null });
     return v;
   },
+  setIdleReturnBlocked: (key, blocked) =>
+    set((state) => {
+      const next = { ...state.idleReturnBlockers };
+      if (blocked) next[key] = true;
+      else delete next[key];
+      return { idleReturnBlockers: next };
+    }),
 }));

@@ -167,6 +167,9 @@ export function MealsView() {
   const consumeMealSlotIntent = useAppStore(
     (state) => state.consumeMealSlotIntent,
   );
+  const setIdleReturnBlocked = useAppStore(
+    (state) => state.setIdleReturnBlocked,
+  );
   const readOnly = isPastWeek(visibleWeekStartDate);
   const showGrid = useMediaQuery("(min-width: 1024px)");
   const persistedBoard = board.data?.data ?? null;
@@ -177,6 +180,12 @@ export function MealsView() {
     persistedBoard !== null &&
     hasRecipeBackedEntry(persistedBoard);
   const planningActive = planningScope !== null;
+  const hasActiveMealFlow =
+    selectedSlot !== null ||
+    editingSlotId !== null ||
+    placementDraft !== null ||
+    scopeOpen ||
+    planningActive;
   const currentPlanningTarget =
     planningActive && currentPlanningIndex < planningQueue.length
       ? slotTarget(planningQueue[currentPlanningIndex])
@@ -243,6 +252,11 @@ export function MealsView() {
 
     consumeMealSlotIntent();
   }, [consumeMealSlotIntent, pendingMealSlotIntent, persistedBoard]);
+
+  useEffect(() => {
+    setIdleReturnBlocked("meals-active-flow", hasActiveMealFlow);
+    return () => setIdleReturnBlocked("meals-active-flow", false);
+  }, [hasActiveMealFlow, setIdleReturnBlocked]);
 
   const placementRecipe = useMemo(() => {
     if (!placementDraft) return null;

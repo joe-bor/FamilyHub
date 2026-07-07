@@ -289,4 +289,16 @@ describe("AppStore", () => {
       expect(useAppStore.getState().recipeCreationDraft).toBe(null);
     });
   });
+
+  describe("idle return blockers", () => {
+    it("tracks explicit idle-return blockers by key", () => {
+      useAppStore.getState().setIdleReturnBlocked("meals-planning", true);
+      expect(useAppStore.getState().idleReturnBlockers).toEqual({
+        "meals-planning": true,
+      });
+
+      useAppStore.getState().setIdleReturnBlocked("meals-planning", false);
+      expect(useAppStore.getState().idleReturnBlockers).toEqual({});
+    });
+  });
 });
