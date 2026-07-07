@@ -14,6 +14,18 @@ describe("NavigationTabs", () => {
     expect(screen.getByRole("navigation")).toHaveClass("flex", "w-20");
   });
 
+  it('names the rail "Primary" so the e2e waitForCalendarReady helper can find it', () => {
+    // e2e/helpers/test-helpers.ts waitForCalendarReady() looks up
+    // getByRole("navigation", { name: /primary/i }) to land on Calendar on
+    // fresh desktop loads (activeModule now defaults to Home). Renaming this
+    // label will silently break that e2e branch.
+    render(<NavigationTabs />);
+
+    expect(
+      screen.getByRole("navigation", { name: /primary/i }),
+    ).toBeInTheDocument();
+  });
+
   it("renders Meals and Recipes as top-level desktop modules", () => {
     render(<NavigationTabs />);
 
