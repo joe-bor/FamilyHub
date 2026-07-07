@@ -79,7 +79,10 @@ export function LargeNowHero({
           <p className="text-lg font-semibold text-foreground/65 lg:text-xl">
             {metaFor(state, now)}
           </p>
-          <h2 className="max-w-[12ch] text-6xl font-semibold leading-[1.03] text-foreground lg:text-7xl 2xl:text-8xl">
+          {/* line-clamp keeps extreme titles from burying the state strip
+              below the fold on tablet heights (spec allows intentional
+              truncation; the full title lives in the aria-label). */}
+          <h2 className="line-clamp-4 max-w-[12ch] text-6xl font-semibold leading-[1.03] text-foreground lg:text-7xl 2xl:text-8xl">
             {titleFor(state)}
           </h2>
           {event?.location && (
