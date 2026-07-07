@@ -1,5 +1,5 @@
 import type { CalendarEvent } from "@/lib/types";
-import { getEventDateTime } from "./event-time";
+import { compareByStartDateTime, getEventDateTime } from "./event-time";
 
 export type HeroState =
   | { kind: "RIGHT_NOW"; event: CalendarEvent }
@@ -17,11 +17,7 @@ export function deriveHeroState({
 }): HeroState {
   const timedEvents = todayEvents
     .filter((event) => !event.isAllDay)
-    .sort(
-      (left, right) =>
-        getEventDateTime(left, "start").getTime() -
-        getEventDateTime(right, "start").getTime(),
-    );
+    .sort(compareByStartDateTime);
   const allDayEvents = todayEvents.filter((event) => event.isAllDay);
 
   const inProgress = timedEvents.find((event) => {

@@ -487,4 +487,73 @@ describe("large home selectors", () => {
       },
     });
   });
+
+  it("reports loading for all three derive functions", () => {
+    expect(
+      deriveChoresSummary({
+        board: undefined,
+        isLoading: true,
+        isError: false,
+      }),
+    ).toMatchObject({ kind: "loading" });
+
+    expect(
+      deriveMealsSummary({
+        board: undefined,
+        today: new Date(2026, 6, 5),
+        isLoading: true,
+        isError: false,
+      }),
+    ).toMatchObject({ kind: "loading" });
+
+    expect(
+      deriveListsSummary({ lists: undefined, isLoading: true, isError: false }),
+    ).toMatchObject({ kind: "loading" });
+  });
+
+  it("reports unavailable on error for all three derive functions, with or without data present", () => {
+    expect(
+      deriveChoresSummary({
+        board: choresBoard(3),
+        isLoading: false,
+        isError: true,
+      }),
+    ).toMatchObject({ kind: "unavailable" });
+    expect(
+      deriveChoresSummary({ board: null, isLoading: false, isError: true }),
+    ).toMatchObject({ kind: "unavailable" });
+
+    expect(
+      deriveMealsSummary({
+        board: mealsBoard("Tacos"),
+        today: new Date(2026, 6, 5),
+        isLoading: false,
+        isError: true,
+      }),
+    ).toMatchObject({ kind: "unavailable" });
+    expect(
+      deriveMealsSummary({
+        board: null,
+        today: new Date(2026, 6, 5),
+        isLoading: false,
+        isError: true,
+      }),
+    ).toMatchObject({ kind: "unavailable" });
+
+    const lists: ListSummary[] = [
+      {
+        id: "g1",
+        name: "Groceries",
+        kind: "grocery",
+        totalItems: 7,
+        completedItems: 2,
+      },
+    ];
+    expect(
+      deriveListsSummary({ lists, isLoading: false, isError: true }),
+    ).toMatchObject({ kind: "unavailable" });
+    expect(
+      deriveListsSummary({ lists: null, isLoading: false, isError: true }),
+    ).toMatchObject({ kind: "unavailable" });
+  });
 });

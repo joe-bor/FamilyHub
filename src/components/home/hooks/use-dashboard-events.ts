@@ -2,28 +2,11 @@ import { addDays, endOfDay, startOfDay } from "date-fns";
 import { useMemo } from "react";
 import { useCalendarEvents } from "@/api";
 import { formatLocalDate, isEventOnDate } from "@/lib/time-utils";
-import type { CalendarEvent } from "@/lib/types";
-import { getEventDateTime } from "../lib/event-time";
-
-function sortTodayEvents(left: CalendarEvent, right: CalendarEvent): number {
-  if (left.isAllDay && !right.isAllDay) return -1;
-  if (!left.isAllDay && right.isAllDay) return 1;
-
-  return (
-    getEventDateTime(left, "start").getTime() -
-    getEventDateTime(right, "start").getTime()
-  );
-}
-
-function sortByStartDateTime(
-  left: CalendarEvent,
-  right: CalendarEvent,
-): number {
-  return (
-    getEventDateTime(left, "start").getTime() -
-    getEventDateTime(right, "start").getTime()
-  );
-}
+import {
+  compareAllDayFirst,
+  compareByStartDateTime,
+  getEventDateTime,
+} from "../lib/event-time";
 
 export function useDashboardEvents({
   currentDate = new Date(),
@@ -59,7 +42,7 @@ export function useDashboardEvents({
     () =>
       filteredEvents
         .filter((event) => isEventOnDate(event, dayStart))
-        .sort(sortTodayEvents),
+        .sort(compareAllDayFirst),
     [dayStart, filteredEvents],
   );
 
@@ -70,7 +53,7 @@ export function useDashboardEvents({
           const eventStart = getEventDateTime(event, "start");
           return eventStart > dayEnd && eventStart <= windowEnd;
         })
-        .sort(sortByStartDateTime)
+        .sort(compareByStartDateTime)
         .slice(0, 3),
     [dayEnd, filteredEvents, windowEnd],
   );
