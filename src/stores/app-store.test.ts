@@ -189,6 +189,23 @@ describe("AppStore", () => {
       });
       expect(useAppStore.getState().consumeMealSlotIntent()).toBeNull();
     });
+
+    it("focusMealSlot clears a pending meal placement draft to avoid competing dialog state", () => {
+      useAppStore.getState().startMealPlacementFromRecipe({
+        recipeId: "recipe-123",
+        requestedAtWeekStartDate: "2026-06-07",
+        source: { kind: "recipes-library" },
+      });
+      expect(useAppStore.getState().mealPlacementDraft).not.toBeNull();
+
+      useAppStore.getState().focusMealSlot({
+        weekStartDate: "2026-07-12",
+        dayIndex: 2,
+        mealType: "dinner",
+      });
+
+      expect(useAppStore.getState().mealPlacementDraft).toBeNull();
+    });
   });
 
   describe("recipe and meals handoff drafts", () => {
