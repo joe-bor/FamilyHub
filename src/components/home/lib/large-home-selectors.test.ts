@@ -275,4 +275,216 @@ describe("large home selectors", () => {
       mealType: "dinner",
     });
   });
+
+  it("excludes ended events from rest-of-day but keeps in-progress and all-day events", () => {
+    const nowAfternoon = new Date(2026, 6, 5, 14, 30, 0);
+    const ended = event({
+      id: "ended",
+      title: "Ended",
+      startTime: "11:00 AM",
+      endTime: "12:00 PM",
+    });
+    const inProgress = event({
+      id: "in-progress",
+      title: "In Progress",
+      startTime: "1:00 PM",
+      endTime: "3:00 PM",
+    });
+    const allDay = event({
+      id: "all-day",
+      title: "All Day",
+      startTime: "12:00 AM",
+      endTime: "11:59 PM",
+      isAllDay: true,
+    });
+
+    const result = selectRestOfDayItems(
+      [ended, inProgress, allDay],
+      null,
+      nowAfternoon,
+    );
+
+    expect(result.map((e) => e.title)).toEqual(["All Day", "In Progress"]);
+  });
+
+  it("sorts all-day events before timed events in rest-of-day", () => {
+    const allDay = event({
+      id: "all-day",
+      title: "All Day",
+      startTime: "12:00 AM",
+      endTime: "11:59 PM",
+      isAllDay: true,
+    });
+    const early = event({
+      id: "early",
+      title: "Early",
+      startTime: "10:00 AM",
+      endTime: "11:00 AM",
+    });
+    const late = event({
+      id: "late",
+      title: "Late",
+      startTime: "1:00 PM",
+      endTime: "2:00 PM",
+    });
+
+    const result = selectRestOfDayItems([late, allDay, early], null, now);
+
+    expect(result.map((e) => e.title)).toEqual(["All Day", "Early", "Late"]);
+  });
+
+  it("falls back to earliest upcoming events when tomorrow has none", () => {
+    const laterThisWeek = new Date(2026, 6, 8);
+    const evenLater = new Date(2026, 6, 10);
+    const items = selectTomorrowPeek(
+      [
+        event({
+          id: "l2",
+          title: "Even Later",
+          date: evenLater,
+          startTime: "9:00 AM",
+        }),
+        event({
+          id: "l1",
+          title: "Later This Week",
+          date: laterThisWeek,
+          startTime: "10:00 AM",
+        }),
+      ],
+      now,
+    );
+
+    expect(items.map((e) => e.title)).toEqual([
+      "Later This Week",
+      "Even Later",
+    ]);
+    expect(items.length).toBeLessThanOrEqual(3);
+  });
+
+  it("derives singular labels for exactly one remaining chore and one grocery item", () => {
+    expect(
+      deriveChoresSummary({
+        board: choresBoard(1),
+        isLoading: false,
+        isError: false,
+      }),
+    ).toMatchObject({
+      kind: "remaining",
+      label: "1 chore left",
+    });
+
+    const lists: ListSummary[] = [
+      {
+        id: "g1",
+        name: "Groceries",
+        kind: "grocery",
+        totalItems: 1,
+        completedItems: 0,
+      },
+    ];
+
+    expect(
+      deriveListsSummary({ lists, isLoading: false, isError: false }),
+    ).toMatchObject({
+      kind: "active",
+      label: "1 grocery item",
+    });
+  });
+
+  it("picks the most-active grocery list and reports quiet when fully completed", () => {
+    const lists: ListSummary[] = [
+      {
+        id: "small",
+        name: "Small List",
+        kind: "grocery",
+        totalItems: 3,
+        completedItems: 1,
+      },
+      {
+        id: "big",
+        name: "Big List",
+        kind: "grocery",
+        totalItems: 10,
+        completedItems: 4,
+      },
+    ];
+
+    expect(
+      deriveListsSummary({ lists, isLoading: false, isError: false }),
+    ).toMatchObject({
+      kind: "active",
+      label: "6 grocery items",
+      target: { module: "lists", listId: "big" },
+    });
+
+    const quietLists: ListSummary[] = [
+      {
+        id: "done",
+        name: "Groceries",
+        kind: "grocery",
+        totalItems: 4,
+        completedItems: 4,
+      },
+    ];
+
+    expect(
+      deriveListsSummary({
+        lists: quietLists,
+        isLoading: false,
+        isError: false,
+      }),
+    ).toMatchObject({
+      kind: "quiet",
+      label: "Lists quiet",
+    });
+  });
+
+  it("excludes a recurring hero instance from rest-of-day while keeping sibling events", () => {
+    const hero = event({
+      id: null,
+      recurringEventId: "r1",
+      date: new Date(2026, 6, 5),
+      title: "Recurring Standup",
+      startTime: "9:00 AM",
+      endTime: "9:30 AM",
+    });
+    const sameInstance = event({
+      id: null,
+      recurringEventId: "r1",
+      date: new Date(2026, 6, 5),
+      title: "Recurring Standup",
+      startTime: "9:00 AM",
+      endTime: "9:30 AM",
+    });
+    const sibling = event({
+      id: "sibling",
+      title: "Sibling Event",
+      startTime: "11:00 AM",
+      endTime: "12:00 PM",
+    });
+
+    const result = selectRestOfDayItems([sameInstance, sibling], hero, now);
+
+    expect(result.map((e) => e.title)).toEqual(["Sibling Event"]);
+  });
+
+  it("falls back to unavailable meals target derived from the given day", () => {
+    expect(
+      deriveMealsSummary({
+        board: null,
+        today: new Date(2026, 6, 8),
+        isLoading: false,
+        isError: false,
+      }),
+    ).toMatchObject({
+      kind: "unavailable",
+      label: "Meals unavailable",
+      target: {
+        module: "meals",
+        weekStartDate: "2026-07-05",
+        dayIndex: 3,
+        mealType: "dinner",
+      },
+    });
+  });
 });
