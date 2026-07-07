@@ -1,5 +1,6 @@
 // App Store
 export {
+  IDLE_BLOCKER_MEALS_FLOW,
   type MealPlacementDraft,
   type MealType,
   type ModuleType,

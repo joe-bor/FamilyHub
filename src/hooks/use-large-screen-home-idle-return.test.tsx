@@ -100,4 +100,50 @@ describe("useLargeScreenHomeIdleReturn", () => {
     vi.advanceTimersByTime(1000);
     expect(setActiveModule).not.toHaveBeenCalled();
   });
+
+  it("re-arms after a blocked fire and returns once the dialog closes", () => {
+    vi.useFakeTimers();
+    const setActiveModule = vi.fn();
+    const dialog = document.createElement("div");
+    dialog.setAttribute("role", "dialog");
+    document.body.append(dialog);
+
+    renderHook(() =>
+      useLargeScreenHomeIdleReturn({
+        enabled: true,
+        activeModule: "calendar",
+        setActiveModule,
+        idleMs: 1000,
+      }),
+    );
+
+    // Fire while blocked: deferred, not cancelled.
+    vi.advanceTimersByTime(1000);
+    expect(setActiveModule).not.toHaveBeenCalled();
+
+    dialog.remove();
+    vi.advanceTimersByTime(1000);
+    expect(setActiveModule).toHaveBeenCalledWith(null);
+  });
+
+  it("clears the countdown when disabled mid-countdown", () => {
+    vi.useFakeTimers();
+    const setActiveModule = vi.fn();
+
+    const { rerender } = renderHook(
+      ({ enabled }: { enabled: boolean }) =>
+        useLargeScreenHomeIdleReturn({
+          enabled,
+          activeModule: "calendar",
+          setActiveModule,
+          idleMs: 1000,
+        }),
+      { initialProps: { enabled: true } },
+    );
+
+    vi.advanceTimersByTime(500);
+    rerender({ enabled: false });
+    vi.advanceTimersByTime(2000);
+    expect(setActiveModule).not.toHaveBeenCalled();
+  });
 });

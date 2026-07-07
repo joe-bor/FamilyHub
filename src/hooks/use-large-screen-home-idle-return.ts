@@ -16,6 +16,13 @@ const ACTIVITY_EVENTS = [
   "wheel",
 ] as const;
 
+/**
+ * Contract with the whole component tree: any Radix dialog (`role="dialog"`)
+ * or open vaul drawer blocks idle return automatically. A create/edit surface
+ * that renders neither (inline wizard, custom overlay) MUST register an
+ * explicit blocker via `useAppStore.getState().setIdleReturnBlocked` or the
+ * screen will silently bounce to Home underneath it after the idle interval.
+ */
 function hasBlockingSurface(): boolean {
   if (typeof document === "undefined") return false;
   return Boolean(
@@ -42,17 +49,12 @@ export function useLargeScreenHomeIdleReturn({
   const setActiveModuleRef = useRef(setActiveModule);
   const isBlockedRef = useRef(isBlocked);
 
+  // Keep fire-time reads fresh without re-arming the countdown on re-renders.
   useEffect(() => {
     activeModuleRef.current = activeModule;
-  }, [activeModule]);
-
-  useEffect(() => {
     setActiveModuleRef.current = setActiveModule;
-  }, [setActiveModule]);
-
-  useEffect(() => {
     isBlockedRef.current = isBlocked;
-  }, [isBlocked]);
+  });
 
   useEffect(() => {
     if (!enabled || typeof window === "undefined") return;

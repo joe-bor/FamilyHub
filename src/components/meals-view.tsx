@@ -35,7 +35,7 @@ import {
 } from "@/lib/time-utils";
 import type { MealPlanningScope, MealSlot } from "@/lib/types";
 import type { MealPlacementDraft } from "@/stores";
-import { useAppStore } from "@/stores";
+import { IDLE_BLOCKER_MEALS_FLOW, useAppStore } from "@/stores";
 
 function samePlanningTarget(
   left: MealPlanningTarget,
@@ -254,8 +254,8 @@ export function MealsView() {
   }, [consumeMealSlotIntent, pendingMealSlotIntent, persistedBoard]);
 
   useEffect(() => {
-    setIdleReturnBlocked("meals-active-flow", hasActiveMealFlow);
-    return () => setIdleReturnBlocked("meals-active-flow", false);
+    setIdleReturnBlocked(IDLE_BLOCKER_MEALS_FLOW, hasActiveMealFlow);
+    return () => setIdleReturnBlocked(IDLE_BLOCKER_MEALS_FLOW, false);
   }, [hasActiveMealFlow, setIdleReturnBlocked]);
 
   const placementRecipe = useMemo(() => {
