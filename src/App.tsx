@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useState } from "react";
+import { lazy, Suspense, useState } from "react";
 import { useSetupComplete } from "@/api";
 import { CalendarModule } from "@/components/calendar";
 import { HomeDashboard } from "@/components/home";
@@ -105,7 +105,6 @@ function LoadingScreen() {
 
 export default function FamilyHub() {
   const activeModule = useAppStore((state) => state.activeModule);
-  const setActiveModule = useAppStore((state) => state.setActiveModule);
   const hasHydrated = useHasHydrated();
   const authHasHydrated = useAuthHasHydrated();
   const isAuthenticated = useIsAuthenticated();
@@ -117,13 +116,6 @@ export default function FamilyHub() {
 
   // State to toggle between login and onboarding for new users
   const [showOnboarding, setShowOnboarding] = useState(false);
-
-  // On desktop, redirect null (home) to calendar since home is mobile-only
-  useEffect(() => {
-    if (!isMobile && activeModule === null) {
-      setActiveModule("calendar");
-    }
-  }, [isMobile, activeModule, setActiveModule]);
 
   // Wait for both stores to hydrate from localStorage
   if (!hasHydrated || !authHasHydrated) {
