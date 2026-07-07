@@ -192,6 +192,7 @@ export function CalendarModule() {
   const {
     data: eventsResponse,
     isLoading,
+    isFetching,
     isError,
     error,
   } = useCalendarEvents(dateRange);
@@ -244,15 +245,31 @@ export function CalendarModule() {
     const match = rawEvents.find(
       (event) => getEventKey(event) === calendarEventIntent.eventKey,
     );
-    if (!match) return;
+    if (match) {
+      resetDeleteEvent();
+      resetDeleteInstance();
+      openDetailModal(match);
+      clearCalendarEventIntent();
+      return;
+    }
 
-    resetDeleteEvent();
-    resetDeleteInstance();
-    openDetailModal(match);
-    clearCalendarEventIntent();
+    // No match. Only give up on the intent once the range that should
+    // contain it has actually settled — otherwise a deleted/errored event
+    // would leave the intent dangling forever, re-snapping the calendar to
+    // its date on every remount and popping the modal on a later refetch.
+    const rangeCoversIntent =
+      dateRange.startDate <= calendarEventIntent.date &&
+      calendarEventIntent.date <= dateRange.endDate;
+    const querySettled = isError || (!isLoading && !isFetching);
+    if (rangeCoversIntent && querySettled) {
+      clearCalendarEventIntent();
+    }
   }, [
     calendarEventIntent,
     clearCalendarEventIntent,
+    dateRange,
+    isError,
+    isFetching,
     isLoading,
     openDetailModal,
     rawEvents,

@@ -228,7 +228,8 @@ export function MealsView() {
     const slot = day?.slots.find(
       (candidate) => candidate.mealType === pendingMealSlotIntent.mealType,
     );
-    if (!slot) return;
+    if (!slot || slot.weekStartDate !== pendingMealSlotIntent.weekStartDate)
+      return;
 
     if (slot.primary || slot.extras.length > 0) {
       setEditingSlotId({

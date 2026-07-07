@@ -119,7 +119,14 @@ export const useAppStore = create<AppState>((set, get) => ({
     }),
   clearCalendarEventIntent: () => set({ calendarEventIntent: null }),
   focusMealSlot: (intent) =>
-    set({ mealSlotIntent: intent, activeModule: "meals" }),
+    set({
+      mealSlotIntent: intent,
+      mealPlacementDraft: null,
+      activeModule: "meals",
+    }),
+  // Return value is unused by reactive consumers (they read mealSlotIntent
+  // directly); this is a clear disguised as a getter, mirroring the other
+  // consume* actions.
   consumeMealSlotIntent: () => {
     const v = get().mealSlotIntent;
     set({ mealSlotIntent: null });

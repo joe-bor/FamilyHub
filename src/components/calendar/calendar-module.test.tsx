@@ -330,9 +330,40 @@ describe("CalendarModule", () => {
 
       render(<CalendarModule />);
 
-      expect(await screen.findByRole("dialog")).toBeInTheDocument();
-      expect(screen.getByText("Swim lesson")).toBeInTheDocument();
+      const dialog = await screen.findByRole("dialog");
+      expect(within(dialog).getByText("Swim lesson")).toBeInTheDocument();
       expect(useAppStore.getState().calendarEventIntent).toBeNull();
+    });
+
+    it("clears an unmatched calendar event intent once the covering query settles", async () => {
+      const unrelated = createTestEventResponse({
+        id: "unrelated-event",
+        title: "Unrelated Event",
+        date: "2026-04-25",
+        startTime: "1:00 PM",
+        endTime: "2:00 PM",
+        memberId: testMembers[0].id,
+      });
+      seedMockEvents([unrelated]);
+      seedCalendarStore({
+        currentDate: new Date(2026, 3, 25),
+        calendarView: "daily",
+        filter: {
+          selectedMembers: testMembers.map((m) => m.id),
+          showAllDayEvents: true,
+        },
+      });
+      useAppStore.getState().openCalendarEvent({
+        date: "2026-04-25",
+        eventKey: "deleted-target",
+      });
+
+      render(<CalendarModule />);
+
+      await waitFor(() => {
+        expect(useAppStore.getState().calendarEventIntent).toBeNull();
+      });
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     });
   });
 
