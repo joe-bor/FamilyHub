@@ -96,7 +96,7 @@ describe("App shell", () => {
     expect(screen.getByRole("button", { name: /^menu$/i })).toBeInTheDocument();
   });
 
-  it("does not render bottom nav on desktop", async () => {
+  it("does not render the mobile bottom nav on desktop", async () => {
     setViewportWidth(769);
     useAppStore.setState({ activeModule: "calendar", isSidebarOpen: false });
 
@@ -105,9 +105,16 @@ describe("App shell", () => {
     await waitFor(() => {
       expect(useAppStore.getState().activeModule).toBe("calendar");
     });
+    // Desktop renders the nav rail (also aria-label="Primary" — see
+    // navigation-tabs.test.tsx), not the mobile bottom nav. Only one
+    // "Primary" nav should exist, and it must be the rail (w-20), not the
+    // mobile bottom nav.
     expect(
-      screen.queryByRole("navigation", { name: /primary/i }),
-    ).not.toBeInTheDocument();
+      screen.getAllByRole("navigation", { name: /primary/i }),
+    ).toHaveLength(1);
+    expect(screen.getByRole("navigation", { name: /primary/i })).toHaveClass(
+      "w-20",
+    );
   });
 
   it("renders the Recipes module when recipes is active", async () => {

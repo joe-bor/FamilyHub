@@ -27,7 +27,7 @@ export type RecipeCreationDraft = {
 
 interface AppState {
   // State
-  activeModule: ModuleType | null; // null = home dashboard (mobile only)
+  activeModule: ModuleType | null; // null = home dashboard (first-class surface on all screen sizes)
   isSidebarOpen: boolean;
   mealPlacementDraft: MealPlacementDraft | null;
   recipeCreationDraft: RecipeCreationDraft | null;
@@ -50,7 +50,7 @@ interface AppState {
 }
 
 export const useAppStore = create<AppState>((set, get) => ({
-  // Initial state - null shows home dashboard on mobile, desktop redirects to calendar
+  // Initial state - null shows the home dashboard on every screen size
   activeModule: null,
   isSidebarOpen: false,
   mealPlacementDraft: null,

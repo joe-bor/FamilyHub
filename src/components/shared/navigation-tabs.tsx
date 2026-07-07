@@ -5,6 +5,7 @@ import {
   Home,
   ImageIcon,
   ListTodo,
+  type LucideIcon,
   UtensilsCrossed,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -16,7 +17,7 @@ export type TabType = ModuleType;
 type DesktopNavItem = {
   id: ModuleType | null;
   label: string;
-  icon: typeof Home;
+  icon: LucideIcon;
 };
 
 const tabs: DesktopNavItem[] = [
@@ -34,7 +35,10 @@ export function NavigationTabs() {
   const setActiveModule = useAppStore((state) => state.setActiveModule);
 
   return (
-    <nav className="flex w-20 flex-col items-center gap-2 py-6 bg-card border-r border-border shrink-0">
+    <nav
+      aria-label="Primary"
+      className="flex w-20 flex-col items-center gap-2 py-6 bg-card border-r border-border shrink-0"
+    >
       {tabs.map((tab) => {
         const Icon = tab.icon;
         const isActive = activeModule === tab.id;
