@@ -163,6 +163,10 @@ export function MealsView() {
   const consumeMealPlacementDraft = useAppStore(
     (state) => state.consumeMealPlacementDraft,
   );
+  const pendingMealSlotIntent = useAppStore((state) => state.mealSlotIntent);
+  const consumeMealSlotIntent = useAppStore(
+    (state) => state.consumeMealSlotIntent,
+  );
   const readOnly = isPastWeek(visibleWeekStartDate);
   const showGrid = useMediaQuery("(min-width: 1024px)");
   const persistedBoard = board.data?.data ?? null;
@@ -211,6 +215,33 @@ export function MealsView() {
     });
     setPlacementDraft(null);
   }, [board.data?.data.days, placementDraft]);
+
+  useEffect(() => {
+    if (!pendingMealSlotIntent) return;
+    setVisibleWeekStartDate(pendingMealSlotIntent.weekStartDate);
+  }, [pendingMealSlotIntent]);
+
+  useEffect(() => {
+    if (!pendingMealSlotIntent || !persistedBoard) return;
+
+    const day = persistedBoard.days[pendingMealSlotIntent.dayIndex];
+    const slot = day?.slots.find(
+      (candidate) => candidate.mealType === pendingMealSlotIntent.mealType,
+    );
+    if (!slot) return;
+
+    if (slot.primary || slot.extras.length > 0) {
+      setEditingSlotId({
+        weekStartDate: slot.weekStartDate,
+        dayIndex: slot.dayIndex,
+        mealType: slot.mealType,
+      });
+    } else {
+      setSelectedSlot(slot);
+    }
+
+    consumeMealSlotIntent();
+  }, [consumeMealSlotIntent, pendingMealSlotIntent, persistedBoard]);
 
   const placementRecipe = useMemo(() => {
     if (!placementDraft) return null;

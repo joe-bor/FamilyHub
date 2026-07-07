@@ -11,7 +11,7 @@ import {
   vi,
 } from "vitest";
 import type { CalendarEventResponse, UpdateEventRequest } from "@/lib/types";
-import { useCalendarStore } from "@/stores";
+import { useAppStore, useCalendarStore } from "@/stores";
 import {
   createTestEventResponse,
   testEventResponses,
@@ -301,6 +301,38 @@ describe("CalendarModule", () => {
       // Verify event card is in the DOM and has event handler structure
       const eventElement = screen.getByText("Clickable Event");
       expect(eventElement).toBeInTheDocument();
+    });
+  });
+
+  describe("Large Home Navigation Intent", () => {
+    it("opens the requested event detail when a calendar event intent is present", async () => {
+      const target = createTestEventResponse({
+        id: "large-home-target",
+        title: "Swim lesson",
+        date: "2026-04-25",
+        startTime: "9:00 AM",
+        endTime: "10:00 AM",
+        memberId: testMembers[0].id,
+      });
+      seedMockEvents([target]);
+      seedCalendarStore({
+        currentDate: new Date(2026, 3, 25),
+        calendarView: "daily",
+        filter: {
+          selectedMembers: [testMembers[1].id],
+          showAllDayEvents: true,
+        },
+      });
+      useAppStore.getState().openCalendarEvent({
+        date: "2026-04-25",
+        eventKey: "large-home-target",
+      });
+
+      render(<CalendarModule />);
+
+      expect(await screen.findByRole("dialog")).toBeInTheDocument();
+      expect(screen.getByText("Swim lesson")).toBeInTheDocument();
+      expect(useAppStore.getState().calendarEventIntent).toBeNull();
     });
   });
 

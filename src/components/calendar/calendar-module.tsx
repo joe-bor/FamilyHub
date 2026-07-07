@@ -44,6 +44,7 @@ import { buildRRule } from "@/lib/recurrence-utils";
 import {
   format24hTo12h,
   formatLocalDate,
+  getEventKey,
   parseLocalDate,
 } from "@/lib/time-utils";
 import type { CalendarEvent, CreateEventRequest } from "@/lib/types";
@@ -141,6 +142,15 @@ export function CalendarModule() {
     if (date) setDate(parseLocalDate(date));
   }, [consumeCalendarFocusDate, setDate]);
 
+  const calendarEventIntent = useAppStore((s) => s.calendarEventIntent);
+  const clearCalendarEventIntent = useAppStore(
+    (s) => s.clearCalendarEventIntent,
+  );
+  useEffect(() => {
+    if (!calendarEventIntent) return;
+    setDate(parseLocalDate(calendarEventIntent.date));
+  }, [calendarEventIntent, setDate]);
+
   // Family data for mobile views
   const members = useFamilyMembers();
   const memberMap = useFamilyMemberMap();
@@ -186,6 +196,10 @@ export function CalendarModule() {
     error,
   } = useCalendarEvents(dateRange);
 
+  // Unfiltered events for the API response — used by intent lookups that must
+  // find an event regardless of the active member/all-day filter state.
+  const rawEvents = useMemo(() => eventsResponse?.data ?? [], [eventsResponse]);
+
   // Mutations
   const createEvent = useCreateEvent({
     onSuccess: () => {
@@ -221,6 +235,31 @@ export function CalendarModule() {
     },
   });
 
+  const resetDeleteEvent = deleteEvent.reset;
+  const resetDeleteInstance = deleteInstance.reset;
+
+  useEffect(() => {
+    if (!calendarEventIntent || isLoading) return;
+
+    const match = rawEvents.find(
+      (event) => getEventKey(event) === calendarEventIntent.eventKey,
+    );
+    if (!match) return;
+
+    resetDeleteEvent();
+    resetDeleteInstance();
+    openDetailModal(match);
+    clearCalendarEventIntent();
+  }, [
+    calendarEventIntent,
+    clearCalendarEventIntent,
+    isLoading,
+    openDetailModal,
+    rawEvents,
+    resetDeleteEvent,
+    resetDeleteInstance,
+  ]);
+
   // Scope dialog state for recurring events
   const [scopeDialogOpen, setScopeDialogOpen] = useState(false);
   const [scopeAction, setScopeAction] = useState<"edit" | "delete">("edit");
@@ -232,13 +271,12 @@ export function CalendarModule() {
 
   // Client-side filtering based on filter state
   const events = useMemo(() => {
-    const rawEvents = eventsResponse?.data ?? [];
     return rawEvents.filter((event) => {
       const memberMatches = filter.selectedMembers.includes(event.memberId);
       const allDayMatches = filter.showAllDayEvents || !event.isAllDay;
       return memberMatches && allDayMatches;
     });
-  }, [eventsResponse, filter]);
+  }, [filter, rawEvents]);
 
   const handleEventClick = (event: CalendarEvent) => {
     deleteEvent.reset();

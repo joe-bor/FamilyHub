@@ -25,6 +25,17 @@ export type RecipeCreationDraft = {
   typedTitle: string;
 };
 
+export type CalendarEventIntent = {
+  date: string;
+  eventKey: string;
+};
+
+export type MealSlotIntent = {
+  weekStartDate: string;
+  dayIndex: number;
+  mealType: MealType;
+};
+
 interface AppState {
   // State
   activeModule: ModuleType | null; // null = home dashboard (first-class surface on all screen sizes)
@@ -33,6 +44,8 @@ interface AppState {
   recipeCreationDraft: RecipeCreationDraft | null;
   listDetailIntent: string | null;
   calendarFocusDate: string | null;
+  calendarEventIntent: CalendarEventIntent | null;
+  mealSlotIntent: MealSlotIntent | null;
 
   // Actions
   setActiveModule: (module: ModuleType | null) => void;
@@ -47,6 +60,10 @@ interface AppState {
   consumeListDetailIntent: () => string | null;
   focusCalendarDate: (date: string) => void;
   consumeCalendarFocusDate: () => string | null;
+  openCalendarEvent: (intent: CalendarEventIntent) => void;
+  clearCalendarEventIntent: () => void;
+  focusMealSlot: (intent: MealSlotIntent) => void;
+  consumeMealSlotIntent: () => MealSlotIntent | null;
 }
 
 export const useAppStore = create<AppState>((set, get) => ({
@@ -57,6 +74,8 @@ export const useAppStore = create<AppState>((set, get) => ({
   recipeCreationDraft: null,
   listDetailIntent: null,
   calendarFocusDate: null,
+  calendarEventIntent: null,
+  mealSlotIntent: null,
 
   // Actions
   setActiveModule: (module) => set({ activeModule: module }),
@@ -90,6 +109,20 @@ export const useAppStore = create<AppState>((set, get) => ({
   consumeCalendarFocusDate: () => {
     const v = get().calendarFocusDate;
     set({ calendarFocusDate: null });
+    return v;
+  },
+  openCalendarEvent: (intent) =>
+    set({
+      calendarEventIntent: intent,
+      calendarFocusDate: null,
+      activeModule: "calendar",
+    }),
+  clearCalendarEventIntent: () => set({ calendarEventIntent: null }),
+  focusMealSlot: (intent) =>
+    set({ mealSlotIntent: intent, activeModule: "meals" }),
+  consumeMealSlotIntent: () => {
+    const v = get().mealSlotIntent;
+    set({ mealSlotIntent: null });
     return v;
   },
 }));

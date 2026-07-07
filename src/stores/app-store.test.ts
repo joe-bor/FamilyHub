@@ -138,6 +138,8 @@ describe("AppStore", () => {
       useAppStore.setState({
         listDetailIntent: null,
         calendarFocusDate: null,
+        calendarEventIntent: null,
+        mealSlotIntent: null,
         activeModule: null,
       });
     });
@@ -154,6 +156,38 @@ describe("AppStore", () => {
         "2026-07-15",
       );
       expect(useAppStore.getState().consumeCalendarFocusDate()).toBeNull();
+    });
+
+    it("openCalendarEvent stores event focus data and switches to calendar", () => {
+      useAppStore.getState().openCalendarEvent({
+        date: "2026-07-15",
+        eventKey: "event-123",
+      });
+
+      expect(useAppStore.getState().activeModule).toBe("calendar");
+      expect(useAppStore.getState().calendarEventIntent).toEqual({
+        date: "2026-07-15",
+        eventKey: "event-123",
+      });
+
+      useAppStore.getState().clearCalendarEventIntent();
+      expect(useAppStore.getState().calendarEventIntent).toBeNull();
+    });
+
+    it("focusMealSlot stores a meal slot intent and switches to meals", () => {
+      useAppStore.getState().focusMealSlot({
+        weekStartDate: "2026-07-12",
+        dayIndex: 2,
+        mealType: "dinner",
+      });
+
+      expect(useAppStore.getState().activeModule).toBe("meals");
+      expect(useAppStore.getState().consumeMealSlotIntent()).toEqual({
+        weekStartDate: "2026-07-12",
+        dayIndex: 2,
+        mealType: "dinner",
+      });
+      expect(useAppStore.getState().consumeMealSlotIntent()).toBeNull();
     });
   });
 
