@@ -17,6 +17,7 @@ import {
   useGoogleAuthReturn,
   useIsMobile,
 } from "@/hooks";
+import { useLargeScreenHomeIdleReturn } from "@/hooks/use-large-screen-home-idle-return";
 import {
   type ModuleType,
   useAppStore,
@@ -110,9 +111,19 @@ export default function FamilyHub() {
   const isAuthenticated = useIsAuthenticated();
   const setupComplete = useSetupComplete();
   const isMobile = useIsMobile();
+  const setActiveModule = useAppStore((state) => state.setActiveModule);
+  const idleReturnBlocked = useAppStore(
+    (state) => Object.keys(state.idleReturnBlockers).length > 0,
+  );
 
   useGoogleAuthReturn();
   useAndroidBackButton(isAuthenticated && setupComplete);
+  useLargeScreenHomeIdleReturn({
+    enabled: isAuthenticated && setupComplete && !isMobile,
+    activeModule,
+    setActiveModule,
+    isBlocked: () => idleReturnBlocked,
+  });
 
   // State to toggle between login and onboarding for new users
   const [showOnboarding, setShowOnboarding] = useState(false);

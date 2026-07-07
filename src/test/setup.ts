@@ -105,6 +105,7 @@ function resetAllStores(): void {
     calendarFocusDate: null,
     calendarEventIntent: null,
     mealSlotIntent: null,
+    idleReturnBlockers: {},
   });
 
   // Reset auth store

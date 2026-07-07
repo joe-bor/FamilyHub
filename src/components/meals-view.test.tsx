@@ -231,6 +231,20 @@ describe("MealsView", () => {
     ).not.toBeInTheDocument();
   });
 
+  it("blocks large-screen idle return while a meal flow is active", async () => {
+    seedMockMealsBoard(createEmptyMealsBoard());
+    const { user } = renderWithUser(<MealsView />);
+
+    const dinnerButtons = await screen.findAllByRole("button", {
+      name: /add dinner/i,
+    });
+    await user.click(dinnerButtons[0]);
+
+    expect(useAppStore.getState().idleReturnBlockers).toEqual({
+      "meals-active-flow": true,
+    });
+  });
+
   it("consumes a recipe placement draft and places the recipe into a selected empty slot", async () => {
     seedMockMealsBoard(createEmptyMealsBoard());
     seedMockRecipes([testRecipeDetail]);
