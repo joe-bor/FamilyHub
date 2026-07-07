@@ -43,7 +43,7 @@ export function CalendarNavigation({
         <span>Today</span>
       </button>
 
-      <h2 className="min-w-0 truncate text-center text-base font-semibold text-foreground sm:min-w-[200px] sm:text-lg">
+      <h2 className="min-w-0 truncate text-center text-base font-semibold text-foreground sm:min-w-[8rem] sm:text-lg">
         {label}
       </h2>
 

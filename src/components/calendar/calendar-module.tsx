@@ -483,7 +483,7 @@ export function CalendarModule() {
       {isMobile ? (
         <MobileToolbar members={members} />
       ) : (
-        <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 px-4 py-2 bg-card border-b border-border">
+        <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-2 px-3 py-2 bg-card border-b border-border">
           <CalendarViewSwitcher />
           <CalendarNavigation
             label={getContextLabel(calendarView, currentDate)}

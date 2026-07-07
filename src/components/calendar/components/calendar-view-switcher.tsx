@@ -29,6 +29,8 @@ export function CalendarViewSwitcher() {
         <button
           key={v.id}
           onClick={() => setCalendarView(v.id)}
+          aria-label={v.label}
+          title={v.label}
           className={cn(
             "flex min-h-11 min-w-11 items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-sm font-semibold transition-all sm:px-3",
             calendarView === v.id
@@ -37,7 +39,8 @@ export function CalendarViewSwitcher() {
           )}
         >
           {v.icon}
-          <span className="hidden sm:inline">{v.label}</span>
+          {/* Icon-only in the 1024-1279 band so the merged toolbar keeps one row */}
+          <span className="hidden xl:inline">{v.label}</span>
         </button>
       ))}
     </div>
