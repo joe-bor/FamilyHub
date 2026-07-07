@@ -39,7 +39,7 @@ export function CalendarViewSwitcher() {
           )}
         >
           {v.icon}
-          {/* Icon-only in the 1024-1279 band so the merged toolbar keeps one row */}
+          {/* Icon-only below xl (768-1279) so the merged toolbar keeps one row */}
           <span className="hidden xl:inline">{v.label}</span>
         </button>
       ))}
