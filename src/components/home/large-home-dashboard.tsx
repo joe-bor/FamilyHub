@@ -16,11 +16,16 @@ import {
   selectTomorrowPeek,
 } from "./lib/large-home-selectors";
 
+const LARGE_HOME_GRID_CLASS =
+  "mx-auto grid min-h-full max-w-[118rem] grid-cols-[minmax(0,1.42fr)_minmax(22rem,0.88fr)] gap-6 px-6 py-6 lg:px-8 lg:py-8 2xl:gap-8 2xl:px-12 2xl:py-10";
+
 function LoadingLargeHome() {
   return (
-    <div className="grid min-h-0 flex-1 grid-cols-[minmax(0,1.5fr)_minmax(22rem,0.9fr)] gap-6 p-6">
-      <div className="animate-pulse rounded-lg bg-card" />
-      <div className="animate-pulse rounded-lg bg-card" />
+    <div className="flex-1 bg-background">
+      <div className={LARGE_HOME_GRID_CLASS}>
+        <div className="animate-pulse rounded-lg bg-card" />
+        <div className="animate-pulse rounded-lg bg-card" />
+      </div>
     </div>
   );
 }
@@ -51,7 +56,7 @@ export function LargeHomeDashboard({
     () => selectRestOfDayItems(today, heroEvent, now),
     [heroEvent, now, today],
   );
-  const tomorrowItems = useMemo(
+  const tomorrowPeek = useMemo(
     () => selectTomorrowPeek(comingUp, now),
     [comingUp, now],
   );
@@ -94,7 +99,7 @@ export function LargeHomeDashboard({
       data-testid="large-home-dashboard"
       className="flex-1 overflow-y-auto bg-background"
     >
-      <div className="mx-auto grid min-h-full max-w-[118rem] grid-cols-[minmax(0,1.42fr)_minmax(22rem,0.88fr)] gap-6 px-6 py-6 lg:px-8 lg:py-8 2xl:gap-8 2xl:px-12 2xl:py-10">
+      <div className={LARGE_HOME_GRID_CLASS}>
         <div className="flex min-w-0 flex-col gap-5">
           <div>
             <p className="text-sm font-semibold uppercase tracking-normal text-muted-foreground">
@@ -110,12 +115,16 @@ export function LargeHomeDashboard({
             now={now}
             onOpenEvent={openEvent}
           />
-          <LargeStateStrip summaries={summaries} onSelect={openSummary} />
+          <LargeStateStrip
+            summaries={[summaries.chores, summaries.meals, summaries.lists]}
+            onSelect={openSummary}
+          />
         </div>
         <LargeTodayRail
           currentDate={now}
           todayItems={todayItems}
-          tomorrowItems={tomorrowItems}
+          tomorrowItems={tomorrowPeek.items}
+          isTomorrow={tomorrowPeek.isTomorrow}
           members={members}
           onSelect={openEvent}
         />

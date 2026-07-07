@@ -16,22 +16,22 @@ export function useLargeHomeSummaries({
   const meals = useMealsBoard(weekStart);
   const lists = useLists();
 
-  return [
-    deriveChoresSummary({
+  return {
+    chores: deriveChoresSummary({
       board: chores.data?.data ?? null,
       isLoading: chores.isLoading,
       isError: chores.isError,
     }),
-    deriveMealsSummary({
+    meals: deriveMealsSummary({
       board: meals.data?.data ?? null,
       today: now,
       isLoading: meals.isLoading,
       isError: meals.isError,
     }),
-    deriveListsSummary({
+    lists: deriveListsSummary({
       lists: lists.data?.data ?? null,
       isLoading: lists.isLoading,
       isError: lists.isError,
     }),
-  ];
+  };
 }

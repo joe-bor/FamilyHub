@@ -72,17 +72,24 @@ export function selectRestOfDayItems(
     .slice(0, limit);
 }
 
+export interface TomorrowPeek {
+  items: CalendarEvent[];
+  /** True when `items` are actually tomorrow's events; false for the fallback. */
+  isTomorrow: boolean;
+}
+
 /**
  * Small look-ahead into tomorrow. Assumes `comingUpEvents` already excludes
  * today. Falls back to the earliest upcoming events (beyond tomorrow) when
  * tomorrow itself has nothing scheduled, so the peek is never empty while
- * later events exist.
+ * later events exist. Callers should use `isTomorrow` to label the fallback
+ * section as "Coming up" rather than "Tomorrow".
  */
 export function selectTomorrowPeek(
   comingUpEvents: CalendarEvent[],
   currentDate: Date,
   limit = 3,
-): CalendarEvent[] {
+): TomorrowPeek {
   const tomorrow = startOfDay(addDays(currentDate, 1));
 
   const tomorrowItems = comingUpEvents
@@ -90,9 +97,13 @@ export function selectTomorrowPeek(
     .sort(compareByStartDateTime)
     .slice(0, limit);
 
-  if (tomorrowItems.length > 0) return tomorrowItems;
+  if (tomorrowItems.length > 0)
+    return { items: tomorrowItems, isTomorrow: true };
 
-  return [...comingUpEvents].sort(compareByStartDateTime).slice(0, limit);
+  return {
+    items: [...comingUpEvents].sort(compareByStartDateTime).slice(0, limit),
+    isTomorrow: false,
+  };
 }
 
 /** Summaries always carry a routing target, even when loading or unavailable. */

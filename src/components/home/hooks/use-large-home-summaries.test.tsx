@@ -30,16 +30,12 @@ describe("useLargeHomeSummaries", () => {
     );
 
     await waitFor(() => {
-      expect(result.current.map((summary) => summary.module)).toEqual([
-        "chores",
-        "meals",
-        "lists",
-      ]);
-      expect(result.current.map((summary) => summary.kind)).toEqual([
-        "empty",
-        "missing",
-        "quiet",
-      ]);
+      expect(result.current.chores.module).toBe("chores");
+      expect(result.current.meals.module).toBe("meals");
+      expect(result.current.lists.module).toBe("lists");
+      expect(result.current.chores.kind).toBe("empty");
+      expect(result.current.meals.kind).toBe("missing");
+      expect(result.current.lists.kind).toBe("quiet");
     });
   });
 });

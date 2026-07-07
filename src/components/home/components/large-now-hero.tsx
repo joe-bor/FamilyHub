@@ -28,9 +28,9 @@ function titleFor(state: HeroState) {
 function metaFor(state: HeroState, now: Date) {
   switch (state.kind) {
     case "RIGHT_NOW":
-      return `Now - ${formatRemainingEnd(getEventDateTime(state.event, "end"), now)}`;
+      return `Now · ${formatRemainingEnd(getEventDateTime(state.event, "end"), now)}`;
     case "UP_NEXT":
-      return `Up next - ${formatRelativeStart(getEventDateTime(state.event, "start"), now)}`;
+      return `Up next · ${formatRelativeStart(getEventDateTime(state.event, "start"), now)}`;
     case "ALL_DAY_ONLY":
       return "Today";
     case "REST_OF_DAY_CLEAR":
@@ -109,7 +109,7 @@ export function LargeNowHero({
   );
 
   return (
-    <section aria-label={ariaFor(state, now)}>
+    <section aria-label="Home status">
       {event ? (
         <button
           type="button"

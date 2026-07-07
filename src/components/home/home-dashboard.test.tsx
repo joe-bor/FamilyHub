@@ -358,13 +358,17 @@ describe("HomeDashboard", () => {
     );
 
     await user.click(
-      await screen.findByRole("button", { name: /open chores/i }),
+      await screen.findByRole("button", {
+        name: /open chores\. no chores configured/i,
+      }),
     );
     expect(useAppStore.getState().activeModule).toBe("chores");
 
     useAppStore.getState().setActiveModule(null);
     await user.click(
-      await screen.findByRole("button", { name: /open meals/i }),
+      await screen.findByRole("button", {
+        name: /open meals\. dinner not planned/i,
+      }),
     );
     expect(useAppStore.getState().activeModule).toBe("meals");
     expect(useAppStore.getState().mealSlotIntent).toMatchObject({
@@ -373,7 +377,9 @@ describe("HomeDashboard", () => {
 
     useAppStore.getState().setActiveModule(null);
     await user.click(
-      await screen.findByRole("button", { name: /open lists/i }),
+      await screen.findByRole("button", {
+        name: /open lists\. 1 grocery item/i,
+      }),
     );
     expect(useAppStore.getState().activeModule).toBe("lists");
     expect(useAppStore.getState().listDetailIntent).toBe("grocery-1");
