@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, type Page, test } from "@playwright/test";
 import {
   format24hTo12h,
   formatLocalDate,
@@ -10,13 +10,13 @@ import {
   createChoreTemplate,
   createList,
   createListItem,
+  getChoresBoard,
   registerFamily,
   seedBrowserAuth,
   upsertMealSlot,
 } from "./helpers/api-helpers";
 import {
   clearStorage,
-  getTodayDateString,
   safeClick,
   waitForHydration,
   waitForOfflineCachePersisted,
@@ -50,6 +50,12 @@ function localDate(daysFromToday = 0) {
 
 function currentWeekStart() {
   return formatLocalDate(getWeekStartSunday(FIXED_NOW));
+}
+
+function primaryNavButton(page: Page, label: string) {
+  return page
+    .locator('nav[aria-label="Primary"] button')
+    .filter({ hasText: new RegExp(`^${label}$`) });
 }
 
 test.describe("Large-screen Home", () => {
@@ -104,12 +110,11 @@ test.describe("Large-screen Home", () => {
 
     await safeClick(page.getByRole("button", { name: /swim lesson/i }).first());
 
-    await expect(
-      page
-        .getByRole("navigation", { name: "Primary" })
-        .getByRole("button", { name: "Calendar" }),
-    ).toHaveAttribute("aria-current", "page");
     await expect(page.getByRole("dialog")).toContainText("Swim lesson");
+    await expect(primaryNavButton(page, "Calendar")).toHaveAttribute(
+      "aria-current",
+      "page",
+    );
   });
 
   test("renders sparse and busy days with state-strip summaries routed to their modules", async ({
@@ -128,9 +133,10 @@ test.describe("Large-screen Home", () => {
     const weekStartDate = currentWeekStart();
     const longTitleTime = eventTime(30);
     const swimTime = eventTime(150);
-    // The chores board scopes "today" to the real backend clock, not the
-    // browser's fixed FIXED_NOW clock — seed activeFrom off the real date.
-    const realToday = getTodayDateString();
+    // The chores board scopes "today" to the real backend family clock, not
+    // the browser's fixed FIXED_NOW clock or the Playwright process timezone.
+    const choresBoard = await getChoresBoard(request, registration.token);
+    const backendToday = choresBoard.today.periodStartDate;
 
     await createCalendarEvent(request, registration.token, {
       title:
@@ -161,7 +167,7 @@ test.describe("Large-screen Home", () => {
       title: "Unload dishwasher",
       assignedToMemberId: alice.id,
       cadence: "DAILY",
-      activeFrom: realToday,
+      activeFrom: backendToday,
     });
     await upsertMealSlot(request, registration.token, {
       weekStartDate,
@@ -237,19 +243,19 @@ test.describe("Large-screen Home", () => {
       members: [{ name: "Alice", color: "coral" }],
     });
     const [alice] = registration.family.members;
-    // The chores board scopes "today" to the real backend clock, not the
-    // browser's fixed FIXED_NOW clock — seed activeFrom/periodStartDate off
-    // the real date.
-    const realToday = getTodayDateString();
+    // The chores board scopes "today" to the real backend family clock, not
+    // the browser's fixed FIXED_NOW clock or the Playwright process timezone.
+    const choresBoard = await getChoresBoard(request, registration.token);
+    const backendToday = choresBoard.today.periodStartDate;
     const chore = await createChoreTemplate(request, registration.token, {
       title: "Wipe counters",
       assignedToMemberId: alice.id,
       cadence: "DAILY",
-      activeFrom: realToday,
+      activeFrom: backendToday,
     });
     await completeCurrentChore(request, registration.token, chore.id, {
       scope: "TODAY",
-      periodStartDate: realToday,
+      periodStartDate: backendToday,
     });
 
     await seedBrowserAuth(page, registration);

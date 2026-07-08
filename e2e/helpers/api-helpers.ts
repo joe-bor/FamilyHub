@@ -1,6 +1,7 @@
 import type { APIRequestContext, Page } from "@playwright/test";
 import type { CreateEventRequest } from "../../src/lib/types/calendar";
 import type {
+  ChoresBoard,
   ChoreTemplate,
   CreateChoreTemplateRequest,
   UpdateCurrentPeriodCompletionRequest,
@@ -202,6 +203,25 @@ export async function createChoreTemplate(
   if (!response.ok()) {
     throw new Error(
       `Create chore failed (${response.status()}): ${await response.text()}`,
+    );
+  }
+  const json = await response.json();
+  return json.data;
+}
+
+/**
+ * Fetch the chores board through the real backend API using an authenticated token.
+ */
+export async function getChoresBoard(
+  request: APIRequestContext,
+  token: string,
+): Promise<ChoresBoard> {
+  const response = await request.get(`${API_BASE}/chores/board`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!response.ok()) {
+    throw new Error(
+      `Fetch chores board failed (${response.status()}): ${await response.text()}`,
     );
   }
   const json = await response.json();
