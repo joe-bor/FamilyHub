@@ -301,7 +301,11 @@ export function resetAppStore(): void {
   const store = useAppStore.getState();
   store.setActiveModule("calendar");
   store.closeSidebar();
-  useAppStore.setState({ idleReturnBlockers: {} });
+  useAppStore.setState({
+    idleReturnBlockers: {},
+    calendarEventIntent: null,
+    mealSlotIntent: null,
+  });
 }
 
 /**
