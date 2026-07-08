@@ -231,27 +231,46 @@ export function MealsView() {
   }, [pendingMealSlotIntent]);
 
   useEffect(() => {
-    if (!pendingMealSlotIntent || !persistedBoard) return;
+    if (!pendingMealSlotIntent || board.isLoading) return;
 
-    const day = persistedBoard.days[pendingMealSlotIntent.dayIndex];
+    const day = persistedBoard?.days[pendingMealSlotIntent.dayIndex];
     const slot = day?.slots.find(
       (candidate) => candidate.mealType === pendingMealSlotIntent.mealType,
     );
-    if (!slot || slot.weekStartDate !== pendingMealSlotIntent.weekStartDate)
+    if (slot && slot.weekStartDate === pendingMealSlotIntent.weekStartDate) {
+      if (slot.primary || slot.extras.length > 0) {
+        setEditingSlotId({
+          weekStartDate: slot.weekStartDate,
+          dayIndex: slot.dayIndex,
+          mealType: slot.mealType,
+        });
+      } else {
+        setSelectedSlot(slot);
+      }
+      consumeMealSlotIntent();
       return;
-
-    if (slot.primary || slot.extras.length > 0) {
-      setEditingSlotId({
-        weekStartDate: slot.weekStartDate,
-        dayIndex: slot.dayIndex,
-        mealType: slot.mealType,
-      });
-    } else {
-      setSelectedSlot(slot);
     }
 
-    consumeMealSlotIntent();
-  }, [consumeMealSlotIntent, pendingMealSlotIntent, persistedBoard]);
+    // No match. Only give up on the intent once the board query that should
+    // contain it has actually settled — otherwise a board error or a
+    // never-matching intent would leave it dangling forever, re-snapping
+    // visibleWeekStartDate on every remount without ever opening anything.
+    const boardIsForIntentWeek =
+      visibleWeekStartDate === pendingMealSlotIntent.weekStartDate;
+    const querySettled =
+      board.isError || (!board.isLoading && !board.isFetching);
+    if (boardIsForIntentWeek && querySettled) {
+      consumeMealSlotIntent();
+    }
+  }, [
+    board.isError,
+    board.isFetching,
+    board.isLoading,
+    consumeMealSlotIntent,
+    pendingMealSlotIntent,
+    persistedBoard,
+    visibleWeekStartDate,
+  ]);
 
   useEffect(() => {
     setIdleReturnBlocked(IDLE_BLOCKER_MEALS_FLOW, hasActiveMealFlow);

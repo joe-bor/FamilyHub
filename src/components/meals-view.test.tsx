@@ -2439,5 +2439,28 @@ describe("MealsView", () => {
       expect(within(editorDialog).getByText("Tacos")).toBeInTheDocument();
       expect(useAppStore.getState().mealSlotIntent).toBeNull();
     });
+
+    it("consumes the intent without opening a dialog when the board query errors", async () => {
+      server.use(
+        http.get(`${API_BASE}/meals/board`, () => {
+          return HttpResponse.json(
+            { message: "Internal server error" },
+            { status: 500 },
+          );
+        }),
+      );
+      useAppStore.getState().focusMealSlot({
+        weekStartDate: testWeekStartDate,
+        dayIndex: 0,
+        mealType: "dinner",
+      });
+
+      renderWithUser(<MealsView />);
+
+      await waitFor(() => {
+        expect(useAppStore.getState().mealSlotIntent).toBeNull();
+      });
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    });
   });
 });

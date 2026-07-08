@@ -7,6 +7,7 @@ import {
 import {
   clearStorage,
   getTodayDateString,
+  waitForCalendarReady,
   waitForHydration,
   waitForOfflineCachePersisted,
   waitForServiceWorkerReady,
@@ -102,6 +103,7 @@ test.describe("Offline read persistence (Option C)", () => {
     await seedBrowserAuth(page, reg);
     await page.reload();
     await waitForHydration(page);
+    await waitForCalendarReady(page);
     await expect(page.getByText("Persisted Dentist")).toBeVisible();
 
     // Wait until the throttled persister has actually written to IndexedDB.
@@ -116,6 +118,10 @@ test.describe("Offline read persistence (Option C)", () => {
     await context.setOffline(true);
     await page.reload();
     await waitForHydration(page);
+
+    // The offline-reloaded page starts back at Home; steer to Calendar so the
+    // cached event assertion below matches where it actually renders.
+    await waitForCalendarReady(page);
 
     // Cached event renders from IndexedDB without a network round-trip.
     await expect(page.getByText("Persisted Dentist")).toBeVisible();
@@ -135,19 +141,24 @@ test.describe("Offline read persistence (Option C)", () => {
       members: [{ name: "Alice", color: "coral" }],
     });
 
-    // Load online but only visit the calendar — chores are never fetched.
+    // Load online but only visit the calendar — Recipes is never fetched.
+    // (Home prefetches chores/meals/lists for its state strip, so Recipes is
+    // the module whose data can genuinely be absent offline.)
     await seedBrowserAuth(page, reg);
     await page.reload();
     await waitForHydration(page);
-    await expect(page.getByRole("button", { name: "Add event" })).toBeVisible();
+    await waitForCalendarReady(page);
 
-    // The Chores chunk is lazy-loaded; ensure the SW controls the page so its
+    // The Recipes chunk is lazy-loaded; ensure the SW controls the page so its
     // precached chunk is served offline (otherwise the import crashes to blank).
     await waitForServiceWorkerReady(page);
 
-    // Offline, navigate to the never-loaded Chores module.
+    // Offline, navigate to the never-loaded Recipes module via the nav rail.
     await context.setOffline(true);
-    await page.getByRole("button", { name: /chores/i }).click();
+    await page
+      .getByRole("navigation", { name: /primary/i })
+      .getByRole("button", { name: /recipes/i })
+      .click();
 
     // No crash / infinite spinner — a clear offline empty state instead.
     await expect(
@@ -170,7 +181,7 @@ test.describe("Offline read persistence (Option C)", () => {
     await seedBrowserAuth(page, reg);
     await page.reload();
     await waitForHydration(page);
-    await expect(page.getByRole("button", { name: "Add event" })).toBeVisible();
+    await waitForCalendarReady(page);
     await waitForServiceWorkerReady(page);
 
     // Force a precache miss for the Chores chunk by dropping it from BOTH the
@@ -193,9 +204,12 @@ test.describe("Offline read persistence (Option C)", () => {
     });
     expect(evicted).toBeGreaterThan(0);
 
-    // Offline, navigate to Chores — the chunk import now fails.
+    // Offline, navigate to Chores — the chunk import now fails. Scope to the
+    // nav rail: Home's state strip also has a "Open Chores. …" control that
+    // matches /chores/i.
     await context.setOffline(true);
-    await page.getByRole("button", { name: /chores/i }).click();
+    const primaryNav = page.getByRole("navigation", { name: /primary/i });
+    await primaryNav.getByRole("button", { name: /chores/i }).click();
 
     // The error boundary renders the offline empty state instead of crashing.
     await expect(
@@ -204,7 +218,9 @@ test.describe("Offline read persistence (Option C)", () => {
     // It is the boundary fallback, not the loaded module: the module's own header
     // is absent, and the app shell (nav) survived rather than blanking out.
     await expect(page.getByRole("heading", { name: "Chores" })).toHaveCount(0);
-    await expect(page.getByRole("button", { name: /chores/i })).toBeVisible();
+    await expect(
+      primaryNav.getByRole("button", { name: /chores/i }),
+    ).toBeVisible();
   });
 
   test("grouped General list: headings and items readable offline; Manage Categories and New Category unavailable", async ({
@@ -224,8 +240,10 @@ test.describe("Offline read persistence (Option C)", () => {
     await page.reload();
     await waitForHydration(page);
 
-    // Navigate to Lists
-    await page.getByRole("button", { name: "Lists" }).click();
+    // Navigate to Lists via the nav rail: Home's state strip also has an
+    // "Open Lists. …" control that substring-matches name: "Lists".
+    const primaryNav = page.getByRole("navigation", { name: /primary/i });
+    await primaryNav.getByRole("button", { name: "Lists" }).click();
     await expect(
       page.getByRole("heading", { name: "My Lists", exact: true }),
     ).toBeVisible();
@@ -251,8 +269,9 @@ test.describe("Offline read persistence (Option C)", () => {
     // The app shell must come back (offline banner).
     await expect(page.getByText(/you're offline/i)).toBeVisible();
 
-    // Navigate back to Lists (the offline-reloaded page starts at Home).
-    await page.getByRole("button", { name: "Lists" }).click();
+    // Navigate back to Lists (the offline-reloaded page starts at Home). Scope
+    // to the nav rail: the state strip's "Open Lists. …" control also matches.
+    await primaryNav.getByRole("button", { name: "Lists" }).click();
 
     // The list card should still be visible from the cached list index.
     await page.getByRole("button", { name: "Offline Test List" }).click();
@@ -299,6 +318,7 @@ test.describe("Offline read persistence (Option C)", () => {
     await seedBrowserAuth(page, familyA);
     await page.reload();
     await waitForHydration(page);
+    await waitForCalendarReady(page);
     await expect(page.getByText("Family A Secret")).toBeVisible();
     await waitForOfflineCachePersisted(page);
 
@@ -317,6 +337,7 @@ test.describe("Offline read persistence (Option C)", () => {
     await seedBrowserAuth(page, familyB);
     await page.reload();
     await waitForHydration(page);
+    await waitForCalendarReady(page);
 
     // Family A's persisted event must not leak into Family B's session.
     await expect(page.getByText("Family A Secret")).toHaveCount(0);
@@ -357,7 +378,7 @@ test.describe("Offline first session (clientsClaim)", () => {
 
     await page.goto("/");
     await waitForHydration(page);
-    await expect(page.getByRole("button", { name: "Add event" })).toBeVisible();
+    await waitForCalendarReady(page);
 
     // The SW activates after this page loaded. clientsClaim must make it take
     // control of this already-open tab WITHOUT a reload; otherwise the controller
@@ -369,13 +390,18 @@ test.describe("Offline first session (clientsClaim)", () => {
       { timeout: 15000 },
     );
 
-    // Offline, navigate via SPA (no reload) to the never-visited Chores module.
+    // Offline, navigate via SPA (no reload) to the never-visited Recipes
+    // module. (Home prefetches chores/meals/lists for its state strip, so
+    // Recipes is the module whose data can genuinely be absent offline.)
     await context.setOffline(true);
-    await page.getByRole("button", { name: /chores/i }).click();
+    await page
+      .getByRole("navigation", { name: /primary/i })
+      .getByRole("button", { name: /recipes/i })
+      .click();
 
     // The precached chunk loads from the now-controlling SW: the module's own
     // header renders (proof the chunk loaded, not the error-boundary fallback)…
-    await expect(page.getByRole("heading", { name: "Chores" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Recipes" })).toBeVisible();
     // …alongside its honest "not saved for offline" empty state (no cached data).
     await expect(
       page.getByText(/haven't been saved for offline viewing yet/i),
