@@ -750,6 +750,70 @@ describe("CalendarModule", () => {
     });
   });
 
+  describe("Week view desktop chrome", () => {
+    function setMatchMedia(matches: (query: string) => boolean) {
+      vi.mocked(window.matchMedia).mockImplementation((query: string) => ({
+        matches: matches(query),
+        media: query,
+        onchange: null,
+        addListener: vi.fn(),
+        removeListener: vi.fn(),
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+        dispatchEvent: vi.fn(),
+      }));
+    }
+
+    afterEach(() => {
+      setMatchMedia(() => false);
+    });
+
+    it("renders one-line day headers without the TODAY pill tower", async () => {
+      setMatchMedia((query) => query.includes("min-width"));
+      seedMockEvents([]);
+      seedCalendarStore({
+        currentDate: new Date(2026, 6, 8), // Wed Jul 8 2026
+        calendarView: "weekly",
+        filter: {
+          selectedMembers: testMembers.map((m) => m.id),
+          showAllDayEvents: true,
+        },
+      });
+
+      render(<CalendarModule />);
+
+      await waitFor(() => {
+        expect(screen.queryByText("Loading events...")).not.toBeInTheDocument();
+      });
+
+      // Collapsed header: no stacked "TODAY" pill anymore.
+      expect(screen.queryByText("TODAY")).not.toBeInTheDocument();
+      // Day numerals still render (7 days rendered as day-of-month numbers).
+      expect(screen.getAllByText(/^\d{1,2}$/).length).toBeGreaterThanOrEqual(7);
+    });
+
+    it("keeps stacked TODAY pill below lg", async () => {
+      setMatchMedia(() => false);
+      seedMockEvents([]);
+      seedCalendarStore({
+        currentDate: new Date(),
+        calendarView: "weekly",
+        filter: {
+          selectedMembers: testMembers.map((m) => m.id),
+          showAllDayEvents: true,
+        },
+      });
+
+      render(<CalendarModule />);
+
+      await waitFor(() => {
+        expect(screen.queryByText("Loading events...")).not.toBeInTheDocument();
+      });
+
+      expect(screen.getByText("TODAY")).toBeInTheDocument();
+    });
+  });
+
   describe("Store Persistence", () => {
     it("respects initial calendar view from store", async () => {
       seedMockEvents([]);
