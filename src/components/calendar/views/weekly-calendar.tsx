@@ -1,11 +1,11 @@
 import { useMemo, useRef } from "react";
 import { useFamilyMembers } from "@/api";
+import { useIsLargeScreen } from "@/hooks";
 import {
   CALENDAR_START_HOUR,
   compareEventsByTime,
   getEventKey,
   isEventOnDate,
-  parseTime,
 } from "@/lib/time-utils";
 import { type CalendarEvent, colorMap, getFamilyMember } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -13,8 +13,15 @@ import { CalendarEventCard } from "../components/calendar-event";
 import type { FilterState } from "../components/calendar-filter";
 import {
   CurrentTimeIndicator,
-  useAutoScrollToNow,
+  useAutoScrollToMinutes,
 } from "../components/current-time-indicator";
+import {
+  earliestEventStartMinutes,
+  getEventOffsets,
+  hourRowHeightFor,
+  pxFromOffsets,
+  TIME_SLOTS,
+} from "../utils/hour-grid";
 
 interface WeeklyCalendarProps {
   events: CalendarEvent[];
@@ -23,21 +30,7 @@ interface WeeklyCalendarProps {
   filter: FilterState;
 }
 
-const ROW_HEIGHT = 80; // px per hour
 const START_HOUR = CALENDAR_START_HOUR;
-
-function getEventPosition(startTime: string, endTime: string) {
-  const start = parseTime(startTime);
-  const end = parseTime(endTime);
-
-  const startOffset = start.hours - START_HOUR + start.minutes / 60;
-  const endOffset = end.hours - START_HOUR + end.minutes / 60;
-
-  const top = startOffset * ROW_HEIGHT;
-  const height = Math.max((endOffset - startOffset) * ROW_HEIGHT, 30); // Minimum 30px
-
-  return { top, height };
-}
 
 export function WeeklyCalendar({
   events,
@@ -48,8 +41,8 @@ export function WeeklyCalendar({
   const familyMembers = useFamilyMembers();
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const today = new Date();
-
-  useAutoScrollToNow(scrollContainerRef);
+  const isLargeScreen = useIsLargeScreen();
+  const rowHeight = hourRowHeightFor(isLargeScreen);
 
   // Memoize week days calculation
   const weekDays = useMemo(() => {
@@ -114,14 +107,6 @@ export function WeeklyCalendar({
     };
   }, [events, weekDays, filter.selectedMembers, filter.showAllDayEvents]);
 
-  const formatDayName = (date: Date) => {
-    return date.toLocaleDateString("en-US", { weekday: "short" });
-  };
-
-  const formatDayNumber = (date: Date) => {
-    return date.getDate();
-  };
-
   const isToday = (date: Date) => {
     return date.toDateString() === today.toDateString();
   };
@@ -135,26 +120,22 @@ export function WeeklyCalendar({
     return allDayByDay.get(date.toDateString()) ?? [];
   };
 
-  const timeSlots = [
-    "6 AM",
-    "7 AM",
-    "8 AM",
-    "9 AM",
-    "10 AM",
-    "11 AM",
-    "12 PM",
-    "1 PM",
-    "2 PM",
-    "3 PM",
-    "4 PM",
-    "5 PM",
-    "6 PM",
-    "7 PM",
-    "8 PM",
-    "9 PM",
-    "10 PM",
-    "11 PM",
-  ];
+  const isTodayInWeek = weekDays.some((date) => isToday(date));
+
+  // Auto-scroll target (minutes from START_HOUR): now when today is in the
+  // visible week, otherwise the earliest timed event across the week (spec Section 3).
+  const autoScrollMinutes = useMemo(() => {
+    if (!isLargeScreen || isTodayInWeek) {
+      const now = new Date();
+      return (now.getHours() - START_HOUR) * 60 + now.getMinutes();
+    }
+    const weekTimedEvents = weekDays.flatMap(
+      (date) => timedByDay.get(date.toDateString()) ?? [],
+    );
+    return earliestEventStartMinutes(weekTimedEvents, START_HOUR);
+  }, [isLargeScreen, isTodayInWeek, weekDays, timedByDay]);
+
+  useAutoScrollToMinutes(scrollContainerRef, autoScrollMinutes, rowHeight);
 
   const gridTemplateColumns = "4rem repeat(7, minmax(0, 1fr))";
 
@@ -167,57 +148,111 @@ export function WeeklyCalendar({
       >
         {/* Time column spacer */}
         <div className="border-r border-border" />
-        {weekDays.map((date, index) => (
-          <div
-            key={index}
-            className={cn(
-              "text-center py-3 border-l border-border relative",
-              isToday(date) && "bg-primary/10",
-            )}
-          >
+        {weekDays.map((date, index) => {
+          const dayIsToday = isToday(date);
+          const busyMembers = familyMembers.filter(
+            (member) =>
+              getEventsForDay(date).some((e) => e.memberId === member.id) ||
+              getAllDayEventsForDay(date).some((e) => e.memberId === member.id),
+          );
+
+          if (!isLargeScreen) {
+            return (
+              <div
+                key={index}
+                className={cn(
+                  "text-center py-3 border-l border-border relative",
+                  dayIsToday && "bg-primary/10",
+                )}
+              >
+                <div
+                  className={cn(
+                    "text-sm font-medium",
+                    dayIsToday ? "text-primary" : "text-muted-foreground",
+                  )}
+                >
+                  {date.toLocaleDateString("en-US", { weekday: "short" })}
+                </div>
+                <div
+                  className={cn(
+                    "text-2xl font-bold mt-1",
+                    dayIsToday
+                      ? "text-primary-foreground bg-primary w-10 h-10 rounded-full flex items-center justify-center mx-auto"
+                      : "text-foreground",
+                  )}
+                >
+                  {date.getDate()}
+                </div>
+                {dayIsToday && (
+                  <span className="inline-block mt-2 px-2 py-0.5 bg-primary/20 text-primary text-[10px] font-bold rounded-full">
+                    TODAY
+                  </span>
+                )}
+                <div className="flex justify-center gap-1 mt-1.5">
+                  {familyMembers.slice(0, 4).map((member) => {
+                    const hasEvent =
+                      getEventsForDay(date).some(
+                        (e) => e.memberId === member.id,
+                      ) ||
+                      getAllDayEventsForDay(date).some(
+                        (e) => e.memberId === member.id,
+                      );
+                    return hasEvent ? (
+                      <div
+                        key={member.id}
+                        className={cn(
+                          "w-2 h-2 rounded-full",
+                          colorMap[member.color]?.bg,
+                        )}
+                      />
+                    ) : null;
+                  })}
+                </div>
+              </div>
+            );
+          }
+
+          return (
             <div
+              key={index}
               className={cn(
-                "text-sm font-medium",
-                isToday(date) ? "text-primary" : "text-muted-foreground",
+                "flex items-center justify-center gap-2 border-l border-border px-2 py-2",
+                dayIsToday && "bg-primary/10",
               )}
             >
-              {formatDayName(date)}
-            </div>
-            <div
-              className={cn(
-                "text-2xl font-bold mt-1",
-                isToday(date)
-                  ? "text-primary-foreground bg-primary w-10 h-10 rounded-full flex items-center justify-center mx-auto"
-                  : "text-foreground",
-              )}
-            >
-              {formatDayNumber(date)}
-            </div>
-            {isToday(date) && (
-              <span className="inline-block mt-2 px-2 py-0.5 bg-primary/20 text-primary text-[10px] font-bold rounded-full">
-                TODAY
+              <span
+                className={cn(
+                  "text-xs font-medium uppercase tracking-wide",
+                  dayIsToday ? "text-primary" : "text-muted-foreground",
+                )}
+              >
+                {date.toLocaleDateString("en-US", { weekday: "short" })}
               </span>
-            )}
-            <div className="flex justify-center gap-1 mt-1.5">
-              {familyMembers.slice(0, 4).map((member) => {
-                const hasEvent =
-                  getEventsForDay(date).some((e) => e.memberId === member.id) ||
-                  getAllDayEventsForDay(date).some(
-                    (e) => e.memberId === member.id,
-                  );
-                return hasEvent ? (
-                  <div
+              <span
+                className={cn(
+                  "flex h-7 min-w-7 items-center justify-center rounded-full px-1 text-sm font-bold tabular-nums",
+                  dayIsToday
+                    ? "bg-primary text-primary-foreground"
+                    : "text-foreground",
+                )}
+              >
+                {date.getDate()}
+              </span>
+              <span className="flex items-center gap-0.5">
+                {busyMembers.slice(0, 4).map((member) => (
+                  <span
                     key={member.id}
                     className={cn(
-                      "w-2 h-2 rounded-full",
+                      "h-1.5 w-1.5 rounded-full",
                       colorMap[member.color]?.bg,
                     )}
+                    title={member.name}
                   />
-                ) : null;
-              })}
+                ))}
+              </span>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {/* All-day events row */}
@@ -275,10 +310,11 @@ export function WeeklyCalendar({
           <div className="grid min-h-full" style={{ gridTemplateColumns }}>
             {/* Time column */}
             <div className="bg-card border-r border-border">
-              {timeSlots.map((time, index) => (
+              {TIME_SLOTS.map((time, index) => (
                 <div
                   key={index}
-                  className="h-20 flex items-start justify-end pr-2 pt-1 border-b border-border/50"
+                  className="flex items-start justify-end pr-2 pt-1 border-b border-border/50"
+                  style={{ height: rowHeight }}
                 >
                   <span className="text-xs text-foreground/70 font-semibold">
                     {time}
@@ -300,23 +336,26 @@ export function WeeklyCalendar({
                     isTodayColumn && "bg-primary/5",
                   )}
                 >
-                  {timeSlots.map((_, index) => (
+                  {TIME_SLOTS.map((_, index) => (
                     <div
                       key={index}
                       className={cn(
-                        "h-20 border-b border-border/50",
+                        "border-b border-border/50",
                         index % 2 === 0 && !isTodayColumn && "bg-muted/20",
                       )}
+                      style={{ height: rowHeight }}
                     />
                   ))}
 
-                  {isTodayColumn && <CurrentTimeIndicator />}
+                  {isTodayColumn && (
+                    <CurrentTimeIndicator rowHeight={rowHeight} />
+                  )}
 
                   <div className="absolute inset-0 px-0.5">
                     {dayEvents.map((event) => {
-                      const { top, height } = getEventPosition(
-                        event.startTime,
-                        event.endTime,
+                      const { top, height } = pxFromOffsets(
+                        getEventOffsets(event.startTime, event.endTime),
+                        rowHeight,
                       );
                       return (
                         <div
