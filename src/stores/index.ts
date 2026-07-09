@@ -20,6 +20,7 @@ export {
   useCalendarActions,
   useCalendarState,
   useCalendarStore,
+  useDayRailState,
   useEditModalState,
   useEventDetailState,
   useFilterPillsState,

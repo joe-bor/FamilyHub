@@ -238,6 +238,7 @@ export function seedCalendarStore(data: {
   hasUserSetView?: boolean;
   filter?: Partial<FilterState>;
   isAddEventModalOpen?: boolean;
+  dayRailHidden?: boolean;
   selectedEvent?: CalendarEvent | null;
   isDetailModalOpen?: boolean;
   editingEvent?: CalendarEvent | null;
@@ -263,6 +264,9 @@ export function seedCalendarStore(data: {
     ...(data.isAddEventModalOpen !== undefined && {
       isAddEventModalOpen: data.isAddEventModalOpen,
     }),
+    ...(data.dayRailHidden !== undefined && {
+      dayRailHidden: data.dayRailHidden,
+    }),
     ...(data.selectedEvent !== undefined && {
       selectedEvent: data.selectedEvent,
     }),
@@ -287,6 +291,7 @@ export function resetCalendarStore(): void {
     hasUserSetView: false,
     filter: { selectedMembers: [], showAllDayEvents: true },
     isAddEventModalOpen: false,
+    dayRailHidden: false,
     selectedEvent: null,
     isDetailModalOpen: false,
     editingEvent: null,

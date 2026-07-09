@@ -11,6 +11,9 @@ interface CalendarState {
   hasUserSetView: boolean; // Track if user explicitly changed view (for smart defaulting)
   filter: FilterState;
   isAddEventModalOpen: boolean;
+  /** User preference: hide the Day view mini-month rail even when it would fit. */
+  dayRailHidden: boolean;
+  toggleDayRail: () => void;
   addEventDefaults: Partial<EventFormData> | null;
 
   // Event detail modal state
@@ -63,6 +66,7 @@ export const useCalendarStore = create<CalendarState>()(
         showAllDayEvents: true,
       },
       isAddEventModalOpen: false,
+      dayRailHidden: false,
       addEventDefaults: null,
 
       // Event detail modal state
@@ -169,6 +173,9 @@ export const useCalendarStore = create<CalendarState>()(
       // Filter actions
       setFilter: (filter) => set({ filter }),
 
+      toggleDayRail: () =>
+        set((state) => ({ dayRailHidden: !state.dayRailHidden })),
+
       toggleMember: (memberId) => {
         const { filter } = get();
         const isSelected = filter.selectedMembers.includes(memberId);
@@ -237,6 +244,7 @@ export const useCalendarStore = create<CalendarState>()(
         filter: state.filter,
         calendarView: state.calendarView,
         hasUserSetView: state.hasUserSetView,
+        dayRailHidden: state.dayRailHidden,
       }),
     },
   ),
@@ -272,6 +280,14 @@ export const useIsViewingToday = () =>
         return true;
     }
   });
+
+export const useDayRailState = () =>
+  useCalendarStore(
+    useShallow((state) => ({
+      dayRailHidden: state.dayRailHidden,
+      toggleDayRail: state.toggleDayRail,
+    })),
+  );
 
 /**
  * Compound selector for calendar state.
