@@ -1,12 +1,9 @@
 import { useMemo, useRef } from "react";
 import { useFamilyMembers } from "@/api";
 import {
-  CALENDAR_START_HOUR,
   compareEventsByTime,
   getEventKey,
-  getTimeInMinutes,
   isEventOnDate,
-  parseTime,
 } from "@/lib/time-utils";
 import { type CalendarEvent, colorMap, getFamilyMember } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -16,6 +13,8 @@ import {
   CurrentTimeIndicator,
   useAutoScrollToNow,
 } from "../components/current-time-indicator";
+import { getEventOffsets, pxFromOffsets, TIME_SLOTS } from "../utils/hour-grid";
+import { calculateEventColumns } from "./day-lane-layout";
 
 interface DailyCalendarProps {
   events: CalendarEvent[];
@@ -24,90 +23,7 @@ interface DailyCalendarProps {
   filter: FilterState;
 }
 
-const START_HOUR = CALENDAR_START_HOUR;
 const ROW_HEIGHT = 80; // px per hour
-
-function getEventGridPosition(startTime: string, endTime: string) {
-  const start = parseTime(startTime);
-  const end = parseTime(endTime);
-
-  // Calculate row index from start hour (6 AM = row 0)
-  const startRow = start.hours - START_HOUR;
-  const startMinuteOffset = start.minutes / 60;
-
-  const endRow = end.hours - START_HOUR;
-  const endMinuteOffset = end.minutes / 60;
-
-  // Calculate top position: row * height + minute offset
-  const top = (startRow + startMinuteOffset) * ROW_HEIGHT;
-  const bottom = (endRow + endMinuteOffset) * ROW_HEIGHT;
-  const height = Math.max(bottom - top, 30); // Minimum 30px height
-
-  return { top, height };
-}
-
-function eventsOverlap(a: CalendarEvent, b: CalendarEvent): boolean {
-  const aStart = getTimeInMinutes(a.startTime);
-  const aEnd = getTimeInMinutes(a.endTime);
-  const bStart = getTimeInMinutes(b.startTime);
-  const bEnd = getTimeInMinutes(b.endTime);
-  return aStart < bEnd && bStart < aEnd;
-}
-
-interface EventWithLayout extends CalendarEvent {
-  column: number;
-  totalColumns: number;
-}
-
-function calculateEventColumns(events: CalendarEvent[]): EventWithLayout[] {
-  if (events.length === 0) return [];
-
-  // Sort by start time, then by duration (longer events first)
-  const sorted = [...events].sort((a, b) => {
-    const aStart = getTimeInMinutes(a.startTime);
-    const bStart = getTimeInMinutes(b.startTime);
-    if (aStart !== bStart) return aStart - bStart;
-
-    const aDuration = getTimeInMinutes(a.endTime) - aStart;
-    const bDuration = getTimeInMinutes(b.endTime) - bStart;
-    return bDuration - aDuration; // Longer events first
-  });
-
-  const result: EventWithLayout[] = [];
-  const columns: CalendarEvent[][] = []; // Each column tracks events in that column
-
-  for (const event of sorted) {
-    // Find the first column where this event doesn't overlap with existing events
-    let assignedColumn = -1;
-    for (let col = 0; col < columns.length; col++) {
-      const hasOverlap = columns[col].some((e) => eventsOverlap(e, event));
-      if (!hasOverlap) {
-        assignedColumn = col;
-        break;
-      }
-    }
-
-    // If no suitable column found, create a new one
-    if (assignedColumn === -1) {
-      assignedColumn = columns.length;
-      columns.push([]);
-    }
-
-    columns[assignedColumn].push(event);
-    result.push({ ...event, column: assignedColumn, totalColumns: 0 }); // totalColumns set later
-  }
-
-  // Now calculate totalColumns for each event based on overlapping events
-  for (const eventWithLayout of result) {
-    // Find all events that overlap with this one
-    const overlapping = result.filter((e) => eventsOverlap(e, eventWithLayout));
-    // Find the max column among overlapping events + 1
-    const maxColumn = Math.max(...overlapping.map((e) => e.column));
-    eventWithLayout.totalColumns = maxColumn + 1;
-  }
-
-  return result;
-}
 
 export function DailyCalendar({
   events,
@@ -153,27 +69,6 @@ export function DailyCalendar({
     () => calculateEventColumns(timedEvents),
     [timedEvents],
   );
-
-  const timeSlots = [
-    "6 AM",
-    "7 AM",
-    "8 AM",
-    "9 AM",
-    "10 AM",
-    "11 AM",
-    "12 PM",
-    "1 PM",
-    "2 PM",
-    "3 PM",
-    "4 PM",
-    "5 PM",
-    "6 PM",
-    "7 PM",
-    "8 PM",
-    "9 PM",
-    "10 PM",
-    "11 PM",
-  ];
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden bg-background">
@@ -243,7 +138,7 @@ export function DailyCalendar({
       <div className="flex-1 flex overflow-y-auto" ref={scrollContainerRef}>
         {/* Time column */}
         <div className="w-12 sm:w-16 shrink-0 bg-card border-r border-border">
-          {timeSlots.map((time, index) => (
+          {TIME_SLOTS.map((time, index) => (
             <div
               key={index}
               className="h-20 flex items-start justify-end pr-2 pt-1 border-b border-border/50"
@@ -263,7 +158,7 @@ export function DailyCalendar({
           )}
         >
           {/* Grid rows */}
-          {timeSlots.map((_, index) => (
+          {TIME_SLOTS.map((_, index) => (
             <div
               key={index}
               className={cn(
@@ -280,9 +175,9 @@ export function DailyCalendar({
           )}
 
           {eventsWithLayout.map((event) => {
-            const { top, height } = getEventGridPosition(
-              event.startTime,
-              event.endTime,
+            const { top, height } = pxFromOffsets(
+              getEventOffsets(event.startTime, event.endTime),
+              ROW_HEIGHT,
             );
             const { column, totalColumns } = event;
 
