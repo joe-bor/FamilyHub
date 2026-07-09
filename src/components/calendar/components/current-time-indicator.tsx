@@ -73,3 +73,25 @@ export function useAutoScrollToNow(
     });
   }, [containerRef, startHour, rowHeight]);
 }
+
+/**
+ * Scroll the grid so a target time is comfortably in view. `targetMinutes` is
+ * minutes from the grid's start hour; pass null to skip (e.g. no events and not
+ * today). Mirrors useAutoScrollToNow's 200px lead but takes an explicit target
+ * so callers can choose "now" or "first event" (spec Section 3, Week auto-scroll).
+ */
+export function useAutoScrollToMinutes(
+  containerRef: React.RefObject<HTMLElement | null>,
+  targetMinutes: number | null,
+  rowHeight = 80,
+) {
+  useEffect(() => {
+    if (!containerRef.current || targetMinutes == null) return;
+
+    const scrollPosition = (targetMinutes / 60) * rowHeight - 200;
+    containerRef.current.scrollTo({
+      top: Math.max(0, scrollPosition),
+      behavior: "smooth",
+    });
+  }, [containerRef, targetMinutes, rowHeight]);
+}
