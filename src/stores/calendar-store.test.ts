@@ -41,6 +41,10 @@ describe("CalendarStore", () => {
       expect(useCalendarStore.getState().hasUserSetView).toBe(false);
     });
 
+    it("initializes day rail hidden preference as false", () => {
+      expect(useCalendarStore.getState().dayRailHidden).toBe(false);
+    });
+
     it("initializes with empty selectedMembers", () => {
       expect(useCalendarStore.getState().filter.selectedMembers).toEqual([]);
     });
@@ -636,6 +640,18 @@ describe("CalendarStore", () => {
     });
   });
 
+  describe("day rail", () => {
+    it("toggles day rail hidden from false to true to false", () => {
+      expect(useCalendarStore.getState().dayRailHidden).toBe(false);
+
+      useCalendarStore.getState().toggleDayRail();
+      expect(useCalendarStore.getState().dayRailHidden).toBe(true);
+
+      useCalendarStore.getState().toggleDayRail();
+      expect(useCalendarStore.getState().dayRailHidden).toBe(false);
+    });
+  });
+
   describe("add event modal", () => {
     it("openAddEventModal sets isAddEventModalOpen to true", () => {
       useCalendarStore.getState().openAddEventModal();
@@ -915,6 +931,14 @@ describe("CalendarStore", () => {
       const stored = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "{}");
 
       expect(stored.state?.hasUserSetView).toBe(true);
+    });
+
+    it("persists day rail hidden preference to localStorage", () => {
+      useCalendarStore.getState().toggleDayRail();
+
+      const stored = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "{}");
+
+      expect(stored.state?.dayRailHidden).toBe(true);
     });
 
     it("does NOT persist currentDate", () => {

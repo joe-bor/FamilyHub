@@ -88,6 +88,7 @@ function resetAllStores(): void {
     hasUserSetView: false,
     filter: { selectedMembers: [], showAllDayEvents: true },
     isAddEventModalOpen: false,
+    dayRailHidden: false,
     addEventDefaults: null,
     selectedEvent: null,
     isDetailModalOpen: false,
