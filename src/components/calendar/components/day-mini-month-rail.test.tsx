@@ -81,6 +81,27 @@ describe("DayMiniMonthRail", () => {
     expect(selected.getDate()).toBe(16);
   });
 
+  it("routes arrow keys from the focused date when focus is not on the selected date", async () => {
+    const onSelectDate = vi.fn();
+    const { user } = renderWithUser(
+      <DayMiniMonthRail
+        currentDate={new Date(2026, 6, 15)}
+        monthEvents={[]}
+        members={members}
+        onSelectDate={onSelectDate}
+      />,
+    );
+
+    screen.getByRole("button", { name: /july 20, 2026/i }).focus();
+    await user.keyboard("{ArrowRight}");
+
+    expect(onSelectDate).toHaveBeenCalledTimes(1);
+    const selected = onSelectDate.mock.calls[0][0] as Date;
+    expect(selected.getFullYear()).toBe(2026);
+    expect(selected.getMonth()).toBe(6);
+    expect(selected.getDate()).toBe(21);
+  });
+
   it("advances repeatedly from the selected date when arrowing after navigation", async () => {
     const onSelectDate = vi.fn();
 

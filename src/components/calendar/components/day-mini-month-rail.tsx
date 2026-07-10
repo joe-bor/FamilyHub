@@ -1,5 +1,6 @@
 import { format } from "date-fns";
 import type React from "react";
+import { useEffect, useRef } from "react";
 import { DAY_INITIALS } from "@/lib/time-utils";
 import { type CalendarEvent, colorMap, type FamilyMember } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -30,7 +31,20 @@ export function DayMiniMonthRail({
   const isSameDay = (a: Date, b: Date) => a.toDateString() === b.toDateString();
   const isCurrentMonth = (date: Date) =>
     date.getMonth() === currentDate.getMonth();
-  const handleDayKeyDown = (event: React.KeyboardEvent<HTMLButtonElement>) => {
+  const focusSelectedAfterKeyboardNav = useRef(false);
+  const selectedDayButtonRef = useRef<HTMLButtonElement | null>(null);
+
+  useEffect(() => {
+    if (!focusSelectedAfterKeyboardNav.current) return;
+
+    focusSelectedAfterKeyboardNav.current = false;
+    selectedDayButtonRef.current?.focus();
+  });
+
+  const handleDayKeyDown = (
+    event: React.KeyboardEvent<HTMLButtonElement>,
+    date: Date,
+  ) => {
     const dayOffsetByKey: Record<string, number> = {
       ArrowLeft: -1,
       ArrowRight: 1,
@@ -41,12 +55,9 @@ export function DayMiniMonthRail({
     if (offset === undefined) return;
 
     event.preventDefault();
+    focusSelectedAfterKeyboardNav.current = true;
     onSelectDate(
-      new Date(
-        currentDate.getFullYear(),
-        currentDate.getMonth(),
-        currentDate.getDate() + offset,
-      ),
+      new Date(date.getFullYear(), date.getMonth(), date.getDate() + offset),
     );
   };
 
@@ -77,11 +88,12 @@ export function DayMiniMonthRail({
             <button
               type="button"
               key={date.toDateString()}
+              ref={selected ? selectedDayButtonRef : undefined}
               aria-current={selected ? "date" : undefined}
               aria-pressed={selected}
               aria-label={format(date, "MMMM d, yyyy")}
               onClick={() => onSelectDate(date)}
-              onKeyDown={handleDayKeyDown}
+              onKeyDown={(event) => handleDayKeyDown(event, date)}
               className={cn(
                 "relative mx-auto flex h-11 w-11 flex-col items-center justify-center rounded-full text-sm transition-colors",
                 !isCurrentMonth(date) && "text-muted-foreground/40",
