@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { describe, expect, it, vi } from "vitest";
 import type { CalendarEvent, FamilyMember } from "@/lib/types";
 import { render, renderWithUser, screen } from "@/test/test-utils";
@@ -57,5 +58,57 @@ describe("DayMiniMonthRail", () => {
     expect(selected.getFullYear()).toBe(2026);
     expect(selected.getMonth()).toBe(6);
     expect(selected.getDate()).toBe(20);
+  });
+
+  it("routes arrow keys to adjacent dates", async () => {
+    const onSelectDate = vi.fn();
+    const { user } = renderWithUser(
+      <DayMiniMonthRail
+        currentDate={new Date(2026, 6, 15)}
+        monthEvents={[]}
+        members={members}
+        onSelectDate={onSelectDate}
+      />,
+    );
+
+    screen.getByRole("button", { name: /july 15, 2026/i }).focus();
+    await user.keyboard("{ArrowRight}");
+
+    expect(onSelectDate).toHaveBeenCalledTimes(1);
+    const selected = onSelectDate.mock.calls[0][0] as Date;
+    expect(selected.getFullYear()).toBe(2026);
+    expect(selected.getMonth()).toBe(6);
+    expect(selected.getDate()).toBe(16);
+  });
+
+  it("advances repeatedly from the selected date when arrowing after navigation", async () => {
+    const onSelectDate = vi.fn();
+
+    function StatefulRail() {
+      const [currentDate, setCurrentDate] = useState(new Date(2026, 6, 15));
+      return (
+        <DayMiniMonthRail
+          currentDate={currentDate}
+          monthEvents={[]}
+          members={members}
+          onSelectDate={(date) => {
+            onSelectDate(date);
+            setCurrentDate(date);
+          }}
+        />
+      );
+    }
+
+    const { user } = renderWithUser(<StatefulRail />);
+
+    screen.getByRole("button", { name: /july 15, 2026/i }).focus();
+    await user.keyboard("{ArrowRight}");
+    await user.keyboard("{ArrowRight}");
+
+    expect(onSelectDate).toHaveBeenCalledTimes(2);
+    const secondSelection = onSelectDate.mock.calls[1][0] as Date;
+    expect(secondSelection.getFullYear()).toBe(2026);
+    expect(secondSelection.getMonth()).toBe(6);
+    expect(secondSelection.getDate()).toBe(17);
   });
 });
