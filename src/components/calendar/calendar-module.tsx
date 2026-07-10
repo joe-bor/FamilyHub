@@ -23,6 +23,8 @@ import {
   CalendarNavigation,
   CalendarViewSwitcher,
   DailyCalendar,
+  DayLanesCalendar,
+  DayRailToggle,
   type EditScope,
   EditScopeDialog,
   EventDetailModal,
@@ -37,8 +39,9 @@ import {
   ScheduleCalendar,
   WeeklyCalendar,
 } from "@/components/calendar";
+import { railThresholdPx } from "@/components/calendar/utils/day-rail";
 import { toast } from "@/components/ui/toaster";
-import { useIsMobile } from "@/hooks";
+import { useIsLargeScreen, useIsMobile, useMediaQuery } from "@/hooks";
 import { isOfflineWriteError } from "@/lib/offline/read-only-guard";
 import { buildRRule } from "@/lib/recurrence-utils";
 import {
@@ -54,6 +57,7 @@ import {
   useCalendarActions,
   useCalendarState,
   useCalendarStore,
+  useDayRailState,
   useEditModalState,
   useEventDetailState,
   useHasUserSetView,
@@ -154,6 +158,16 @@ export function CalendarModule() {
   // Family data for mobile views
   const members = useFamilyMembers();
   const memberMap = useFamilyMemberMap();
+  const isLargeScreen = useIsLargeScreen();
+  const { dayRailHidden } = useDayRailState();
+  const memberCount = members.length;
+  const canFitRail = useMediaQuery(
+    `(min-width: ${railThresholdPx(memberCount)}px)`,
+  );
+  const isDayLanes = !isMobile && isLargeScreen && calendarView === "daily";
+  const showDayRail =
+    isDayLanes && canFitRail && !dayRailHidden && memberCount > 0;
+  const showRailToggle = isDayLanes && canFitRail && memberCount > 0;
 
   // Compute date range based on current view for API query
   const dateRange = useMemo(() => {
@@ -515,7 +529,16 @@ export function CalendarModule() {
 
     switch (calendarView) {
       case "daily":
-        return <DailyCalendar {...commonProps} />;
+        return isLargeScreen ? (
+          <DayLanesCalendar
+            {...commonProps}
+            members={members}
+            showRail={showDayRail}
+            onSelectDate={setDate}
+          />
+        ) : (
+          <DailyCalendar {...commonProps} />
+        );
       case "weekly":
         return <WeeklyCalendar {...commonProps} />;
       case "monthly":
@@ -547,7 +570,10 @@ export function CalendarModule() {
             onToday={goToToday}
             isViewingToday={isViewingToday}
           />
-          <FamilyFilterPills />
+          <div className="flex items-center gap-2">
+            <FamilyFilterPills />
+            {showRailToggle && <DayRailToggle />}
+          </div>
         </div>
       )}
 
