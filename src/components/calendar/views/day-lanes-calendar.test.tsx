@@ -67,6 +67,19 @@ describe("DayLanesCalendar", () => {
     seedFamilyStore({ name: "Test Family", members });
   });
 
+  function mockReducedMotion(matches: boolean) {
+    vi.mocked(window.matchMedia).mockImplementation((query: string) => ({
+      matches: query === "(prefers-reduced-motion: reduce)" ? matches : false,
+      media: query,
+      onchange: null,
+      addListener: vi.fn(),
+      removeListener: vi.fn(),
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      dispatchEvent: vi.fn(),
+    }));
+  }
+
   it("renders one labelled lane per member in family order", () => {
     render(
       <DayLanesCalendar
@@ -235,5 +248,28 @@ describe("DayLanesCalendar", () => {
     expect(
       screen.queryByRole("complementary", { name: /month navigator/i }),
     ).not.toBeInTheDocument();
+  });
+
+  it("uses instant auto-scroll when reduced motion is requested", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 6, 6, 10, 0, 0));
+    mockReducedMotion(true);
+
+    render(
+      <DayLanesCalendar
+        events={events}
+        currentDate={new Date(2026, 6, 6)}
+        members={members}
+        filter={noopFilter}
+        showRail={false}
+        onEventClick={vi.fn()}
+        onSelectDate={vi.fn()}
+      />,
+    );
+
+    expect(Element.prototype.scrollTo).toHaveBeenCalledWith({
+      top: 8,
+      behavior: "auto",
+    });
   });
 });

@@ -88,10 +88,13 @@ export function useAutoScrollToMinutes(
   useEffect(() => {
     if (!containerRef.current || targetMinutes == null) return;
 
+    const prefersReducedMotion = window.matchMedia(
+      "(prefers-reduced-motion: reduce)",
+    ).matches;
     const scrollPosition = (targetMinutes / 60) * rowHeight - 200;
     containerRef.current.scrollTo({
       top: Math.max(0, scrollPosition),
-      behavior: "smooth",
+      behavior: prefersReducedMotion ? "auto" : "smooth",
     });
   }, [containerRef, targetMinutes, rowHeight]);
 }

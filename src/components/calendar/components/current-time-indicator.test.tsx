@@ -4,6 +4,19 @@ import { describe, expect, it, vi } from "vitest";
 import { useAutoScrollToMinutes } from "./current-time-indicator";
 
 describe("useAutoScrollToMinutes", () => {
+  function mockReducedMotion(matches: boolean) {
+    vi.mocked(window.matchMedia).mockImplementation((query: string) => ({
+      matches: query === "(prefers-reduced-motion: reduce)" ? matches : false,
+      media: query,
+      onchange: null,
+      addListener: vi.fn(),
+      removeListener: vi.fn(),
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      dispatchEvent: vi.fn(),
+    }));
+  }
+
   it("scrolls to the target row minus a lead offset", () => {
     const el = document.createElement("div");
     const scrollTo = vi.spyOn(el, "scrollTo");
@@ -40,5 +53,18 @@ describe("useAutoScrollToMinutes", () => {
     });
 
     expect(scrollTo).not.toHaveBeenCalled();
+  });
+
+  it("uses instant scroll when reduced motion is requested", () => {
+    mockReducedMotion(true);
+    const el = document.createElement("div");
+    const scrollTo = vi.spyOn(el, "scrollTo");
+
+    renderHook(() => {
+      const ref = useRef<HTMLDivElement>(el);
+      useAutoScrollToMinutes(ref, 600, 52);
+    });
+
+    expect(scrollTo).toHaveBeenCalledWith({ top: 320, behavior: "auto" });
   });
 });

@@ -1,9 +1,10 @@
-import { endOfMonth, format, startOfMonth } from "date-fns";
+import { endOfMonth, startOfMonth } from "date-fns";
 import { useMemo, useRef } from "react";
 import { useCalendarEvents } from "@/api";
 import {
   CALENDAR_START_HOUR,
   compareEventsByTime,
+  formatLocalDate,
   getEventKey,
   isEventOnDate,
 } from "@/lib/time-utils";
@@ -13,7 +14,7 @@ import { cn } from "@/lib/utils";
 import { CalendarEventCard } from "../components/calendar-event";
 import {
   CurrentTimeIndicator,
-  useAutoScrollToNow,
+  useAutoScrollToMinutes,
 } from "../components/current-time-indicator";
 import { DayMiniMonthRail } from "../components/day-mini-month-rail";
 import { MemberAvatar } from "../components/member-avatar";
@@ -75,8 +76,8 @@ function DayRailPanel({
 }) {
   const monthRange = useMemo(
     () => ({
-      startDate: format(startOfMonth(currentDate), "yyyy-MM-dd"),
-      endDate: format(endOfMonth(currentDate), "yyyy-MM-dd"),
+      startDate: formatLocalDate(startOfMonth(currentDate)),
+      endDate: formatLocalDate(endOfMonth(currentDate)),
     }),
     [currentDate],
   );
@@ -111,12 +112,16 @@ export function DayLanesCalendar({
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const today = isCurrentDay(currentDate);
   const laneTemplate = `repeat(${Math.max(members.length, 1)}, minmax(0, 1fr))`;
+  const autoScrollMinutes = useMemo(() => {
+    if (!today) return null;
+    const now = new Date();
+    return Math.max(
+      0,
+      (now.getHours() - CALENDAR_START_HOUR) * 60 + now.getMinutes(),
+    );
+  }, [today]);
 
-  useAutoScrollToNow(
-    today ? scrollContainerRef : { current: null },
-    CALENDAR_START_HOUR,
-    ROW_HEIGHT,
-  );
+  useAutoScrollToMinutes(scrollContainerRef, autoScrollMinutes, ROW_HEIGHT);
 
   const { timedEventsByMember, allDayEventsByMember } = useMemo(() => {
     const dayEvents = events

@@ -1,4 +1,5 @@
 import { format } from "date-fns";
+import type React from "react";
 import { DAY_INITIALS } from "@/lib/time-utils";
 import { type CalendarEvent, colorMap, type FamilyMember } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -29,6 +30,25 @@ export function DayMiniMonthRail({
   const isSameDay = (a: Date, b: Date) => a.toDateString() === b.toDateString();
   const isCurrentMonth = (date: Date) =>
     date.getMonth() === currentDate.getMonth();
+  const handleDayKeyDown = (event: React.KeyboardEvent<HTMLButtonElement>) => {
+    const dayOffsetByKey: Record<string, number> = {
+      ArrowLeft: -1,
+      ArrowRight: 1,
+      ArrowUp: -7,
+      ArrowDown: 7,
+    };
+    const offset = dayOffsetByKey[event.key];
+    if (offset === undefined) return;
+
+    event.preventDefault();
+    onSelectDate(
+      new Date(
+        currentDate.getFullYear(),
+        currentDate.getMonth(),
+        currentDate.getDate() + offset,
+      ),
+    );
+  };
 
   return (
     <aside
@@ -61,6 +81,7 @@ export function DayMiniMonthRail({
               aria-pressed={selected}
               aria-label={format(date, "MMMM d, yyyy")}
               onClick={() => onSelectDate(date)}
+              onKeyDown={handleDayKeyDown}
               className={cn(
                 "relative mx-auto flex h-11 w-11 flex-col items-center justify-center rounded-full text-sm transition-colors",
                 !isCurrentMonth(date) && "text-muted-foreground/40",
