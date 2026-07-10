@@ -10,6 +10,7 @@ import {
   it,
   vi,
 } from "vitest";
+import { railThresholdPx } from "@/components/calendar/utils/day-rail";
 import type { CalendarEventResponse, UpdateEventRequest } from "@/lib/types";
 import { useAppStore, useCalendarStore } from "@/stores";
 import {
@@ -811,6 +812,131 @@ describe("CalendarModule", () => {
       });
 
       expect(screen.getByText("TODAY")).toBeInTheDocument();
+    });
+  });
+
+  describe("Day view large-screen lanes", () => {
+    function setMatchMediaWidth(width: number) {
+      vi.mocked(window.matchMedia).mockImplementation((query: string) => ({
+        matches: matchesMinWidth(query, width),
+        media: query,
+        onchange: null,
+        addListener: vi.fn(),
+        removeListener: vi.fn(),
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+        dispatchEvent: vi.fn(),
+      }));
+    }
+
+    function matchesMinWidth(query: string, width: number): boolean {
+      const minWidth = query.match(/\(min-width:\s*(\d+)px\)/);
+      if (!minWidth) return false;
+      return width >= Number(minWidth[1]);
+    }
+
+    beforeEach(() => {
+      setMatchMediaWidth(1024);
+    });
+
+    afterEach(() => {
+      setMatchMediaWidth(0);
+    });
+
+    it("keeps the tablet DailyCalendar at 1023px", async () => {
+      setMatchMediaWidth(1023);
+      seedMockEvents([]);
+      seedCalendarStore({
+        currentDate: new Date(2026, 6, 6),
+        calendarView: "daily",
+        filter: {
+          selectedMembers: testMembers.map((m) => m.id),
+          showAllDayEvents: true,
+        },
+      });
+
+      render(<CalendarModule />);
+
+      await waitFor(() => {
+        expect(screen.queryByText("Loading events...")).not.toBeInTheDocument();
+      });
+
+      expect(
+        screen.queryByRole("group", {
+          name: new RegExp(`${testMembers[0].name}'s schedule`, "i"),
+        }),
+      ).not.toBeInTheDocument();
+    });
+
+    it("renders member lanes on the daily view at 1024px", async () => {
+      setMatchMediaWidth(1024);
+      seedMockEvents([]);
+      seedCalendarStore({
+        currentDate: new Date(2026, 6, 6),
+        calendarView: "daily",
+        filter: {
+          selectedMembers: testMembers.map((m) => m.id),
+          showAllDayEvents: true,
+        },
+      });
+
+      render(<CalendarModule />);
+
+      await waitFor(() => {
+        expect(screen.queryByText("Loading events...")).not.toBeInTheDocument();
+      });
+
+      expect(
+        screen.getByRole("group", {
+          name: new RegExp(`${testMembers[0].name}'s schedule`, "i"),
+        }),
+      ).toBeInTheDocument();
+    });
+
+    it("hides the rail toggle below the rail fit threshold", async () => {
+      setMatchMediaWidth(railThresholdPx(testMembers.length) - 1);
+      seedMockEvents([]);
+      seedCalendarStore({
+        currentDate: new Date(2026, 6, 6),
+        calendarView: "daily",
+        filter: {
+          selectedMembers: testMembers.map((m) => m.id),
+          showAllDayEvents: true,
+        },
+      });
+
+      render(<CalendarModule />);
+
+      await waitFor(() => {
+        expect(screen.queryByText("Loading events...")).not.toBeInTheDocument();
+      });
+
+      expect(
+        screen.queryByRole("button", { name: /month navigator/i }),
+      ).not.toBeInTheDocument();
+    });
+
+    it("shows the rail toggle at the rail fit threshold", async () => {
+      setMatchMediaWidth(railThresholdPx(testMembers.length));
+      seedMockEvents([]);
+      seedCalendarStore({
+        currentDate: new Date(2026, 6, 6),
+        calendarView: "daily",
+        filter: {
+          selectedMembers: testMembers.map((m) => m.id),
+          showAllDayEvents: true,
+        },
+      });
+
+      render(<CalendarModule />);
+
+      await waitFor(() => {
+        expect(screen.queryByText("Loading events...")).not.toBeInTheDocument();
+      });
+
+      expect(
+        screen.getByRole("button", { name: /month navigator/i }),
+      ).toBeInTheDocument();
     });
   });
 
