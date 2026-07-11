@@ -89,6 +89,45 @@ beforeEach(() => {
   seedMockListPreferences({ showCompletedByDefault: true });
 });
 
+describe("ListDetailView back button", () => {
+  it("hides the back button when showBackButton is false", async () => {
+    seedMockLists([groceryList]);
+    renderWithUser(
+      <ListDetailView
+        listId={LIST_ID}
+        preferences={null}
+        preferencesStatus="unavailable"
+        onBack={() => {}}
+        showBackButton={false}
+      />,
+    );
+
+    await screen.findByRole("heading", { name: "Trader Joe's Run" });
+
+    expect(
+      screen.queryByRole("button", { name: /back to lists/i }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("shows the back button by default", async () => {
+    seedMockLists([groceryList]);
+    renderWithUser(
+      <ListDetailView
+        listId={LIST_ID}
+        preferences={null}
+        preferencesStatus="unavailable"
+        onBack={() => {}}
+      />,
+    );
+
+    await screen.findByRole("heading", { name: "Trader Joe's Run" });
+
+    expect(
+      await screen.findByRole("button", { name: /back to lists/i }),
+    ).toBeInTheDocument();
+  });
+});
+
 describe("ListDetailView options placement", () => {
   describe("mobile (<768px)", () => {
     beforeEach(() => {
