@@ -1,6 +1,7 @@
 import { delay, HttpResponse, http } from "msw";
+import { listsKeys } from "@/api";
 import type { ListDetail } from "@/lib/types";
-import { useBackStack } from "@/stores";
+import { useAppStore, useBackStack } from "@/stores";
 import {
   API_BASE,
   seedMockListPreferences,
@@ -10,22 +11,28 @@ import {
 } from "@/test/mocks/server";
 import {
   act,
+  getTestQueryClient,
   render,
   renderWithUser,
   screen,
   seedFamilyStore,
   typeAndWait,
   waitFor,
+  within,
 } from "@/test/test-utils";
 import { ListsView } from "./lists-view";
 
-const viewport = vi.hoisted(() => ({ isMobile: false }));
+const viewport = vi.hoisted(() => ({
+  isMobile: false,
+  isLargeScreen: false,
+}));
 
 vi.mock("@/hooks", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/hooks")>();
   return {
     ...actual,
     useIsMobile: () => viewport.isMobile,
+    useIsLargeScreen: () => viewport.isLargeScreen,
   };
 });
 
@@ -130,6 +137,7 @@ describe("ListsView hub", () => {
 
   beforeEach(() => {
     viewport.isMobile = false;
+    viewport.isLargeScreen = false;
     seedFamilyStore({
       name: "Test Family",
       members: [{ id: "1", name: "Alice", color: "coral" }],
@@ -570,5 +578,113 @@ describe("ListsView hub", () => {
     expect(
       await screen.findByRole("button", { name: /new list/i }),
     ).toBeInTheDocument();
+  });
+
+  describe("ListsView large screen (two-pane)", () => {
+    beforeEach(() => {
+      viewport.isLargeScreen = true;
+    });
+
+    it("renders the rail and first list detail together without a back action", async () => {
+      seedMockLists([groceryList, todoList]);
+
+      render(<ListsView />);
+
+      const rail = await screen.findByRole("navigation", { name: "Lists" });
+      expect(
+        within(rail).getByRole("button", { name: /Trader Joe's Run/i }),
+      ).toBeInTheDocument();
+      expect(
+        within(rail).getByRole("button", { name: /Weekend Reset/i }),
+      ).toBeInTheDocument();
+      expect(
+        await screen.findByRole("heading", { name: "Trader Joe's Run" }),
+      ).toBeInTheDocument();
+      expect(
+        screen.queryByRole("button", { name: "Back to Lists" }),
+      ).not.toBeInTheDocument();
+    });
+
+    it("selects a different detail without removing the rail or registering back navigation", async () => {
+      seedMockLists([groceryList, todoList]);
+
+      const { user } = renderWithUser(<ListsView />);
+      const rail = await screen.findByRole("navigation", { name: "Lists" });
+
+      await user.click(
+        within(rail).getByRole("button", { name: /Weekend Reset/i }),
+      );
+
+      expect(
+        await screen.findByRole("heading", { name: "Weekend Reset" }),
+      ).toBeInTheDocument();
+      expect(
+        within(rail).getByRole("button", { name: /Trader Joe's Run/i }),
+      ).toBeInTheDocument();
+      expect(useBackStack.getState().stack).toHaveLength(0);
+    });
+
+    it("honors a pending list detail intent", async () => {
+      seedMockLists([groceryList, todoList]);
+      act(() => {
+        useAppStore.getState().openListDetail(todoList.id);
+      });
+
+      render(<ListsView />);
+
+      expect(
+        await screen.findByRole("heading", { name: "Weekend Reset" }),
+      ).toBeInTheDocument();
+    });
+
+    it("creates a list and selects it in the detail pane", async () => {
+      seedMockLists([groceryList]);
+
+      const { user } = renderWithUser(<ListsView />);
+      await user.click(await screen.findByRole("button", { name: "New List" }));
+      await typeAndWait(user, screen.getByLabelText("List name"), "Target Run");
+      await user.click(screen.getByRole("button", { name: "Create list" }));
+
+      expect(
+        await screen.findByRole("heading", { name: "Target Run" }),
+      ).toBeInTheDocument();
+    });
+
+    it("falls back to the first list when the selected list disappears", async () => {
+      seedMockLists([groceryList, todoList]);
+
+      const { user } = renderWithUser(<ListsView />);
+      const rail = await screen.findByRole("navigation", { name: "Lists" });
+      await user.click(
+        within(rail).getByRole("button", { name: /Weekend Reset/i }),
+      );
+      expect(
+        await screen.findByRole("heading", { name: "Weekend Reset" }),
+      ).toBeInTheDocument();
+
+      act(() => {
+        seedMockLists([groceryList]);
+      });
+      await act(async () => {
+        await getTestQueryClient().refetchQueries({
+          queryKey: listsKeys.hub(),
+        });
+      });
+
+      expect(
+        await screen.findByRole("heading", { name: "Trader Joe's Run" }),
+      ).toBeInTheDocument();
+    });
+
+    it("shows the empty state without a lists rail when no lists exist", async () => {
+      seedMockLists([]);
+
+      render(<ListsView />);
+
+      expect(await screen.findByText("No lists yet")).toBeInTheDocument();
+      expect(
+        screen.queryByRole("navigation", { name: "Lists" }),
+      ).not.toBeInTheDocument();
+    });
   });
 });
