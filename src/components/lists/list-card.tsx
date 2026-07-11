@@ -1,37 +1,12 @@
-import { ClipboardList, ListTodo, ShoppingCart } from "lucide-react";
 import { usePressable } from "@/hooks";
-import type { ListKind, ListSummary } from "@/lib/types";
+import type { ListSummary } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { kindMeta } from "./list-kind-meta";
 
 interface ListCardProps {
   list: ListSummary;
   onOpen: () => void;
 }
-
-const kindMeta: Record<
-  ListKind,
-  {
-    label: string;
-    icon: typeof ShoppingCart;
-    className: string;
-  }
-> = {
-  grocery: {
-    label: "Grocery",
-    icon: ShoppingCart,
-    className: "bg-emerald-100 text-emerald-700",
-  },
-  "to-do": {
-    label: "To-do",
-    icon: ListTodo,
-    className: "bg-sky-100 text-sky-700",
-  },
-  general: {
-    label: "General",
-    icon: ClipboardList,
-    className: "bg-amber-100 text-amber-700",
-  },
-};
 
 export function ListCard({ list, onOpen }: ListCardProps) {
   const pressable = usePressable();
