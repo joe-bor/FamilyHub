@@ -37,6 +37,8 @@ interface ListDetailViewProps {
   preferences: ListPreferences | null;
   preferencesStatus: "ready" | "loading" | "error" | "unavailable";
   onBack: () => void;
+  /** Hide the "Back to Lists" button (two-pane large-screen has no screen to back out of). */
+  showBackButton?: boolean;
 }
 
 export function ListDetailView({
@@ -44,6 +46,7 @@ export function ListDetailView({
   preferences,
   preferencesStatus,
   onBack,
+  showBackButton = true,
 }: ListDetailViewProps) {
   const listQuery = useList(listId);
   const updateList = useUpdateList(listId);
@@ -107,10 +110,12 @@ export function ListDetailView({
   if (!list) {
     return (
       <div className="flex-1 p-4">
-        <Button type="button" variant="ghost" onClick={onBack}>
-          <ArrowLeft className="h-4 w-4" />
-          Back to Lists
-        </Button>
+        {showBackButton && (
+          <Button type="button" variant="ghost" onClick={onBack}>
+            <ArrowLeft className="h-4 w-4" />
+            Back to Lists
+          </Button>
+        )}
         <p className="mt-6 text-sm text-muted-foreground">
           This list could not be loaded.
         </p>
@@ -161,15 +166,17 @@ export function ListDetailView({
         }}
       >
         <div className="mx-auto max-w-2xl space-y-4">
-          <Button
-            type="button"
-            variant="ghost"
-            onClick={onBack}
-            className="px-0"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Back to Lists
-          </Button>
+          {showBackButton && (
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={onBack}
+              className="px-0"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Back to Lists
+            </Button>
+          )}
 
           <div className="rounded-lg border border-border bg-card p-4 shadow-sm">
             <div className="flex items-start justify-between gap-3">
