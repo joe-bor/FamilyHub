@@ -13,6 +13,8 @@ import { Button } from "../ui/button";
 import { ListCard } from "./list-card";
 import { ListCreateSheet } from "./list-create-sheet";
 import { ListDetailView } from "./list-detail-view";
+import { ListsEmptyState } from "./lists-empty-state";
+import { ListsErrorState } from "./lists-error-state";
 
 export function ListsMobileView() {
   const isMobile = useIsMobile();
@@ -76,22 +78,7 @@ export function ListsMobileView() {
               </div>
             )}
 
-            <div className="rounded-lg border border-border bg-card p-6 shadow-sm">
-              <h3 className="text-lg font-semibold text-foreground">
-                Lists could not be loaded
-              </h3>
-              <p className="mt-2 text-sm leading-5 text-muted-foreground">
-                Check your connection and try again.
-              </p>
-              <Button
-                type="button"
-                variant="outline"
-                className="mt-4"
-                onClick={() => lists.refetch()}
-              >
-                Try again
-              </Button>
-            </div>
+            <ListsErrorState onRetry={() => lists.refetch()} />
           </div>
         </div>
       );
@@ -126,23 +113,7 @@ export function ListsMobileView() {
           )}
 
           {summaries.length === 0 ? (
-            <div className="rounded-lg border border-dashed border-border bg-card p-6 text-center shadow-sm">
-              <h3 className="text-lg font-semibold text-foreground">
-                No lists yet
-              </h3>
-              <p className="mx-auto mt-2 max-w-sm text-sm leading-5 text-muted-foreground">
-                Create the first shared family list for groceries, errands, or
-                anything else worth keeping together.
-              </p>
-              <Button
-                type="button"
-                className="mt-4"
-                onClick={() => setCreateOpen(true)}
-              >
-                <Plus className="h-4 w-4" />
-                Create first list
-              </Button>
-            </div>
+            <ListsEmptyState onCreate={() => setCreateOpen(true)} />
           ) : (
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
               {summaries.map((list) => (
