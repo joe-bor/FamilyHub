@@ -93,3 +93,24 @@ describe("ListOptionsControls — Manage categories entry", () => {
     ).not.toBeInTheDocument();
   });
 });
+
+describe("ListOptionsControls — large-screen touch targets", () => {
+  it("sizes every interactive option control to at least 44px at lg", () => {
+    renderControls({ clearCompletedDisabled: false });
+
+    expect(screen.getByLabelText("Categories")).toHaveClass("lg:min-h-11");
+    expect(screen.getByLabelText("Completed items")).toHaveClass("lg:min-h-11");
+    expect(
+      screen.getByRole("button", { name: /manage categories/i }),
+    ).toHaveClass("lg:min-h-11");
+
+    const familyDefaultCheckbox = screen.getByRole("checkbox", {
+      name: /show completed by default/i,
+    });
+    expect(familyDefaultCheckbox.closest("label")).toHaveClass("lg:min-h-11");
+
+    expect(
+      screen.getByRole("button", { name: /remove all completed/i }),
+    ).toHaveClass("lg:min-h-11");
+  });
+});

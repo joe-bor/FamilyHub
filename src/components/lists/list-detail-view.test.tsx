@@ -221,6 +221,14 @@ describe("ListDetailView options placement", () => {
       expect(addItem[0]).not.toHaveClass("fixed");
     });
 
+    it("gives the inline Add item button a 44px large-screen target", async () => {
+      renderDetail();
+
+      expect(
+        await screen.findByRole("button", { name: "Add item" }),
+      ).toHaveClass("lg:min-h-11");
+    });
+
     it("shows category control for a General list when it has categories", async () => {
       const generalList: ListDetail = {
         id: LIST_ID,
