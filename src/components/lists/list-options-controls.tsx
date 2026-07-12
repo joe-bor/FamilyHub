@@ -74,7 +74,7 @@ export function ListOptionsControls({
                 showCompletedOverride: list.showCompletedOverride,
               })
             }
-            className="h-10 w-full rounded-lg border border-input bg-background px-3 text-[15px] leading-5 shadow-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className="h-10 w-full rounded-lg border border-input bg-background px-3 text-[15px] leading-5 shadow-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring lg:min-h-11"
           >
             <option value="grouped" disabled={list.categories.length === 0}>
               Show categories
@@ -96,6 +96,7 @@ export function ListOptionsControls({
                 onClick={onManageCategories}
                 disabled={!categoriesOnline}
                 aria-label="Manage categories"
+                className="lg:min-h-11"
               >
                 <Settings className="h-4 w-4" />
                 Manage categories
@@ -124,7 +125,7 @@ export function ListOptionsControls({
                     : event.target.value === "show",
               })
             }
-            className="h-10 w-full rounded-lg border border-input bg-background px-3 text-[15px] leading-5 shadow-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className="h-10 w-full rounded-lg border border-input bg-background px-3 text-[15px] leading-5 shadow-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring lg:min-h-11"
           >
             <option value="family-default">
               Family default (
@@ -154,7 +155,7 @@ export function ListOptionsControls({
       >
         <label
           htmlFor="family-completed-default"
-          className="flex items-center gap-2 text-sm font-medium text-foreground"
+          className="flex items-center gap-2 text-sm font-medium text-foreground lg:min-h-11"
         >
           <input
             id="family-completed-default"
@@ -175,7 +176,7 @@ export function ListOptionsControls({
           variant="outline"
           onClick={onClearCompleted}
           disabled={clearCompletedDisabled}
-          className={cn(fullWidthClearButton && "w-full")}
+          className={cn("lg:min-h-11", fullWidthClearButton && "w-full")}
         >
           <Trash2 className="h-4 w-4" />
           Remove all completed

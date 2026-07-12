@@ -39,6 +39,29 @@ describe("ListItemRow haptics", () => {
   });
 });
 
+describe("ListItemRow large-screen touch targets", () => {
+  it("gives the toggle and item action buttons 44px targets at lg", () => {
+    render(
+      <ListItemRow
+        item={baseItem}
+        onToggle={vi.fn()}
+        onEdit={vi.fn()}
+        onDelete={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByRole("button", { name: /milk/i })).toHaveClass(
+      "lg:min-h-11",
+    );
+    for (const name of [/edit/i, /delete/i]) {
+      expect(screen.getByRole("button", { name })).toHaveClass(
+        "lg:min-h-11",
+        "lg:min-w-11",
+      );
+    }
+  });
+});
+
 // Drives the REAL haptics.success() (no spy) through to navigator.vibrate on a
 // capable + opted-in device. This is the regression guard for the "no
 // double-pulse" invariant: the raw <button> emits success() with no preceding

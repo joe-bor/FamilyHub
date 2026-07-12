@@ -193,6 +193,7 @@ export function ListDetailView({
                   <Button
                     type="button"
                     onClick={() => setItemSheet({ mode: "create", item: null })}
+                    className="lg:min-h-11"
                   >
                     <Plus className="h-4 w-4" />
                     Add item
