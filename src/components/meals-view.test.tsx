@@ -41,6 +41,7 @@ vi.mock("@/hooks", async (importOriginal) => {
   return {
     ...actual,
     useMediaQuery: () => viewport.showGrid,
+    useIsLargeScreen: () => viewport.showGrid,
   };
 });
 
@@ -1067,6 +1068,32 @@ describe("MealsView", () => {
     expect(
       screen.getByRole("columnheader", { name: "Sunday" }),
     ).toBeInTheDocument();
+  });
+
+  it("merges board actions into the large-screen week header", async () => {
+    viewport.showGrid = true;
+    seedMockMealsBoard(createEmptyMealsBoard());
+
+    renderWithUser(<MealsView />);
+
+    const fillEmptySlots = await screen.findByRole("button", {
+      name: "Fill empty slots",
+    });
+    expect(
+      screen.getAllByRole("button", { name: "Fill empty slots" }),
+    ).toHaveLength(1);
+    expect(fillEmptySlots.closest('[data-slot="week-header"]')).not.toBeNull();
+  });
+
+  it("keeps board actions outside the week header below the large-screen breakpoint", async () => {
+    seedMockMealsBoard(createEmptyMealsBoard());
+
+    renderWithUser(<MealsView />);
+
+    const fillEmptySlots = await screen.findByRole("button", {
+      name: "Fill empty slots",
+    });
+    expect(fillEmptySlots.closest('[data-slot="week-header"]')).toBeNull();
   });
 
   it("prompts when moving into an occupied slot and move clears the source", async () => {

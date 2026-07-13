@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useMealsBoard, useRecipes, useSaveMealPlan } from "@/api";
 import { ApiException } from "@/api/client";
 import { AddIngredientsContainer } from "@/components/meals/add-ingredients-container";
+import { MealBoardActions } from "@/components/meals/meal-board-actions";
 import {
   MealComposerSheet,
   type MealSlotSelection,
@@ -26,7 +27,7 @@ import {
 import { formatWeekRange, WeekHeader } from "@/components/meals/week-header";
 import { OfflineUnavailable } from "@/components/shared";
 import { Button } from "@/components/ui/button";
-import { useMediaQuery } from "@/hooks";
+import { useIsLargeScreen } from "@/hooks";
 import {
   formatLocalDate,
   getWeekStartSunday,
@@ -171,7 +172,7 @@ export function MealsView() {
     (state) => state.setIdleReturnBlocked,
   );
   const readOnly = isPastWeek(visibleWeekStartDate);
-  const showGrid = useMediaQuery("(min-width: 1024px)");
+  const isLargeScreen = useIsLargeScreen();
   const persistedBoard = board.data?.data ?? null;
   // "Add ingredients" is offered only when the visible, editable week has at
   // least one recipe-backed planned meal to extract ingredients from.
@@ -532,12 +533,22 @@ export function MealsView() {
     setSelectedSlot({ ...slot, intent: "extra" });
   }
 
+  const boardActions =
+    persistedBoard && !readOnly ? (
+      <MealBoardActions
+        canAddIngredients={canAddIngredients}
+        onAddIngredients={() => setAddIngredientsOpen(true)}
+        onFillEmptySlots={() => setScopeOpen(true)}
+      />
+    ) : null;
+
   return (
     <section className="flex-1 overflow-y-auto p-4 sm:p-6">
-      <div className="mx-auto flex max-w-5xl flex-col gap-4">
+      <div className="mx-auto flex max-w-[1600px] flex-col gap-4">
         <WeekHeader
           weekStartDate={visibleWeekStartDate}
           readOnly={readOnly}
+          actions={isLargeScreen ? boardActions : undefined}
           onWeekChange={(weekStartDate) => {
             setVisibleWeekStartDate(weekStartDate);
             setSelectedSlot(null);
@@ -547,25 +558,8 @@ export function MealsView() {
           }}
         />
 
-        {persistedBoard && !readOnly ? (
-          <div className="flex flex-wrap justify-end gap-2">
-            {canAddIngredients ? (
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setAddIngredientsOpen(true)}
-              >
-                Add ingredients
-              </Button>
-            ) : null}
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setScopeOpen(true)}
-            >
-              Fill empty slots
-            </Button>
-          </div>
+        {!isLargeScreen && boardActions ? (
+          <div className="flex flex-wrap justify-end gap-2">{boardActions}</div>
         ) : null}
 
         {placementRecipe ? (
@@ -609,7 +603,7 @@ export function MealsView() {
           <OfflineUnavailable label="meals" />
         ) : null}
 
-        {displayBoard && !showGrid ? (
+        {displayBoard && !isLargeScreen ? (
           <div className="space-y-4">
             {displayBoard.days.map((day) => (
               <MealDayCard
@@ -625,7 +619,7 @@ export function MealsView() {
           </div>
         ) : null}
 
-        {displayBoard && showGrid ? (
+        {displayBoard && isLargeScreen ? (
           <MealGrid
             board={displayBoard}
             readOnly={readOnly}
