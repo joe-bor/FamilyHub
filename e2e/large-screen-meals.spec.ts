@@ -257,7 +257,7 @@ test.describe("Large-screen Meals", () => {
     const recipe = await createRecipe(request, fullWeek.token, {
       title: "Sheet Pan Chicken",
       ingredients: ["1 lb chicken"],
-      instructions: ["Roast"],
+      instructions: ["Roast until cooked through."],
       tags: ["Dinner"],
       favorite: false,
     });
@@ -375,6 +375,11 @@ test.describe("Large-screen Meals", () => {
     expect(longTitleMetrics.height).toBeCloseTo(longTitleMetrics.lineHeight, 4);
 
     for (const width of SCREENSHOT_WIDTHS) {
+      await expect(
+        page
+          .getByRole("table", { name: "Weekly meals" })
+          .locator('th[scope="col"][aria-current="date"]'),
+      ).toHaveCount(1);
       await attachBoardScreenshot(page, "long-names", width);
     }
 
