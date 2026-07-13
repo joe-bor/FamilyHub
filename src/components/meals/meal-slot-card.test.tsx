@@ -1,7 +1,7 @@
 import type { ComponentProps } from "react";
 import { describe, expect, it, vi } from "vitest";
 import type { MealSlot, MealSlotEntry } from "@/lib/types";
-import { render, screen } from "@/test/test-utils";
+import { fireEvent, render, screen } from "@/test/test-utils";
 import type { MealPlanningDraft } from "./meal-planning-session";
 import { MealSlotCard } from "./meal-slot-card";
 
@@ -121,5 +121,51 @@ describe("MealSlotCard accessible label", () => {
     expect(
       screen.getByRole("button", { name: "Open dinner, Friday: extras" }),
     ).toBeInTheDocument();
+  });
+});
+
+describe("MealSlotCard image fallback", () => {
+  function primaryWithImage(imageUrl: string): MealSlotEntry {
+    return {
+      id: "primary-1",
+      role: "primary",
+      sourceType: "recipe",
+      recipeId: "r1",
+      title: "Adobo",
+      imageUrl,
+      note: null,
+    };
+  }
+
+  it("re-shows the image after the source changes following a load error", () => {
+    const { container, rerender } = render(
+      <MealSlotCard
+        slot={slot({ primary: primaryWithImage("https://img/a.jpg") })}
+        readOnly={false}
+        dayLabel="Friday"
+        onSelectSlot={vi.fn()}
+      />,
+    );
+
+    const firstImage = container.querySelector("img");
+    expect(firstImage).toHaveAttribute("src", "https://img/a.jpg");
+
+    // The first image fails to load and falls back to the placeholder tile.
+    fireEvent.error(firstImage as HTMLImageElement);
+    expect(container.querySelector("img")).toBeNull();
+
+    // A different meal (new image URL) must render, not stay stuck on fallback.
+    rerender(
+      <MealSlotCard
+        slot={slot({ primary: primaryWithImage("https://img/b.jpg") })}
+        readOnly={false}
+        dayLabel="Friday"
+        onSelectSlot={vi.fn()}
+      />,
+    );
+
+    const nextImage = container.querySelector("img");
+    expect(nextImage).not.toBeNull();
+    expect(nextImage).toHaveAttribute("src", "https://img/b.jpg");
   });
 });
