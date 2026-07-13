@@ -1,5 +1,6 @@
-import { parseLocalDate } from "@/lib/time-utils";
+import { formatLocalDate, parseLocalDate } from "@/lib/time-utils";
 import type { MealBoard, MealSlot } from "@/lib/types";
+import { cn } from "@/lib/utils";
 import type {
   MealPlanningDraft,
   MealPlanningTarget,
@@ -7,7 +8,13 @@ import type {
 import { MealSlotCard } from "./meal-slot-card";
 import { formatMealType } from "./meal-type-utils";
 
-function dayName(date: string) {
+function shortWeekday(date: string) {
+  return parseLocalDate(date).toLocaleDateString("en-US", {
+    weekday: "short",
+  });
+}
+
+function fullWeekday(date: string) {
   return parseLocalDate(date).toLocaleDateString("en-US", {
     weekday: "long",
   });
@@ -32,11 +39,13 @@ export function MealGrid({
   planningTarget = null,
   onSelectSlot,
 }: MealGridProps) {
+  const todayIso = formatLocalDate(new Date());
+
   return (
     <div className="overflow-x-auto">
       <table
         aria-label="Weekly meals"
-        className="min-w-[960px] table-fixed overflow-hidden rounded-lg border border-border"
+        className="w-full table-fixed overflow-hidden rounded-lg border border-border"
       >
         <thead>
           <tr>
@@ -44,15 +53,43 @@ export function MealGrid({
               scope="col"
               className="w-[120px] border-b border-r border-border bg-muted/40 p-3"
             />
-            {board.days.map((day) => (
-              <th
-                key={day.date}
-                scope="col"
-                className="border-b border-r border-border bg-muted/40 p-3 text-center text-sm font-semibold text-foreground last:border-r-0"
-              >
-                {dayName(day.date)}
-              </th>
-            ))}
+            {board.days.map((day) => {
+              const isToday = day.date === todayIso;
+
+              return (
+                <th
+                  key={day.date}
+                  scope="col"
+                  aria-label={fullWeekday(day.date)}
+                  aria-current={isToday ? "date" : undefined}
+                  className={cn(
+                    "border-b border-r border-border p-2 text-center text-sm font-semibold text-foreground last:border-r-0",
+                    isToday ? "bg-primary/10" : "bg-muted/40",
+                  )}
+                >
+                  <span className="flex items-center justify-center gap-1.5">
+                    <span
+                      className={cn(
+                        "text-xs font-semibold uppercase",
+                        isToday ? "text-primary" : "text-muted-foreground",
+                      )}
+                    >
+                      {shortWeekday(day.date)}
+                    </span>
+                    <span
+                      className={cn(
+                        "flex h-6 min-w-6 items-center justify-center rounded-full px-1 text-sm",
+                        isToday
+                          ? "bg-primary text-primary-foreground"
+                          : "text-foreground",
+                      )}
+                    >
+                      {parseLocalDate(day.date).getDate()}
+                    </span>
+                  </span>
+                </th>
+              );
+            })}
           </tr>
         </thead>
         <tbody>
@@ -73,7 +110,10 @@ export function MealGrid({
                 return (
                   <td
                     key={`${day.date}-${mealType}`}
-                    className="border-b border-r border-border p-2 align-top last:border-r-0"
+                    className={cn(
+                      "border-b border-r border-border p-2 align-top last:border-r-0",
+                      day.date === todayIso ? "bg-primary/5" : null,
+                    )}
                   >
                     <MealSlotCard
                       slot={slot}
@@ -90,6 +130,7 @@ export function MealGrid({
                         planningTarget?.dayIndex === slot.dayIndex &&
                         planningTarget.mealType === slot.mealType
                       }
+                      dayLabel={fullWeekday(day.date)}
                       onSelectSlot={onSelectSlot}
                     />
                   </td>

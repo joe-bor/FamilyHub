@@ -1070,6 +1070,59 @@ describe("MealsView", () => {
     ).toBeInTheDocument();
   });
 
+  it("renders one-line weekday headers while retaining full weekday names", async () => {
+    viewport.showGrid = true;
+    seedMockMealsBoard(createEmptyMealsBoard());
+
+    renderWithUser(<MealsView />);
+
+    const table = await screen.findByRole("table", { name: "Weekly meals" });
+    expect(within(table).getByText("Wed")).toBeVisible();
+    expect(within(table).queryByText("Wednesday")).not.toBeInTheDocument();
+    expect(
+      within(table).getByRole("columnheader", { name: "Sunday" }),
+    ).toBeInTheDocument();
+  });
+
+  it("highlights today in the weekday header", async () => {
+    viewport.showGrid = true;
+    seedMockMealsBoard(createEmptyMealsBoard());
+
+    renderWithUser(<MealsView />);
+
+    const table = await screen.findByRole("table", { name: "Weekly meals" });
+    const todayHeader = within(table).getByRole("columnheader", {
+      name: "Wednesday",
+    });
+    expect(todayHeader).toHaveAttribute("aria-label", "Wednesday");
+    expect(todayHeader).toHaveAttribute("aria-current", "date");
+    expect(
+      within(table)
+        .getAllByRole("columnheader")
+        .filter((header) => header.getAttribute("aria-current") === "date"),
+    ).toHaveLength(1);
+  });
+
+  it("uses full weekday context in large-screen meal slot names", async () => {
+    viewport.showGrid = true;
+    seedMockMealsBoard(
+      withOccupiedMealSlot(
+        createEmptyMealsBoard(),
+        3,
+        "dinner",
+        "Turbong Manok",
+      ),
+    );
+
+    renderWithUser(<MealsView />);
+
+    expect(
+      await screen.findByRole("button", {
+        name: "Open dinner, Wednesday: Turbong Manok",
+      }),
+    ).toBeInTheDocument();
+  });
+
   it("merges board actions into the large-screen week header", async () => {
     viewport.showGrid = true;
     seedMockMealsBoard(createEmptyMealsBoard());

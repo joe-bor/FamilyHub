@@ -11,6 +11,7 @@ interface MealSlotCardProps {
   pendingRecipeId?: string | null;
   draft?: MealPlanningDraft | null;
   isPlanningTarget?: boolean;
+  dayLabel?: string;
   onSelectSlot: (slot: MealSlot) => void;
 }
 
@@ -20,6 +21,7 @@ export function MealSlotCard({
   pendingRecipeId = null,
   draft = null,
   isPlanningTarget = false,
+  dayLabel,
   onSelectSlot,
 }: MealSlotCardProps) {
   const [imgFailed, setImgFailed] = useState(false);
@@ -34,6 +36,7 @@ export function MealSlotCard({
   const hasExtras = !draft && slot.extras.length > 0;
   const hasExtrasOnly = !primary && hasExtras;
   const firstExtraTitle = slot.extras[0]?.title;
+  const dayContext = dayLabel ? `, ${dayLabel}` : "";
 
   if (primary || hasExtrasOnly) {
     return (
@@ -49,12 +52,12 @@ export function MealSlotCard({
         aria-current={isPlanningTarget ? "true" : undefined}
         aria-label={
           draft
-            ? `Draft ${slot.mealType}: ${draft.displayTitle}`
+            ? `Draft ${slot.mealType}${dayContext}: ${draft.displayTitle}`
             : primary
-              ? `Open ${slot.mealType}: ${primary.title}`
+              ? `Open ${slot.mealType}${dayContext}: ${primary.title}`
               : firstExtraTitle
-                ? `Open ${slot.mealType}: extras - ${firstExtraTitle}`
-                : `Open ${slot.mealType}: extras`
+                ? `Open ${slot.mealType}${dayContext}: extras - ${firstExtraTitle}`
+                : `Open ${slot.mealType}${dayContext}: extras`
         }
         onClick={() => onSelectSlot(slot)}
       >
@@ -142,8 +145,8 @@ export function MealSlotCard({
       aria-current={isPlanningTarget ? "true" : undefined}
       aria-label={
         pendingRecipeId
-          ? `Add recipe to ${slot.mealType}`
-          : `Add ${slot.mealType} meal`
+          ? `Add recipe to ${slot.mealType}${dayContext}`
+          : `Add ${slot.mealType}${dayContext} meal`
       }
       onClick={() => onSelectSlot(slot)}
     >
