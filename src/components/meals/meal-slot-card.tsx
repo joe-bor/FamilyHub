@@ -3,6 +3,7 @@ import { useState } from "react";
 import type { MealSlot } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import type { MealPlanningDraft } from "./meal-planning-session";
+import { emptySlotLabel, filledSlotLabel } from "./meal-slot-labels";
 import { formatMealType } from "./meal-type-utils";
 
 interface MealSlotCardProps {
@@ -36,7 +37,6 @@ export function MealSlotCard({
   const hasExtras = !draft && slot.extras.length > 0;
   const hasExtrasOnly = !primary && hasExtras;
   const firstExtraTitle = slot.extras[0]?.title;
-  const dayContext = dayLabel ? `, ${dayLabel}` : "";
 
   if (primary || hasExtrasOnly) {
     return (
@@ -50,15 +50,13 @@ export function MealSlotCard({
             : null,
         )}
         aria-current={isPlanningTarget ? "true" : undefined}
-        aria-label={
-          draft
-            ? `Draft ${slot.mealType}${dayContext}: ${draft.displayTitle}`
-            : primary
-              ? `Open ${slot.mealType}${dayContext}: ${primary.title}`
-              : firstExtraTitle
-                ? `Open ${slot.mealType}${dayContext}: extras - ${firstExtraTitle}`
-                : `Open ${slot.mealType}${dayContext}: extras`
-        }
+        aria-label={filledSlotLabel({
+          mealType: slot.mealType,
+          dayLabel,
+          draftTitle: draft ? draft.displayTitle : null,
+          primaryTitle: !draft && slot.primary ? slot.primary.title : null,
+          firstExtraTitle: firstExtraTitle ?? null,
+        })}
         onClick={() => onSelectSlot(slot)}
       >
         <div className="flex items-start gap-3">
@@ -143,11 +141,11 @@ export function MealSlotCard({
           : null,
       )}
       aria-current={isPlanningTarget ? "true" : undefined}
-      aria-label={
-        pendingRecipeId
-          ? `Add recipe to ${slot.mealType}${dayContext}`
-          : `Add ${slot.mealType} meal${dayContext}`
-      }
+      aria-label={emptySlotLabel({
+        mealType: slot.mealType,
+        dayLabel,
+        hasPendingRecipe: Boolean(pendingRecipeId),
+      })}
       onClick={() => onSelectSlot(slot)}
     >
       <div>
