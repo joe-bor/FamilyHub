@@ -72,27 +72,48 @@ async function authenticateAndOpenMeals(
   registration: Awaited<ReturnType<typeof registerFamily>>,
 ) {
   await clearStorage(page);
-  await page.evaluate(
-    () =>
-      new Promise<void>((resolve) => {
-        const request = indexedDB.open("family-hub-offline");
-        request.onerror = () => resolve();
-        request.onupgradeneeded = () => resolve();
-        request.onsuccess = () => {
-          try {
-            const transaction = request.result.transaction(
-              "query-cache",
-              "readwrite",
-            );
-            transaction.objectStore("query-cache").clear();
-            transaction.oncomplete = () => resolve();
-            transaction.onerror = () => resolve();
-          } catch {
+  await page.evaluate(async () => {
+    if (!indexedDB.databases) return;
+
+    let databases: IDBDatabaseInfo[];
+    try {
+      databases = await indexedDB.databases();
+    } catch {
+      return;
+    }
+    if (!databases.some((database) => database.name === "family-hub-offline")) {
+      return;
+    }
+
+    await new Promise<void>((resolve) => {
+      const request = indexedDB.open("family-hub-offline");
+      request.onerror = () => resolve();
+      request.onblocked = () => resolve();
+      request.onsuccess = () => {
+        const database = request.result;
+        if (!database.objectStoreNames.contains("query-cache")) {
+          database.close();
+          resolve();
+          return;
+        }
+
+        try {
+          const transaction = database.transaction("query-cache", "readwrite");
+          transaction.objectStore("query-cache").clear();
+          const finish = () => {
+            database.close();
             resolve();
-          }
-        };
-      }),
-  );
+          };
+          transaction.oncomplete = finish;
+          transaction.onerror = finish;
+          transaction.onabort = finish;
+        } catch {
+          database.close();
+          resolve();
+        }
+      };
+    });
+  });
   await seedBrowserAuth(page, registration);
   await page.reload();
   await waitForHydration(page);
