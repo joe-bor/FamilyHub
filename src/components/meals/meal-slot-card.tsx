@@ -25,7 +25,7 @@ export function MealSlotCard({
   dayLabel,
   onSelectSlot,
 }: MealSlotCardProps) {
-  const [imgFailed, setImgFailed] = useState(false);
+  const [failedImageUrl, setFailedImageUrl] = useState<string | null>(null);
   const label = formatMealType(slot.mealType);
   const primary = draft
     ? {
@@ -34,6 +34,9 @@ export function MealSlotCard({
         note: draft.displayNote,
       }
     : slot.primary;
+  // Key the load-error fallback on the URL, not a sticky boolean, so a new
+  // image (edited meal / different draft) recovers instead of staying blanked.
+  const imageUrl = primary?.imageUrl ?? null;
   const hasExtras = !draft && slot.extras.length > 0;
   const hasExtrasOnly = !primary && hasExtras;
   const firstExtraTitle = slot.extras[0]?.title;
@@ -60,12 +63,12 @@ export function MealSlotCard({
         onClick={() => onSelectSlot(slot)}
       >
         <div className="flex items-start gap-3">
-          {primary?.imageUrl && !imgFailed ? (
+          {imageUrl && imageUrl !== failedImageUrl ? (
             <img
-              src={primary.imageUrl}
+              src={imageUrl}
               alt=""
               className="h-14 w-14 rounded-md object-cover"
-              onError={() => setImgFailed(true)}
+              onError={() => setFailedImageUrl(imageUrl)}
             />
           ) : (
             <div className="flex h-14 w-14 items-center justify-center rounded-md bg-muted text-xs font-semibold text-muted-foreground">
