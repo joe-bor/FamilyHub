@@ -118,7 +118,7 @@ export function MealGridCard({
               {slot.extras.slice(0, 2).map((extra) => (
                 <span
                   key={extra.id}
-                  className="min-w-0 flex-1 truncate rounded-full bg-secondary px-2 py-0.5 text-xs font-medium text-secondary-foreground"
+                  className="min-w-0 flex-initial truncate rounded-full bg-secondary px-2 py-0.5 text-xs font-medium text-secondary-foreground"
                 >
                   {extra.title}
                 </span>
