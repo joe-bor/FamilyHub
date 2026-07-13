@@ -543,8 +543,8 @@ export function MealsView() {
     ) : null;
 
   return (
-    <section className="flex-1 overflow-y-auto p-4 sm:p-6">
-      <div className="mx-auto flex max-w-[1600px] flex-col gap-4">
+    <section className="flex flex-1 flex-col overflow-y-auto p-4 sm:p-6">
+      <div className="mx-auto flex w-full max-w-[1600px] flex-1 flex-col gap-4">
         <WeekHeader
           weekStartDate={visibleWeekStartDate}
           readOnly={readOnly}
