@@ -129,6 +129,12 @@ export function MealGrid({
               if (!slot) return null;
 
               return (
+                // [contain:size]: the cell must take its height from the grid
+                // row (flex-distributed, floored at 170px) rather than its
+                // content. Without it the implicit auto row grows to the
+                // tallest card, breaking the equal-height fill and the row
+                // floor; align-content: stretch (the default) then re-expands
+                // the size-contained track to the row height. Don't remove it.
                 <div
                   key={`${day.date}-${mealType}`}
                   role="cell"
