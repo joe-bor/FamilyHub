@@ -375,6 +375,10 @@ test.describe("Large-screen Meals", () => {
     expect(longTitleMetrics.height).toBeCloseTo(longTitleMetrics.lineHeight, 4);
 
     for (const width of SCREENSHOT_WIDTHS) {
+      await page.setViewportSize({
+        width,
+        height: width === 1024 ? 768 : 900,
+      });
       await expect(
         page
           .getByRole("table", { name: "Weekly meals" })
