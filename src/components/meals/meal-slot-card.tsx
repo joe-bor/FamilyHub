@@ -75,7 +75,7 @@ export function MealSlotCard({
             </div>
           )}
           <div className="min-w-0 flex-1">
-            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            <p className="truncate text-xs font-semibold uppercase tracking-wide text-muted-foreground">
               {label}
             </p>
             {draft ? (
