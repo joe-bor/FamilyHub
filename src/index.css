@@ -34,6 +34,15 @@
   --color-pink: oklch(0.551 0.131 354);
   --color-orange: oklch(0.575 0.119 56);
 
+  /* Meal-type accents: soft banner tints + AA-contrast glyph/label foregrounds.
+     Used only where a meal photo is absent (placeholder band, rail label). */
+  --meal-breakfast: oklch(0.93 0.05 80);
+  --meal-breakfast-foreground: oklch(0.52 0.11 70);
+  --meal-lunch: oklch(0.93 0.05 150);
+  --meal-lunch-foreground: oklch(0.48 0.1 150);
+  --meal-dinner: oklch(0.93 0.05 285);
+  --meal-dinner-foreground: oklch(0.5 0.13 285);
+
   --radius: 0.75rem;
   --sidebar: oklch(1 0 0);
   --sidebar-foreground: oklch(0.25 0.02 250);
@@ -74,6 +83,12 @@
   --color-yellow: var(--color-yellow);
   --color-pink: var(--color-pink);
   --color-orange: var(--color-orange);
+  --color-meal-breakfast: var(--meal-breakfast);
+  --color-meal-breakfast-foreground: var(--meal-breakfast-foreground);
+  --color-meal-lunch: var(--meal-lunch);
+  --color-meal-lunch-foreground: var(--meal-lunch-foreground);
+  --color-meal-dinner: var(--meal-dinner);
+  --color-meal-dinner-foreground: var(--meal-dinner-foreground);
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
