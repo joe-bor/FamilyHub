@@ -146,7 +146,7 @@ export function MealSlotCard({
       aria-label={
         pendingRecipeId
           ? `Add recipe to ${slot.mealType}${dayContext}`
-          : `Add ${slot.mealType}${dayContext} meal`
+          : `Add ${slot.mealType} meal${dayContext}`
       }
       onClick={() => onSelectSlot(slot)}
     >

@@ -1123,6 +1123,19 @@ describe("MealsView", () => {
     ).toBeInTheDocument();
   });
 
+  it("uses weekday context after the empty meal action label on large screens", async () => {
+    viewport.showGrid = true;
+    seedMockMealsBoard(createEmptyMealsBoard());
+
+    renderWithUser(<MealsView />);
+
+    expect(
+      await screen.findByRole("button", {
+        name: "Add breakfast meal, Sunday",
+      }),
+    ).toBeInTheDocument();
+  });
+
   it("merges board actions into the large-screen week header", async () => {
     viewport.showGrid = true;
     seedMockMealsBoard(createEmptyMealsBoard());
