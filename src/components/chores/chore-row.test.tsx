@@ -44,3 +44,16 @@ describe("ChoreRow haptics", () => {
     expect(success).not.toHaveBeenCalled();
   });
 });
+
+it("grows the checkoff control to at least 44px at lg+", () => {
+  render(<ChoreRow chore={baseChore} />);
+
+  const checkoff = screen.getByRole("button", {
+    name: /mark dishes complete/i,
+  });
+
+  expect(checkoff.className).toContain("h-9");
+  expect(checkoff.className).toContain("w-9");
+  expect(checkoff.className).toContain("lg:h-11");
+  expect(checkoff.className).toContain("lg:w-11");
+});
