@@ -56,16 +56,16 @@ export function ChoreRow({
           }
         }}
         className={cn(
-          "flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 transition-colors",
+          "flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 transition-colors lg:h-11 lg:w-11",
           chore.completed
             ? "border-primary bg-primary text-primary-foreground"
             : "border-border bg-background text-muted-foreground hover:border-primary hover:text-primary",
         )}
       >
         {chore.completed ? (
-          <Check className="h-4 w-4" />
+          <Check className="h-4 w-4 lg:h-5 lg:w-5" />
         ) : (
-          <Circle className="h-4 w-4" />
+          <Circle className="h-4 w-4 lg:h-5 lg:w-5" />
         )}
       </button>
 
