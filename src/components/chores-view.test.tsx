@@ -23,7 +23,10 @@ import {
 } from "@/test/test-utils";
 import { ChoresView } from "./chores-view";
 
-const viewport = vi.hoisted(() => ({ isMobile: false }));
+const viewport = vi.hoisted(() => ({
+  isMobile: false,
+  isLargeScreen: false,
+}));
 const mockToast = vi.hoisted(() => vi.fn());
 
 vi.mock("@/hooks", async (importOriginal) => {
@@ -31,6 +34,7 @@ vi.mock("@/hooks", async (importOriginal) => {
   return {
     ...actual,
     useIsMobile: () => viewport.isMobile,
+    useIsLargeScreen: () => viewport.isLargeScreen,
   };
 });
 
@@ -144,6 +148,7 @@ describe("ChoresView", () => {
 
   beforeEach(() => {
     viewport.isMobile = false;
+    viewport.isLargeScreen = false;
     mockToast.mockClear();
     seedFamilyStore({
       members: [
@@ -495,6 +500,72 @@ describe("ChoresView", () => {
 
     await waitFor(() => {
       expect(capturedUpdateBody).toEqual({ archived: true });
+    });
+  });
+
+  describe("ChoresView large screen (full-height board)", () => {
+    beforeEach(() => {
+      viewport.isLargeScreen = true;
+    });
+
+    it("renders the full-height board with Today emphasized", async () => {
+      seedMockChoresBoard(sampleChoresBoard());
+
+      render(<ChoresView />);
+
+      const today = await screen.findByRole("region", { name: "Today" });
+      const thisWeek = screen.getByRole("region", { name: "This Week" });
+      const thisMonth = screen.getByRole("region", { name: "This Month" });
+
+      expect(today).toBeVisible();
+      expect(thisWeek).toBeVisible();
+      expect(thisMonth).toBeVisible();
+      expect(today).toHaveAttribute("data-emphasis", "true");
+      expect(thisWeek).not.toHaveAttribute("data-emphasis");
+    });
+
+    it("completes a Today routine through the full-height board", async () => {
+      let capturedCompletionBody: UpdateCurrentPeriodCompletionRequest | null =
+        null;
+      server.use(
+        http.put(
+          `${API_BASE}/chores/templates/brush-teeth-id/current-period-completion`,
+          async ({ request }) => {
+            capturedCompletionBody =
+              (await request.json()) as UpdateCurrentPeriodCompletionRequest;
+            return HttpResponse.json({
+              data: {
+                scope: "TODAY",
+                periodStartDate: "2026-05-17",
+                periodEndDate: "2026-05-17",
+                item: {
+                  templateId: "brush-teeth-id",
+                  title: "Brush teeth",
+                  cadence: "DAILY",
+                  assignedToMemberId: "leo",
+                  completed: true,
+                  completedAt: "2026-05-17T09:30:00Z",
+                },
+              },
+            });
+          },
+        ),
+      );
+      seedMockChoresBoard(sampleChoresBoard());
+      const { user } = renderWithUser(<ChoresView />);
+
+      await user.click(
+        await screen.findByRole("button", {
+          name: /mark brush teeth complete/i,
+        }),
+      );
+
+      await waitFor(() => {
+        expect(capturedCompletionBody).toEqual({
+          scope: "TODAY",
+          periodStartDate: "2026-05-17",
+        });
+      });
     });
   });
 });
