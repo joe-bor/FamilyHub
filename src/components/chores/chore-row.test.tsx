@@ -46,7 +46,9 @@ describe("ChoreRow haptics", () => {
 });
 
 it("grows the checkoff control to at least 44px at lg+", () => {
-  render(<ChoreRow chore={baseChore} />);
+  render(
+    <ChoreRow chore={baseChore} onComplete={vi.fn()} onUncomplete={vi.fn()} />,
+  );
 
   const checkoff = screen.getByRole("button", {
     name: /mark dishes complete/i,
