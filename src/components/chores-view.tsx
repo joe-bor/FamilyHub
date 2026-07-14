@@ -10,6 +10,7 @@ import {
   useUpdateChoreTemplate,
 } from "@/api";
 import { ChoreFormSheet } from "@/components/chores/chore-form-sheet";
+import { ChoresBoardLarge } from "@/components/chores/chores-board-large";
 import { ChoreScopeColumn } from "@/components/chores/chores-scope-column";
 import {
   type ChoreScopeKey,
@@ -22,7 +23,7 @@ import {
 } from "@/components/shared";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/toaster";
-import { useIsMobile } from "@/hooks";
+import { useIsLargeScreen, useIsMobile } from "@/hooks";
 import type { ChoreBoardItem, ChoreScopeBoard, ChoresBoard } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import type { ChoreFormData } from "@/lib/validations";
@@ -51,6 +52,7 @@ function showStalePeriodRecovery(error: ApiException) {
 
 export function ChoresView() {
   const isMobile = useIsMobile();
+  const isLargeScreen = useIsLargeScreen();
   const [selectedScopeKey, setSelectedScopeKey] =
     useState<ChoreScopeKey>("today");
   const [isCreateOpen, setCreateOpen] = useState(false);
@@ -116,13 +118,23 @@ export function ChoresView() {
   return (
     <>
       <div
-        className="flex-1 overflow-y-auto p-4 sm:p-6"
+        className={cn(
+          "flex-1 p-4 sm:p-6",
+          isLargeScreen ? "flex min-h-0 flex-col" : "overflow-y-auto",
+        )}
         style={{
           paddingBottom: isMobile ? MOBILE_FAB_SCROLL_PADDING : undefined,
         }}
       >
-        <div className="mx-auto max-w-6xl">
-          <div className="mb-6 flex items-start justify-between gap-3">
+        <div
+          className={cn(
+            "mx-auto",
+            isLargeScreen
+              ? "flex min-h-0 w-full max-w-[1600px] flex-1 flex-col"
+              : "max-w-6xl",
+          )}
+        >
+          <div className="mb-6 flex shrink-0 items-start justify-between gap-3">
             <div className="space-y-3">
               {!isMobile && (
                 <h1 className="text-[24px] leading-8 font-semibold text-foreground">
@@ -178,20 +190,33 @@ export function ChoresView() {
             </div>
           )}
 
-          {!isLoading && !isError && board && hasRoutines && (
-            <div className={cn("grid gap-4", !isMobile && "lg:grid-cols-3")}>
-              {visibleScopes.map((scope) => (
-                <ChoreScopeColumn
-                  key={scope.scope}
-                  scope={scope}
-                  showHeading={!isMobile}
-                  onArchive={handleArchive}
-                  onComplete={handleComplete}
-                  onUncomplete={handleUncomplete}
-                />
-              ))}
-            </div>
-          )}
+          {!isLoading &&
+            !isError &&
+            board &&
+            hasRoutines &&
+            (isLargeScreen ? (
+              <ChoresBoardLarge
+                today={board.today}
+                thisWeek={board.thisWeek}
+                thisMonth={board.thisMonth}
+                onArchive={handleArchive}
+                onComplete={handleComplete}
+                onUncomplete={handleUncomplete}
+              />
+            ) : (
+              <div className={cn("grid gap-4", !isMobile && "lg:grid-cols-3")}>
+                {visibleScopes.map((scope) => (
+                  <ChoreScopeColumn
+                    key={scope.scope}
+                    scope={scope}
+                    showHeading={!isMobile}
+                    onArchive={handleArchive}
+                    onComplete={handleComplete}
+                    onUncomplete={handleUncomplete}
+                  />
+                ))}
+              </div>
+            ))}
         </div>
       </div>
 
