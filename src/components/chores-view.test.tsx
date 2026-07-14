@@ -522,6 +522,7 @@ describe("ChoresView", () => {
       expect(thisMonth).toBeVisible();
       expect(today).toHaveAttribute("data-emphasis", "true");
       expect(thisWeek).not.toHaveAttribute("data-emphasis");
+      expect(thisMonth).not.toHaveAttribute("data-emphasis");
     });
 
     it("completes a Today routine through the full-height board", async () => {
