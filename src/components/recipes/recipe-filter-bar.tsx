@@ -10,6 +10,7 @@ export interface RecipeTagFilterOption {
 
 interface RecipeFilterBarProps {
   availableTags: RecipeTagFilterOption[];
+  className?: string;
   favoritesOnly: boolean;
   onFavoritesOnlyChange: (favoritesOnly: boolean) => void;
   onSearchChange: (value: string) => void;
@@ -20,6 +21,7 @@ interface RecipeFilterBarProps {
 
 export function RecipeFilterBar({
   availableTags,
+  className,
   favoritesOnly,
   onFavoritesOnlyChange,
   onSearchChange,
@@ -28,8 +30,14 @@ export function RecipeFilterBar({
   selectedTag,
 }: RecipeFilterBarProps) {
   return (
-    <div className="space-y-3">
-      <div className="relative">
+    <div
+      data-testid="recipe-filter-bar"
+      className={cn(
+        "space-y-3 lg:flex lg:min-w-0 lg:flex-1 lg:items-center lg:gap-3 lg:space-y-0",
+        className,
+      )}
+    >
+      <div className="relative lg:w-64 lg:shrink-0">
         <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <Input
           type="search"
@@ -37,17 +45,17 @@ export function RecipeFilterBar({
           value={searchValue}
           onChange={(event) => onSearchChange(event.target.value)}
           placeholder="Search titles or tags"
-          className="pl-9"
+          className="pl-9 lg:h-11"
         />
       </div>
 
-      <div className="flex items-center gap-2 overflow-x-auto pb-1">
+      <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-hide lg:min-w-0 lg:flex-1 lg:pb-0">
         <Button
           type="button"
           variant={favoritesOnly ? "default" : "outline"}
           size="sm"
           onClick={() => onFavoritesOnlyChange(!favoritesOnly)}
-          className="shrink-0"
+          className="shrink-0 lg:min-h-11"
         >
           <Heart className={cn("h-4 w-4", favoritesOnly && "fill-current")} />
           Favorites only
@@ -58,7 +66,7 @@ export function RecipeFilterBar({
           variant={selectedTag === null ? "secondary" : "outline"}
           size="sm"
           onClick={() => onTagChange(null)}
-          className="shrink-0"
+          className="shrink-0 lg:min-h-11"
         >
           All
         </Button>
@@ -72,7 +80,7 @@ export function RecipeFilterBar({
             onClick={() =>
               onTagChange(selectedTag === tag.value ? null : tag.value)
             }
-            className="shrink-0"
+            className="shrink-0 lg:min-h-11"
           >
             {tag.label}
           </Button>

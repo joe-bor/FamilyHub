@@ -59,6 +59,7 @@ describe("RecipesView", () => {
     const detailContainer = screen.getByTestId("recipes-view-container");
     expect(detailContainer).toHaveClass("w-full", "max-w-3xl");
     expect(detailContainer).not.toHaveClass("lg:max-w-[1200px]");
+    expect(screen.queryByTestId("recipe-filter-bar")).not.toBeInTheDocument();
   });
 
   it("adds a recipe to meals from detail and stores a library handoff draft", async () => {
@@ -216,6 +217,28 @@ describe("RecipesView", () => {
     expect(grid).toHaveClass("lg:grid-cols-2");
     expect(grid).toHaveClass("xl:grid-cols-3");
     expect(grid).toHaveClass("min-[1440px]:grid-cols-4");
+  });
+
+  it("composes the large-screen controls into one foundations toolbar", async () => {
+    viewport.isMobile = false;
+    seedMockRecipes([testRecipeDetail, importedRecipeDetail]);
+    render(<RecipesView />);
+    await screen.findByRole("article", {
+      name: "Recipe card: Sheet Pan Salmon",
+    });
+    const toolbar = screen.getByTestId("recipes-desktop-toolbar");
+    const search = screen.getByRole("searchbox", { name: "Search recipes" });
+    const favorites = screen.getByRole("button", { name: "Favorites only" });
+    const add = screen.getByRole("button", { name: "Add recipe" });
+    expect(toolbar).toHaveClass("lg:flex-nowrap");
+    expect(toolbar).toContainElement(search);
+    expect(toolbar).toContainElement(favorites);
+    expect(toolbar).toContainElement(add);
+    expect(screen.getAllByTestId("recipe-filter-bar")).toHaveLength(1);
+    expect(screen.getByTestId("recipe-filter-bar")).toHaveClass("lg:flex");
+    expect(search).toHaveClass("lg:h-11");
+    expect(favorites).toHaveClass("lg:min-h-11");
+    expect(add).toHaveClass("lg:min-h-11");
   });
 
   it("opens recipe detail from the library with cook-first content order and returns back", async () => {
@@ -1043,6 +1066,7 @@ describe("RecipesView", () => {
         name: `Open recipe: ${testRecipeDetail.title}`,
       });
       const fab = screen.getByRole("button", { name: "Add recipe" });
+      expect(screen.getAllByTestId("recipe-filter-bar")).toHaveLength(1);
       expect(fab).toHaveClass("fixed");
     });
 
