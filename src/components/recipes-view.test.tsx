@@ -245,7 +245,7 @@ describe("RecipesView", () => {
     expect(grid).toHaveClass("grid-cols-1");
     expect(grid).toHaveClass("lg:grid-cols-2");
     expect(grid).toHaveClass("xl:grid-cols-3");
-    expect(grid).toHaveClass("min-[1440px]:grid-cols-4");
+    expect(grid).toHaveClass("min-[1440px]:grid-cols-4!");
   });
 
   it("composes the large-screen controls into one foundations toolbar", async () => {
