@@ -45,6 +45,22 @@ describe("RecipesView", () => {
     viewport.isMobile = false;
   });
 
+  it("widens the container for the grid but keeps recipe detail at reading width", async () => {
+    viewport.isMobile = false;
+    seedMockRecipes([testRecipeDetail]);
+    const { user } = renderWithUser(<RecipesView />);
+    const openButton = await screen.findByRole("button", {
+      name: `Open recipe: ${testRecipeDetail.title}`,
+    });
+    const container = screen.getByTestId("recipes-view-container");
+    expect(container).toHaveClass("w-full", "max-w-3xl", "lg:max-w-[1200px]");
+    await user.click(openButton);
+    await screen.findByRole("button", { name: "Back to recipes" });
+    const detailContainer = screen.getByTestId("recipes-view-container");
+    expect(detailContainer).toHaveClass("w-full", "max-w-3xl");
+    expect(detailContainer).not.toHaveClass("lg:max-w-[1200px]");
+  });
+
   it("adds a recipe to meals from detail and stores a library handoff draft", async () => {
     const fixedNow = new Date(2026, 5, 10, 9, 15, 0);
     const RealDate = Date;
