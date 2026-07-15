@@ -158,7 +158,13 @@ export function RecipesView() {
         paddingBottom: isMobile ? MOBILE_FAB_SCROLL_PADDING : undefined,
       }}
     >
-      <div className="mx-auto flex max-w-3xl flex-col gap-4">
+      <div
+        data-testid="recipes-view-container"
+        className={cn(
+          "mx-auto flex w-full max-w-3xl flex-col gap-4",
+          selectedRecipeId === null && "lg:max-w-[1200px]",
+        )}
+      >
         {!isMobile && (
           <div className="flex items-start justify-between gap-3">
             <div>
