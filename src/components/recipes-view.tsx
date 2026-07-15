@@ -286,7 +286,7 @@ export function RecipesView() {
               <p className="text-sm font-medium text-muted-foreground">
                 Loading recipes...
               </p>
-              <div className="grid grid-cols-1 gap-3 lg:grid-cols-2 lg:gap-4 xl:grid-cols-3 min-[1440px]:grid-cols-4">
+              <div className="grid grid-cols-1 gap-3 lg:grid-cols-2 lg:gap-4 xl:grid-cols-3 min-[1440px]:grid-cols-4!">
                 {Array.from({ length: 3 }, (_, index) => (
                   <div
                     key={`recipe-loading-${index}`}
@@ -369,7 +369,7 @@ export function RecipesView() {
               ) : (
                 <div
                   data-testid="recipe-library-grid"
-                  className="grid grid-cols-1 gap-3 lg:grid-cols-2 lg:gap-4 xl:grid-cols-3 min-[1440px]:grid-cols-4"
+                  className="grid grid-cols-1 gap-3 lg:grid-cols-2 lg:gap-4 xl:grid-cols-3 min-[1440px]:grid-cols-4!"
                 >
                   {filteredRecipes.map((recipe) => (
                     <div key={recipe.id} className={cn("min-w-0")}>
