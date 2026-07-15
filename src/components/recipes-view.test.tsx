@@ -182,6 +182,35 @@ describe("RecipesView", () => {
     ).not.toBeInTheDocument();
   });
 
+  it("centers the empty state within the widened library", async () => {
+    viewport.isMobile = false;
+    seedMockRecipes([]);
+    render(<RecipesView />);
+    const heading = await screen.findByText("No recipes yet");
+    const panel = heading.closest("div");
+    expect(panel).toHaveClass("mx-auto");
+    expect(panel).toHaveClass("w-full");
+    expect(panel).toHaveClass("max-w-xl");
+  });
+
+  it("centers the no-results state within the widened library", async () => {
+    viewport.isMobile = false;
+    seedMockRecipes([testRecipeDetail]);
+    const { user } = renderWithUser(<RecipesView />);
+    await screen.findByRole("article", {
+      name: "Recipe card: Sheet Pan Salmon",
+    });
+    await user.type(
+      screen.getByRole("searchbox", { name: "Search recipes" }),
+      "definitely-not-a-recipe",
+    );
+    const heading = await screen.findByText("No recipes match those filters");
+    const panel = heading.closest("div");
+    expect(panel).toHaveClass("mx-auto");
+    expect(panel).toHaveClass("w-full");
+    expect(panel).toHaveClass("max-w-xl");
+  });
+
   it("renders summary cards with image, title, tags, and favorite state", async () => {
     seedMockRecipes([testRecipeDetail, importedRecipeDetail]);
 

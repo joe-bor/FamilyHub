@@ -341,7 +341,7 @@ export function RecipesView() {
               ) : null}
 
               {recipes.length === 0 ? (
-                <div className="rounded-lg border border-dashed border-border bg-card p-6 text-center">
+                <div className="mx-auto w-full max-w-xl rounded-lg border border-dashed border-border bg-card p-6 text-center">
                   <h2 className="text-lg font-semibold text-foreground">
                     No recipes yet
                   </h2>
@@ -358,7 +358,7 @@ export function RecipesView() {
                   </div>
                 </div>
               ) : filteredRecipes.length === 0 ? (
-                <div className="rounded-lg border border-dashed border-border bg-card p-6 text-center">
+                <div className="mx-auto w-full max-w-xl rounded-lg border border-dashed border-border bg-card p-6 text-center">
                   <h2 className="text-lg font-semibold text-foreground">
                     No recipes match those filters
                   </h2>
