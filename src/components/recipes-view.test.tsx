@@ -188,6 +188,20 @@ describe("RecipesView", () => {
     ).toBeInTheDocument();
   });
 
+  it("lays the large-screen library out as a responsive card grid", async () => {
+    viewport.isMobile = false;
+    seedMockRecipes([testRecipeDetail, importedRecipeDetail]);
+    render(<RecipesView />);
+    await screen.findByRole("article", {
+      name: "Recipe card: Sheet Pan Salmon",
+    });
+    const grid = screen.getByTestId("recipe-library-grid");
+    expect(grid).toHaveClass("grid-cols-1");
+    expect(grid).toHaveClass("lg:grid-cols-2");
+    expect(grid).toHaveClass("xl:grid-cols-3");
+    expect(grid).toHaveClass("min-[1440px]:grid-cols-4");
+  });
+
   it("opens recipe detail from the library with cook-first content order and returns back", async () => {
     seedMockRecipes([testRecipeDetail, importedRecipeDetail]);
 
