@@ -101,6 +101,12 @@ export function RecipesView() {
   const searchQuery = normalizeValue(searchValue);
   const selectedRecipeData = selectedRecipe.data?.data ?? null;
   const updateSelectedRecipe = useUpdateRecipe(selectedRecipeId ?? "none");
+  const showDesktopLibraryFilters =
+    !isMobile &&
+    selectedRecipeId === null &&
+    !isLoading &&
+    !isError &&
+    data !== undefined;
 
   const availableTags = useMemo(() => {
     const tagMap = new Map<string, RecipeTagFilterOption>();
@@ -166,17 +172,44 @@ export function RecipesView() {
         )}
       >
         {!isMobile && (
-          <div className="flex items-start justify-between gap-3">
-            <div>
+          <div
+            data-testid="recipes-desktop-toolbar"
+            className={cn(
+              "flex flex-wrap items-start justify-between gap-3",
+              selectedRecipeId === null && "lg:flex-nowrap lg:items-center",
+            )}
+          >
+            <div className="min-w-0 shrink-0">
               <h1 className="text-2xl font-semibold text-foreground">
                 Recipes
               </h1>
-              <p className="text-sm text-muted-foreground">
+              <p
+                className={cn(
+                  "text-sm text-muted-foreground",
+                  selectedRecipeId === null && "lg:hidden",
+                )}
+              >
                 Save family favorites and discover what to cook next.
               </p>
             </div>
+            {showDesktopLibraryFilters ? (
+              <RecipeFilterBar
+                availableTags={availableTags}
+                favoritesOnly={favoritesOnly}
+                onFavoritesOnlyChange={setFavoritesOnly}
+                onSearchChange={setSearchValue}
+                onTagChange={setSelectedTag}
+                searchValue={searchValue}
+                selectedTag={selectedTag}
+                className="order-3 w-full lg:order-none lg:w-auto"
+              />
+            ) : null}
             {selectedRecipeId === null ? (
-              <Button type="button" onClick={() => setIsCreateSheetOpen(true)}>
+              <Button
+                type="button"
+                className="lg:min-h-11"
+                onClick={() => setIsCreateSheetOpen(true)}
+              >
                 Add recipe
               </Button>
             ) : null}
@@ -295,15 +328,17 @@ export function RecipesView() {
             <OfflineUnavailable label="recipes" />
           ) : (
             <>
-              <RecipeFilterBar
-                availableTags={availableTags}
-                favoritesOnly={favoritesOnly}
-                onFavoritesOnlyChange={setFavoritesOnly}
-                onSearchChange={setSearchValue}
-                onTagChange={setSelectedTag}
-                searchValue={searchValue}
-                selectedTag={selectedTag}
-              />
+              {isMobile ? (
+                <RecipeFilterBar
+                  availableTags={availableTags}
+                  favoritesOnly={favoritesOnly}
+                  onFavoritesOnlyChange={setFavoritesOnly}
+                  onSearchChange={setSearchValue}
+                  onTagChange={setSelectedTag}
+                  searchValue={searchValue}
+                  selectedTag={selectedTag}
+                />
+              ) : null}
 
               {recipes.length === 0 ? (
                 <div className="rounded-lg border border-dashed border-border bg-card p-6 text-center">
