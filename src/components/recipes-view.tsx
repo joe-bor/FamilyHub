@@ -201,13 +201,13 @@ export function RecipesView() {
                 onTagChange={setSelectedTag}
                 searchValue={searchValue}
                 selectedTag={selectedTag}
-                className="order-3 w-full lg:order-none lg:w-auto"
+                className="w-full lg:w-auto"
               />
             ) : null}
             {selectedRecipeId === null ? (
               <Button
                 type="button"
-                className="lg:min-h-11"
+                className="ml-auto lg:min-h-11"
                 onClick={() => setIsCreateSheetOpen(true)}
               >
                 Add recipe

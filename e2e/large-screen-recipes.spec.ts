@@ -132,6 +132,20 @@ test.describe("Large-screen Recipes", () => {
     });
     await authenticateAndOpenRecipes(page, registration);
 
+    await page.setViewportSize({ width: 800, height: 768 });
+    const tabletFocusRows = await page
+      .getByTestId("recipes-desktop-toolbar")
+      .evaluate((toolbar) =>
+        Array.from(toolbar.querySelectorAll<HTMLElement>("input, button")).map(
+          (element) => element.getBoundingClientRect().top,
+        ),
+      );
+    expect(
+      tabletFocusRows.every(
+        (top, index) => index === 0 || top >= tabletFocusRows[index - 1] - 1,
+      ),
+    ).toBe(true);
+
     for (const { width, columns } of ACCEPTANCE_WIDTHS) {
       await page.setViewportSize({
         width,
@@ -262,6 +276,7 @@ test.describe("Large-screen Recipes", () => {
   });
 
   test("preserves the 375px horizontal cards and FAB", async ({
+    browserName,
     page,
     request,
   }) => {
@@ -274,7 +289,7 @@ test.describe("Large-screen Recipes", () => {
       imageUrl: LOCAL_RECIPE_IMAGE,
       ingredients: ["Mobile ingredient"],
       instructions: ["Mobile instruction"],
-      tags: ["Mobile"],
+      tags: ["Mobile", "Quick", "Dinner", "Family", "Weeknight", "Favorite"],
       favorite: false,
     });
     await authenticateAndOpenRecipes(page, registration);
@@ -293,6 +308,26 @@ test.describe("Large-screen Recipes", () => {
     await expect(
       page.getByRole("button", { name: "Add recipe", exact: true }),
     ).toBeVisible();
+
+    const mobileFilterScroller = page
+      .getByTestId("recipe-filter-bar")
+      .locator(".overflow-x-auto");
+    const mobileFilterOverflow = await mobileFilterScroller.evaluate(
+      (element) => ({
+        classNames: element.className.split(/\s+/),
+        clientWidth: element.clientWidth,
+        scrollWidth: element.scrollWidth,
+        scrollbarWidth: window.getComputedStyle(element).scrollbarWidth,
+      }),
+    );
+    expect(mobileFilterOverflow.scrollWidth).toBeGreaterThan(
+      mobileFilterOverflow.clientWidth,
+    );
+    expect(mobileFilterOverflow.classNames).not.toContain("scrollbar-hide");
+    if (browserName === "chromium") {
+      expect(mobileFilterOverflow.scrollbarWidth).not.toBe("none");
+    }
+
     await attachRecipesScreenshot(page, "mobile-regression", 375);
   });
 });

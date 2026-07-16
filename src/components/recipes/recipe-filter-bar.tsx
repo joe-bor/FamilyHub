@@ -49,7 +49,7 @@ export function RecipeFilterBar({
         />
       </div>
 
-      <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-hide lg:min-w-0 lg:flex-1 lg:pb-0">
+      <div className="flex items-center gap-2 overflow-x-auto pb-1 lg:min-w-0 lg:flex-1 lg:pb-0 lg:[scrollbar-width:none] lg:[&::-webkit-scrollbar]:hidden">
         <Button
           type="button"
           variant={favoritesOnly ? "default" : "outline"}
