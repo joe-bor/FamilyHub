@@ -1,5 +1,99 @@
 # Changelog
 
+## [0.3.23](https://github.com/joe-bor/FamilyHub/compare/family-hub-v0.3.22...family-hub-v0.3.23) (2026-07-16)
+
+
+### Features
+
+* **calendar:** add day mini-month rail and toolbar toggle ([86824a6](https://github.com/joe-bor/FamilyHub/commit/86824a65c343bec30af105edaf9db66ffd56def9))
+* **calendar:** add day-rail fit math and persisted rail toggle state ([e07ef90](https://github.com/joe-bor/FamilyHub/commit/e07ef904ae5056bdbba4931725d02fd06c02388a))
+* **calendar:** add shared hour-grid geometry and useIsLargeScreen ([0c7268d](https://github.com/joe-bor/FamilyHub/commit/0c7268d7f9de0ec8255aed4ba01f6885c9fc5973))
+* **calendar:** add useAutoScrollToMinutes for now-or-first-event scroll ([dd1a174](https://github.com/joe-bor/FamilyHub/commit/dd1a174f74bd0d2f9cbec494c46b991f8ffaaa4f))
+* **calendar:** collapse week day headers to one line and densify lg+ rows ([eea7939](https://github.com/joe-bor/FamilyHub/commit/eea7939f6b3e96b3ee5b1c9b7f45a3cb1f7da3e6))
+* **calendar:** merge date navigation into single desktop toolbar row ([b034da2](https://github.com/joe-bor/FamilyHub/commit/b034da26f57f337f070e61750ab5328dc1dccf70))
+* **calendar:** render per-member day lanes with optional rail on lg+ ([f1ee2a8](https://github.com/joe-bor/FamilyHub/commit/f1ee2a8c9071a6a33c21e25bb37761e07a1b172a))
+* **chores:** add fillHeight/emphasis/className to ChoreScopeColumn ([7b9ca58](https://github.com/joe-bor/FamilyHub/commit/7b9ca5859108ed39310071541a26beb0611b3b46))
+* **chores:** add full-height Today-weighted large-screen board ([69ad251](https://github.com/joe-bor/FamilyHub/commit/69ad2512f42585bcf7e70c36c976563476d738a9))
+* **chores:** grow checkoff target to 44px on large screens ([d945e90](https://github.com/joe-bor/FamilyHub/commit/d945e9024039b2af6f310ca0e3e2af15a34e0fd2))
+* **chores:** render full-height board on large screens ([55e3953](https://github.com/joe-bor/FamilyHub/commit/55e3953ea0d014d3458cf70df5504e039ce4b84a))
+* **home:** add large home navigation intents ([3731f4c](https://github.com/joe-bor/FamilyHub/commit/3731f4cf7a6e493844c65ec53532913c04e19a3e))
+* **home:** add large home selectors ([1e82b1e](https://github.com/joe-bor/FamilyHub/commit/1e82b1ef7f16c158085e77251cc0d37e79a7a040))
+* **home:** add large screen dashboard layout ([8ad140c](https://github.com/joe-bor/FamilyHub/commit/8ad140cf1bc542165cdd1e9e97073b8e0a495592))
+* **home:** make home reachable on large screens ([650b733](https://github.com/joe-bor/FamilyHub/commit/650b73359fada6df8174dab024bd65a20459fd35))
+* **home:** return large screens to home after idle ([fce9c4e](https://github.com/joe-bor/FamilyHub/commit/fce9c4ef2501cfe8eb53e5f94d1f7410dde33a76))
+* **lists:** add ListRailRow with selected state ([2dbfaa0](https://github.com/joe-bor/FamilyHub/commit/2dbfaa0c4976eade80b9f0beee034b08db61f4cf))
+* **lists:** add ListsLargeScreen two-pane layout ([400f5fd](https://github.com/joe-bor/FamilyHub/commit/400f5fdf8e69001d20910bdc348b8348116e3318))
+* **lists:** add ListsRail container ([785904e](https://github.com/joe-bor/FamilyHub/commit/785904ee20d5627aa2ef7c85b26269979a4b9f68))
+* **lists:** add showBackButton prop to ListDetailView ([a60a959](https://github.com/joe-bor/FamilyHub/commit/a60a959e37fb152f513d00de5df56e8f2bb0b79d))
+* **lists:** route Lists to two-pane layout at lg+ ([9ead5d7](https://github.com/joe-bor/FamilyHub/commit/9ead5d73df7c7b79582497e943127a4da7968ecb))
+* **meals:** add actions slot to WeekHeader toolbar ([4d59759](https://github.com/joe-bor/FamilyHub/commit/4d59759b4e3d82478172365db52c32d14ef62aaf))
+* **meals:** add grid banner slot card with tinted placeholder band ([f34867e](https://github.com/joe-bor/FamilyHub/commit/f34867ea656d72caa2f87cc2fdf12da08ee27813))
+* **meals:** add meal-type accent tokens ([97d9b59](https://github.com/joe-bor/FamilyHub/commit/97d9b59c55c4a84e71b92d27d3c2f9647fff10d9))
+* **meals:** add meal-type icon and tint class helpers ([f2b0509](https://github.com/joe-bor/FamilyHub/commit/f2b0509b1e627dfd6d0831e906a7a7ee18c1345c))
+* **meals:** full-width week board with one-line headers and today highlight ([afb9032](https://github.com/joe-bor/FamilyHub/commit/afb9032ec71b3818b5d25d43dd4e4e578201d4fd))
+* **meals:** merge board actions into toolbar and widen large-screen cap ([ffc0fad](https://github.com/joe-bor/FamilyHub/commit/ffc0fad879015f8de002c4af86420c8c6799a165))
+* **meals:** rebuild week board as ARIA grid with sideways rail ([211e85b](https://github.com/joe-bor/FamilyHub/commit/211e85bd12396082ef922f5974c402c3d962c66d))
+* **meals:** stretch week board to fill large-screen viewport ([60148f5](https://github.com/joe-bor/FamilyHub/commit/60148f5aadd06df590bc5437c38e403b1f1fb58a))
+* **recipes:** center empty and no-results states in wide grid ([e70cbd2](https://github.com/joe-bor/FamilyHub/commit/e70cbd2bdaacbbada715f0f0b1d47599938e48d9))
+* **recipes:** compose large-screen controls into one toolbar ([e46e56e](https://github.com/joe-bor/FamilyHub/commit/e46e56e5a21de4e90ae424fd1df9c37b6cea9c55))
+* **recipes:** responsive card grid on large screens ([fe91123](https://github.com/joe-bor/FamilyHub/commit/fe91123f3d060eaf4c0e70a9356529be2f45f497))
+* **recipes:** widen large-screen index without stretching detail ([c5b24e0](https://github.com/joe-bor/FamilyHub/commit/c5b24e021087fc7e09e5b41bb4786216694bdcdd))
+* **shell:** slim desktop app header to one row, drop fake weather ([259eebd](https://github.com/joe-bor/FamilyHub/commit/259eebdfb1511321a113def5be94bd8e0ab91625))
+
+
+### Bug Fixes
+
+* **calendar:** address large-screen calendar review polish ([dd225f3](https://github.com/joe-bor/FamilyHub/commit/dd225f3953a1b23fd111cce0075e37cc031001fc))
+* **calendar:** align rail arrow navigation with focused day ([b8a9db6](https://github.com/joe-bor/FamilyHub/commit/b8a9db68054542c4f8921ee275fe7e6cfda338c0))
+* **calendar:** keep merged toolbar to one row at the lg boundary ([a01827f](https://github.com/joe-bor/FamilyHub/commit/a01827fe22637ea9df7990491cfa9efd90bc1c13))
+* **home:** clamp hero title so extreme titles keep the state strip visible ([6ea1de8](https://github.com/joe-bor/FamilyHub/commit/6ea1de8a2c4ee6155f850532bddf9f6fe2f4504c))
+* **home:** harden navigation intents against stale boards and unmatched events ([2a7bf45](https://github.com/joe-bor/FamilyHub/commit/2a7bf4564f8c12a1ef4748661fe1a498d5912153))
+* **home:** keep desktop e2e landing on calendar reachable via named nav rail ([a543455](https://github.com/joe-bor/FamilyHub/commit/a5434552a6dafcffd8738eac2e6c94beb032daae))
+* **home:** large dashboard review fixes (coming-up header, stable grid, a11y, tests) ([d21a233](https://github.com/joe-bor/FamilyHub/commit/d21a2330e2b018de028920f180a65df289902d32))
+* **home:** update offline e2e for home landing, settle-clear meal intents ([5121a46](https://github.com/joe-bor/FamilyHub/commit/5121a464f22e3188fcd788f57fa82686c53f069d))
+* **lists:** ensure large-screen detail touch targets ([342accf](https://github.com/joe-bor/FamilyHub/commit/342accf43b335c9bbe58022d0544e73143f839ed))
+* **meals:** order grid empty-slot accessible labels ([15f1c6d](https://github.com/joe-bor/FamilyHub/commit/15f1c6dd7724aae313f2d9f7c47ecc710d1f8f06))
+* **meals:** prevent meal-card eyebrow overflow ([443ebde](https://github.com/joe-bor/FamilyHub/commit/443ebdef73345f4c23b2c1c8018212e5db223f29))
+* **meals:** recover mobile meal image after src change ([5cb2e0c](https://github.com/joe-bor/FamilyHub/commit/5cb2e0cf77fea7333294abeb402697d1a131eef2))
+* **meals:** stop short extras chips from stretching ([74ee50b](https://github.com/joe-bor/FamilyHub/commit/74ee50bbcd957c756610cb38a54a293a12286df3))
+* **recipes:** preserve four-column grid at 1440 ([4604c7c](https://github.com/joe-bor/FamilyHub/commit/4604c7c66aa4ece39131fac0e8e0a1df29f869c1))
+* **recipes:** preserve responsive filter accessibility ([1be875d](https://github.com/joe-bor/FamilyHub/commit/1be875deb03068c02dc0f962618f7adfde57875b))
+* stabilize large-screen home e2e ([7efbb31](https://github.com/joe-bor/FamilyHub/commit/7efbb3165402542aff544fbf9912aad8bdf3fc22))
+
+
+### Code Refactoring
+
+* **calendar:** extract shared day overlap layout ([3e37f00](https://github.com/joe-bor/FamilyHub/commit/3e37f001be449e89cd756cf2fba96510250a0586))
+* **calendar:** toolbar review polish (pill wrap, icon-lg, label helper) ([2985a67](https://github.com/joe-bor/FamilyHub/commit/2985a67b817a9f5037f9a3117b8e304fe6260e72))
+* **home:** dedupe event comparators and dinner-slot lookup, document selectors ([6e29a1e](https://github.com/joe-bor/FamilyHub/commit/6e29a1e9bc29466fc7dec74ef61a136ba6833a16))
+* **home:** idle-return polish (contract docs, no-op guards, re-arm coverage) ([c0ea90e](https://github.com/joe-bor/FamilyHub/commit/c0ea90e26fadfaf536eb97ca105d4c737a90efb3))
+* **home:** split mobile home dashboard ([77aaf54](https://github.com/joe-bor/FamilyHub/commit/77aaf54aabc490b286b49aa94617fab0851c23b1))
+* **lists:** extract ListsMobileView from ListsView ([6c5c633](https://github.com/joe-bor/FamilyHub/commit/6c5c6334eabb4fb47da7c34aeac8bbe1b410ef82))
+* **lists:** extract shared empty and error state cards ([67bf630](https://github.com/joe-bor/FamilyHub/commit/67bf630b8f2ef339f665bd67047b55fbdc7d6579))
+* **lists:** extract shared list-kind metadata ([2f68bce](https://github.com/joe-bor/FamilyHub/commit/2f68bce08fb286f7bed7a083b7d077f1e9f7064c))
+* **meals:** extract shared MealBoardActions ([a14dc2b](https://github.com/joe-bor/FamilyHub/commit/a14dc2b4ea88005de977ff3a8f36dd3a797cfc21))
+* **meals:** extract shared slot accessible-label helpers ([7812f3a](https://github.com/joe-bor/FamilyHub/commit/7812f3a75e05cdeec0c1a70930ed9bcf90422fe1))
+* **shell:** apply header review polish (icon-lg variant, nowrap date, cn dots) ([a4cb894](https://github.com/joe-bor/FamilyHub/commit/a4cb8947b06386a2727815b2e33d4e8fafb54f36))
+
+
+### Documentation
+
+* **meals:** document contain:size grid-cell sizing ([da19e17](https://github.com/joe-bor/FamilyHub/commit/da19e173b278963c899b1c57414207a247cf3a32))
+
+
+### Tests
+
+* **chores:** pass callbacks to checkoff size test ([f0ae919](https://github.com/joe-bor/FamilyHub/commit/f0ae9191b14f890012573dbc77eb05a6601f10d1))
+* **chores:** verify only Today is emphasized ([083e860](https://github.com/joe-bor/FamilyHub/commit/083e8605bbc2fcf1c5a9e0a864232ecb2e39c1af))
+* **home:** cover large screen home experience ([b4c7c59](https://github.com/joe-bor/FamilyHub/commit/b4c7c59c8350646d8a3cc177f4aee9cb9c675de4))
+* **home:** cover selector edge cases (ended events, all-day order, fallbacks) ([9483b55](https://github.com/joe-bor/FamilyHub/commit/9483b55e446786ecdb2c8f982e2d622be0d54039))
+* **meals:** assert full-height board geometry and refresh visual matrix ([6a91c2e](https://github.com/joe-bor/FamilyHub/commit/6a91c2e051890bcdcfd6fee7eab9cb9d7ca712f0))
+* **meals:** assert long-name today state at each width ([b2ed8d1](https://github.com/joe-bor/FamilyHub/commit/b2ed8d1b547e984fa22fd5337b2396215da671f0))
+* **meals:** avoid creating empty offline cache database ([838f1f0](https://github.com/joe-bor/FamilyHub/commit/838f1f09d47b71188946bd9838e345a61a479965))
+* **meals:** complete large-screen visual matrix assertions ([8a38e94](https://github.com/joe-bor/FamilyHub/commit/8a38e94cec3eb83fb21c53b57eac33fab47aa222))
+* **meals:** verify large-screen board geometry and visual matrix ([e97872a](https://github.com/joe-bor/FamilyHub/commit/e97872a0b881baf353f96bc9eda06d6c025b3118))
+* **recipes:** cover large-screen grid geometry and screenshots ([32324e8](https://github.com/joe-bor/FamilyHub/commit/32324e8f57d00439181ffbc1013b2a7bba890ec6))
+
 ## [0.3.22](https://github.com/joe-bor/FamilyHub/compare/family-hub-v0.3.21...family-hub-v0.3.22) (2026-07-06)
 
 
