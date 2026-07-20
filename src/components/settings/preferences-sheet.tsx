@@ -85,7 +85,7 @@ export function PreferencesSheet({
       onOpenChange={onOpenChange}
       title="Preferences"
       initialHeight="full"
-      dialogClassName="max-w-lg max-h-[90dvh] overflow-y-auto"
+      dialogClassName="max-w-lg"
       titleClassName="text-xl"
       desktopHeaderRight={
         <Button

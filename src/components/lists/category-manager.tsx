@@ -596,7 +596,6 @@ export function CategoryManager({
           onOpenChange(newOpen);
         }}
         title={`${kindLabel[kind]} categories`}
-        dialogClassName="max-w-md max-h-[90dvh] overflow-y-auto"
         focusTitleOnOpen
         mobileNestedDialogOpenRef={nestedDialogOpenRef}
         returnFocusRef={returnFocusRef}

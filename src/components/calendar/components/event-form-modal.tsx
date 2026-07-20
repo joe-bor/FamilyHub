@@ -87,15 +87,9 @@ function EventFormModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      {/* The form grows well past a short laptop viewport once Add details is
-          expanded, and DialogContent is centred with `fixed`, so anything past
-          the fold — including the submit button — was unreachable. Matches the
-          bound the other form dialogs use via ResponsiveFormDialog. Both the
-          date and time popovers portal out, so they are not clipped by this. */}
-      <DialogContent
-        className="max-h-[90dvh] overflow-y-auto"
-        aria-describedby={undefined}
-      >
+      {/* Height is bounded and scrolled by DialogContent itself, so the form
+          stays reachable once "Add details" expands past a short viewport. */}
+      <DialogContent aria-describedby={undefined}>
         <DialogHeader onClose={onClose}>
           <DialogTitle>{title}</DialogTitle>
         </DialogHeader>
