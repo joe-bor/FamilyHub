@@ -136,4 +136,35 @@ test.describe("Calendar Event CRUD", () => {
     // Verify event is removed from calendar
     await expect(page.getByText("Updated Meeting")).not.toBeVisible();
   });
+
+  test("shows the full time label in the event form", async ({ page }) => {
+    // The desktop dialog is capped at max-w-md, so pairing Start/End side by
+    // side left each time trigger 88px — enough for the icon and padding but
+    // not for a label like "10:30 AM", whose nowrap text then spilled under the
+    // adjacent + button. Runs on every project, so the desktop dialog and the
+    // mobile sheet are both covered by the browser matrix.
+    await safeClick(page.getByRole("button", { name: "Add event" }));
+    const dialog = await waitForDialogReady(page);
+
+    const timeTriggers = dialog.getByRole("button", {
+      name: /^\d{1,2}:\d{2}\s(AM|PM)$/,
+    });
+    await expect(timeTriggers).toHaveCount(2);
+
+    for (const trigger of await timeTriggers.all()) {
+      const geometry = await trigger.evaluate((element) => ({
+        label: element.textContent ?? "",
+        // clientWidth/scrollWidth are untransformed layout metrics, so they are
+        // immune to the dialog's zoom-in enter animation, which does skew
+        // getBoundingClientRect on the opening frames.
+        clientWidth: element.clientWidth,
+        scrollWidth: element.scrollWidth,
+      }));
+
+      expect(
+        geometry.scrollWidth,
+        `"${geometry.label.trim()}" is clipped inside its trigger`,
+      ).toBeLessThanOrEqual(geometry.clientWidth + 1);
+    }
+  });
 });

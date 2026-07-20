@@ -315,7 +315,15 @@ function EventForm({
 
       {/* Start/End Time */}
       {!isAllDayValue && (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        // Track sizing is driven by the space actually available, not by a
+        // viewport breakpoint: the desktop dialog is capped at max-w-md, so a
+        // `sm:grid-cols-2` pair only ever left the time trigger 88px — far too
+        // narrow for "10:30 AM" once the -/+ buttons (44px each) and the
+        // trigger's own icon and padding are subtracted, and the trigger's
+        // nowrap text spilled under the adjacent + button. auto-fit keeps the
+        // side-by-side pair wherever a column can hold a full time label and
+        // stacks them everywhere else.
+        <div className="grid grid-cols-[repeat(auto-fit,minmax(15rem,1fr))] gap-4">
           <div className="space-y-2">
             <Label>Start Time</Label>
             <div className="flex items-center gap-2">
