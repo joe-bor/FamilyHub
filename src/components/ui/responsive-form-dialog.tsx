@@ -18,7 +18,11 @@ interface ResponsiveFormDialogProps {
   title: string;
   /** Mobile sheet open height. Desktop is unaffected. Defaults to "full". */
   initialHeight?: MobileSheetHeight;
-  /** Desktop DialogContent classes (e.g. "max-w-lg max-h-[90dvh] overflow-y-auto"). */
+  /**
+   * Extra desktop DialogContent classes, e.g. a width override like "max-w-lg".
+   * The viewport height bound and internal scroll are DialogContent defaults,
+   * so callers no longer pass "max-h-[90dvh] overflow-y-auto" here.
+   */
   dialogClassName?: string;
   /**
    * Desktop DialogTitle classes. Defaults to the DialogTitle primitive size;

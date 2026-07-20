@@ -137,7 +137,7 @@ export function MemberProfileModal({
       onOpenChange={onOpenChange}
       title="Member Profile"
       initialHeight="full"
-      dialogClassName="max-w-sm max-h-[90dvh] overflow-y-auto"
+      dialogClassName="max-w-sm"
       titleClassName="text-xl"
       desktopHeaderRight={
         <Button

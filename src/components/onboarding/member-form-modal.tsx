@@ -81,7 +81,7 @@ export function MemberFormModal({
       onOpenChange={onOpenChange}
       title={mode === "add" ? "Add Family Member" : "Edit Family Member"}
       initialHeight="half"
-      dialogClassName="w-full max-w-md mx-4 sm:mx-auto max-h-[90dvh] overflow-y-auto"
+      dialogClassName="w-full max-w-md mx-4 sm:mx-auto"
     >
       <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">
         <div className="space-y-2">

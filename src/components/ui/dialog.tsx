@@ -40,6 +40,14 @@ function DialogContent({
           // edge at narrow phone widths. Combining w-full with external margins
           // (mx-4) overflowed because margins don't shrink a full-width box.
           "fixed left-1/2 top-1/2 z-50 w-[calc(100%-2rem)] max-w-md -translate-x-1/2 -translate-y-1/2",
+          // Bound height to the viewport and scroll internally so content taller
+          // than the screen stays reachable. A fixed, centered box does not
+          // extend the document, so without this anything past the fold — the
+          // submit button included — is unreachable and unscrollable. Callers
+          // can still override the cap via className (twMerge). Popovers/selects
+          // inside dialogs portal out (or are OS-native), so they are not
+          // clipped by this scroll container.
+          "max-h-[90dvh] overflow-y-auto",
           "bg-card rounded-xl shadow-2xl p-5 sm:p-6",
           "duration-200",
           "data-[state=open]:animate-in data-[state=closed]:animate-out",
