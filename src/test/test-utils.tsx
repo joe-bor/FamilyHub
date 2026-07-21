@@ -466,6 +466,14 @@ export function setViewportWidth(width: number): void {
         query.match(/min-width:\s*(\d+)px/)?.[1] ?? "",
         10,
       );
+      // A query with no width feature is not a breakpoint question:
+      // `(prefers-reduced-motion: reduce)`, `(pointer: coarse)`,
+      // `(display-mode: standalone)`, `(prefers-color-scheme: dark)`. Both
+      // parses are NaN there, so without this guard the two `Number.isNaN`
+      // fallbacks below answer `true` for every one of them — the opposite of
+      // setup.ts's `matches: false` default, and enough to silently flip a
+      // component into its reduced-motion or touch branch at every viewport.
+      if (Number.isNaN(maxWidth) && Number.isNaN(minWidth)) return false;
       const matchesMax = Number.isNaN(maxWidth) || width <= maxWidth;
       const matchesMin = Number.isNaN(minWidth) || width >= minWidth;
       return matchesMax && matchesMin;
