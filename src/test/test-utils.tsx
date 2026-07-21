@@ -7,6 +7,7 @@ import {
 } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { ReactElement, ReactNode } from "react";
+import { vi } from "vitest";
 import { type FamilyApiResponse, familyKeys } from "@/api";
 import { AUTH_TOKEN_STORAGE_KEY, FAMILY_STORAGE_KEY } from "@/lib/constants";
 import type {
@@ -438,4 +439,66 @@ export async function waitForMemberSelected(
     { timeout: TEST_TIMEOUTS.FORM_STATE },
   );
   return memberButton;
+}
+
+const DEFAULT_VIEWPORT_WIDTH = window.innerWidth;
+
+/**
+ * Drive the mocked `matchMedia` from a single viewport width so breakpoint
+ * hooks resolve correctly. `src/test/setup.ts` mocks `matchMedia` to return
+ * `matches: false` for every query, which would otherwise make `useIsMobile()`
+ * and `useIsLargeScreen()` both false in every test.
+ *
+ * 390 -> mobile. 800 -> tablet (769-1023). 1024+ -> large screen.
+ */
+export function setViewportWidth(width: number): void {
+  Object.defineProperty(window, "innerWidth", {
+    configurable: true,
+    value: width,
+  });
+  vi.mocked(window.matchMedia).mockImplementation((query: string) => ({
+    matches: (() => {
+      const maxWidth = Number.parseInt(
+        query.match(/max-width:\s*(\d+)px/)?.[1] ?? "",
+        10,
+      );
+      const minWidth = Number.parseInt(
+        query.match(/min-width:\s*(\d+)px/)?.[1] ?? "",
+        10,
+      );
+      const matchesMax = Number.isNaN(maxWidth) || width <= maxWidth;
+      const matchesMin = Number.isNaN(minWidth) || width >= minWidth;
+      return matchesMax && matchesMin;
+    })(),
+    media: query,
+    onchange: null,
+    addListener: vi.fn(),
+    removeListener: vi.fn(),
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+    dispatchEvent: vi.fn(),
+  }));
+}
+
+/**
+ * Restore the default `matchMedia` behaviour (`matches: false` for every
+ * query). Required in an `afterEach` of any describe block that calls
+ * `setViewportWidth`, because setup.ts's `vi.clearAllMocks()` clears call
+ * history but leaves the implementation in place.
+ */
+export function resetViewportWidth(): void {
+  Object.defineProperty(window, "innerWidth", {
+    configurable: true,
+    value: DEFAULT_VIEWPORT_WIDTH,
+  });
+  vi.mocked(window.matchMedia).mockImplementation((query: string) => ({
+    matches: false,
+    media: query,
+    onchange: null,
+    addListener: vi.fn(),
+    removeListener: vi.fn(),
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+    dispatchEvent: vi.fn(),
+  }));
 }

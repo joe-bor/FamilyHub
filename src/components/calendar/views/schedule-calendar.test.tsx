@@ -3,8 +3,10 @@ import { testEvents, testMembers } from "@/test/fixtures";
 import {
   render,
   resetFamilyStore,
+  resetViewportWidth,
   screen,
   seedFamilyStore,
+  setViewportWidth,
 } from "@/test/test-utils";
 import { ScheduleCalendar } from "./schedule-calendar";
 
@@ -17,35 +19,7 @@ const expectedBottomPadding =
   "max(8.5rem, calc(env(safe-area-inset-bottom) + 8.5rem))";
 
 function setMobile(isMobile: boolean) {
-  const width = isMobile ? 390 : 1024;
-
-  Object.defineProperty(window, "innerWidth", {
-    configurable: true,
-    value: width,
-  });
-  vi.mocked(window.matchMedia).mockImplementation((query: string) => ({
-    matches: (() => {
-      const maxWidth = Number.parseInt(
-        query.match(/max-width:\s*(\d+)px/)?.[1] ?? "",
-        10,
-      );
-      const minWidth = Number.parseInt(
-        query.match(/min-width:\s*(\d+)px/)?.[1] ?? "",
-        10,
-      );
-
-      const matchesMax = Number.isNaN(maxWidth) || width <= maxWidth;
-      const matchesMin = Number.isNaN(minWidth) || width >= minWidth;
-      return matchesMax && matchesMin;
-    })(),
-    media: query,
-    onchange: null,
-    addListener: vi.fn(),
-    removeListener: vi.fn(),
-    addEventListener: vi.fn(),
-    removeEventListener: vi.fn(),
-    dispatchEvent: vi.fn(),
-  }));
+  setViewportWidth(isMobile ? 390 : 1024);
 }
 
 describe("ScheduleCalendar", () => {
@@ -58,6 +32,7 @@ describe("ScheduleCalendar", () => {
 
   afterEach(() => {
     resetFamilyStore();
+    resetViewportWidth();
     vi.useRealTimers();
   });
 
