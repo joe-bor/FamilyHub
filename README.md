@@ -72,7 +72,7 @@ npm run build         # type-check + production build
 
 ## Status
 
-**v0.3.23** — Calendar, Chores, Lists, Meals, and Recipes are integrated with `family-hub-api` v1.6.0. Photos is UI-only for now. <!-- x-release-please-version -->
+**v0.3.24** — Calendar, Chores, Lists, Meals, and Recipes are integrated with `family-hub-api` v1.6.0. Photos is UI-only for now. <!-- x-release-please-version -->
 
 | Module   | Status          |
 | -------- | --------------- |

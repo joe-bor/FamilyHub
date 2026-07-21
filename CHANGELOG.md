@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.3.24](https://github.com/joe-bor/FamilyHub/compare/family-hub-v0.3.23...family-hub-v0.3.24) (2026-07-21)
+
+
+### Bug Fixes
+
+* **calendar:** keep the event form dialog inside the viewport ([1c24708](https://github.com/joe-bor/FamilyHub/commit/1c24708c1247e9b8c7ee03abe8fe2878ac4762a7))
+* **calendar:** stop the event form clipping time labels ([afb1aa6](https://github.com/joe-bor/FamilyHub/commit/afb1aa60a3c399352d3b6ffd6681514ecd611d48))
+* **ui:** bound every dialog to the viewport by default ([e74c5c7](https://github.com/joe-bor/FamilyHub/commit/e74c5c737c77aa2285ac83e2c523093cea7a3216))
+
 ## [0.3.23](https://github.com/joe-bor/FamilyHub/compare/family-hub-v0.3.22...family-hub-v0.3.23) (2026-07-16)
 
 
