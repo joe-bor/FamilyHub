@@ -4,11 +4,8 @@ import { useEffect, useRef } from "react";
 import { DAY_INITIALS } from "@/lib/time-utils";
 import { type CalendarEvent, colorMap, type FamilyMember } from "@/lib/types";
 import { cn } from "@/lib/utils";
-import {
-  buildMonthMatrix,
-  RAIL_WIDTH,
-  selectMonthDayDots,
-} from "../utils/day-rail";
+import { RAIL_WIDTH } from "../utils/day-rail";
+import { buildMonthMatrix, selectMonthDayDots } from "../utils/month-matrix";
 
 interface DayMiniMonthRailProps {
   currentDate: Date;

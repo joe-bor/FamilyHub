@@ -1,29 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { CalendarEvent, FamilyMember } from "@/lib/types";
-import {
-  buildMonthMatrix,
-  MIN_LANE_WIDTH,
-  RAIL_WIDTH,
-  railThresholdPx,
-  selectMonthDayDots,
-} from "./day-rail";
-
-const member = (id: string, color: FamilyMember["color"]): FamilyMember => ({
-  id,
-  name: id.toUpperCase(),
-  color,
-});
-
-const ev = (date: Date, memberId: string): CalendarEvent => ({
-  id: `${memberId}-${date.getDate()}`,
-  title: "E",
-  date,
-  startTime: "9:00 AM",
-  endTime: "10:00 AM",
-  memberId,
-  isAllDay: false,
-  source: "NATIVE",
-});
+import { MIN_LANE_WIDTH, RAIL_WIDTH, railThresholdPx } from "./day-rail";
 
 describe("day-rail math", () => {
   it("threshold grows with member count and accounts for the desktop nav", () => {
@@ -39,26 +15,5 @@ describe("day-rail math", () => {
   it("uses the documented lane/rail widths", () => {
     expect(RAIL_WIDTH).toBe(300);
     expect(MIN_LANE_WIDTH).toBeGreaterThanOrEqual(160);
-  });
-
-  it("builds a 6x7 (or 5x7) month matrix covering the current month", () => {
-    const matrix = buildMonthMatrix(new Date(2026, 6, 15)); // July 2026
-    expect(matrix.length % 7).toBe(0);
-    expect(matrix.some((d) => d.getMonth() === 6 && d.getDate() === 1)).toBe(
-      true,
-    );
-    expect(matrix.some((d) => d.getMonth() === 6 && d.getDate() === 31)).toBe(
-      true,
-    );
-  });
-
-  it("maps each day to its unique member colors (deduped, filtered)", () => {
-    const members = [member("m1", "coral"), member("m2", "teal")];
-    const july6 = new Date(2026, 6, 6);
-    const dots = selectMonthDayDots(
-      [ev(july6, "m1"), ev(july6, "m1"), ev(july6, "m2")],
-      members,
-    );
-    expect(dots.get(july6.toDateString())).toEqual(["coral", "teal"]);
   });
 });
