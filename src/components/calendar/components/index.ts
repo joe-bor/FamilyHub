@@ -18,4 +18,5 @@ export { MemberAvatar } from "./member-avatar";
 export { MobileEventDetail } from "./mobile-event-detail";
 export { MobileEventSheet } from "./mobile-event-sheet";
 export { MobileToolbar } from "./mobile-toolbar";
+export { MonthEventChip } from "./month-event-chip";
 export { RecurrencePicker } from "./recurrence-picker";
