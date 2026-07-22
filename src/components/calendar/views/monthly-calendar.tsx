@@ -482,19 +482,33 @@ function MonthlyCalendarLarge({
   }, [isEventDetailOpen, weeksEl]);
 
   // Branches sit after every hook so React's hook order stays stable.
-  if (isError) {
-    return <CalendarErrorState message={errorMessage} onRetry={onRetry} />;
-  }
+  //
   // Restoration owns the surface until persisted queries finish, so the
   // uncached message cannot flash during hydration.
-  if (isLoading || isQueryRestoring) {
+  if (isQueryRestoring) {
     return <MonthGridSkeleton weekCount={weekCount} />;
   }
   // `events.length === 0` is NOT a cache-presence test: a successfully cached
   // empty response is valid data and must render the normal empty grid.
   // useOnlineStatus() is reactive, unlike a direct navigator.onLine read.
+  //
+  // This deliberately outranks BOTH isLoading and isError. TanStack's
+  // onlineManager starts at `#online = true` and only reacts to online/offline
+  // *events*, so a page that cold-starts offline never pauses its queries: an
+  // uncached month fetches, reports isLoading, retries, and lands on isError
+  // roughly seven seconds later. Neither of those states is honest here — the
+  // skeleton promises data that cannot arrive, and "Try again" is a dead action
+  // while offline. Error/retry still owns online failures, where retrying can
+  // actually succeed. Restoration still wins above, which is what keeps this
+  // copy from flashing during hydration.
   if (!hasQueryData && !isOnline) {
     return <CalendarOfflineState message="This month isn't cached yet." />;
+  }
+  if (isError) {
+    return <CalendarErrorState message={errorMessage} onRetry={onRetry} />;
+  }
+  if (isLoading) {
+    return <MonthGridSkeleton weekCount={weekCount} />;
   }
 
   return (

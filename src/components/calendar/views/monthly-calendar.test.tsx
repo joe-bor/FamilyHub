@@ -302,6 +302,45 @@ describe("MonthlyCalendar large query states", () => {
     ).toBeInTheDocument();
   });
 
+  it("shows cold-cache copy rather than a load that can never finish", () => {
+    // TanStack's onlineManager initialises `#online = true` and only reacts to
+    // online/offline *events*, so a page that cold-starts offline never pauses
+    // its queries: the uncached month fetches, fails, retries, and reports
+    // isLoading the whole time. A spinner there promises data that cannot
+    // arrive, so the honest offline state must outrank it.
+    setOnline(false);
+    render(<MonthlyCalendar {...baseProps} isLoading hasQueryData={false} />);
+    expect(
+      screen.getByText("This month isn't cached yet."),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("status", { name: /loading month/i }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("keeps the offline explanation instead of an unusable retry", () => {
+    // The same doomed offline fetch ends in `isError` once its retries are
+    // exhausted (measured: ~7s). "Try again" cannot succeed while offline, so
+    // offering it would replace the one honest explanation with a dead action.
+    // Error/retry stays for online failures, which is where retrying works.
+    setOnline(false);
+    render(
+      <MonthlyCalendar
+        {...baseProps}
+        isError
+        errorMessage="Failed to fetch"
+        onRetry={vi.fn()}
+        hasQueryData={false}
+      />,
+    );
+    expect(
+      screen.getByText("This month isn't cached yet."),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /try again/i }),
+    ).not.toBeInTheDocument();
+  });
+
   it("renders a cached empty month instead of calling it uncached", () => {
     setOnline(false);
     render(<MonthlyCalendar {...baseProps} hasQueryData />);
