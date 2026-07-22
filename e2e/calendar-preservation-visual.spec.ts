@@ -15,6 +15,24 @@ import {
 const preservationOut = process.env.PRESERVATION_OUT_DIR;
 test.skip(!preservationOut, "Set PRESERVATION_OUT_DIR for parity evidence");
 
+// Byte-identical comparison needs deterministic rasterisation. Without this,
+// `daily-769x1024` differed from ITSELF across runs of origin/main by a single
+// pixel at +/-1 per channel — subpixel text anti-aliasing, not a code change.
+// These live in the spec, not playwright.config.ts, because the preservation
+// runner copies only this file into the origin/main worktree; a config-level
+// flag would apply to one side of the comparison only.
+test.use({
+  launchOptions: {
+    args: [
+      "--disable-lcd-text",
+      "--force-color-profile=srgb",
+      "--disable-font-subpixel-positioning",
+      "--disable-partial-raster",
+      "--disable-skia-runtime-opts",
+    ],
+  },
+});
+
 const preservedCases = [
   ["monthly", 375, 812],
   ["monthly", 768, 1024],
@@ -29,6 +47,41 @@ const preservedCases = [
   ["daily", 768, 1024],
   ["daily", 769, 1024],
 ] as const;
+
+/**
+ * Hold until every scroller has stopped moving.
+ *
+ * Day and Week auto-scroll to "now" on mount, and `useAutoScrollToNow` passes
+ * `behavior: "smooth"` unconditionally — it does not consult reduced-motion the
+ * way its sibling `useAutoScrollToMinutes` does. Emulating reduced motion
+ * therefore does not stop it, and a capture taken two frames after load lands
+ * at a different point along the easing curve each run: `daily-769x1024`
+ * differed between two runs of identical source by a 3px vertical offset.
+ * Without this the gate is unreliable in both directions — it could equally
+ * hide a real regression behind a scroll that had not finished.
+ */
+async function waitForScrollSettled(page: import("@playwright/test").Page) {
+  let previous = "";
+  let stableSamples = 0;
+  await expect
+    .poll(
+      async () => {
+        const signature = await page.evaluate(() =>
+          Array.from(document.querySelectorAll("*"))
+            .filter(
+              (element) => element.scrollTop > 0 || element.scrollLeft > 0,
+            )
+            .map((element) => `${element.scrollTop}:${element.scrollLeft}`)
+            .join("|"),
+        );
+        stableSamples = signature === previous ? stableSamples + 1 : 0;
+        previous = signature;
+        return stableSamples;
+      },
+      { timeout: 15_000, intervals: [120, 120, 120, 200, 200, 400] },
+    )
+    .toBeGreaterThanOrEqual(3);
+}
 
 const desktopLabels = {
   monthly: "Month",
@@ -90,6 +143,7 @@ for (const [view, width, height] of preservedCases) {
     await expect(page.getByText("Baseline event").first()).toBeVisible();
 
     await page.evaluate(() => document.fonts.ready);
+    await waitForScrollSettled(page);
     await page.evaluate(
       () =>
         new Promise<void>((resolve) =>
