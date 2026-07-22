@@ -174,8 +174,17 @@ describe("MonthOverflowPopover", () => {
     expect(onCloseFocus).not.toHaveBeenCalled();
   });
 
-  it("keeps dense event lists scrollable", () => {
+  it("keeps dense event lists scrollable inside the bounded popover", () => {
     setup(20);
-    expect(screen.getByRole("list")).toHaveClass("max-h-72", "overflow-y-auto");
+    // The list scrolls, but its ceiling is now the popover's available height
+    // rather than a fixed max-h-72: with the fixed cap the content could still
+    // total more than the space on either side of the anchor, and the popover
+    // rendered 24px off the top of an 800px viewport. It shrinks to fit now, so
+    // the list must be free to shrink with it.
+    expect(screen.getByRole("list")).toHaveClass(
+      "min-h-0",
+      "flex-1",
+      "overflow-y-auto",
+    );
   });
 });

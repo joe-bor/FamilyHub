@@ -58,8 +58,14 @@ export function MonthOverflowPopover({
       <PopoverAnchor asChild>{children}</PopoverAnchor>
       <PopoverContent
         align="start"
+        // A full day can be taller than the space above OR below its cell. When
+        // neither side fits, Radix keeps the preferred side and does not shrink,
+        // so the popover ran 24px past the top of an 800px viewport and cut off
+        // its own date heading. Bounding it to the available height makes the
+        // list scroll inside instead; collisionPadding keeps it off the edge.
+        collisionPadding={8}
         aria-label={`Events for ${format(date, "MMMM d, yyyy")}`}
-        className="motion-reduce:animate-none"
+        className="flex max-h-[var(--radix-popover-content-available-height)] flex-col motion-reduce:animate-none"
         onInteractOutside={() => {
           // Let a pointer/focus dismissal keep the newly chosen outside target.
           // Escape has no interact-outside event and restores the cell below.
@@ -76,10 +82,10 @@ export function MonthOverflowPopover({
           onCloseFocus?.();
         }}
       >
-        <p className="mb-2 text-sm font-semibold">
+        <p className="mb-2 shrink-0 text-sm font-semibold">
           {format(date, "EEEE, MMMM d")}
         </p>
-        <ul className="flex max-h-72 flex-col gap-1 overflow-y-auto pr-1">
+        <ul className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto pr-1">
           {events.map((event) => {
             const member = getFamilyMember(familyMembers, event.memberId);
             const memberName = member?.name ?? "Unknown member";
@@ -133,7 +139,7 @@ export function MonthOverflowPopover({
         <button
           type="button"
           onClick={() => closeForAction(() => onOpenDay(date))}
-          className="mt-2 min-h-11 w-full rounded-lg border border-border text-sm font-medium hover:bg-accent"
+          className="mt-2 min-h-11 w-full shrink-0 rounded-lg border border-border text-sm font-medium hover:bg-accent"
         >
           Open in Day view
         </button>
