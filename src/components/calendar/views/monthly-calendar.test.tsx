@@ -209,6 +209,63 @@ describe("MonthlyCalendar large screen", () => {
   });
 });
 
+/**
+ * The tablet path (769-1023px) must stay byte-for-byte the shipped rendering.
+ * 1024 is the only boundary this component gates on; the 768/769 mobile
+ * boundary belongs to useIsMobile and the module's MobileMonthlyView routing,
+ * neither of which this story touches.
+ */
+describe("MonthlyCalendar below the large-screen breakpoint", () => {
+  beforeEach(() => {
+    stubResizeObserver();
+    seedFamilyStore({ name: "Test Family", members: testMembers });
+  });
+  afterEach(resetViewportWidth);
+
+  it("renders the compact path, not the ARIA grid, at 1023px", () => {
+    setViewportWidth(1023);
+    setup();
+
+    expect(screen.queryByRole("grid")).not.toBeInTheDocument();
+    expect(screen.queryAllByRole("gridcell")).toHaveLength(0);
+    expect(screen.queryAllByRole("columnheader")).toHaveLength(0);
+    // The compact path keeps its directly-clickable event buttons.
+    expect(screen.getByRole("button", { name: "Soccer" })).toBeInTheDocument();
+  });
+
+  it("switches to the ARIA grid at exactly 1024px", () => {
+    setViewportWidth(1024);
+    setup();
+
+    expect(screen.getByRole("grid")).toBeInTheDocument();
+    expect(screen.getAllByRole("gridcell").length).toBeGreaterThan(0);
+  });
+
+  it("keeps the shipped 3-event cap and +N summary on the compact path", () => {
+    setViewportWidth(1023);
+    const crowded = Array.from({ length: 5 }, (_, index) =>
+      createTestEvent({
+        id: `compact-${index}`,
+        title: `Compact ${index}`,
+        date: new Date(2026, 2, 8),
+        memberId: testMembers[0].id,
+      }),
+    );
+    setup(new Date(2026, 2, 8), crowded);
+
+    expect(
+      screen.getByRole("button", { name: "Compact 0" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Compact 2" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Compact 3" }),
+    ).not.toBeInTheDocument();
+    expect(screen.getByText("+2 more")).toBeInTheDocument();
+  });
+});
+
 describe("MonthlyCalendar large query states", () => {
   const baseProps = {
     events: [],
