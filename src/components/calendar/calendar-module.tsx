@@ -184,8 +184,18 @@ export function CalendarModule() {
         end = endOfWeek(currentDate, { weekStartsOn: 0 });
         break;
       case "monthly":
-        start = startOfMonth(currentDate);
-        end = endOfMonth(currentDate);
+        if (isLargeScreen) {
+          // The lg+ grid renders leading and trailing days from adjacent
+          // months, so fetch the range it actually draws. Gated because
+          // dateRange is module-wide and MobileMonthlyView also renders
+          // adjacent-month days — an ungated change would alter mobile.
+          // See spec Section 4.6.
+          start = startOfWeek(startOfMonth(currentDate), { weekStartsOn: 0 });
+          end = endOfWeek(endOfMonth(currentDate), { weekStartsOn: 0 });
+        } else {
+          start = startOfMonth(currentDate);
+          end = endOfMonth(currentDate);
+        }
         break;
       case "schedule":
         start = currentDate;
@@ -200,7 +210,7 @@ export function CalendarModule() {
       startDate: format(start, "yyyy-MM-dd"),
       endDate: format(end, "yyyy-MM-dd"),
     };
-  }, [currentDate, calendarView]);
+  }, [currentDate, calendarView, isLargeScreen]);
 
   // Server state from TanStack Query
   const {
@@ -546,6 +556,8 @@ export function CalendarModule() {
           <MonthlyCalendar
             {...commonProps}
             onDateSelect={selectDateAndSwitchToDaily}
+            onMonthChange={setDate}
+            isEventDetailOpen={isDetailModalOpen}
           />
         );
       case "schedule":
