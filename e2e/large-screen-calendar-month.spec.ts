@@ -357,6 +357,33 @@ test.describe("Large-screen Calendar Month", () => {
     // stay square even though outward bleed is suppressed there.
     await expect(chips.nth(1)).not.toHaveClass(/rounded-r/);
     await expect(chips.nth(2)).not.toHaveClass(/rounded-l/);
+
+    // Square corners alone do not prove the 9px bleed was suppressed — assert
+    // the rectangles too. Saturday must not extend past its row's right edge,
+    // and Sunday must not start left of its row's left edge.
+    const rows = page.locator('[role="rowgroup"] > [role="row"]');
+    const saturdayRow = await rows
+      .filter({ has: chips.nth(1) })
+      .first()
+      .boundingBox();
+    const sundayRow = await rows
+      .filter({ has: chips.nth(2) })
+      .first()
+      .boundingBox();
+    const sunday = await chips.nth(2).boundingBox();
+    expect(saturdayRow).not.toBeNull();
+    expect(sundayRow).not.toBeNull();
+    expect(sunday).not.toBeNull();
+    const saturdayRight =
+      (saturday as { x: number; width: number }).x +
+      (saturday as { width: number }).width;
+    const saturdayRowRight =
+      (saturdayRow as { x: number; width: number }).x +
+      (saturdayRow as { width: number }).width;
+    expect(saturdayRight).toBeLessThanOrEqual(saturdayRowRight + 1);
+    expect((sunday as { x: number }).x).toBeGreaterThanOrEqual(
+      (sundayRow as { x: number }).x - 1,
+    );
     expect(
       await page.evaluate(
         () =>

@@ -54,53 +54,46 @@ async function settleAndCapture(
     //  2. a resize does not reach the DOM until the ResizeObserver callback and
     //     the resulting React render have run, so the cells still carry the
     //     previous viewport's row height.
-    // Wait out both, and above 1024px require the grid to actually be there
-    // rather than treating "no grid" as "nothing to wait for".
+    // Settle on a *stable* row height rather than on the height formula: when
+    // the rows overflow, the container is content-sized and the formula holds
+    // for the stale layout too (see waitForMeasuredRowHeight).
+    let previous = Number.NaN;
+    let stableSamples = 0;
     await expect
       .poll(
-        () =>
-          page.evaluate(
-            ({ rowGap, minRowHeight }) => {
-              if (
+        async () => {
+          const state = await page.evaluate(() => {
+            const cell = document.querySelector<HTMLElement>(
+              '[role="grid"] [role="rowgroup"] [role="gridcell"]',
+            );
+            return {
+              loading: Boolean(
                 document.querySelector(
                   '[role="status"][aria-label="Loading month"]',
-                )
-              ) {
-                return false;
-              }
-              const isLargeScreen = window.matchMedia(
-                "(min-width: 1024px)",
-              ).matches;
-              const rowgroup = document.querySelector(
-                '[role="grid"] [role="rowgroup"]',
-              );
-              // Below 1024px Month renders the compact/mobile path, which has no
-              // measured rowgroup at all.
-              if (!isLargeScreen) return true;
-              if (!rowgroup) return false;
-              const weeks = rowgroup.querySelectorAll(
-                ':scope > [role="row"]',
-              ).length;
-              const cell =
-                rowgroup.querySelector<HTMLElement>('[role="gridcell"]');
-              if (!weeks || !cell) return false;
-              const expected = Math.max(
-                minRowHeight,
-                Math.floor(
-                  (rowgroup.getBoundingClientRect().height -
-                    rowGap * (weeks - 1)) /
-                    weeks,
                 ),
-              );
-              return (
-                Math.abs(cell.getBoundingClientRect().height - expected) <= 1
-              );
-            },
-            { rowGap: MONTH_ROW_GAP, minRowHeight: MONTH_MIN_ROW_HEIGHT },
-          ),
-        { timeout: 15_000 },
+              ),
+              // Below 1024px Month renders the compact/mobile path, which has
+              // no measured rowgroup at all.
+              isLargeScreen: window.matchMedia("(min-width: 1024px)").matches,
+              height: cell ? cell.getBoundingClientRect().height : -1,
+            };
+          });
+          if (state.loading) {
+            stableSamples = 0;
+            previous = Number.NaN;
+            return 0;
+          }
+          if (!state.isLargeScreen) return 2;
+          stableSamples =
+            state.height > 0 && state.height === previous
+              ? stableSamples + 1
+              : 0;
+          previous = state.height;
+          return stableSamples;
+        },
+        { timeout: 15_000, intervals: [120, 120, 120, 200, 200, 400] },
       )
-      .toBe(true);
+      .toBeGreaterThanOrEqual(2);
   }
   await page.evaluate(() => document.fonts.ready);
   await page.evaluate(
@@ -196,53 +189,76 @@ async function renderedTextContrast(
 
 /**
  * Block until the measured row height the ResizeObserver produced has actually
- * reached the DOM.
+ * reached the DOM, then prove the observer-to-render wiring.
  *
  * Counting slots straight after `setViewportSize` reads the *previous*
  * viewport's layout: the observer callback, the React state update and the
- * re-render all land after the resize returns. This also doubles as the
- * observer-to-render proof the contract wants made in a browser — the rendered
- * cell height must equal `monthRowHeight()` applied to the observed weeks
- * container, and must never fall under the floor.
+ * re-render all land after the resize returns.
+ *
+ * The wait is a stability check, deliberately NOT the height formula. When the
+ * rows overflow, the weeks container is content-sized, so
+ * `monthRowHeight(containerHeight)` is self-consistent at *any* row height —
+ * including the stale one — and a formula-based wait returns true immediately
+ * on the previous viewport's layout. That is exactly how a 2560px measurement
+ * leaked into the 1024x768 capacity count. Settle first, then assert the
+ * formula as a proof rather than using it as the gate.
  */
 async function waitForMeasuredRowHeight(
   grid: import("@playwright/test").Locator,
   weekCount: number,
 ): Promise<number> {
+  let previous = Number.NaN;
+  let stableSamples = 0;
   await expect
     .poll(
-      () =>
-        grid.evaluate(
-          (element, { weeks, rowGap, minRowHeight }) => {
-            const rowgroup = element.querySelector('[role="rowgroup"]');
-            const cell =
-              rowgroup?.querySelector<HTMLElement>('[role="gridcell"]');
-            if (!rowgroup || !cell) return false;
-            const containerHeight = rowgroup.getBoundingClientRect().height;
-            const expected = Math.max(
-              minRowHeight,
-              Math.floor((containerHeight - rowGap * (weeks - 1)) / weeks),
-            );
-            return (
-              Math.abs(cell.getBoundingClientRect().height - expected) <= 1
-            );
-          },
-          {
-            weeks: weekCount,
-            rowGap: MONTH_ROW_GAP,
-            minRowHeight: MONTH_MIN_ROW_HEIGHT,
-          },
-        ),
-      { timeout: 10_000 },
+      async () => {
+        const height = await grid.evaluate((element) => {
+          const cell = element.querySelector<HTMLElement>(
+            '[role="rowgroup"] [role="gridcell"]',
+          );
+          return cell ? cell.getBoundingClientRect().height : -1;
+        });
+        stableSamples =
+          height > 0 && height === previous ? stableSamples + 1 : 0;
+        previous = height;
+        return stableSamples;
+      },
+      { timeout: 15_000, intervals: [120, 120, 120, 200, 200, 400] },
     )
-    .toBe(true);
+    .toBeGreaterThanOrEqual(2);
 
-  const rowHeight = await grid
-    .locator('[role="rowgroup"] [role="gridcell"]')
-    .first()
-    .evaluate((element) => element.getBoundingClientRect().height);
-  expect(rowHeight).toBeGreaterThanOrEqual(MONTH_MIN_ROW_HEIGHT);
-  return rowHeight;
+  const proof = await grid.evaluate(
+    (element, { weeks, rowGap, minRowHeight }) => {
+      const rowgroup = element.querySelector('[role="rowgroup"]');
+      const cell = rowgroup?.querySelector<HTMLElement>('[role="gridcell"]');
+      if (!rowgroup || !cell) return null;
+      const containerHeight = rowgroup.getBoundingClientRect().height;
+      return {
+        rendered: cell.getBoundingClientRect().height,
+        expected: Math.max(
+          minRowHeight,
+          Math.floor((containerHeight - rowGap * (weeks - 1)) / weeks),
+        ),
+        renderedWeeks: rowgroup.querySelectorAll(':scope > [role="row"]')
+          .length,
+      };
+    },
+    {
+      weeks: weekCount,
+      rowGap: MONTH_ROW_GAP,
+      minRowHeight: MONTH_MIN_ROW_HEIGHT,
+    },
+  );
+  expect(proof).not.toBeNull();
+  const { rendered, expected, renderedWeeks } = proof as {
+    rendered: number;
+    expected: number;
+    renderedWeeks: number;
+  };
+  expect(renderedWeeks).toBe(weekCount);
+  expect(Math.abs(rendered - expected)).toBeLessThanOrEqual(1);
+  expect(rendered).toBeGreaterThanOrEqual(MONTH_MIN_ROW_HEIGHT);
+  return rendered;
 }
 
 async function renderedOpacity(
@@ -357,6 +373,25 @@ test("Month viewport matrix and measured capacity proof", async ({
     await renderedTextContrast(overflowSummary, '[role="gridcell"]'),
   ).toBeGreaterThanOrEqual(4.5);
 
+  // Six weeks at 1024x768 sit on the MONTH_MIN_ROW_HEIGHT floor (asserted by
+  // waitForMeasuredRowHeight) and therefore overflow. That is the spec's
+  // accepted trade — but only while the overflow stays *reachable*: the grid
+  // has to scroll to the last week rather than clip it away permanently.
+  const sixWeekOverflow = await augustGrid.evaluate((element) => {
+    const scroller = element as HTMLElement;
+    const before = scroller.scrollTop;
+    scroller.scrollTop = scroller.scrollHeight;
+    const reached = scroller.scrollTop;
+    scroller.scrollTop = before;
+    return {
+      overflows: scroller.scrollHeight > scroller.clientHeight,
+      canScroll: reached > 0,
+    };
+  });
+  if (sixWeekOverflow.overflows) {
+    expect(sixWeekOverflow.canScroll).toBe(true);
+  }
+
   for (let step = 0; step < 4; step++) {
     await page.getByRole("button", { name: "Previous" }).click();
   }
@@ -375,6 +410,25 @@ test("Month viewport matrix and measured capacity proof", async ({
   // Both days carry ten events, so each cell saturates its measured capacity
   // and these counts are the observed capacity rather than the event count.
   expect(fiveWeekCapacity).toBeGreaterThan(sixWeekCapacity);
+
+  // Five weeks at 1440x900 must consume the height rather than leave dead
+  // space under the last week — the whole point of measuring the container.
+  const fiveWeekFill = await aprilGrid.evaluate((element) => {
+    const rows = element.querySelectorAll('[role="rowgroup"] > [role="row"]');
+    const last = rows[rows.length - 1];
+    if (!last) return null;
+    return {
+      lastBottom: last.getBoundingClientRect().bottom,
+      gridBottom: element.getBoundingClientRect().bottom,
+    };
+  });
+  expect(fiveWeekFill).not.toBeNull();
+  const { lastBottom, gridBottom } = fiveWeekFill as {
+    lastBottom: number;
+    gridBottom: number;
+  };
+  expect(lastBottom).toBeGreaterThanOrEqual(gridBottom - 24);
+  expect(lastBottom).toBeLessThanOrEqual(gridBottom + 2);
   await settleAndCapture(page, "month/1440x900/five-week-capacity.png");
 
   if (!evidenceRoot) throw new Error("CALENDAR_VISUAL_OUT_DIR is required");
