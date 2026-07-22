@@ -41,3 +41,6 @@ test-results/
 docs/VERSIONING-WALKTHROUGH.md
 .worktrees/
 .claude/launch.json
+
+# Local Calendar screenshot evidence (PR attachments, never source)
+.calendar-evidence/
