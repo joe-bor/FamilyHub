@@ -9,7 +9,7 @@ import {
 import type React from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useFamilyMembers } from "@/api";
-import { useIsLargeScreen } from "@/hooks";
+import { useIsLargeScreen, useOnlineStatus } from "@/hooks";
 import {
   compareEventsAllDayFirst,
   formatLocalDate,
@@ -25,6 +25,10 @@ import {
 import { cn } from "@/lib/utils";
 import { GoogleBadge, isGoogleEvent } from "../components/calendar-event";
 import type { FilterState } from "../components/calendar-filter";
+import {
+  CalendarErrorState,
+  CalendarOfflineState,
+} from "../components/calendar-view-states";
 import { MonthDayCell } from "../components/month-day-cell";
 import {
   MONTH_COLUMN_GAP,
@@ -40,7 +44,16 @@ import {
   planCellSlots,
 } from "../utils/month-slots";
 
-interface MonthlyCalendarProps {
+interface MonthlyCalendarQueryStateProps {
+  isLoading?: boolean;
+  isError?: boolean;
+  errorMessage?: string;
+  onRetry?: () => void;
+  hasQueryData?: boolean;
+  isQueryRestoring?: boolean;
+}
+
+interface MonthlyCalendarProps extends MonthlyCalendarQueryStateProps {
   events: CalendarEvent[];
   currentDate: Date;
   onEventClick?: (event: CalendarEvent) => void;
@@ -297,8 +310,15 @@ function MonthlyCalendarLarge({
   onDateSelect,
   onMonthChange,
   isEventDetailOpen = false,
+  isLoading = false,
+  isError = false,
+  errorMessage,
+  onRetry,
+  hasQueryData = true,
+  isQueryRestoring = false,
 }: MonthlyCalendarProps) {
   const familyMembers = useFamilyMembers();
+  const isOnline = useOnlineStatus();
   const visibleEvents = useMemo(
     () =>
       events.filter(
@@ -461,6 +481,22 @@ function MonthlyCalendarLarge({
     pendingModalReturnDate.current = null;
   }, [isEventDetailOpen, weeksEl]);
 
+  // Branches sit after every hook so React's hook order stays stable.
+  if (isError) {
+    return <CalendarErrorState message={errorMessage} onRetry={onRetry} />;
+  }
+  // Restoration owns the surface until persisted queries finish, so the
+  // uncached message cannot flash during hydration.
+  if (isLoading || isQueryRestoring) {
+    return <MonthGridSkeleton weekCount={weekCount} />;
+  }
+  // `events.length === 0` is NOT a cache-presence test: a successfully cached
+  // empty response is valid data and must render the normal empty grid.
+  // useOnlineStatus() is reactive, unlike a direct navigator.onLine read.
+  if (!hasQueryData && !isOnline) {
+    return <CalendarOfflineState message="This month isn't cached yet." />;
+  }
+
   return (
     // biome-ignore lint/a11y/useSemanticElements: CSS grid layout, not table data
     <div
@@ -559,6 +595,38 @@ function MonthlyCalendarLarge({
           );
         })}
       </div>
+    </div>
+  );
+}
+
+/**
+ * Loading placeholder for the measured grid. Keys are derived from the row and
+ * column index on purpose — the cells are static and interchangeable. This
+ * deliberately carries no lint suppression: `noArrayIndexKey` is disabled in
+ * biome.json, and suppressing a disabled rule is itself a lint error.
+ */
+function MonthGridSkeleton({ weekCount }: { weekCount: number }) {
+  return (
+    <div
+      role="status"
+      aria-label="Loading month"
+      className="flex min-h-0 flex-1 flex-col overflow-y-auto p-4"
+      style={{ gap: MONTH_ROW_GAP }}
+    >
+      {Array.from({ length: weekCount }).map((_, week) => (
+        <div
+          key={`week-${week}`}
+          className="grid min-h-24 flex-1 shrink-0 grid-cols-7"
+          style={{ columnGap: MONTH_COLUMN_GAP }}
+        >
+          {Array.from({ length: 7 }).map((__, day) => (
+            <div
+              key={`day-${week}-${day}`}
+              className="animate-pulse rounded-lg border border-border/50 bg-muted/40 motion-reduce:animate-none"
+            />
+          ))}
+        </div>
+      ))}
     </div>
   );
 }

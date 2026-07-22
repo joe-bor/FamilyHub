@@ -208,3 +208,112 @@ describe("MonthlyCalendar large screen", () => {
     ).toBeInTheDocument();
   });
 });
+
+describe("MonthlyCalendar large query states", () => {
+  const baseProps = {
+    events: [],
+    currentDate: new Date(2026, 3, 15),
+    filter,
+    onDateSelect: vi.fn(),
+    onMonthChange: vi.fn(),
+  };
+
+  function setOnline(value: boolean) {
+    Object.defineProperty(navigator, "onLine", {
+      configurable: true,
+      value,
+    });
+    window.dispatchEvent(new Event(value ? "online" : "offline"));
+  }
+
+  beforeEach(() => {
+    stubResizeObserver();
+    setViewportWidth(1280);
+    seedFamilyStore({ name: "Test Family", members: testMembers });
+  });
+
+  afterEach(() => {
+    setOnline(true);
+    resetViewportWidth();
+  });
+
+  it("shows offline-cold-cache only when query data is absent", () => {
+    setOnline(false);
+    render(<MonthlyCalendar {...baseProps} hasQueryData={false} />);
+    expect(
+      screen.getByText("This month isn't cached yet."),
+    ).toBeInTheDocument();
+  });
+
+  it("renders a cached empty month instead of calling it uncached", () => {
+    setOnline(false);
+    render(<MonthlyCalendar {...baseProps} hasQueryData />);
+    expect(screen.queryByText(/isn't cached/i)).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("grid", { name: /april 2026/i }),
+    ).toBeInTheDocument();
+  });
+
+  it("treats a cached empty grid-aligned February as valid data", () => {
+    setOnline(false);
+    render(
+      <MonthlyCalendar
+        {...baseProps}
+        currentDate={new Date(2026, 1, 15)}
+        hasQueryData
+      />,
+    );
+    expect(screen.queryByText(/isn't cached/i)).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("grid", { name: /february 2026/i }),
+    ).toBeInTheDocument();
+  });
+
+  it("shows restoration skeleton without flashing cold-cache copy", () => {
+    setOnline(false);
+    const { rerender } = render(
+      <MonthlyCalendar {...baseProps} hasQueryData={false} isQueryRestoring />,
+    );
+    expect(
+      screen.getByRole("status", { name: /loading month/i }),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/isn't cached/i)).not.toBeInTheDocument();
+
+    rerender(
+      <MonthlyCalendar
+        {...baseProps}
+        hasQueryData={false}
+        isQueryRestoring={false}
+      />,
+    );
+    expect(
+      screen.getByText("This month isn't cached yet."),
+    ).toBeInTheDocument();
+  });
+
+  it("renders loading before content", () => {
+    render(<MonthlyCalendar {...baseProps} isLoading hasQueryData={false} />);
+    expect(
+      screen.getByRole("status", { name: /loading month/i }),
+    ).toBeInTheDocument();
+  });
+
+  it("renders error before loading and retries", async () => {
+    const user = userEvent.setup();
+    const onRetry = vi.fn();
+    render(
+      <MonthlyCalendar
+        {...baseProps}
+        isLoading
+        isError
+        errorMessage="No route"
+        onRetry={onRetry}
+      />,
+    );
+    expect(
+      screen.queryByRole("status", { name: /loading month/i }),
+    ).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: /try again/i }));
+    expect(onRetry).toHaveBeenCalledOnce();
+  });
+});

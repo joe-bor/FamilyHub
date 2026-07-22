@@ -1,3 +1,4 @@
+import { useIsRestoring } from "@tanstack/react-query";
 import {
   addDays,
   endOfMonth,
@@ -219,7 +220,11 @@ export function CalendarModule() {
     isFetching,
     isError,
     error,
+    refetch,
   } = useCalendarEvents(dateRange);
+  // Persisted query data hydrates asynchronously; an undefined response while
+  // this flag is true is not a cold cache.
+  const isRestoring = useIsRestoring();
 
   // Unfiltered events for the API response — used by intent lookups that must
   // find an event regardless of the active member/all-day filter state.
@@ -473,8 +478,13 @@ export function CalendarModule() {
   };
 
   const renderCalendarView = () => {
+    // Only the lg+ compositions own their states. This gate is load-bearing:
+    // without `isLargeScreen`, a mobile "monthly" view would skip the shared
+    // loading state and render MobileMonthlyView with zero events mid-fetch.
+    const ownsItsStates = isLargeScreen && calendarView === "monthly";
+
     // Show loading state
-    if (isLoading) {
+    if (isLoading && !ownsItsStates) {
       return (
         <div className="flex-1 flex items-center justify-center">
           <div className="text-muted-foreground">Loading events...</div>
@@ -483,7 +493,7 @@ export function CalendarModule() {
     }
 
     // Show error state
-    if (isError) {
+    if (isError && !ownsItsStates) {
       return (
         <div className="flex-1 flex items-center justify-center">
           <div className="text-destructive">
@@ -558,6 +568,12 @@ export function CalendarModule() {
             onDateSelect={selectDateAndSwitchToDaily}
             onMonthChange={setDate}
             isEventDetailOpen={isDetailModalOpen}
+            isLoading={isLoading}
+            isError={isError}
+            errorMessage={error?.message}
+            onRetry={refetch}
+            hasQueryData={eventsResponse !== undefined}
+            isQueryRestoring={isRestoring}
           />
         );
       case "schedule":
