@@ -191,7 +191,12 @@ export function MonthDayCell({
           <div
             data-testid="month-overflow-summary"
             aria-hidden="true"
-            className="w-full shrink-0 rounded px-1.5 text-left text-sm font-semibold text-primary"
+            // `text-primary` measured 4.29:1 over a weekend cell's bg-muted/40
+            // — below AA for this 14px text. It also dressed a presentational
+            // summary as an accent control, which the interaction contract
+            // forbids: the gridcell is the only target. `text-foreground` is
+            // both accessible and honest about not being clickable.
+            className="w-full shrink-0 rounded px-1.5 text-left text-sm font-semibold text-foreground"
             style={{
               height: MONTH_CHIP_HEIGHT,
               minHeight: MONTH_CHIP_HEIGHT,
