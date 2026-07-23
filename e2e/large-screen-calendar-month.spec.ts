@@ -1,5 +1,9 @@
 import { expect, test } from "@playwright/test";
 import { addDays, addMonths, startOfMonth } from "date-fns";
+import {
+  MONTH_COLUMN_GAP,
+  MONTH_ROW_GAP,
+} from "../src/components/calendar/utils/month-capacity";
 import { formatLocalDate, parseLocalDate } from "../src/lib/time-utils";
 import {
   createCalendarEvent,
@@ -327,6 +331,60 @@ test.describe("Large-screen Calendar Month", () => {
     const weekRows = grid.locator(':scope > [role="rowgroup"] > [role="row"]');
     expect(await weekRows.count()).toBeGreaterThanOrEqual(4);
     expect(await weekRows.count()).toBeLessThanOrEqual(6);
+  });
+
+  test("adjacent gridcells keep 8px gaps in both axes", async ({ page }) => {
+    // The other half of the same criterion as the weld test below. Spec 9 asks
+    // for "at least 8px row and column gaps, while continuation-chip weld
+    // geometry still touches across the horizontal gap" — proving only that
+    // chips touch would also pass with a 0px gap, which fails the PRD's
+    // adjacent-target spacing floor. jsdom has no layout engine, so this is
+    // only provable here.
+    // Gate on the loaded grid before measuring. MonthGridSkeleton renders no
+    // rowgroup at all, so a bare evaluate() throws against a cold backend that
+    // outlives the default expect timeout — measure the real thing or nothing.
+    const weekRows = page.locator('[role="rowgroup"] > [role="row"]');
+    await expect(weekRows.first()).toBeVisible();
+    expect(await weekRows.count()).toBeGreaterThanOrEqual(2);
+    await expect(weekRows.first().getByRole("gridcell")).toHaveCount(7);
+
+    const geometry = await page.evaluate(() => {
+      const rows = Array.from(
+        document.querySelectorAll('[role="rowgroup"] > [role="row"]'),
+      );
+      const cellsIn = (row: Element) =>
+        Array.from(row.querySelectorAll(':scope > [role="gridcell"]')).map(
+          (cell) => cell.getBoundingClientRect(),
+        );
+      const first = cellsIn(rows[0]);
+      const second = cellsIn(rows[1]);
+      if (first.length < 7 || second.length < 7) return null;
+      return {
+        // Every adjacent column pair, so one uneven track cannot hide.
+        columnGaps: first
+          .slice(1)
+          .map((cell, index) => cell.left - first[index].right),
+        rowGap: second[0].top - first[0].bottom,
+      };
+    });
+    expect(geometry).not.toBeNull();
+    const { columnGaps, rowGap } = geometry as {
+      columnGaps: number[];
+      rowGap: number;
+    };
+
+    expect(columnGaps).toHaveLength(6);
+    for (const gap of columnGaps) {
+      // The PRD floor, asserted against a literal so it holds even if the
+      // constant is retuned...
+      expect(gap).toBeGreaterThanOrEqual(8);
+      // ...and the constant-to-CSS binding, which is the thing spec 4.2
+      // actually forbids breaking: rendered geometry must track the values the
+      // capacity arithmetic is computed from.
+      expect(gap).toBeCloseTo(MONTH_COLUMN_GAP, 0);
+    }
+    expect(rowGap).toBeGreaterThanOrEqual(8);
+    expect(rowGap).toBeCloseTo(MONTH_ROW_GAP, 0);
   });
 
   test("multi-day segments weld, keep row-edge corners square and never overflow the page", async ({
