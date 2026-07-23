@@ -1079,4 +1079,36 @@ describe("CalendarModule", () => {
       });
     });
   });
+
+  describe("large Schedule empty reason", () => {
+    afterEach(resetViewportWidth);
+
+    it("reports active filters when raw in-window events are filtered out", async () => {
+      setViewportWidth(1280);
+      seedCalendarStore({
+        calendarView: "schedule",
+        filter: {
+          selectedMembers: testMembers.map((member) => member.id),
+          showAllDayEvents: false,
+        },
+      });
+      seedMockEvents([
+        createTestEventResponse({
+          id: "hidden-all-day",
+          title: "Hidden all-day event",
+          memberId: testMembers[0].id,
+          isAllDay: true,
+        }),
+      ]);
+
+      render(<CalendarModule />);
+
+      expect(
+        await screen.findByText("No events match your filters"),
+      ).toBeInTheDocument();
+      expect(
+        screen.queryByText("Hidden all-day event"),
+      ).not.toBeInTheDocument();
+    });
+  });
 });

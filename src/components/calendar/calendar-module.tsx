@@ -41,6 +41,7 @@ import {
   WeeklyCalendar,
 } from "@/components/calendar";
 import { railThresholdPx } from "@/components/calendar/utils/day-rail";
+import { hasScheduleWindowEvents } from "@/components/calendar/utils/schedule-rows";
 import { toast } from "@/components/ui/toaster";
 import { useIsLargeScreen, useIsMobile, useMediaQuery } from "@/hooks";
 import { isOfflineWriteError } from "@/lib/offline/read-only-guard";
@@ -481,7 +482,9 @@ export function CalendarModule() {
     // Only the lg+ compositions own their states. This gate is load-bearing:
     // without `isLargeScreen`, a mobile "monthly" view would skip the shared
     // loading state and render MobileMonthlyView with zero events mid-fetch.
-    const ownsItsStates = isLargeScreen && calendarView === "monthly";
+    const ownsItsStates =
+      isLargeScreen &&
+      (calendarView === "monthly" || calendarView === "schedule");
 
     // Show loading state
     if (isLoading && !ownsItsStates) {
@@ -577,7 +580,20 @@ export function CalendarModule() {
           />
         );
       case "schedule":
-        return <ScheduleCalendar {...commonProps} />;
+        return (
+          <ScheduleCalendar
+            {...commonProps}
+            isLoading={isLoading}
+            isError={isError}
+            errorMessage={error?.message}
+            onRetry={refetch}
+            hasUnfilteredEventsInWindow={hasScheduleWindowEvents(
+              rawEvents,
+              currentDate,
+              14,
+            )}
+          />
+        );
       default:
         return <WeeklyCalendar {...commonProps} />;
     }

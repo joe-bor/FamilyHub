@@ -20,7 +20,10 @@ import {
 import { type CalendarEvent, colorMap, getFamilyMember } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import type { FilterState } from "../components/calendar-filter";
-import { CalendarEmptyState } from "../components/calendar-view-states";
+import {
+  CalendarEmptyState,
+  CalendarErrorState,
+} from "../components/calendar-view-states";
 import { MOBILE_FAB_SCROLL_PADDING } from "../components/floating-action-layout";
 import { MemberAvatar } from "../components/member-avatar";
 import {
@@ -33,6 +36,10 @@ interface ScheduleCalendarProps {
   currentDate: Date;
   onEventClick?: (event: CalendarEvent) => void;
   filter: FilterState;
+  isLoading?: boolean;
+  isError?: boolean;
+  errorMessage?: string;
+  onRetry?: () => void;
   /** Raw-query reason signal; the compact branch ignores it. */
   hasUnfilteredEventsInWindow?: boolean;
 }
@@ -239,11 +246,41 @@ function gapAriaLabel(start: Date, end: Date): string {
   return `${format(start, "EEEE MMMM d, yyyy")} to ${format(end, "EEEE MMMM d, yyyy")}, nothing scheduled`;
 }
 
+function ScheduleSkeleton() {
+  return (
+    <div
+      role="status"
+      aria-label="Loading schedule"
+      className="flex w-full flex-col gap-4 p-4"
+    >
+      {Array.from({ length: 4 }).map((_, group) => (
+        <div
+          key={group}
+          className="grid gap-4"
+          style={{
+            gridTemplateColumns: `${SCHEDULE_GUTTER_WIDTH}px minmax(0, 1fr)`,
+          }}
+        >
+          <div className="h-10 animate-pulse rounded-lg bg-muted/60 motion-reduce:animate-none" />
+          <div className="flex flex-col gap-2">
+            <div className="h-14 animate-pulse rounded-xl bg-muted/40 motion-reduce:animate-none" />
+            <div className="h-14 animate-pulse rounded-xl bg-muted/40 motion-reduce:animate-none" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function ScheduleCalendarLarge({
   events,
   currentDate,
   onEventClick,
   filter,
+  isLoading = false,
+  isError = false,
+  errorMessage,
+  onRetry,
   hasUnfilteredEventsInWindow = hasScheduleWindowEvents(
     events,
     currentDate,
@@ -265,6 +302,11 @@ function ScheduleCalendarLarge({
     // object on every filter change, so this is no less precise.
     [events, currentDate, filter],
   );
+
+  if (isError) {
+    return <CalendarErrorState message={errorMessage} onRetry={onRetry} />;
+  }
+  if (isLoading) return <ScheduleSkeleton />;
 
   if (rows.length === 0) {
     if (familyMembers.length === 0) {
