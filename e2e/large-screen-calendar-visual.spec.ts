@@ -102,10 +102,11 @@ async function settleScheduleLayout(
 async function settleAndCapture(
   page: import("@playwright/test").Page,
   relativePath: string,
-  // "state" is for the loading/error surfaces, which have no grid to measure
-  // and have each asserted their own state before calling. "schedule" is the
-  // Schedule equivalent of "grid": Schedule renders no rowgroup at all, so the
-  // Month settle would poll a null cell until it timed out.
+  // "state" is for the loading, error and whole-view empty surfaces, which
+  // have no grid or scroll surface to measure and have each asserted their own
+  // state before calling. "schedule" is the Schedule equivalent of "grid":
+  // Schedule renders no rowgroup at all, so the Month settle would poll a null
+  // cell until it timed out.
   options: { surface?: "grid" | "schedule" | "state" } = {},
 ) {
   if (!evidenceRoot) throw new Error("CALENDAR_VISUAL_OUT_DIR is required");
@@ -345,6 +346,9 @@ test("Month viewport matrix and measured capacity proof", async ({
   page,
   request,
 }) => {
+  // Seeds a large fixture and takes a dozen full-page captures, several at
+  // 2560x1440. A timeout here would sink the whole evidence run at the end.
+  test.slow();
   await page.clock.setFixedTime(new Date(2026, 7, 15, 12, 0, 0));
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.setViewportSize({ width: 1440, height: 900 });
@@ -926,6 +930,11 @@ test("Month error and retry", async ({ page, request }) => {
  * Block until the Schedule surface is the loaded composition. Assertions that
  * run against `ScheduleSkeleton` prove nothing, and a cold released backend can
  * keep the skeleton up for longer than the default expect timeout.
+ *
+ * The scroll-surface check is what makes this a gate at all: "no skeleton" is
+ * satisfied at t=0, before the skeleton has even mounted. Only tests that end
+ * up on a populated surface may call this — a whole-view empty state renders no
+ * scroll surface, so those gate on their own copy instead.
  */
 async function waitForScheduleLoaded(
   page: import("@playwright/test").Page,
@@ -933,12 +942,18 @@ async function waitForScheduleLoaded(
   await expect(
     page.getByRole("status", { name: /loading schedule/i }),
   ).toHaveCount(0, { timeout: 30_000 });
+  await expect(page.getByTestId("schedule-scroll-surface")).toBeVisible({
+    timeout: 30_000,
+  });
 }
 
 test("Schedule viewport matrix, full-width rows, paging and sticky gutter", async ({
   page,
   request,
 }) => {
+  // Seeds a large fixture and takes a dozen full-page captures, several at
+  // 2560x1440. A timeout here would sink the whole evidence run at the end.
+  test.slow();
   await page.clock.setFixedTime(new Date(2026, 7, 15, 12, 0, 0));
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.setViewportSize({ width: 1440, height: 900 });
@@ -1171,7 +1186,15 @@ test("Schedule viewport matrix, full-width rows, paging and sticky gutter", asyn
   expect((gutterAfter as { y: number }).y).toBeGreaterThanOrEqual(
     (scrollBox as { y: number }).y,
   );
-  // Still inside its own section rather than escaping to the surface top.
+  // Same bounds as e2e/large-screen-calendar-schedule.spec.ts: pinned to the
+  // surface top, and still inside its own section rather than floating over
+  // the following day's rows.
+  expect((gutterAfter as { y: number }).y).toBeLessThanOrEqual(
+    (scrollBox as { y: number }).y + 20,
+  );
+  expect((gutterAfter as { y: number }).y).toBeGreaterThanOrEqual(
+    (regionAfter as { y: number }).y,
+  );
   expect((gutterAfter as { y: number }).y).toBeLessThan(
     (regionAfter as { y: number }).y +
       (regionAfter as { height: number }).height,
@@ -1198,6 +1221,27 @@ test("Schedule viewport matrix, full-width rows, paging and sticky gutter", asyn
       "button",
     ),
   ).toBeGreaterThanOrEqual(4.5);
+  // The positive half of "de-emphasised without opacity": the past group's own
+  // chrome really is lighter than a present group's. Without this, only the
+  // absence of a regression is proven and the de-emphasis itself rests on the
+  // screenshot.
+  const borderComparison = await page.evaluate(() => {
+    const sections = Array.from(
+      document.querySelectorAll<HTMLElement>(
+        '[data-testid="schedule-scroll-surface"] section',
+      ),
+    );
+    const read = (section: HTMLElement | undefined) =>
+      section ? getComputedStyle(section).borderTopColor : null;
+    const past = sections.find((section) =>
+      section.querySelector("h3")?.textContent?.includes("Past boundary"),
+    );
+    const present = sections.find((section) => section !== past);
+    return { past: read(past), present: read(present) };
+  });
+  expect(borderComparison.past).not.toBeNull();
+  expect(borderComparison.present).not.toBeNull();
+  expect(borderComparison.past).not.toBe(borderComparison.present);
   await settleAndCapture(page, "schedule/1440x900/past-after-previous.png", {
     surface: "schedule",
   });
@@ -1224,16 +1268,23 @@ test("Schedule genuinely empty", async ({ page, request }) => {
   await waitForHydration(page);
   await waitForCalendarReady(page);
   await switchCalendarView(page, "schedule");
-  await waitForScheduleLoaded(page);
 
   // Members exist and nothing is filtered out, so the reason is the window
-  // itself — not the filter copy and not the no-members copy.
-  await expect(page.getByText("No upcoming events")).toBeVisible();
+  // itself — not the filter copy and not the no-members copy. This state
+  // renders no scroll surface, so the empty copy itself is the load gate.
+  await expect(page.getByText("No upcoming events")).toBeVisible({
+    timeout: 30_000,
+  });
   await expect(
     page.getByText("Nothing scheduled in the next 2 weeks."),
   ).toBeVisible();
   await expect(page.getByText(/No events match your filters/)).toHaveCount(0);
   await expect(page.getByText(/No family members yet/)).toHaveCount(0);
+  // Spec Section 9: an event-free window is the whole-view empty state, never
+  // a gap row spanning the fourteen days.
+  await expect(
+    page.getByRole("group", { name: /nothing scheduled/i }),
+  ).toHaveCount(0);
 
   for (const viewport of scenarioViewports) {
     await page.setViewportSize(viewport);

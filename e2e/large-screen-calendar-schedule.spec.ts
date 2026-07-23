@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { addDays } from "date-fns";
+import { addDays, format } from "date-fns";
 import { formatLocalDate, parseLocalDate } from "../src/lib/time-utils";
 import { colorMap } from "../src/lib/types";
 import {
@@ -14,6 +14,47 @@ import {
   waitForCalendarReady,
   waitForHydration,
 } from "./helpers/test-helpers";
+
+/** Mirrors schedule-calendar.tsx's lg+ day-group grid track and its `gap-4`. */
+const GUTTER_WIDTH = 168;
+const GRID_GAP = 16;
+
+/**
+ * Block until a viewport change has actually reached the day group.
+ *
+ * `setViewportSize` returns before React re-renders, so a width read straight
+ * after a resize can return the *previous* viewport's layout — which would
+ * "prove" a width assertion against the wrong viewport. Waiting for the width
+ * to both differ from the old one and hold still avoids that.
+ */
+async function settleScheduleWidth(
+  page: import("@playwright/test").Page,
+  previousWidth: number,
+): Promise<void> {
+  let previous = Number.NaN;
+  let stableSamples = 0;
+  await expect
+    .poll(
+      async () => {
+        const width = await page.evaluate(
+          () =>
+            document
+              .querySelector('[data-testid="schedule-scroll-surface"] section')
+              ?.getBoundingClientRect().width ?? -1,
+        );
+        if (width < 0 || Math.abs(width - previousWidth) < 1) {
+          stableSamples = 0;
+          previous = Number.NaN;
+          return 0;
+        }
+        stableSamples = width === previous ? stableSamples + 1 : 0;
+        previous = width;
+        return stableSamples;
+      },
+      { timeout: 15_000, intervals: [120, 120, 120, 200, 200, 400] },
+    )
+    .toBeGreaterThanOrEqual(2);
+}
 
 /**
  * Block until the Schedule surface is the loaded composition rather than
@@ -45,10 +86,17 @@ test.describe("Large-screen Calendar Schedule", () => {
     const today = parseLocalDate(getTodayDateString());
     const dateFor = (offset: number) => formatLocalDate(addDays(today, offset));
 
-    // Today and day +13 define the initial window and leave exactly one
-    // 12-day interior gap. Day +20 is outside offsets 0..13 but enters after
-    // the preserved 7-day paging step, making the 50% overlap testable.
-    for (const offset of [0, 13, 20]) {
+    // These five offsets pin the window and the paging step *exactly*.
+    //   +0  and +13 are the initial window's boundaries.
+    //   +14 is the first day outside the rendered window. It is still inside
+    //       the 15-day *query* range, so its absence proves the rendered
+    //       window is 14 days, not the range the query fetches.
+    //   +20 is the new upper boundary after one step, forcing step >= 7.
+    //   +7  is the new lower boundary after one step, forcing step <= 7.
+    // Together the last two pin the step to exactly 7 — offsets {0,13,20}
+    // alone would be satisfied by any step from 7 to 13 — and +7/+13 being
+    // present in both windows is the 50% overlap.
+    for (const offset of [0, 7, 13, 14, 20]) {
       await createCalendarEvent(request, reg.token, {
         title: `Event day ${offset}`,
         date: dateFor(offset),
@@ -92,6 +140,72 @@ test.describe("Large-screen Calendar Schedule", () => {
     expect(box).not.toBeNull();
     // A 1400px cap fails here; 1920 minus nav/padding leaves about 1800px.
     expect((box as { width: number }).width).toBeGreaterThan(1700);
+  });
+
+  test("keeps no outer cap at 2560 while the text measure stays fixed", async ({
+    page,
+  }) => {
+    // The visual harness records these numbers as PR evidence, but it is
+    // opt-in and CI never runs it. Keeping the relationship here makes it a
+    // permanent regression guard.
+    const section = page.getByRole("region", { name: /Today.*5 events/i });
+    const row = page.getByRole("button", { name: /Event day 0/ });
+    const textMeasure = row.locator(".max-w-\\[72ch\\]");
+
+    const measure = async () => {
+      const [sectionBox, rowBox, textBox] = await Promise.all([
+        section.boundingBox(),
+        row.boundingBox(),
+        textMeasure.boundingBox(),
+      ]);
+      expect(sectionBox).not.toBeNull();
+      expect(rowBox).not.toBeNull();
+      expect(textBox).not.toBeNull();
+      return {
+        section: (sectionBox as { width: number }).width,
+        row: (rowBox as { width: number }).width,
+        text: (textBox as { width: number }).width,
+      };
+    };
+
+    const wide = await measure();
+    expect(wide.section).toBeGreaterThan(1700);
+    // The row fills whatever the 168px gutter and the 16px grid gap leave, so
+    // it has no cap of its own.
+    expect(wide.row).toBeCloseTo(wide.section - GUTTER_WIDTH - GRID_GAP, 0);
+    expect(wide.text).toBeLessThan(wide.row);
+
+    // Contract 16 as rendered geometry rather than Tailwind class names.
+    const typography = await row.evaluate((element) => {
+      const heading = element.querySelector("h3");
+      const metadata = element.querySelector<HTMLElement>(
+        '[data-testid="schedule-event-metadata"]',
+      );
+      return {
+        height: element.getBoundingClientRect().height,
+        titlePx: heading
+          ? Number.parseFloat(getComputedStyle(heading).fontSize)
+          : -1,
+        metadataPx: metadata
+          ? Number.parseFloat(getComputedStyle(metadata).fontSize)
+          : -1,
+      };
+    });
+    expect(typography.titlePx).toBe(20);
+    expect(typography.metadataPx).toBeGreaterThanOrEqual(14);
+    expect(typography.height).toBeGreaterThanOrEqual(56);
+
+    await page.setViewportSize({ width: 2560, height: 1440 });
+    await settleScheduleWidth(page, wide.section);
+    const widest = await measure();
+
+    // The decisive "no outer cap, inner measure only" proof: 640px more
+    // viewport reaches the day group and the row in full, while the readable
+    // text measure does not grow with it.
+    expect(widest.section).toBeGreaterThan(2300);
+    expect(widest.row).toBeCloseTo(widest.section - GUTTER_WIDTH - GRID_GAP, 0);
+    expect(widest.row).toBeGreaterThan(wide.row + 600);
+    expect(widest.text - wide.text).toBeLessThan(50);
   });
 
   test("the date gutter carries label, date and count", async ({ page }) => {
@@ -141,9 +255,10 @@ test.describe("Large-screen Calendar Schedule", () => {
     expect((gutterAfter as { y: number }).y).toBeLessThanOrEqual(
       (scrollBox as { y: number }).y + 20,
     );
-    // Pinned to the surface top *and* still inside its own day group: a gutter
-    // that had escaped its section would satisfy the two bounds above while
-    // floating over the following day's rows.
+    // Pinned to the surface top *and* still inside its own day group. A
+    // `fixed` or portalled gutter would satisfy the two bounds above while
+    // floating over the following day's rows; `position: sticky` cannot leave
+    // its containing block, so this is the assertion that tells them apart.
     expect((gutterAfter as { y: number }).y).toBeGreaterThanOrEqual(
       (regionAfter as { y: number }).y,
     );
@@ -151,12 +266,38 @@ test.describe("Large-screen Calendar Schedule", () => {
       (regionAfter as { y: number }).y +
         (regionAfter as { height: number }).height,
     );
+    // Not asserted here: that the gutter *unpins* once its group scrolls past.
+    // This fixture's Today group is taller than the surface's scroll range, so
+    // it can never be scrolled fully out of view and the gutter stays
+    // legitimately pinned — the assertion would be untestable, not merely
+    // unwritten.
   });
 
-  test("an event-free stretch renders one gap row", async ({ page }) => {
+  test("each event-free stretch collapses into one gap row", async ({
+    page,
+  }) => {
+    // Populated days in the window are +0, +7 and +13, so the two event-free
+    // runs are +1..+6 (six days) and +8..+12 (five days). Eleven empty days
+    // therefore have to collapse to exactly two rows.
     const gaps = page.getByRole("group", { name: /nothing scheduled/i });
-    await expect(gaps).toHaveCount(1);
-    await expect(gaps).not.toHaveAttribute("tabindex");
+    await expect(gaps).toHaveCount(2);
+    for (const gap of await gaps.all()) {
+      await expect(gap).not.toHaveAttribute("tabindex");
+    }
+
+    const today = parseLocalDate(getTodayDateString());
+    const spoken = (offset: number) =>
+      format(addDays(today, offset), "EEEE MMMM d, yyyy");
+    await expect(
+      page.getByRole("group", {
+        name: `${spoken(1)} to ${spoken(6)}, nothing scheduled`,
+      }),
+    ).toHaveCount(1);
+    await expect(
+      page.getByRole("group", {
+        name: `${spoken(8)} to ${spoken(12)}, nothing scheduled`,
+      }),
+    ).toHaveCount(1);
   });
 
   test("event rows show the member and resolve the coloured border", async ({
@@ -164,15 +305,23 @@ test.describe("Large-screen Calendar Schedule", () => {
   }) => {
     const row = page.getByRole("button", { name: /Event day 0/ });
     await expect(row).toContainText("Alice");
-    const actual = await row.evaluate(
-      (element) => (element as HTMLElement).style.borderLeftColor,
-    );
+    // The *resolved* value, not `element.style` — reading the inline
+    // declaration back would still pass if `border-l-4` were dropped and the
+    // border rendered at zero width, or if another rule won the cascade.
+    const actual = await row.evaluate((element) => {
+      const style = getComputedStyle(element);
+      return {
+        color: style.borderLeftColor,
+        width: style.borderLeftWidth,
+      };
+    });
     const expected = await page.evaluate((hex) => {
       const probe = document.createElement("div");
       probe.style.borderLeftColor = hex;
       return probe.style.borderLeftColor;
     }, colorMap.coral.hex);
-    expect(actual).toBe(expected);
+    expect(actual.color).toBe(expected);
+    expect(actual.width).toBe("4px");
   });
 
   test("selecting a Schedule row opens EventDetailModal", async ({ page }) => {
@@ -183,31 +332,39 @@ test.describe("Large-screen Calendar Schedule", () => {
   });
 
   test("pages a 14-day window by exactly 7 days and back", async ({ page }) => {
-    const dayZero = page.getByText("Event day 0", { exact: true });
-    const dayThirteen = page.getByText("Event day 13", { exact: true });
-    const dayTwenty = page.getByText("Event day 20", { exact: true });
+    const day = (offset: number) =>
+      page.getByText(`Event day ${offset}`, { exact: true });
 
-    // Initial offsets are 0..13: both boundary events render and +20 does not.
-    // Each block asserts the events that must be present before the ones that
-    // must be absent, so a still-loading surface can never satisfy the window.
-    await expect(dayZero).toBeVisible();
-    await expect(dayThirteen).toBeVisible();
-    await expect(dayTwenty).toHaveCount(0);
+    // Initial window is offsets 0..13. Day +14 is absent even though the query
+    // fetches through +14, so the *rendered* window is exactly 14 days.
+    // Each block asserts what must be present before what must be absent, so a
+    // still-loading surface can never satisfy it.
+    await expect(day(0)).toBeVisible();
+    await expect(day(7)).toBeVisible();
+    await expect(day(13)).toBeVisible();
+    await expect(day(14)).toHaveCount(0);
+    await expect(day(20)).toHaveCount(0);
 
     await page.getByRole("button", { name: "Next" }).click();
     await waitForScheduleLoaded(page);
 
-    // The next window is offsets 7..20. Day +13 proves the seven-day overlap;
-    // the old lower boundary leaves and the new upper boundary enters.
-    await expect(dayThirteen).toBeVisible();
-    await expect(dayTwenty).toBeVisible();
-    await expect(dayZero).toHaveCount(0);
+    // The next window is offsets 7..20. Day +20 present forces start >= 7 and
+    // day +7 present forces start <= 7, so the step is exactly 7 — not merely
+    // "somewhere between 7 and 13". Days +7 and +13 appearing in both windows
+    // are the 7 of 14 overlapping days.
+    await expect(day(7)).toBeVisible();
+    await expect(day(13)).toBeVisible();
+    await expect(day(14)).toBeVisible();
+    await expect(day(20)).toBeVisible();
+    await expect(day(0)).toHaveCount(0);
 
     await page.getByRole("button", { name: "Previous" }).click();
     await waitForScheduleLoaded(page);
 
-    await expect(dayZero).toBeVisible();
-    await expect(dayThirteen).toBeVisible();
-    await expect(dayTwenty).toHaveCount(0);
+    await expect(day(0)).toBeVisible();
+    await expect(day(7)).toBeVisible();
+    await expect(day(13)).toBeVisible();
+    await expect(day(14)).toHaveCount(0);
+    await expect(day(20)).toHaveCount(0);
   });
 });
