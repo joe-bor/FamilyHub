@@ -196,118 +196,6 @@ describe("ScheduleCalendar", () => {
     });
   });
 
-  describe("large composition", () => {
-    const fixedNow = new Date(2026, 2, 18, 12, 0, 0);
-
-    beforeEach(() => {
-      vi.useFakeTimers();
-      vi.setSystemTime(fixedNow);
-      setViewportWidth(1280);
-    });
-
-    function renderLargeSchedule() {
-      return render(
-        <ScheduleCalendar
-          events={[
-            createTestEvent({
-              id: "e1",
-              title: "Test Event",
-              date: fixedNow,
-              memberId: testMembers[0].id,
-            }),
-            createTestEvent({
-              id: "e2",
-              title: "Later Event",
-              date: new Date(2026, 2, 21),
-              memberId: testMembers[0].id,
-            }),
-          ]}
-          currentDate={fixedNow}
-          filter={defaultFilter}
-        />,
-      );
-    }
-
-    it("uses the full surface with a date gutter", () => {
-      const { container } = renderLargeSchedule();
-      const region = screen.getByRole("region", {
-        name: /Today, Wednesday March 18, 2026, 1 event/i,
-      });
-      expect(within(region).getByText("Today")).toBeInTheDocument();
-      expect(container.querySelector(".w-full.space-y-1")).not.toBeNull();
-      expect(container.querySelector(".mx-auto.max-w-3xl")).toBeNull();
-    });
-
-    it("compresses an empty run and keeps member/title information visible", () => {
-      renderLargeSchedule();
-      expect(
-        screen.getByRole("group", {
-          name: /Thursday March 19, 2026 to Friday March 20, 2026, nothing scheduled/i,
-        }),
-      ).toBeInTheDocument();
-      expect(screen.getAllByText(testMembers[0].name).length).toBeGreaterThan(
-        0,
-      );
-      expect(screen.getByRole("heading", { name: "Test Event" })).toHaveClass(
-        "text-xl",
-      );
-    });
-
-    it("distinguishes defensive no-selection from a genuinely empty window", () => {
-      const { rerender } = render(
-        <ScheduleCalendar
-          events={[]}
-          currentDate={fixedNow}
-          filter={{ selectedMembers: [], showAllDayEvents: true }}
-        />,
-      );
-      expect(
-        screen.getByText("Select at least one profile to view events"),
-      ).toBeInTheDocument();
-      rerender(
-        <ScheduleCalendar
-          events={[]}
-          currentDate={fixedNow}
-          filter={defaultFilter}
-        />,
-      );
-      expect(screen.getByText("No upcoming events")).toBeInTheDocument();
-    });
-
-    it("uses a truthful zero-member empty state", () => {
-      resetFamilyStore();
-      seedFamilyStore({ name: "Empty Family", members: [] });
-      render(
-        <ScheduleCalendar
-          events={[]}
-          currentDate={fixedNow}
-          filter={{ selectedMembers: [], showAllDayEvents: true }}
-        />,
-      );
-      expect(screen.getByText("No family members yet")).toBeInTheDocument();
-    });
-
-    it("identifies events hidden by an active all-day filter", () => {
-      const allDay = createTestEvent({
-        id: "hidden-all-day",
-        title: "Hidden all-day",
-        date: fixedNow,
-        memberId: testMembers[0].id,
-        isAllDay: true,
-      });
-      render(
-        <ScheduleCalendar
-          events={[allDay]}
-          currentDate={fixedNow}
-          filter={{ ...defaultFilter, showAllDayEvents: false }}
-        />,
-      );
-      expect(
-        screen.getByText("No events match your filters"),
-      ).toBeInTheDocument();
-    });
-  });
-
   describe("large screen", () => {
     const fixedNow = new Date(2026, 2, 18, 12, 0, 0); // Wed Mar 18 2026
 
@@ -442,10 +330,22 @@ describe("ScheduleCalendar", () => {
       });
     });
 
+    it("renders event titles at the 20px large-screen size", () => {
+      renderSchedule();
+      expect(screen.getByRole("heading", { name: "Test Event" })).toHaveClass(
+        "text-xl",
+      );
+    });
+
     it("uses the full surface without a fixed outer max width", () => {
       const { container } = renderSchedule();
       const content = container.querySelector(".w-full.space-y-1");
       expect(content).not.toBeNull();
+      // The shipped compact centred column is what this branch has to shed.
+      // Asserting only the absence of an inline 1400px cap is near-vacuous —
+      // nothing sets one — so pin the real regression: `mx-auto max-w-3xl`
+      // must not survive into the lg+ composition.
+      expect(container.querySelector(".mx-auto.max-w-3xl")).toBeNull();
       expect(content).not.toHaveStyle({ maxWidth: "1400px" });
     });
 
