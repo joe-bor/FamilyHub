@@ -196,10 +196,19 @@ export function MonthDayCell({
             // summary as an accent control, which the interaction contract
             // forbids: the gridcell is the only target. `text-foreground` is
             // both accessible and honest about not being clickable.
-            className="w-full shrink-0 rounded px-1.5 text-left text-sm font-semibold text-foreground"
+            //
+            // Clamped and centred exactly like MonthEventChip: `+N more` is one
+            // of the visual slots monthSlotCapacity() counts, so it has to be
+            // the same MONTH_CHIP_HEIGHT box. Height alone left the text riding
+            // the top of a 28px slot while the chips above it were centred, and
+            // left nothing stopping the slot growing past the height the
+            // capacity arithmetic assumes — spec 4.2 forbids rendered geometry
+            // drifting from the capacity constants.
+            className="flex w-full shrink-0 items-center overflow-hidden whitespace-nowrap rounded px-1.5 text-left text-sm font-semibold text-foreground"
             style={{
               height: MONTH_CHIP_HEIGHT,
               minHeight: MONTH_CHIP_HEIGHT,
+              maxHeight: MONTH_CHIP_HEIGHT,
             }}
           >
             +{plan.overflowCount} more

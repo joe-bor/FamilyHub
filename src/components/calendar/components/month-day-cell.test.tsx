@@ -134,9 +134,13 @@ describe("MonthDayCell", () => {
     expect(
       screen.queryByRole("button", { name: /show all/i }),
     ).not.toBeInTheDocument();
+    // maxHeight matters as much as height: `+N more` is one of the slots
+    // monthSlotCapacity() counts, so an unclamped box would let the cell
+    // render taller than the capacity arithmetic assumed.
     expect(screen.getByTestId("month-overflow-summary")).toHaveStyle({
       height: "28px",
       minHeight: "28px",
+      maxHeight: "28px",
     });
   });
 
