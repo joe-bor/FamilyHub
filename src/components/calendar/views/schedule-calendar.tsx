@@ -1,9 +1,16 @@
-import { format } from "date-fns";
+import {
+  addDays,
+  format,
+  isBefore,
+  isSameMonth,
+  isSameYear,
+  startOfToday,
+} from "date-fns";
 import { Clock, MapPin } from "lucide-react";
 import type React from "react";
 import { useMemo } from "react";
 import { useFamilyMembers } from "@/api";
-import { useIsMobile } from "@/hooks";
+import { useIsLargeScreen, useIsMobile } from "@/hooks";
 import {
   compareEventsAllDayFirst,
   formatLocalDate,
@@ -13,17 +20,35 @@ import {
 import { type CalendarEvent, colorMap, getFamilyMember } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import type { FilterState } from "../components/calendar-filter";
+import { CalendarEmptyState } from "../components/calendar-view-states";
 import { MOBILE_FAB_SCROLL_PADDING } from "../components/floating-action-layout";
 import { MemberAvatar } from "../components/member-avatar";
+import {
+  buildScheduleRows,
+  hasScheduleWindowEvents,
+} from "../utils/schedule-rows";
 
 interface ScheduleCalendarProps {
   events: CalendarEvent[];
   currentDate: Date;
   onEventClick?: (event: CalendarEvent) => void;
   filter: FilterState;
+  /** Raw-query reason signal; the compact branch ignores it. */
+  hasUnfilteredEventsInWindow?: boolean;
 }
 
-export function ScheduleCalendar({
+/**
+ * Breakpoint dispatcher. Below 1024px this renders the shipped compact
+ * composition unchanged — it is the smart default for first-time mobile users,
+ * so its markup is a hard parity contract.
+ */
+export function ScheduleCalendar(props: ScheduleCalendarProps) {
+  const isLargeScreen = useIsLargeScreen();
+  if (!isLargeScreen) return <ScheduleCalendarCompact {...props} />;
+  return <ScheduleCalendarLarge {...props} />;
+}
+
+function ScheduleCalendarCompact({
   events,
   currentDate,
   onEventClick,
@@ -171,6 +196,247 @@ export function ScheduleCalendar({
           ))}
         </div>
       )}
+    </div>
+  );
+}
+
+const SCHEDULE_GUTTER_WIDTH = 168;
+
+const sameDate = (a: Date, b: Date) =>
+  formatLocalDate(a) === formatLocalDate(b);
+
+function relativeDayLabel(date: Date, today: Date): string {
+  if (sameDate(date, today)) return "Today";
+  if (sameDate(date, addDays(today, 1))) return "Tomorrow";
+  return format(date, "EEEE");
+}
+
+function dayRegionLabel(date: Date, today: Date, count: number): string {
+  const relative = relativeDayLabel(date, today);
+  const dateLabel = format(date, "EEEE MMMM d, yyyy");
+  const prefix =
+    relative === "Today" || relative === "Tomorrow"
+      ? `${relative}, ${dateLabel}`
+      : dateLabel;
+  return `${prefix}, ${count} ${count === 1 ? "event" : "events"}`;
+}
+
+function gapLabel(start: Date, end: Date): string {
+  if (sameDate(start, end)) return format(start, "EEE, MMM d");
+  if (!isSameYear(start, end)) {
+    return `${format(start, "EEE, MMM d, yyyy")} – ${format(end, "EEE, MMM d, yyyy")}`;
+  }
+  if (!isSameMonth(start, end)) {
+    return `${format(start, "EEE, MMM d")} – ${format(end, "EEE, MMM d")}`;
+  }
+  return `${format(start, "EEE d")} – ${format(end, "EEE d")}`;
+}
+
+function gapAriaLabel(start: Date, end: Date): string {
+  if (sameDate(start, end)) {
+    return `${format(start, "EEEE MMMM d, yyyy")}, nothing scheduled`;
+  }
+  return `${format(start, "EEEE MMMM d, yyyy")} to ${format(end, "EEEE MMMM d, yyyy")}, nothing scheduled`;
+}
+
+function ScheduleCalendarLarge({
+  events,
+  currentDate,
+  onEventClick,
+  filter,
+  hasUnfilteredEventsInWindow = hasScheduleWindowEvents(
+    events,
+    currentDate,
+    14,
+  ),
+}: ScheduleCalendarProps) {
+  const familyMembers = useFamilyMembers();
+  const today = startOfToday();
+  const rows = useMemo(
+    () =>
+      buildScheduleRows({
+        events,
+        startDate: currentDate,
+        dayCount: 14,
+        filter,
+      }),
+    // `buildScheduleRows` captures the whole filter object, so the dependency
+    // is `filter` itself rather than its two fields. The store replaces the
+    // object on every filter change, so this is no less precise.
+    [events, currentDate, filter],
+  );
+
+  if (rows.length === 0) {
+    if (familyMembers.length === 0) {
+      return (
+        <CalendarEmptyState
+          title="No family members yet"
+          description="Add a family member to start seeing their events."
+        />
+      );
+    }
+    if (filter.selectedMembers.length === 0) {
+      return (
+        <CalendarEmptyState
+          title="Select at least one profile to view events"
+          description="Choose a family member to see their events."
+        />
+      );
+    }
+    if (hasUnfilteredEventsInWindow) {
+      return (
+        <CalendarEmptyState
+          title="No events match your filters"
+          description="Adjust the member or all-day filters to see more events."
+        />
+      );
+    }
+    return (
+      <CalendarEmptyState
+        title="No upcoming events"
+        description="Nothing scheduled in the next 2 weeks."
+      />
+    );
+  }
+
+  return (
+    <div
+      data-testid="schedule-scroll-surface"
+      className="flex min-h-0 flex-1 flex-col overflow-y-auto bg-background p-4"
+    >
+      <div className="w-full space-y-1">
+        {rows.map((row) => {
+          if (row.kind === "gap") {
+            return (
+              // biome-ignore lint/a11y/useSemanticElements: a gap row groups no form controls, so <fieldset> is wrong; role="group" carries the announced range
+              <div
+                key={`gap-${formatLocalDate(row.start)}`}
+                role="group"
+                aria-label={gapAriaLabel(row.start, row.end)}
+                className="grid gap-4 border-t border-border py-3"
+                style={{
+                  gridTemplateColumns: `${SCHEDULE_GUTTER_WIDTH}px minmax(0, 1fr)`,
+                }}
+              >
+                <p
+                  aria-hidden="true"
+                  className="text-sm font-medium text-muted-foreground"
+                >
+                  {gapLabel(row.start, row.end)}
+                </p>
+                <p
+                  aria-hidden="true"
+                  className="text-sm italic text-muted-foreground"
+                >
+                  Nothing scheduled
+                </p>
+              </div>
+            );
+          }
+
+          const relative = relativeDayLabel(row.date, today);
+          const isPast = isBefore(row.date, today);
+          return (
+            <section
+              key={formatLocalDate(row.date)}
+              aria-label={dayRegionLabel(row.date, today, row.events.length)}
+              className={cn(
+                "grid gap-4 border-t py-3",
+                isPast ? "border-border/40" : "border-border",
+              )}
+              style={{
+                gridTemplateColumns: `${SCHEDULE_GUTTER_WIDTH}px minmax(0, 1fr)`,
+              }}
+            >
+              <div
+                data-testid="schedule-date-gutter"
+                className="sticky top-0 z-10 self-start bg-background/95 py-1"
+              >
+                <p
+                  className={cn(
+                    "text-sm font-bold uppercase tracking-wide",
+                    sameDate(row.date, today)
+                      ? "text-primary"
+                      : "text-muted-foreground",
+                    isPast && "font-medium",
+                  )}
+                >
+                  {relative}
+                </p>
+                <p className="text-sm font-semibold">
+                  {format(row.date, "EEE, MMM d")}
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  {row.events.length}{" "}
+                  {row.events.length === 1 ? "event" : "events"}
+                </p>
+              </div>
+
+              <div className="flex min-w-0 flex-col gap-2">
+                {row.events.map((event) => {
+                  const member = getFamilyMember(familyMembers, event.memberId);
+                  return (
+                    <button
+                      type="button"
+                      key={getEventKey(event)}
+                      onClick={() => onEventClick?.(event)}
+                      style={{
+                        borderLeftColor: member
+                          ? colorMap[member.color].hex
+                          : undefined,
+                      }}
+                      className={cn(
+                        "flex min-h-14 w-full cursor-pointer items-center gap-4 rounded-xl border-l-4 p-3 text-left",
+                        "ring-1 ring-inset ring-black/5 transition-all hover:scale-[1.005] hover:shadow-md motion-reduce:transition-none motion-reduce:hover:scale-100",
+                        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
+                        member ? colorMap[member.color].light : "bg-muted",
+                      )}
+                    >
+                      <div className="min-w-0 max-w-[72ch] flex-1">
+                        <h3 className="truncate text-xl leading-6 font-semibold text-foreground">
+                          {event.title}
+                        </h3>
+                        <div
+                          data-testid="schedule-event-metadata"
+                          className="mt-1 flex min-w-0 flex-wrap items-center gap-2 text-sm leading-5 text-muted-foreground"
+                        >
+                          <span className="flex items-center gap-1">
+                            <Clock aria-hidden="true" className="size-3.5" />
+                            {event.isAllDay
+                              ? "All day"
+                              : `${event.startTime} - ${event.endTime}`}
+                          </span>
+                          {event.location && (
+                            <span className="flex min-w-0 items-center gap-1">
+                              <MapPin
+                                aria-hidden="true"
+                                className="size-3.5 shrink-0"
+                              />
+                              <span className="truncate">{event.location}</span>
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      {member && (
+                        <span className="ml-auto flex shrink-0 items-center gap-2">
+                          <span className="text-sm font-medium text-foreground">
+                            {member.name}
+                          </span>
+                          <MemberAvatar
+                            name={member.name}
+                            color={member.color}
+                            size="md"
+                          />
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </section>
+          );
+        })}
+      </div>
     </div>
   );
 }
