@@ -6,11 +6,19 @@ import { fileURLToPath } from "node:url";
 import { gzipSync } from "node:zlib";
 
 // Budget for the entry chunk, gzipped. Baseline measured 2026-07-02: the fixed
-// build's entry is ~77 kB gzip (77,158 bytes). 90 kB gives ~15% headroom while
-// still catching a regression such as React leaking back into the entry (which
-// would push it toward ~135 kB). See the spec: gate the ENTRY chunk, not total
-// initial JS — a React leak moves bytes between chunks without changing the total.
-export const MAX_ENTRY_GZIP_BYTES = 92160; // 90 * 1024
+// build's entry was ~77 kB gzip (77,158 bytes) under a 90 kB budget. Since then
+// the eagerly-loaded calendar (App.tsx imports CalendarModule directly, unlike
+// the five lazy views) has grown organically with features. The large-screen
+// Month/Schedule work (2026-07-23) put the entry at 92.4 kB gzip (92,356 bytes),
+// just over the old budget. `npm run analyze` confirms this is legitimate app
+// code — calendar is ~38% of the entry, there is no misplaced vendor module, and
+// React is still isolated in react-vendor (~60.7 kB gzip). Raised to 96 kB: ~4%
+// headroom over today's entry while still catching the regression this guard
+// exists for — React leaking back into the entry, which would push it toward
+// ~135 kB (still ~39 kB above this budget). See the spec: gate the ENTRY chunk,
+// not total initial JS — a React leak moves bytes between chunks without
+// changing the total.
+export const MAX_ENTRY_GZIP_BYTES = 98304; // 96 * 1024
 
 /**
  * Extract the single ES-module entry chunk path from built index.html.
