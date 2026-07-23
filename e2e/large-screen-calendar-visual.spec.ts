@@ -15,7 +15,8 @@ import {
 const evidenceRoot = process.env.CALENDAR_VISUAL_OUT_DIR;
 test.skip(!evidenceRoot, "Set CALENDAR_VISUAL_OUT_DIR for visual evidence");
 
-const monthViewports = [
+/** The full viewport matrix both Month and Schedule are photographed across. */
+const calendarViewports = [
   { width: 375, height: 812 },
   { width: 768, height: 1024 },
   { width: 769, height: 1024 },
@@ -36,17 +37,84 @@ const scenarioViewports = [
 const MONTH_ROW_GAP = 8;
 const MONTH_MIN_ROW_HEIGHT = 96;
 
+/** Mirrors schedule-calendar.tsx's lg+ day-group grid track and `gap-4`. */
+const SCHEDULE_GUTTER_WIDTH = 168;
+const SCHEDULE_GAP = 16;
+
+/**
+ * Block until a Schedule resize has actually reached the rows.
+ *
+ * Two races make an immediate read dishonest, and both matter for measurement
+ * as much as for capture: the surface may still be `ScheduleSkeleton`, and
+ * `setViewportSize` returns before the resulting React render lands — so a
+ * width read straight after a 2560 -> 1920 resize can return the 2560 layout
+ * and "prove" a width assertion against the wrong viewport.
+ *
+ * Settle on a stable rendered signature rather than a single dimension: the app
+ * shell is viewport-height, so document height alone looks stable across a
+ * width change that has not reached the rows yet.
+ */
+async function settleScheduleLayout(
+  page: import("@playwright/test").Page,
+): Promise<void> {
+  let previous = "";
+  let stableSamples = 0;
+  await expect
+    .poll(
+      async () => {
+        const state = await page.evaluate(() => ({
+          loading: Boolean(
+            document.querySelector(
+              '[role="status"][aria-label="Loading schedule"]',
+            ),
+          ),
+          signature: [
+            document.documentElement.clientWidth,
+            document.documentElement.scrollHeight,
+            // Both the compact and the lg+ branch title every event with an
+            // <h3>, so this counts rendered rows in either composition.
+            document.querySelectorAll("h3").length,
+            // The measured width of the day group itself, so the settle is
+            // tied to the surface the width assertions read.
+            Math.round(
+              document
+                .querySelector(
+                  '[data-testid="schedule-scroll-surface"] section',
+                )
+                ?.getBoundingClientRect().width ?? -1,
+            ),
+          ].join("x"),
+        }));
+        if (state.loading) {
+          stableSamples = 0;
+          previous = "";
+          return 0;
+        }
+        stableSamples = state.signature === previous ? stableSamples + 1 : 0;
+        previous = state.signature;
+        return stableSamples;
+      },
+      { timeout: 15_000, intervals: [120, 120, 120, 200, 200, 400] },
+    )
+    .toBeGreaterThanOrEqual(2);
+}
+
 async function settleAndCapture(
   page: import("@playwright/test").Page,
   relativePath: string,
   // "state" is for the loading/error surfaces, which have no grid to measure
-  // and have each asserted their own state before calling.
-  options: { surface?: "grid" | "state" } = {},
+  // and have each asserted their own state before calling. "schedule" is the
+  // Schedule equivalent of "grid": Schedule renders no rowgroup at all, so the
+  // Month settle would poll a null cell until it timed out.
+  options: { surface?: "grid" | "schedule" | "state" } = {},
 ) {
   if (!evidenceRoot) throw new Error("CALENDAR_VISUAL_OUT_DIR is required");
   const directory = `${evidenceRoot}/${relativePath.substring(0, relativePath.lastIndexOf("/"))}`;
   await mkdir(directory, { recursive: true });
-  if (options.surface !== "state") {
+  if (options.surface === "schedule") {
+    await settleScheduleLayout(page);
+  }
+  if (options.surface === undefined || options.surface === "grid") {
     // Two separate races make an immediate capture dishonest:
     //  1. crossing the 1024px gate changes the fetched range, so the surface is
     //     briefly the loading skeleton — an earlier revision of this harness
@@ -341,7 +409,7 @@ test("Month viewport matrix and measured capacity proof", async ({
   await waitForCalendarReady(page);
   await switchCalendarView(page, "monthly");
 
-  for (const viewport of monthViewports) {
+  for (const viewport of calendarViewports) {
     await page.setViewportSize(viewport);
     await settleAndCapture(
       page,
@@ -851,5 +919,559 @@ test("Month error and retry", async ({ page, request }) => {
       `month/${viewport.width}x${viewport.height}/error.png`,
       { surface: "state" },
     );
+  }
+});
+
+/**
+ * Block until the Schedule surface is the loaded composition. Assertions that
+ * run against `ScheduleSkeleton` prove nothing, and a cold released backend can
+ * keep the skeleton up for longer than the default expect timeout.
+ */
+async function waitForScheduleLoaded(
+  page: import("@playwright/test").Page,
+): Promise<void> {
+  await expect(
+    page.getByRole("status", { name: /loading schedule/i }),
+  ).toHaveCount(0, { timeout: 30_000 });
+}
+
+test("Schedule viewport matrix, full-width rows, paging and sticky gutter", async ({
+  page,
+  request,
+}) => {
+  await page.clock.setFixedTime(new Date(2026, 7, 15, 12, 0, 0));
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto("/");
+  await clearStorage(page);
+
+  const reg = await registerFamily(request, {
+    familyName: "Schedule Visual Matrix",
+    members: [
+      { name: "Alice", color: "coral" },
+      { name: "Bob", color: "teal" },
+      { name: "Charlie", color: "purple" },
+    ],
+  });
+  const fixtures = [
+    {
+      title:
+        "A deliberately very long Schedule title that must truncate inside the event row",
+      date: "2026-08-15",
+      location:
+        "A deliberately long family destination that must not cap the Schedule surface",
+      member: 0,
+      allDay: false,
+    },
+    { title: "Today extra 1", date: "2026-08-15", member: 1, allDay: false },
+    { title: "Today extra 2", date: "2026-08-15", member: 2, allDay: false },
+    { title: "Today extra 3", date: "2026-08-15", member: 0, allDay: false },
+    { title: "Today extra 4", date: "2026-08-15", member: 1, allDay: true },
+    { title: "Event day 13", date: "2026-08-28", member: 2, allDay: false },
+    { title: "Event day 20", date: "2026-09-04", member: 0, allDay: false },
+    { title: "Past boundary", date: "2026-08-08", member: 1, allDay: false },
+  ] as const;
+  for (const fixture of fixtures) {
+    await createCalendarEvent(request, reg.token, {
+      title: fixture.title,
+      date: fixture.date,
+      startTime: fixture.allDay ? "12:00 AM" : "9:00 AM",
+      endTime: fixture.allDay ? "11:59 PM" : "10:00 AM",
+      memberId: reg.family.members[fixture.member].id,
+      isAllDay: fixture.allDay,
+      location: "location" in fixture ? fixture.location : undefined,
+    });
+  }
+  // Keep Today at exactly five events while making the 1440x900 Schedule
+  // surface unambiguously scrollable for the sticky-gutter browser proof.
+  for (let index = 1; index <= 14; index++) {
+    await createCalendarEvent(request, reg.token, {
+      title: `Day 13 extra ${index}`,
+      date: "2026-08-28",
+      startTime: "10:00 AM",
+      endTime: "11:00 AM",
+      memberId: reg.family.members[index % 3].id,
+      isAllDay: false,
+    });
+  }
+
+  await seedBrowserAuth(page, reg);
+  await page.reload();
+  await waitForHydration(page);
+  await waitForCalendarReady(page);
+  await switchCalendarView(page, "schedule");
+  await waitForScheduleLoaded(page);
+  await expect(
+    page.getByRole("region", { name: /Today.*5 events/i }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("group", { name: /nothing scheduled/i }),
+  ).toHaveCount(1);
+
+  for (const viewport of calendarViewports) {
+    await page.setViewportSize(viewport);
+    await settleAndCapture(
+      page,
+      `schedule/${viewport.width}x${viewport.height}/populated.png`,
+      { surface: "schedule" },
+    );
+  }
+
+  await page.setViewportSize({ width: 1920, height: 1080 });
+  // The loop ended at 2560; measuring before the resize lands would read that
+  // layout and pass the >1700 assertion for the wrong viewport.
+  await settleScheduleLayout(page);
+  const wideRegion = page.getByRole("region", { name: /Today.*5 events/i });
+  const wideBox = await wideRegion.boundingBox();
+  expect(wideBox).not.toBeNull();
+  expect((wideBox as { width: number }).width).toBeGreaterThan(1700);
+  const longRow = page.getByRole("button", {
+    name: /A deliberately very long Schedule title/i,
+  });
+  // The row fills the day group's content column — everything the 168px gutter
+  // and the 16px grid gap leave — so it has no cap of its own. Asserting a flat
+  // ">1700" here would be wrong: the gutter legitimately takes 184px off.
+  const longRowBox = await longRow.boundingBox();
+  expect(longRowBox).not.toBeNull();
+  const rowWidth = (longRowBox as { width: number }).width;
+  expect(rowWidth).toBeCloseTo(
+    (wideBox as { width: number }).width - SCHEDULE_GUTTER_WIDTH - SCHEDULE_GAP,
+    0,
+  );
+  // Far past both the shipped compact `max-w-3xl` (768px) centred column and
+  // the 1400px cap the spec rejected.
+  expect(rowWidth).toBeGreaterThan(1500);
+  const constrainedTextWidth = await longRow
+    .getByRole("heading")
+    .evaluate((element) => {
+      const measured = element.closest<HTMLElement>(".max-w-\\[72ch\\]");
+      return measured ? measured.getBoundingClientRect().width : -1;
+    });
+  expect(constrainedTextWidth).toBeGreaterThan(0);
+  expect(constrainedTextWidth).toBeLessThan(rowWidth);
+  // Contract 16: 20px titles, >=14px secondary metadata, >=56px rows, proven as
+  // rendered geometry rather than as Tailwind class names.
+  const rowTypography = await longRow.evaluate((element) => {
+    const heading = element.querySelector("h3");
+    const metadata = element.querySelector<HTMLElement>(
+      '[data-testid="schedule-event-metadata"]',
+    );
+    return {
+      height: element.getBoundingClientRect().height,
+      titlePx: heading
+        ? Number.parseFloat(getComputedStyle(heading).fontSize)
+        : -1,
+      metadataPx: metadata
+        ? Number.parseFloat(getComputedStyle(metadata).fontSize)
+        : -1,
+    };
+  });
+  expect(rowTypography.titlePx).toBe(20);
+  expect(rowTypography.metadataPx).toBeGreaterThanOrEqual(14);
+  expect(rowTypography.height).toBeGreaterThanOrEqual(56);
+  expect(
+    await renderedTextContrast(longRow.getByRole("heading"), "button"),
+  ).toBeGreaterThanOrEqual(4.5);
+  expect(
+    await renderedTextContrast(
+      longRow.getByTestId("schedule-event-metadata"),
+      "button",
+    ),
+  ).toBeGreaterThanOrEqual(4.5);
+  await settleAndCapture(page, "schedule/1920x1080/full-width-rows.png", {
+    surface: "schedule",
+  });
+
+  await page.setViewportSize({ width: 2560, height: 1440 });
+  await settleScheduleLayout(page);
+  await settleAndCapture(page, "schedule/2560x1440/full-width-rows.png", {
+    surface: "schedule",
+  });
+  const widestBox = await wideRegion.boundingBox();
+  expect(widestBox).not.toBeNull();
+  expect((widestBox as { width: number }).width).toBeGreaterThan(2300);
+  const widestRowBox = await longRow.boundingBox();
+  expect(widestRowBox).not.toBeNull();
+  const widestRowWidth = (widestRowBox as { width: number }).width;
+  expect(widestRowWidth).toBeCloseTo(
+    (widestBox as { width: number }).width -
+      SCHEDULE_GUTTER_WIDTH -
+      SCHEDULE_GAP,
+    0,
+  );
+  const widestTextWidth = await longRow
+    .getByRole("heading")
+    .evaluate((element) => {
+      const measured = element.closest<HTMLElement>(".max-w-\\[72ch\\]");
+      return measured ? measured.getBoundingClientRect().width : -1;
+    });
+  expect(widestTextWidth).toBeGreaterThan(0);
+  // The decisive "no outer cap, inner measure only" proof: going 1920 -> 2560
+  // grows the day group and the row by the full 640px, while the text measure
+  // does not grow with it.
+  expect(widestTextWidth).toBeLessThan(widestRowWidth);
+  expect(widestRowWidth).toBeGreaterThan(rowWidth + 600);
+  expect(widestTextWidth - constrainedTextWidth).toBeLessThan(50);
+  if (!evidenceRoot) throw new Error("CALENDAR_VISUAL_OUT_DIR is required");
+  await writeFile(
+    `${evidenceRoot}/schedule/width-proof.json`,
+    `${JSON.stringify(
+      {
+        wide: {
+          viewport: "1920x1080",
+          dayGroupWidth: (wideBox as { width: number }).width,
+          eventRowWidth: rowWidth,
+          constrainedTextWidth,
+          rowHeight: rowTypography.height,
+          titleFontPx: rowTypography.titlePx,
+          metadataFontPx: rowTypography.metadataPx,
+        },
+        widest: {
+          viewport: "2560x1440",
+          dayGroupWidth: (widestBox as { width: number }).width,
+          eventRowWidth: widestRowWidth,
+          constrainedTextWidth: widestTextWidth,
+        },
+      },
+      null,
+      2,
+    )}\n`,
+  );
+
+  await page.setViewportSize({ width: 1440, height: 900 });
+  // Sticky geometry compares y values across a scroll; a stale 2560x1440
+  // layout would make both reads meaningless.
+  await settleScheduleLayout(page);
+  const scroller = page.getByTestId("schedule-scroll-surface");
+  const todayRegion = page.getByRole("region", { name: /Today.*5 events/i });
+  const gutter = todayRegion.getByTestId("schedule-date-gutter");
+  const regionBefore = await todayRegion.boundingBox();
+  // Sticky geometry is meaningless on a surface that does not scroll, so prove
+  // the overflow before proving the gutter holds its place.
+  expect(
+    await scroller.evaluate(
+      (element) => element.scrollHeight > element.clientHeight,
+    ),
+  ).toBe(true);
+  await scroller.evaluate((element) => {
+    element.scrollTop = 120;
+  });
+  const [scrollBox, regionAfter, gutterAfter] = await Promise.all([
+    scroller.boundingBox(),
+    todayRegion.boundingBox(),
+    gutter.boundingBox(),
+  ]);
+  expect(scrollBox).not.toBeNull();
+  expect(regionBefore).not.toBeNull();
+  expect(regionAfter).not.toBeNull();
+  expect(gutterAfter).not.toBeNull();
+  expect((regionAfter as { y: number }).y).toBeLessThan(
+    (regionBefore as { y: number }).y - 50,
+  );
+  expect((gutterAfter as { y: number }).y).toBeGreaterThanOrEqual(
+    (scrollBox as { y: number }).y,
+  );
+  // Still inside its own section rather than escaping to the surface top.
+  expect((gutterAfter as { y: number }).y).toBeLessThan(
+    (regionAfter as { y: number }).y +
+      (regionAfter as { height: number }).height,
+  );
+  await settleAndCapture(page, "schedule/1440x900/sticky-gutter.png", {
+    surface: "schedule",
+  });
+
+  await page.getByRole("button", { name: "Previous" }).click();
+  await waitForScheduleLoaded(page);
+  await scroller.evaluate((element) => {
+    element.scrollTop = 0;
+  });
+  await expect(page.getByText("Past boundary", { exact: true })).toBeVisible();
+  const pastRow = page.getByRole("button", { name: /Past boundary/i });
+  await expect(pastRow).toBeInViewport();
+  expect(await renderedOpacity(pastRow)).toBeCloseTo(1, 5);
+  expect(
+    await renderedTextContrast(pastRow.getByRole("heading"), "button"),
+  ).toBeGreaterThanOrEqual(4.5);
+  expect(
+    await renderedTextContrast(
+      pastRow.getByTestId("schedule-event-metadata"),
+      "button",
+    ),
+  ).toBeGreaterThanOrEqual(4.5);
+  await settleAndCapture(page, "schedule/1440x900/past-after-previous.png", {
+    surface: "schedule",
+  });
+});
+
+test("Schedule genuinely empty", async ({ page, request }) => {
+  await page.clock.setFixedTime(new Date(2026, 7, 15, 12, 0, 0));
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await page.goto("/");
+  await clearStorage(page);
+
+  const reg = await registerFamily(request, {
+    familyName: "Schedule Empty",
+    members: [
+      { name: "Alice", color: "coral" },
+      { name: "Bob", color: "teal" },
+      { name: "Charlie", color: "purple" },
+    ],
+  });
+
+  await seedBrowserAuth(page, reg);
+  await page.reload();
+  await waitForHydration(page);
+  await waitForCalendarReady(page);
+  await switchCalendarView(page, "schedule");
+  await waitForScheduleLoaded(page);
+
+  // Members exist and nothing is filtered out, so the reason is the window
+  // itself — not the filter copy and not the no-members copy.
+  await expect(page.getByText("No upcoming events")).toBeVisible();
+  await expect(
+    page.getByText("Nothing scheduled in the next 2 weeks."),
+  ).toBeVisible();
+  await expect(page.getByText(/No events match your filters/)).toHaveCount(0);
+  await expect(page.getByText(/No family members yet/)).toHaveCount(0);
+
+  for (const viewport of scenarioViewports) {
+    await page.setViewportSize(viewport);
+    await settleAndCapture(
+      page,
+      `schedule/${viewport.width}x${viewport.height}/empty-window.png`,
+      { surface: "state" },
+    );
+  }
+});
+
+test("Schedule filters hide window", async ({ page, request }) => {
+  await page.clock.setFixedTime(new Date(2026, 7, 15, 12, 0, 0));
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await page.goto("/");
+  await clearStorage(page);
+
+  const reg = await registerFamily(request, {
+    familyName: "Schedule Member Filter",
+    members: [
+      { name: "Alice", color: "coral" },
+      { name: "Bob", color: "teal" },
+    ],
+  });
+  // Every in-window event belongs to Alice, so turning Alice off leaves Bob
+  // selected: a non-empty selection that still hides the whole window.
+  await createCalendarEvent(request, reg.token, {
+    title: "Alice only event",
+    date: "2026-08-16",
+    startTime: "9:00 AM",
+    endTime: "10:00 AM",
+    memberId: reg.family.members[0].id,
+    isAllDay: false,
+  });
+
+  await seedBrowserAuth(page, reg);
+  await page.reload();
+  await waitForHydration(page);
+  await waitForCalendarReady(page);
+  await switchCalendarView(page, "schedule");
+  await waitForScheduleLoaded(page);
+  await expect(page.getByText("Alice only event")).toBeVisible();
+
+  await page
+    .getByTestId("family-filter-pills")
+    .getByRole("button", { name: "Filter by Alice" })
+    .click();
+
+  await expect(page.getByText("No events match your filters")).toBeVisible();
+  await expect(page.getByText(/No upcoming events/)).toHaveCount(0);
+
+  for (const viewport of scenarioViewports) {
+    await page.setViewportSize(viewport);
+    await settleAndCapture(
+      page,
+      `schedule/${viewport.width}x${viewport.height}/filters-hide-window.png`,
+      { surface: "state" },
+    );
+  }
+});
+
+test("Schedule all-day filter hides window", async ({ page, request }) => {
+  await page.clock.setFixedTime(new Date(2026, 7, 15, 12, 0, 0));
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await page.goto("/");
+  await clearStorage(page);
+
+  const reg = await registerFamily(request, {
+    familyName: "Schedule All Day Filter",
+    members: [{ name: "Alice", color: "coral" }],
+  });
+  await createCalendarEvent(request, reg.token, {
+    title: "All day only event",
+    date: "2026-08-17",
+    startTime: "12:00 AM",
+    endTime: "11:59 PM",
+    memberId: reg.family.members[0].id,
+    isAllDay: true,
+  });
+
+  await seedBrowserAuth(page, reg);
+  await page.reload();
+  await waitForHydration(page);
+  await waitForCalendarReady(page);
+  await switchCalendarView(page, "schedule");
+  await waitForScheduleLoaded(page);
+  await expect(page.getByText("All day only event")).toBeVisible();
+
+  await page
+    .getByTestId("family-filter-pills")
+    .getByRole("button", { name: /all day/i })
+    .click();
+
+  await expect(page.getByText("No events match your filters")).toBeVisible();
+  await expect(page.getByText(/No upcoming events/)).toHaveCount(0);
+
+  for (const viewport of scenarioViewports) {
+    await page.setViewportSize(viewport);
+    await settleAndCapture(
+      page,
+      `schedule/${viewport.width}x${viewport.height}/all-day-filter.png`,
+      { surface: "state" },
+    );
+  }
+});
+
+test("Schedule loading", async ({ page, request }) => {
+  await page.clock.setFixedTime(new Date(2026, 7, 15, 12, 0, 0));
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await page.goto("/");
+  await clearStorage(page);
+
+  const reg = await registerFamily(request, {
+    familyName: "Schedule Loading",
+    members: [{ name: "Alice", color: "coral" }],
+  });
+
+  let release: (() => void) | undefined;
+  const held = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  await page.route("**/api/calendar/events?**", async (route) => {
+    await held;
+    await route.continue();
+  });
+
+  try {
+    await seedBrowserAuth(page, reg);
+    await page.reload();
+    await waitForHydration(page);
+    await waitForCalendarReady(page);
+    await switchCalendarView(page, "schedule");
+
+    await expect(
+      page.getByRole("status", { name: /loading schedule/i }),
+    ).toBeVisible();
+    for (const viewport of scenarioViewports) {
+      await page.setViewportSize(viewport);
+      await settleAndCapture(
+        page,
+        `schedule/${viewport.width}x${viewport.height}/loading.png`,
+        { surface: "state" },
+      );
+    }
+  } finally {
+    release?.();
+  }
+});
+
+test("Schedule error and retry", async ({ page, request }) => {
+  await page.clock.setFixedTime(new Date(2026, 7, 15, 12, 0, 0));
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await page.goto("/");
+  await clearStorage(page);
+
+  const reg = await registerFamily(request, {
+    familyName: "Schedule Error",
+    members: [{ name: "Alice", color: "coral" }],
+  });
+
+  await page.route("**/api/calendar/events?**", async (route) => {
+    await route.fulfill({
+      status: 500,
+      contentType: "application/json",
+      body: JSON.stringify({ message: "Internal Server Error" }),
+    });
+  });
+
+  await seedBrowserAuth(page, reg);
+  await page.reload();
+  await waitForHydration(page);
+  await waitForCalendarReady(page);
+  await switchCalendarView(page, "schedule");
+
+  const retry = page.getByRole("button", { name: /try again/i });
+  await expect(retry).toBeVisible({ timeout: 30_000 });
+
+  for (const viewport of scenarioViewports) {
+    await page.setViewportSize(viewport);
+    await settleAndCapture(
+      page,
+      `schedule/${viewport.width}x${viewport.height}/error.png`,
+      { surface: "state" },
+    );
+  }
+});
+
+test("Schedule offline-cached", async ({ page, context, request }) => {
+  await page.clock.setFixedTime(new Date(2026, 7, 15, 12, 0, 0));
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await page.goto("/");
+  await clearStorage(page);
+
+  const reg = await registerFamily(request, {
+    familyName: "Schedule Offline",
+    members: [{ name: "Alice", color: "coral" }],
+  });
+  await createCalendarEvent(request, reg.token, {
+    title: "Cached offline event",
+    date: "2026-08-18",
+    startTime: "9:00 AM",
+    endTime: "10:00 AM",
+    memberId: reg.family.members[0].id,
+    isAllDay: false,
+  });
+
+  try {
+    await seedBrowserAuth(page, reg);
+    await page.reload();
+    await waitForHydration(page);
+    await waitForCalendarReady(page);
+    await switchCalendarView(page, "schedule");
+    await waitForScheduleLoaded(page);
+    await expect(page.getByText("Cached offline event")).toBeVisible();
+
+    await context.setOffline(true);
+
+    // Honest restoration: the global banner announces the connection while the
+    // already-cached rows stay readable instead of collapsing to a cold state.
+    await expect(page.getByText(/you're offline/i)).toBeVisible({
+      timeout: 10_000,
+    });
+    await expect(page.getByText("Cached offline event")).toBeVisible();
+
+    for (const viewport of scenarioViewports) {
+      await page.setViewportSize(viewport);
+      await settleAndCapture(
+        page,
+        `schedule/${viewport.width}x${viewport.height}/offline-cached.png`,
+        { surface: "schedule" },
+      );
+    }
+  } finally {
+    await context.setOffline(false);
   }
 });
