@@ -459,18 +459,29 @@ function ScheduleCalendarLarge({
                           )}
                         </div>
                       </div>
-                      {member && (
-                        <span className="ml-auto flex shrink-0 items-center gap-2">
-                          <span className="text-sm font-medium text-foreground">
-                            {member.name}
-                          </span>
+                      {/*
+                        An event can outlive the member it names — the calendar
+                        store persists `filter.selectedMembers`, so a stale id
+                        still passes the filter. Without a fallback the row
+                        would carry no member identity in any channel: the
+                        border falls back to the default colour and the
+                        background to `bg-muted`. The wording matches
+                        month-overflow-popover.tsx. The avatar is dropped
+                        rather than given a stand-in colour, because
+                        `MemberAvatar` needs a real `FamilyColor`.
+                      */}
+                      <span className="ml-auto flex shrink-0 items-center gap-2">
+                        <span className="text-sm font-medium text-foreground">
+                          {member?.name ?? "Unknown member"}
+                        </span>
+                        {member && (
                           <MemberAvatar
                             name={member.name}
                             color={member.color}
                             size="md"
                           />
-                        </span>
-                      )}
+                        )}
+                      </span>
                     </button>
                   );
                 })}

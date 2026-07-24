@@ -322,6 +322,72 @@ describe("ScheduleCalendar", () => {
       );
     });
 
+    /**
+     * A removed member is reachable, not hypothetical: the calendar store
+     * persists `filter.selectedMembers`, so an id can outlive the member it
+     * named and keep letting that member's events through the filter. The
+     * fixture therefore keeps the stale id selected.
+     */
+    function renderWithRemovedMember() {
+      const events = [
+        createTestEvent({
+          id: "kept",
+          title: "Kept Event",
+          date: fixedNow,
+          memberId: testMembers[0].id,
+        }),
+        createTestEvent({
+          id: "orphan",
+          title: "Orphan Event",
+          date: fixedNow,
+          memberId: "removed-member",
+        }),
+      ];
+      return render(
+        <ScheduleCalendar
+          events={events}
+          currentDate={fixedNow}
+          filter={{
+            ...defaultFilter,
+            selectedMembers: [
+              ...defaultFilter.selectedMembers,
+              "removed-member",
+            ],
+          }}
+        />,
+      );
+    }
+
+    it("names a member who is no longer in the family", () => {
+      renderWithRemovedMember();
+      const row = screen.getByRole("button", { name: /Orphan Event/ });
+      // Same string as month-overflow-popover.tsx, so the two surfaces agree.
+      expect(within(row).getByText("Unknown member")).toBeInTheDocument();
+    });
+
+    it("omits the avatar for a removed member but keeps it for a real one", () => {
+      const { container } = renderWithRemovedMember();
+      const orphan = screen.getByRole("button", { name: /Orphan Event/ });
+      const kept = screen.getByRole("button", { name: /Kept Event/ });
+      // MemberAvatar is the only rounded-full element inside an event row, and
+      // it needs a real FamilyColor — so the fallback must not render one.
+      expect(kept.querySelector(".rounded-full")).not.toBeNull();
+      expect(orphan.querySelector(".rounded-full")).toBeNull();
+      expect(container.querySelectorAll(".rounded-full")).toHaveLength(1);
+    });
+
+    it("gives the fallback the same treatment as a real member name", () => {
+      renderWithRemovedMember();
+      const fallback = within(
+        screen.getByRole("button", { name: /Orphan Event/ }),
+      ).getByText("Unknown member");
+      const real = within(
+        screen.getByRole("button", { name: /Kept Event/ }),
+      ).getByText(testMembers[0].name);
+      // Identity must not visually downgrade when the member is missing.
+      expect(fallback.className).toBe(real.className);
+    });
+
     it("colours the left border with the member's colour", () => {
       renderSchedule();
       const row = screen.getByRole("button", { name: /Test Event/ });
