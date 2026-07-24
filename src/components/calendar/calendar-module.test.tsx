@@ -30,9 +30,11 @@ import {
   renderWithUser,
   resetCalendarStore,
   resetFamilyStore,
+  resetViewportWidth,
   screen,
   seedCalendarStore,
   seedFamilyStore,
+  setViewportWidth,
   TEST_TIMEOUTS,
   typeAndWait,
   waitForMemberSelected,
@@ -1013,6 +1015,100 @@ describe("CalendarModule", () => {
       // Should keep user's preference, not switch to schedule
       const { calendarView } = useCalendarStore.getState();
       expect(calendarView).toBe("daily");
+    });
+  });
+
+  describe("Month query range", () => {
+    const requestedRanges: { startDate: string; endDate: string }[] = [];
+
+    beforeEach(() => {
+      requestedRanges.length = 0;
+      server.events.removeAllListeners("request:start");
+      server.events.on("request:start", ({ request }) => {
+        const url = new URL(request.url);
+        if (!url.pathname.includes("/calendar/events")) return;
+        requestedRanges.push({
+          startDate: url.searchParams.get("startDate") ?? "",
+          endDate: url.searchParams.get("endDate") ?? "",
+        });
+      });
+      // April 2026 deliberately: Apr 1 is a Wednesday, so the grid has three
+      // leading days from March and the two ranges genuinely differ. March 2026
+      // would be a vacuous test — Mar 1 is itself a Sunday, so the grid needs no
+      // leading days and both ranges would share a start date.
+      seedCalendarStore({ currentDate: new Date(2026, 3, 15) });
+      useCalendarStore.setState({ calendarView: "monthly" });
+    });
+
+    afterEach(() => {
+      server.events.removeAllListeners("request:start");
+      resetViewportWidth();
+    });
+
+    it("requests only the calendar month below lg", async () => {
+      setViewportWidth(800);
+      render(<CalendarModule />);
+
+      await waitFor(() => expect(requestedRanges.length).toBeGreaterThan(0));
+      expect(requestedRanges.at(-1)).toEqual({
+        startDate: "2026-04-01",
+        endDate: "2026-04-30",
+      });
+    });
+
+    it("requests the full rendered grid range at lg+", async () => {
+      setViewportWidth(1280);
+      render(<CalendarModule />);
+
+      await waitFor(() => expect(requestedRanges.length).toBeGreaterThan(0));
+      expect(requestedRanges.at(-1)).toEqual({
+        startDate: "2026-03-29",
+        endDate: "2026-05-02",
+      });
+    });
+
+    it("reuses the calendar-month parameters for grid-aligned February 2026", async () => {
+      seedCalendarStore({ currentDate: new Date(2026, 1, 15) });
+      setViewportWidth(1280);
+      render(<CalendarModule />);
+
+      await waitFor(() => expect(requestedRanges.length).toBeGreaterThan(0));
+      expect(requestedRanges.at(-1)).toEqual({
+        startDate: "2026-02-01",
+        endDate: "2026-02-28",
+      });
+    });
+  });
+
+  describe("large Schedule empty reason", () => {
+    afterEach(resetViewportWidth);
+
+    it("reports active filters when raw in-window events are filtered out", async () => {
+      setViewportWidth(1280);
+      seedCalendarStore({
+        calendarView: "schedule",
+        filter: {
+          selectedMembers: testMembers.map((member) => member.id),
+          showAllDayEvents: false,
+        },
+      });
+      seedMockEvents([
+        createTestEventResponse({
+          id: "hidden-all-day",
+          title: "Hidden all-day event",
+          memberId: testMembers[0].id,
+          isAllDay: true,
+        }),
+      ]);
+
+      render(<CalendarModule />);
+
+      expect(
+        await screen.findByText("No events match your filters"),
+      ).toBeInTheDocument();
+      expect(
+        screen.queryByText("Hidden all-day event"),
+      ).not.toBeInTheDocument();
     });
   });
 });

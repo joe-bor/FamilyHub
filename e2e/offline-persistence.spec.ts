@@ -1,3 +1,4 @@
+import { mkdir } from "node:fs/promises";
 import { type APIRequestContext, expect, test } from "@playwright/test";
 import {
   createCalendarEvent,
@@ -7,6 +8,8 @@ import {
 import {
   clearStorage,
   getTodayDateString,
+  readPersistedQueryData,
+  switchCalendarView,
   waitForCalendarReady,
   waitForHydration,
   waitForOfflineCachePersisted,
@@ -341,6 +344,146 @@ test.describe("Offline read persistence (Option C)", () => {
 
     // Family A's persisted event must not leak into Family B's session.
     await expect(page.getByText("Family A Secret")).toHaveCount(0);
+  });
+
+  test("large Month restores cached empty April and February without a cold-cache flash", async ({
+    page,
+    context,
+    request,
+  }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await page.clock.setFixedTime(new Date(2026, 3, 15, 12, 0, 0));
+    await clearStorage(page);
+
+    // Observe every text mutation from before application scripts run. A final
+    // absence assertion alone could miss a one-frame uncached-message flash.
+    await page.addInitScript(() => {
+      (window as Window & { __sawMonthColdCopy?: boolean }).__sawMonthColdCopy =
+        false;
+      new MutationObserver(() => {
+        if (
+          document.body?.textContent?.includes("This month isn't cached yet.")
+        ) {
+          (
+            window as Window & { __sawMonthColdCopy?: boolean }
+          ).__sawMonthColdCopy = true;
+        }
+      }).observe(document, {
+        childList: true,
+        subtree: true,
+        characterData: true,
+      });
+    });
+
+    const reg = await registerFamily(request, {
+      familyName: "Empty Month Cache",
+      members: [{ name: "Alice", color: "coral" }],
+    });
+    await seedBrowserAuth(page, reg);
+    await page.reload();
+    await waitForHydration(page);
+    await waitForCalendarReady(page);
+    await switchCalendarView(page, "monthly");
+
+    // April has a grid-expanded key (Mar 29-May 2). February 2026 is exactly
+    // four Sunday-start weeks, so its expanded and month-only keys are equal.
+    await expect(page.getByRole("grid", { name: "April 2026" })).toBeVisible();
+    await page.getByRole("button", { name: "Previous" }).click();
+    await page.getByRole("button", { name: "Previous" }).click();
+    await expect(
+      page.getByRole("grid", { name: "February 2026" }),
+    ).toBeVisible();
+    await page.getByRole("button", { name: "Next" }).click();
+    await page.getByRole("button", { name: "Next" }).click();
+    await expect(page.getByRole("grid", { name: "April 2026" })).toBeVisible();
+
+    // Persistence is only ready when both exact Month query keys exist with
+    // cached empty payloads. A generic "some cache exists" wait can pass on the
+    // bootstrap/preferences queries and leave this test racing IndexedDB.
+    await expect
+      .poll(
+        async () => {
+          const [april, february] = await Promise.all([
+            readPersistedQueryData<{ data?: unknown[] }>(page, [
+              "calendar",
+              "events",
+              { startDate: "2026-03-29", endDate: "2026-05-02" },
+            ]),
+            readPersistedQueryData<{ data?: unknown[] }>(page, [
+              "calendar",
+              "events",
+              { startDate: "2026-02-01", endDate: "2026-02-28" },
+            ]),
+          ]);
+          return [april?.data?.length, february?.data?.length];
+        },
+        { timeout: 10_000 },
+      )
+      .toEqual([0, 0]);
+    await waitForServiceWorkerReady(page);
+    await context.setOffline(true);
+    await page.reload();
+    await waitForHydration(page);
+    await waitForCalendarReady(page);
+    await switchCalendarView(page, "monthly");
+
+    await expect(page.getByRole("grid", { name: "April 2026" })).toBeVisible();
+    expect(
+      await page.evaluate(() =>
+        Boolean(
+          (window as Window & { __sawMonthColdCopy?: boolean })
+            .__sawMonthColdCopy,
+        ),
+      ),
+    ).toBe(false);
+
+    // Task 12 opts into one deterministic offline-restoration screenshot. The
+    // normal offline-persistence project remains artifact-free.
+    const visualOut = process.env.CALENDAR_VISUAL_OUT_DIR;
+    if (visualOut) {
+      const directory = `${visualOut}/month/1280x800`;
+      await mkdir(directory, { recursive: true });
+      await page.evaluate(() => document.fonts.ready);
+      await page.evaluate(
+        () =>
+          new Promise<void>((resolve) =>
+            requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
+          ),
+      );
+      await page.screenshot({
+        path: `${directory}/offline-restored.png`,
+        fullPage: true,
+      });
+    }
+
+    await page.getByRole("button", { name: "Previous" }).click();
+    await page.getByRole("button", { name: "Previous" }).click();
+    await expect(
+      page.getByRole("grid", { name: "February 2026" }),
+    ).toBeVisible();
+    await expect(page.getByText(/isn't cached/i)).toHaveCount(0);
+
+    // March and April were loaded during navigation; May was never loaded. The
+    // honest cold-cache state therefore appears only on the third Next click.
+    await page.getByRole("button", { name: "Next" }).click();
+    await page.getByRole("button", { name: "Next" }).click();
+    await page.getByRole("button", { name: "Next" }).click();
+    await expect(page.getByText("This month isn't cached yet.")).toBeVisible();
+
+    // Offline with nothing cached is a settled condition, not a transient one.
+    // TanStack cold-starts believing it is online, so the doomed fetch retries
+    // and resolves to an error at roughly seven seconds; before this was fixed
+    // the copy above was replaced by an unusable "Try again" at t=8s and a
+    // visibility check alone passed purely on timing. Hold past that point.
+    await page.waitForTimeout(12_000);
+    await expect(page.getByText("This month isn't cached yet.")).toBeVisible();
+    await expect(page.getByRole("button", { name: /try again/i })).toHaveCount(
+      0,
+    );
+    await expect(
+      page.getByRole("status", { name: /loading month/i }),
+    ).toHaveCount(0);
   });
 });
 

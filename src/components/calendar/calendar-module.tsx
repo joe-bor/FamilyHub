@@ -1,3 +1,4 @@
+import { useIsRestoring } from "@tanstack/react-query";
 import {
   addDays,
   endOfMonth,
@@ -40,6 +41,7 @@ import {
   WeeklyCalendar,
 } from "@/components/calendar";
 import { railThresholdPx } from "@/components/calendar/utils/day-rail";
+import { hasScheduleWindowEvents } from "@/components/calendar/utils/schedule-rows";
 import { toast } from "@/components/ui/toaster";
 import { useIsLargeScreen, useIsMobile, useMediaQuery } from "@/hooks";
 import { isOfflineWriteError } from "@/lib/offline/read-only-guard";
@@ -184,8 +186,18 @@ export function CalendarModule() {
         end = endOfWeek(currentDate, { weekStartsOn: 0 });
         break;
       case "monthly":
-        start = startOfMonth(currentDate);
-        end = endOfMonth(currentDate);
+        if (isLargeScreen) {
+          // The lg+ grid renders leading and trailing days from adjacent
+          // months, so fetch the range it actually draws. Gated because
+          // dateRange is module-wide and MobileMonthlyView also renders
+          // adjacent-month days — an ungated change would alter mobile.
+          // See spec Section 4.6.
+          start = startOfWeek(startOfMonth(currentDate), { weekStartsOn: 0 });
+          end = endOfWeek(endOfMonth(currentDate), { weekStartsOn: 0 });
+        } else {
+          start = startOfMonth(currentDate);
+          end = endOfMonth(currentDate);
+        }
         break;
       case "schedule":
         start = currentDate;
@@ -200,7 +212,7 @@ export function CalendarModule() {
       startDate: format(start, "yyyy-MM-dd"),
       endDate: format(end, "yyyy-MM-dd"),
     };
-  }, [currentDate, calendarView]);
+  }, [currentDate, calendarView, isLargeScreen]);
 
   // Server state from TanStack Query
   const {
@@ -209,7 +221,11 @@ export function CalendarModule() {
     isFetching,
     isError,
     error,
+    refetch,
   } = useCalendarEvents(dateRange);
+  // Persisted query data hydrates asynchronously; an undefined response while
+  // this flag is true is not a cold cache.
+  const isRestoring = useIsRestoring();
 
   // Unfiltered events for the API response — used by intent lookups that must
   // find an event regardless of the active member/all-day filter state.
@@ -463,8 +479,15 @@ export function CalendarModule() {
   };
 
   const renderCalendarView = () => {
+    // Only the lg+ compositions own their states. This gate is load-bearing:
+    // without `isLargeScreen`, a mobile "monthly" view would skip the shared
+    // loading state and render MobileMonthlyView with zero events mid-fetch.
+    const ownsItsStates =
+      isLargeScreen &&
+      (calendarView === "monthly" || calendarView === "schedule");
+
     // Show loading state
-    if (isLoading) {
+    if (isLoading && !ownsItsStates) {
       return (
         <div className="flex-1 flex items-center justify-center">
           <div className="text-muted-foreground">Loading events...</div>
@@ -473,7 +496,7 @@ export function CalendarModule() {
     }
 
     // Show error state
-    if (isError) {
+    if (isError && !ownsItsStates) {
       return (
         <div className="flex-1 flex items-center justify-center">
           <div className="text-destructive">
@@ -546,10 +569,31 @@ export function CalendarModule() {
           <MonthlyCalendar
             {...commonProps}
             onDateSelect={selectDateAndSwitchToDaily}
+            onMonthChange={setDate}
+            isEventDetailOpen={isDetailModalOpen}
+            isLoading={isLoading}
+            isError={isError}
+            errorMessage={error?.message}
+            onRetry={refetch}
+            hasQueryData={eventsResponse !== undefined}
+            isQueryRestoring={isRestoring}
           />
         );
       case "schedule":
-        return <ScheduleCalendar {...commonProps} />;
+        return (
+          <ScheduleCalendar
+            {...commonProps}
+            isLoading={isLoading}
+            isError={isError}
+            errorMessage={error?.message}
+            onRetry={refetch}
+            hasUnfilteredEventsInWindow={hasScheduleWindowEvents(
+              rawEvents,
+              currentDate,
+              14,
+            )}
+          />
+        );
       default:
         return <WeeklyCalendar {...commonProps} />;
     }
