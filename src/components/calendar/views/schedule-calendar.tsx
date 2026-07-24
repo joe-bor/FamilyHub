@@ -149,15 +149,29 @@ function ScheduleCalendarCompact({
                       type="button"
                       key={getEventKey(event)}
                       onClick={() => onEventClick?.(event)}
+                      // The border colour has to be an inline style, exactly as
+                      // in the lg+ branch. Passing `colorMap[x].bg` through
+                      // `cn()` alongside `colorMap[x].light` does not work:
+                      // both are `bg-*` utilities, so twMerge treats them as
+                      // conflicting and keeps only the last, leaving no border
+                      // colour at all. Reordering only swaps which background
+                      // wins; an inline style is what twMerge cannot collapse.
+                      style={{
+                        borderLeftColor: member
+                          ? colorMap[member.color].hex
+                          : undefined,
+                      }}
                       className={cn(
                         "flex min-h-14 w-full cursor-pointer items-center rounded-xl p-3 text-left",
                         "transition-all hover:shadow-md hover:scale-[1.005]",
                         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
                         "border-l-4 ring-1 ring-inset ring-black/5",
+                        // `border-muted-foreground` is a border utility, so the
+                        // member-less row never had the collision and already
+                        // rendered as intended. It keeps its shipped classes.
                         member
-                          ? colorMap[member.color]?.bg
-                          : "border-muted-foreground",
-                        member ? colorMap[member.color]?.light : "bg-muted",
+                          ? colorMap[member.color].light
+                          : "border-muted-foreground bg-muted",
                       )}
                     >
                       <div className="flex min-w-0 flex-1 flex-col">
