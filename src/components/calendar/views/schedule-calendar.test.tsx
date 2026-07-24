@@ -26,6 +26,14 @@ function setMobile(isMobile: boolean) {
   setViewportWidth(isMobile ? 390 : 1024);
 }
 
+/** jsdom reports resolved colours as `rgb(r, g, b)`, never as the source hex. */
+function hexToRgb(hex: string): string {
+  const channels = hex.replace("#", "").match(/[0-9a-f]{2}/gi);
+  if (channels?.length !== 3) throw new Error(`Invalid hex: ${hex}`);
+  const [red, green, blue] = channels.map((c) => Number.parseInt(c, 16));
+  return `rgb(${red}, ${green}, ${blue})`;
+}
+
 describe("ScheduleCalendar", () => {
   beforeEach(() => {
     seedFamilyStore({
@@ -193,6 +201,70 @@ describe("ScheduleCalendar", () => {
       expect(scrollArea).toHaveStyle({
         paddingBottom: expectedBottomPadding,
       });
+    });
+
+    it("colours the left border with the member's colour", () => {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      render(
+        <ScheduleCalendar
+          events={[testEvents[0]]}
+          currentDate={today}
+          filter={defaultFilter}
+        />,
+      );
+
+      // The *resolved* value, not `element.style`: reading the inline
+      // declaration back would pass even if another rule won the cascade.
+      //
+      // The matching `border-left-width: 4px` guard cannot live here. jsdom
+      // loads no Tailwind stylesheet, so `border-l-4` never resolves and
+      // `getComputedStyle(row).borderLeftWidth` returns the UA default `2px`
+      // for a <button> whether or not the class is present — pinning it would
+      // prove nothing. That half is enforced in `e2e/mobile-calendar.spec.ts`
+      // against real CSS, mirroring what the lg+ branch does in
+      // `e2e/large-screen-calendar-schedule.spec.ts`.
+      const row = screen.getByRole("button", { name: /Morning Meeting/ });
+      expect(getComputedStyle(row).borderLeftColor).toBe(
+        hexToRgb(colorMap[testMembers[0].color].hex),
+      );
+      // `colorMap[x].bg` and `colorMap[x].light` are both `bg-*` utilities, so
+      // twMerge collapses them and the border colour class disappears. The
+      // background must survive the fix that restores the border.
+      expect(row).toHaveClass(colorMap[testMembers[0].color].light);
+    });
+
+    it("leaves a member-less row on the default border colour", () => {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const orphan = createTestEvent({
+        id: "orphan",
+        title: "Orphan Event",
+        date: today,
+        memberId: "removed-member",
+      });
+
+      render(
+        <ScheduleCalendar
+          events={[orphan]}
+          currentDate={today}
+          filter={{
+            ...defaultFilter,
+            selectedMembers: [
+              ...defaultFilter.selectedMembers,
+              "removed-member",
+            ],
+          }}
+        />,
+      );
+
+      // `border-muted-foreground` is a *border* utility, so it never collided
+      // with `bg-muted` and this branch already renders as intended. Fixing the
+      // member branch must not disturb it.
+      const row = screen.getByRole("button", { name: /Orphan Event/ });
+      expect(row).toHaveClass("border-muted-foreground", "bg-muted");
+      expect(row.style.borderLeftColor).toBe("");
     });
   });
 

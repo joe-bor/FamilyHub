@@ -1,8 +1,15 @@
 import { expect, test } from "@playwright/test";
-import { registerFamily, seedBrowserAuth } from "./helpers/api-helpers";
+import { colorMap } from "../src/lib/types";
+import {
+  createCalendarEvent,
+  registerFamily,
+  seedBrowserAuth,
+} from "./helpers/api-helpers";
 import {
   clearStorage,
+  getTodayDateString,
   safeClick,
+  switchCalendarView,
   waitForCalendarReady,
   waitForHydration,
 } from "./helpers/test-helpers";
@@ -126,5 +133,70 @@ test.describe("Mobile Calendar Views", () => {
     // Bob's filter dot should also be present
     const bobDot = page.getByRole("button", { name: /Bob filter/i }).first();
     await expect(bobDot).toBeVisible();
+  });
+});
+
+/**
+ * The compact Schedule row's coloured left border.
+ *
+ * Its own describe because the fixture ordering is load-bearing: the event must
+ * exist *before* the app's first authenticated calendar load. Seeding it after
+ * that load and reloading does not work — successful queries are persisted to
+ * IndexedDB by `PersistQueryClientProvider`, `clearStorage` clears only
+ * local/sessionStorage, and the restored empty result is seconds old against a
+ * 5-minute `staleTime`, so TanStack treats it as fresh and never refetches.
+ * Schedule then renders "No upcoming events" while the event sits in the
+ * backend. Same ordering as `calendar-preservation-visual.spec.ts`.
+ */
+test.describe("Mobile Schedule member border", () => {
+  test("Schedule rows resolve the member's coloured left border", async ({
+    page,
+    request,
+    isMobile,
+  }) => {
+    test.skip(!isMobile, "Mobile-only test");
+
+    await page.goto("/");
+    await clearStorage(page);
+
+    const reg = await registerFamily(request, {
+      familyName: "Schedule Border",
+      members: [{ name: "Alice", color: "coral" }],
+    });
+    await createCalendarEvent(request, reg.token, {
+      title: "Border Probe",
+      date: getTodayDateString(),
+      startTime: "9:00 AM",
+      endTime: "10:00 AM",
+      memberId: reg.family.members[0].id,
+      isAllDay: false,
+    });
+
+    await seedBrowserAuth(page, reg);
+    await page.reload();
+    await waitForHydration(page);
+    await waitForCalendarReady(page);
+    await switchCalendarView(page, "schedule");
+
+    // Assert on the loaded surface, never on an empty one: reading geometry off
+    // a row that has not rendered yet fails for the wrong reason.
+    const row = page.getByRole("button", { name: /Border Probe/ });
+    await expect(row).toBeVisible();
+
+    // The *resolved* values, not `element.style`. jsdom cannot stand in for
+    // this: it loads no Tailwind stylesheet, so `border-l-4` never resolves
+    // there and the width half of the guard only holds against real CSS.
+    const actual = await row.evaluate((element) => {
+      const style = getComputedStyle(element);
+      return { color: style.borderLeftColor, width: style.borderLeftWidth };
+    });
+    const expected = await page.evaluate((hex) => {
+      const probe = document.createElement("div");
+      probe.style.borderLeftColor = hex;
+      return probe.style.borderLeftColor;
+    }, colorMap.coral.hex);
+
+    expect(actual.color).toBe(expected);
+    expect(actual.width).toBe("4px");
   });
 });
