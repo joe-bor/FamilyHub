@@ -1,5 +1,52 @@
 # Changelog
 
+## [0.3.25](https://github.com/joe-bor/FamilyHub/compare/family-hub-v0.3.24...family-hub-v0.3.25) (2026-07-24)
+
+
+### Features
+
+* **calendar:** add large-screen month view states ([dd3193d](https://github.com/joe-bor/FamilyHub/commit/dd3193d905c123c46dda8b8f0cbc9f44cbca59f6))
+* **calendar:** add large-screen schedule gutter composition ([740f188](https://github.com/joe-bor/FamilyHub/commit/740f188415bcda2c784d5a645d725cb551075c06))
+* **calendar:** add month day cell with gridcell semantics ([bd208f3](https://github.com/joe-bor/FamilyHub/commit/bd208f3678179e5083cfc0d2fbfa2ea538b0dd07))
+* **calendar:** add month event chip with run edge geometry ([e1a399c](https://github.com/joe-bor/FamilyHub/commit/e1a399c8bee85cad27502f62b615cbaeba341604))
+* **calendar:** add month overflow popover ([d9105b3](https://github.com/joe-bor/FamilyHub/commit/d9105b318ec6f582177d1127f427fe0c5b1bbf3f))
+* **calendar:** add month slot capacity helper ([0e32b6e](https://github.com/joe-bor/FamilyHub/commit/0e32b6ea19a8350dc37646d4f435b5ce6d1b4d21))
+* **calendar:** add month slot planning with multi-day reservation ([0fd40bf](https://github.com/joe-bor/FamilyHub/commit/0fd40bf20d0e746bebb7527f37109a22c1258f65))
+* **calendar:** add schedule row grouping with gap runs ([234f970](https://github.com/joe-bor/FamilyHub/commit/234f970e6271a3f7c508d989825b8ca383a4176d))
+* **calendar:** correct schedule empty states and migrate tests ([acc2460](https://github.com/joe-bor/FamilyHub/commit/acc2460573962f7235947a3d45a86893cf14038e))
+* **calendar:** fetch the rendered grid range for large-screen month ([768f8d4](https://github.com/joe-bor/FamilyHub/commit/768f8d42077b0382ea27f34101999a53ac2185a9))
+* **calendar:** fill viewport in large-screen month grid ([f510a50](https://github.com/joe-bor/FamilyHub/commit/f510a50e728c3065724c001f8e104ee2494a3c35))
+* **calendar:** large-screen month and schedule ([10489e4](https://github.com/joe-bor/FamilyHub/commit/10489e425c958e29f34b16a301c5f0768bc7df29))
+
+
+### Bug Fixes
+
+* **calendar:** bound the month day popover to the viewport ([cc8f7e8](https://github.com/joe-bor/FamilyHub/commit/cc8f7e81c743e5e28cdc3de03ae38456bcff0b11))
+* **calendar:** clamp and centre the month overflow summary slot ([83e535b](https://github.com/joe-bor/FamilyHub/commit/83e535bf63dbd0cfea4811b02ccbeb7e9bb1e544))
+* **calendar:** keep the offline month explanation honest ([91421d0](https://github.com/joe-bor/FamilyHub/commit/91421d06fbfc4d26ea7dee06f7c91c61f91f0fb1))
+* **calendar:** raise the month overflow summary to AA contrast ([90427da](https://github.com/joe-bor/FamilyHub/commit/90427da3bb5bdcceaaef323541b111ddafbb91b2))
+* **test:** scope setViewportWidth's matchMedia override to width queries ([5bcbdbb](https://github.com/joe-bor/FamilyHub/commit/5bcbdbb65f52d6cd847dc694b19b61c6f52acb2b))
+
+
+### Code Refactoring
+
+* **calendar:** move month matrix helpers out of day-rail ([212e858](https://github.com/joe-bor/FamilyHub/commit/212e8589ddaad7db9dd9fa1e835c9520d1654b1d))
+
+
+### Tests
+
+* **calendar:** add large-screen month E2E coverage ([bb89f8c](https://github.com/joe-bor/FamilyHub/commit/bb89f8c5d2ed2427939bfc2db860d1ecc7e6465b))
+* **calendar:** add large-screen schedule E2E coverage ([e203cb1](https://github.com/joe-bor/FamilyHub/commit/e203cb19940fbc84ea5016e8107809618a77a8ca))
+* **calendar:** add the month deterministic visual harness ([1ac13e9](https://github.com/joe-bor/FamilyHub/commit/1ac13e9bdf3014a7a43a454b071b67446eb05b18))
+* **calendar:** extend the visual harness with schedule evidence ([f7c0bf6](https://github.com/joe-bor/FamilyHub/commit/f7c0bf6386e977985f7bb3901ab2abedef18836d))
+* **calendar:** extract shared setViewportWidth helper ([ff05cb0](https://github.com/joe-bor/FamilyHub/commit/ff05cb0e5eb5d57b1df27cd163d92114223ab920))
+* **calendar:** fold the duplicated large-schedule describe block ([0a0438d](https://github.com/joe-bor/FamilyHub/commit/0a0438dbc279b0ac27a2f7481c2c62cc64cb9709))
+* **calendar:** make the preservation capture deterministic ([68a08b9](https://github.com/joe-bor/FamilyHub/commit/68a08b992ce61d3b9b926491bcaff32356501dd8))
+* **calendar:** pin month geometry and preservation evidence ([2264dcc](https://github.com/joe-bor/FamilyHub/commit/2264dcc620fc60064c7f977e51939053d4f5a7d3))
+* **calendar:** pin the month large-screen breakpoint boundary ([0c9229e](https://github.com/joe-bor/FamilyHub/commit/0c9229e41597e849a7896737215310ce3eb3ca73))
+* **calendar:** pin the schedule window, step and resolved border ([b1c08e5](https://github.com/joe-bor/FamilyHub/commit/b1c08e5d8f0874a3baac502e63d34154c837fbd1))
+* **calendar:** prove the month gridcell gaps in the browser ([cc2c92b](https://github.com/joe-bor/FamilyHub/commit/cc2c92baac1160263f2916bc032ed54738fb0b5f))
+
 ## [0.3.24](https://github.com/joe-bor/FamilyHub/compare/family-hub-v0.3.23...family-hub-v0.3.24) (2026-07-21)
 
 
