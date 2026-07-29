@@ -1,3 +1,5 @@
+import { userEvent } from "@testing-library/user-event";
+import { useCalendarStore } from "@/stores";
 import { render, screen } from "@/test/test-utils";
 import { MobileToolbar } from "./mobile-toolbar";
 
@@ -35,5 +37,32 @@ describe("MobileToolbar", () => {
     expect(
       screen.queryByRole("button", { name: /menu/i }),
     ).not.toBeInTheDocument();
+  });
+});
+
+describe("MobileToolbar period navigation", () => {
+  const members = [{ id: "m1", name: "Alice", color: "coral" as const }];
+
+  it("renders previous and next controls", () => {
+    render(<MobileToolbar members={members} />);
+    expect(
+      screen.getByRole("button", { name: "Previous" }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Next" })).toBeInTheDocument();
+  });
+
+  it("does not render a second Today control (AppHeader owns it)", () => {
+    render(<MobileToolbar members={members} />);
+    expect(screen.queryByRole("button", { name: /today/i })).toBeNull();
+  });
+
+  it("moves the store date forward when Next is pressed", async () => {
+    useCalendarStore.setState({
+      calendarView: "daily",
+      currentDate: new Date(2026, 5, 1),
+    });
+    render(<MobileToolbar members={members} />);
+    await userEvent.click(screen.getByRole("button", { name: "Next" }));
+    expect(useCalendarStore.getState().currentDate.getDate()).toBe(2);
   });
 });

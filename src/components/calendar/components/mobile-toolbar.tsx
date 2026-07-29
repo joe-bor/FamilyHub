@@ -1,3 +1,4 @@
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useEffect } from "react";
 import type { FamilyMember } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -23,6 +24,8 @@ export function MobileToolbar({ members }: MobileToolbarProps) {
   const initializeSelectedMembers = useCalendarStore(
     (s) => s.initializeSelectedMembers,
   );
+  const goToPrevious = useCalendarStore((s) => s.goToPrevious);
+  const goToNext = useCalendarStore((s) => s.goToNext);
 
   // Initialize selected members on first load or when persisted filter is stale
   useEffect(() => {
@@ -62,6 +65,27 @@ export function MobileToolbar({ members }: MobileToolbarProps) {
             {label}
           </button>
         ))}
+      </div>
+
+      {/* Period navigation — Today deliberately lives in the shared AppHeader
+          (app-header.tsx:74-87), so this row owns prev/next only. */}
+      <div className="flex items-center gap-0.5">
+        <button
+          type="button"
+          aria-label="Previous"
+          onClick={goToPrevious}
+          className="flex h-11 w-11 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground"
+        >
+          <ChevronLeft className="h-5 w-5" />
+        </button>
+        <button
+          type="button"
+          aria-label="Next"
+          onClick={goToNext}
+          className="flex h-11 w-11 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground"
+        >
+          <ChevronRight className="h-5 w-5" />
+        </button>
       </div>
 
       {/* Member Filter Dots */}
