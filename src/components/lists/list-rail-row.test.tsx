@@ -11,12 +11,12 @@ const list: ListSummary = {
 };
 
 describe("ListRailRow", () => {
-  it("identifies the selected row and its remaining item count", () => {
+  it("identifies the selected row and its progress", () => {
     render(<ListRailRow list={list} selected onSelect={vi.fn()} />);
 
     expect(
       screen.getByRole("button", {
-        name: /groceries, selected, 4 items remaining/i,
+        name: /groceries, selected, 2 of 6 done/i,
       }),
     ).toHaveAttribute("aria-current", "true");
   });
@@ -27,7 +27,7 @@ describe("ListRailRow", () => {
       <ListRailRow list={list} selected={false} onSelect={onSelect} />,
     );
     const row = screen.getByRole("button", {
-      name: /groceries, 4 items remaining/i,
+      name: /groceries, 2 of 6 done/i,
     });
 
     expect(row).not.toHaveAttribute("aria-current");
@@ -39,7 +39,7 @@ describe("ListRailRow", () => {
     render(<ListRailRow list={list} selected={false} onSelect={vi.fn()} />);
 
     expect(
-      screen.getByRole("button", { name: /groceries, 4 items remaining/i }),
+      screen.getByRole("button", { name: /groceries, 2 of 6 done/i }),
     ).toHaveClass("min-h-[44px]");
   });
 });

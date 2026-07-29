@@ -12,15 +12,10 @@ export function ListCard({ list, onOpen }: ListCardProps) {
   const pressable = usePressable();
   const meta = kindMeta[list.kind];
   const Icon = meta.icon;
-  const remainingItems = list.totalItems - list.completedItems;
   const progressLabel =
     list.totalItems === 0
       ? "No items yet"
       : `${list.completedItems} of ${list.totalItems} done`;
-  const remainingLabel =
-    list.totalItems === 0
-      ? "Ready to fill"
-      : `${remainingItems} ${remainingItems === 1 ? "item" : "items"} left`;
 
   return (
     <button
@@ -48,12 +43,9 @@ export function ListCard({ list, onOpen }: ListCardProps) {
       <h3 className="mt-4 line-clamp-2 text-[17px] font-semibold leading-6 text-foreground">
         {list.name}
       </h3>
-      <div className="mt-2 space-y-1">
+      <div className="mt-2">
         <p className="text-sm leading-5 text-muted-foreground">
           {progressLabel}
-        </p>
-        <p className="text-xs font-semibold leading-4 text-muted-foreground">
-          {remainingLabel}
         </p>
       </div>
     </button>

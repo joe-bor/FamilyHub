@@ -45,7 +45,8 @@ export function ChoreAssigneeGroup({
               {group.member.name}
             </h3>
             <p className="text-xs font-medium text-muted-foreground">
-              {group.summary.remaining} left, {group.summary.completed} done
+              {group.summary.completed} of{" "}
+              {group.summary.completed + group.summary.remaining} done
             </p>
           </div>
         </div>

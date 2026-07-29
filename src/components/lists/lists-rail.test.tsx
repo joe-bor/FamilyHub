@@ -35,7 +35,7 @@ describe("ListsRail", () => {
     ).toBeInTheDocument();
     expect(
       screen.getByRole("button", {
-        name: /chores, selected, 2 items remaining/i,
+        name: /chores, selected, 0 of 2 done/i,
       }),
     ).toHaveAttribute("aria-current", "true");
     expect(

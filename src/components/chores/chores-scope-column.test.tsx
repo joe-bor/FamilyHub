@@ -23,7 +23,7 @@ describe("ChoreScopeColumn", () => {
 
     expect(screen.queryByRole("heading", { name: "Today" })).toBeNull();
     expect(screen.getByRole("region", { name: "Today" })).toBeInTheDocument();
-    expect(screen.getByText(/1 left of 2/i)).toBeInTheDocument();
+    expect(screen.getByText(/1 of 2 done/i)).toBeInTheDocument();
   });
 });
 

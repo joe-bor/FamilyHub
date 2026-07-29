@@ -13,15 +13,13 @@ export function ListRailRow({ list, selected, onSelect }: ListRailRowProps) {
   const pressable = usePressable();
   const meta = kindMeta[list.kind];
   const Icon = meta.icon;
-  const remaining = list.totalItems - list.completedItems;
-  const remainingLabel =
+  // One phrasing for progress everywhere (list card, rail row, chore columns and
+  // assignee groups) so the same list never reads two different ways.
+  const progressLabel =
     list.totalItems === 0
-      ? "Ready to fill"
-      : `${remaining} ${remaining === 1 ? "item" : "items"} left`;
-  const ariaLabel =
-    list.totalItems === 0
-      ? `${list.name}${selected ? ", selected" : ""}, no items yet`
-      : `${list.name}${selected ? ", selected" : ""}, ${remaining} ${remaining === 1 ? "item" : "items"} remaining`;
+      ? "No items yet"
+      : `${list.completedItems} of ${list.totalItems} done`;
+  const ariaLabel = `${list.name}${selected ? ", selected" : ""}, ${progressLabel.toLowerCase()}`;
 
   return (
     <button
@@ -51,7 +49,7 @@ export function ListRailRow({ list, selected, onSelect }: ListRailRowProps) {
           {list.name}
         </span>
         <span className="block text-xs leading-4 text-muted-foreground">
-          {remainingLabel}
+          {progressLabel}
         </span>
       </span>
     </button>

@@ -42,11 +42,14 @@ test.describe("Mobile Chores", () => {
     await expect(dialog).toBeHidden();
 
     await page.getByRole("button", { name: "Week" }).click();
-    await expect(page.getByRole("region", { name: "This Week" })).toBeVisible();
+    const weekRegion = page.getByRole("region", { name: "This Week" });
+    await expect(weekRegion).toBeVisible();
     await expect(page.getByRole("heading", { name: "This Week" })).toHaveCount(
       0,
     );
-    await expect(page.getByText("1 left of 1")).toBeVisible();
+    // The column's own summary is a direct child <p>; the assignee group inside
+    // now states progress the same way, so an unscoped match is ambiguous.
+    await expect(weekRegion.locator("> p")).toHaveText("0 of 1 done");
 
     const row = page
       .locator('[data-testid^="chore-row-"]')

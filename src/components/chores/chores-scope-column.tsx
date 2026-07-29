@@ -33,7 +33,7 @@ export function ChoreScopeColumn({
   onUncomplete,
 }: ChoreScopeColumnProps) {
   const heading = scopeHeading(scope.scope);
-  const summary = `${scope.summary.remaining} left of ${scope.summary.total}`;
+  const summary = `${scope.summary.total - scope.summary.remaining} of ${scope.summary.total} done`;
   const isFullyComplete =
     scope.summary.total > 0 && scope.summary.remaining === 0;
 
