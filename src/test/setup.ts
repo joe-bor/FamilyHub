@@ -42,6 +42,11 @@ global.IntersectionObserver = vi.fn().mockImplementation(() => ({
 Element.prototype.scrollTo = vi.fn();
 window.scrollTo = vi.fn();
 
+// Mock scrollIntoView (used by the mobile Meals stack to land on today; jsdom
+// lacks it entirely, unlike scrollTo, so calling it unstubbed throws and takes
+// the whole component tree down). The real scroll is proven in Playwright.
+Element.prototype.scrollIntoView = vi.fn();
+
 // Mock pointer capture APIs (used by vaul's drag handling; missing in jsdom)
 Element.prototype.setPointerCapture = vi.fn();
 Element.prototype.releasePointerCapture = vi.fn();

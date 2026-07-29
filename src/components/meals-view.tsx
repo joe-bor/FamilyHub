@@ -133,6 +133,8 @@ export function MealsView() {
   const [selectedSlot, setSelectedSlot] = useState<MealSlotSelection | null>(
     null,
   );
+  const todayCardRef = useRef<HTMLDivElement | null>(null);
+  const didScrollToTodayRef = useRef(false);
   const [editingSlotId, setEditingSlotId] = useState<MealSlotId | null>(null);
   const [placementDraft, setPlacementDraft] =
     useState<MealPlacementDraft | null>(null);
@@ -201,6 +203,20 @@ export function MealsView() {
     onSuccess: () => resetPlanningSession(),
     onError: handlePlanningSaveError,
   });
+
+  // Land on today within the Sunday-anchored week. The week boundary itself is a
+  // cross-stack contract with the Meals/Chores backend and must not move.
+  useEffect(() => {
+    if (didScrollToTodayRef.current) return;
+    if (isLargeScreen) return; // MealGrid already marks today at lg+
+    // The board query is still loading on mount, so no day card exists yet and
+    // the ref is null; this re-runs once displayBoard lands.
+    if (!displayBoard) return;
+    const node = todayCardRef.current;
+    if (!node) return;
+    didScrollToTodayRef.current = true;
+    node.scrollIntoView({ block: "start", behavior: "auto" });
+  }, [isLargeScreen, displayBoard]);
 
   useEffect(() => {
     if (!pendingPlacementDraft) return;
@@ -606,15 +622,23 @@ export function MealsView() {
         {displayBoard && !isLargeScreen ? (
           <div className="space-y-4">
             {displayBoard.days.map((day) => (
-              <MealDayCard
+              <div
                 key={day.date}
-                day={day}
-                readOnly={readOnly}
-                pendingRecipeId={pendingRecipeId}
-                planningDrafts={planningActive ? planningDrafts : []}
-                planningTarget={currentPlanningTarget}
-                onSelectSlot={selectSlot}
-              />
+                ref={
+                  day.date === formatLocalDate(new Date())
+                    ? todayCardRef
+                    : undefined
+                }
+              >
+                <MealDayCard
+                  day={day}
+                  readOnly={readOnly}
+                  pendingRecipeId={pendingRecipeId}
+                  planningDrafts={planningActive ? planningDrafts : []}
+                  planningTarget={currentPlanningTarget}
+                  onSelectSlot={selectSlot}
+                />
+              </div>
             ))}
           </div>
         ) : null}
