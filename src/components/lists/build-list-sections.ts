@@ -50,7 +50,9 @@ export function buildListSections({
       ? [
           {
             id: "uncategorized",
-            title: "Uncategorized",
+            // A lone "Uncategorized" header labels nothing — there is no other
+            // section to distinguish it from. The call site already skips nulls.
+            title: categorizedSections.length > 0 ? "Uncategorized" : null,
             items: uncategorizedItems,
           },
         ]

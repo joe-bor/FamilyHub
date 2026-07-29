@@ -295,4 +295,58 @@ describe("buildListSections", () => {
       "No cat item",
     ]);
   });
+
+  it("omits the Uncategorized title when it is the only section", () => {
+    const sections = buildListSections({
+      list: {
+        ...baseList,
+        items: [
+          {
+            id: "1",
+            text: "Milk",
+            completed: false,
+            completedAt: null,
+            categoryId: null,
+            createdAt: "2026-01-01T00:00:00",
+            updatedAt: "2026-01-01T00:00:00",
+          },
+        ],
+      },
+      showCompleted: true,
+    });
+
+    expect(sections).toHaveLength(1);
+    expect(sections[0].title).toBeNull();
+  });
+
+  it("keeps the Uncategorized title when other sections exist", () => {
+    const sections = buildListSections({
+      list: {
+        ...baseList,
+        items: [
+          {
+            id: "1",
+            text: "Milk",
+            completed: false,
+            completedAt: null,
+            categoryId: null,
+            createdAt: "2026-01-01T00:00:00",
+            updatedAt: "2026-01-01T00:00:00",
+          },
+          {
+            id: "2",
+            text: "Bread",
+            completed: false,
+            completedAt: null,
+            categoryId: "produce",
+            createdAt: "2026-01-02T00:00:00",
+            updatedAt: "2026-01-02T00:00:00",
+          },
+        ],
+      },
+      showCompleted: true,
+    });
+
+    expect(sections.find((s) => s.title === "Uncategorized")).toBeDefined();
+  });
 });
