@@ -67,7 +67,11 @@ export function AppHeader() {
 
     return (
       <header className="shrink-0 border-b border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/85 flex items-center justify-between gap-3 min-h-16 px-4 py-3">
-        <h1 className="min-w-0 truncate text-[22px] leading-7 font-semibold text-foreground">
+        <h1
+          data-testid="app-header-context"
+          data-module={activeModule ?? "home"}
+          className="min-w-0 truncate text-[22px] leading-7 font-semibold text-foreground"
+        >
           {mobileTitle}
         </h1>
         <div className="flex shrink-0 items-center gap-2">
