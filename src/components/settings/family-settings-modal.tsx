@@ -213,10 +213,11 @@ export function FamilySettingsModal({
             )}
           </section>
 
-          {/* Danger Zone */}
+          {/* Reset — the only action here, so the heading names it rather than
+              using a jargon warning label. The consequence copy sits below. */}
           <section className="space-y-4 pt-4 border-t border-border">
             <h3 className="text-sm font-semibold text-destructive uppercase tracking-wider">
-              Danger Zone
+              Reset this family
             </h3>
             <div className="p-4 rounded-lg border border-destructive/30 bg-destructive/5">
               <div className="flex items-start gap-3">

@@ -115,6 +115,20 @@ describe("FamilySettingsModal — pending member controls", () => {
     expect(screen.getByRole("button", { name: "Edit Bob" })).toBeDisabled();
     expect(screen.getByRole("button", { name: "Remove Bob" })).toBeDisabled();
   });
+
+  it("uses plain language instead of 'Danger Zone'", () => {
+    const client = createClient();
+    client.setQueryData<FamilyApiResponse>(familyKeys.family(), {
+      data: baseFamily(),
+    });
+
+    render(<FamilySettingsModal open onOpenChange={noop} />, {
+      queryClient: client,
+    });
+
+    expect(screen.queryByText(/danger zone/i)).toBeNull();
+    expect(screen.getByText(/reset this family/i)).toBeInTheDocument();
+  });
 });
 
 // ============================================================================
