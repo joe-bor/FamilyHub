@@ -713,7 +713,10 @@ describe("CalendarModule", () => {
 
     it("renders date navigation in the toolbar for the schedule view", async () => {
       seedMockEvents([]);
-      seedCalendarStore({ calendarView: "schedule" });
+      seedCalendarStore({
+        calendarView: "schedule",
+        currentDate: new Date(2026, 5, 1),
+      });
 
       renderWithUser(<CalendarModule />);
 
@@ -725,7 +728,8 @@ describe("CalendarModule", () => {
         screen.getByRole("button", { name: /previous/i }),
       ).toBeInTheDocument();
       expect(screen.getByRole("button", { name: /next/i })).toBeInTheDocument();
-      expect(screen.getByText("Upcoming")).toBeInTheDocument();
+      // Schedule's label reflects its visible 14-day window, so paging it is visible.
+      expect(screen.getByText("Jun 1 – 14")).toBeInTheDocument();
     });
   });
 

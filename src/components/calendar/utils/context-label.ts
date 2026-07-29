@@ -3,7 +3,7 @@ import type { CalendarViewType } from "@/lib/types";
 
 /**
  * Human-readable label describing the calendar's current view + date context
- * (e.g. "June 2026", "Jun 1 – 7", "Mon, Jun 1", "Upcoming"). Shared by the
+ * (e.g. "June 2026", "Jun 1 – 7", "Mon, Jun 1", "Jun 1 – 14"). Shared by the
  * module-aware app header and the calendar mobile toolbar so both render one
  * consistent label.
  */
@@ -24,8 +24,16 @@ export function getContextLabel(
     }
     case "daily":
       return format(currentDate, "EEE, MMM d");
-    case "schedule":
-      return "Upcoming";
+    case "schedule": {
+      // Schedule renders a 14-day window starting at currentDate (offsets 0-13,
+      // schedule-calendar.tsx:73-75).
+      const windowEnd = new Date(currentDate);
+      windowEnd.setDate(currentDate.getDate() + 13);
+      const sameMonth = currentDate.getMonth() === windowEnd.getMonth();
+      return sameMonth
+        ? `${format(currentDate, "MMM d")} – ${format(windowEnd, "d")}`
+        : `${format(currentDate, "MMM d")} – ${format(windowEnd, "MMM d")}`;
+    }
     default:
       return format(currentDate, "MMMM yyyy");
   }
