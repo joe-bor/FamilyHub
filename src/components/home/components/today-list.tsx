@@ -61,13 +61,23 @@ export const TodayList = memo(function TodayList({
           const member = getFamilyMember(members, event.memberId);
           const colors = member ? colorMap[member.color] : colorMap.coral;
           const affix = getSpanAffix(event, currentDate);
+          // Under a cleared hero ("All clear for the rest of today") these events
+          // are the ones already behind us, and were previously indistinguishable
+          // from upcoming ones.
+          const isPast =
+            !event.isAllDay &&
+            getEventDateTime(event, "end").getTime() < currentDate.getTime();
 
           return (
             <button
               key={getEventKey(event)}
               type="button"
               onClick={() => onSelect(event)}
-              className="flex min-h-12 w-full items-start gap-3 rounded-xl px-1 py-2.5 text-left transition-transform duration-[150ms] ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.98] motion-reduce:transition-none"
+              data-past={isPast ? "true" : undefined}
+              className={cn(
+                "flex min-h-12 w-full items-start gap-3 rounded-xl px-1 py-2.5 text-left transition-transform duration-[150ms] ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.98] motion-reduce:transition-none",
+                isPast && "opacity-60",
+              )}
             >
               <div className="pt-1.5">
                 <span
@@ -86,6 +96,13 @@ export const TodayList = memo(function TodayList({
                   <span className="truncate text-[17px] leading-6 font-semibold text-foreground">
                     {event.title}
                   </span>
+                  {/* Opacity alone conveys nothing to assistive tech or to anyone
+                      who cannot compare rows side by side, so mark it in text. */}
+                  {isPast && (
+                    <span className="shrink-0 text-[13px] leading-5 text-foreground/55">
+                      · done
+                    </span>
+                  )}
                 </div>
 
                 {(affix || event.location) && (

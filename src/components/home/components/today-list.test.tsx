@@ -105,4 +105,60 @@ describe("TodayList", () => {
 
     expect(container).toBeEmptyDOMElement();
   });
+
+  it("marks events that have already finished", () => {
+    const pastEvent = createEvent({
+      id: "past",
+      title: "Morning run",
+      startTime: "8:00 AM",
+      endTime: "9:00 AM",
+    });
+    const futureEvent = createEvent({
+      id: "future",
+      title: "Dinner",
+      startTime: "6:00 PM",
+      endTime: "7:00 PM",
+    });
+
+    renderWithUser(
+      <TodayList
+        currentDate={new Date(2026, 3, 25, 15, 0)}
+        events={[pastEvent, futureEvent]}
+        members={testMembers}
+        onSelect={vi.fn()}
+      />,
+    );
+
+    const past = screen
+      .getByText(pastEvent.title)
+      .closest("[data-past]") as HTMLElement | null;
+    expect(past).toHaveAttribute("data-past", "true");
+
+    // The future event must not be marked.
+    expect(
+      screen.getByText(futureEvent.title).closest("[data-past]"),
+    ).toBeNull();
+  });
+
+  it("conveys finished state to assistive tech, not by opacity alone", () => {
+    renderWithUser(
+      <TodayList
+        currentDate={new Date(2026, 3, 25, 15, 0)}
+        events={[
+          createEvent({
+            id: "past",
+            title: "Morning run",
+            startTime: "8:00 AM",
+            endTime: "9:00 AM",
+          }),
+        ]}
+        members={testMembers}
+        onSelect={vi.fn()}
+      />,
+    );
+
+    expect(
+      screen.getByRole("button", { name: /morning run.*done/i }),
+    ).toBeInTheDocument();
+  });
 });

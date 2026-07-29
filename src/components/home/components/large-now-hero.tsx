@@ -19,7 +19,11 @@ function titleFor(state: HeroState) {
     case "ALL_DAY_ONLY":
       return state.event.title;
     case "REST_OF_DAY_CLEAR":
-      return "Rest of day clear";
+      // Same wording as the mobile hero (hero-card.tsx getTitle) so both surfaces
+      // agree about what a cleared day means. ALL_CLEAR_TODAY stays as-is: it is
+      // only returned when there were no events at all, so no past event can sit
+      // beneath it (hero-state.ts:40-48).
+      return "All clear for the rest of today";
     case "ALL_CLEAR_TODAY":
       return "All clear today";
   }
