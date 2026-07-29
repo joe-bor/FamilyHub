@@ -13,6 +13,9 @@ interface ActivityFeedProps {
   memberColorOf?: MemberColorOf;
   /** Bumped on each meaningful open; remounts groups so expansion is ephemeral (§5). */
   meaningfulOpenId?: number;
+  /** True only on a genuine first open — derived from getLastSeen(), never from
+   * a null persisted state, which also means "IndexedDB unavailable". */
+  isFirstRun?: boolean;
 }
 
 // Shared field styling. min-h-11 = 44px touch target (spec §9). Easing/durations
@@ -24,15 +27,20 @@ export function ActivityFeed({
   onSelectRow,
   memberColorOf,
   meaningfulOpenId = 0,
+  isFirstRun = false,
 }: ActivityFeedProps) {
+  // "What's new" rather than "Recent changes": the <section> already carries that
+  // aria-label, and reusing the string would duplicate the accessible name.
+  const heading = isFirstRun ? "What's new" : "Since you last opened";
+
   if (feed.groups.length === 0) {
     return (
       <section className="px-4 pt-6" aria-label="Recent changes">
-        <h2 className="text-sm font-medium text-muted-foreground">
-          Since you last opened
-        </h2>
+        <h2 className="text-sm font-medium text-muted-foreground">{heading}</h2>
         <p className="pt-2 text-sm text-muted-foreground">
-          You're all caught up.
+          {isFirstRun
+            ? "Changes your family makes will show up here."
+            : "You're all caught up."}
         </p>
       </section>
     );
@@ -40,9 +48,7 @@ export function ActivityFeed({
 
   return (
     <section className="px-4 pt-6" aria-label="Recent changes">
-      <h2 className="text-sm font-medium text-muted-foreground">
-        Since you last opened
-      </h2>
+      <h2 className="text-sm font-medium text-muted-foreground">{heading}</h2>
       <ul className="pt-2">
         {feed.groups.map((group, index) => (
           <li key={group.id}>

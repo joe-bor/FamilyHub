@@ -289,8 +289,11 @@ describe("HomeDashboard", () => {
   it("renders the activity feed region on mobile", async () => {
     setViewportWidth(768);
     render(<HomeDashboard nowOverride={new Date(2026, 5, 21, 12)} />);
+    // Assert the region, not its heading: the heading is first-run dependent
+    // ("What's new" until the lastSeen marker is written), and this test is about
+    // the feed rendering at all. First-run copy is covered in activity-feed.test.tsx.
     expect(
-      await screen.findByText(/Since you last opened/i),
+      await screen.findByRole("region", { name: "Recent changes" }),
     ).toBeInTheDocument();
   });
 

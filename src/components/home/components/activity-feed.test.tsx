@@ -117,3 +117,47 @@ describe("ActivityFeed", () => {
     expect(onSelect).toHaveBeenCalledWith(feed.groups[1].rows[0]);
   });
 });
+
+describe("ActivityFeed first run", () => {
+  const EMPTY: Feed = { groups: [], dividerAfter: -1, overflow: 0 };
+
+  it("does not claim a previous visit on first run with no activity", () => {
+    render(<ActivityFeed feed={EMPTY} onSelectRow={() => {}} isFirstRun />);
+    expect(screen.queryByText(/since you last opened/i)).toBeNull();
+  });
+
+  it("does not claim a previous visit on first run WITH activity", () => {
+    const firstRunFeed: Feed = {
+      groups: [
+        {
+          id: "lists:1",
+          module: "lists",
+          summary: "Groceries · +1 item",
+          rows: [
+            {
+              storeKey: "r1",
+              kind: "added",
+              label: "Milk",
+              module: "lists",
+            },
+          ],
+          rowsOverflow: 0,
+          newest: Date.now(),
+        },
+      ],
+      dividerAfter: -1,
+      overflow: 0,
+    };
+    render(
+      <ActivityFeed feed={firstRunFeed} onSelectRow={() => {}} isFirstRun />,
+    );
+    expect(screen.queryByText(/since you last opened/i)).toBeNull();
+  });
+
+  it("still says 'since you last opened' on a return visit", () => {
+    render(
+      <ActivityFeed feed={EMPTY} onSelectRow={() => {}} isFirstRun={false} />,
+    );
+    expect(screen.getByText(/since you last opened/i)).toBeInTheDocument();
+  });
+});

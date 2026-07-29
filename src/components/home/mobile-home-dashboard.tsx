@@ -96,7 +96,7 @@ function ActivityFeedSection({
   now: Date;
   onOpenEvent: (e: CalendarEvent) => void;
 }) {
-  const { feed, meaningfulOpenId, events } = useActivityFeed({
+  const { feed, meaningfulOpenId, events, isFirstRun } = useActivityFeed({
     nowProvider: () => now.getTime(),
   });
   const memberMap = useFamilyMemberMap();
@@ -125,6 +125,7 @@ function ActivityFeedSection({
       onSelectRow={handleSelect}
       memberColorOf={memberColorOf}
       meaningfulOpenId={meaningfulOpenId}
+      isFirstRun={isFirstRun}
     />
   );
 }

@@ -110,6 +110,10 @@ export function useActivityFeed({
   const lists = listsQuery.data?.data ?? EMPTY_LISTS;
 
   const [feed, setFeed] = useState<Feed>(EMPTY_FEED);
+  // getLastSeen() is 0 only when the marker was never written, i.e. a true first
+  // open. It reads localStorage, so it is unaffected by IndexedDB availability —
+  // unlike loadState(), which returns null for both "never opened" and "no store".
+  const [isFirstRun] = useState(() => io.getLastSeen() === 0);
   const [meaningfulOpenId, setMeaningfulOpenId] = useState(0); // bump → reset ephemeral expansion
   const coldStartRef = useRef(true);
   // Mutex: every cycle (cold start, data change, return-to-visible) is chained
@@ -306,5 +310,5 @@ export function useActivityFeed({
 
   // `events` is the unfiltered 28-day source the feed is built from; the dashboard
   // narrows it to the openable horizon (selectOpenableEvents) for deep-linking.
-  return { feed, meaningfulOpenId, events };
+  return { feed, meaningfulOpenId, events, isFirstRun };
 }
