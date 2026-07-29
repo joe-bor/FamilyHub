@@ -25,17 +25,15 @@ export const familyNameSchema = z.object({
 export type FamilyNameFormData = z.infer<typeof familyNameSchema>;
 
 /**
- * Valid family colors.
+ * Valid family colors. The message lives here rather than at the call sites: a
+ * missing or invalid color fails this base schema first, so a wrapping
+ * `.refine()` never runs and Zod's raw enum text would reach the UI. Both member
+ * surfaces inherit this message.
  */
-const familyColorSchema = z.enum([
-  "coral",
-  "teal",
-  "green",
-  "purple",
-  "yellow",
-  "pink",
-  "orange",
-]);
+const familyColorSchema = z.enum(
+  ["coral", "teal", "green", "purple", "yellow", "pink", "orange"],
+  { message: "Please select a color" },
+);
 
 /**
  * Schema for family member form validation.
@@ -51,9 +49,7 @@ export const memberFormSchema = z.object({
         .min(1, "Name is required")
         .max(30, "Name must be 30 characters or less"),
     ),
-  color: familyColorSchema.refine((val) => val !== undefined, {
-    message: "Please select a color",
-  }),
+  color: familyColorSchema,
 });
 
 export type MemberFormData = z.infer<typeof memberFormSchema>;
@@ -84,9 +80,7 @@ export const createMemberFormSchema = (
             message: "A member with this name already exists",
           }),
       ),
-    color: familyColorSchema.refine((val) => val !== undefined, {
-      message: "Please select a color",
-    }),
+    color: familyColorSchema,
   });
 };
 

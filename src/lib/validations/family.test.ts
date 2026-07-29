@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   createMemberFormSchema,
+  createMemberProfileSchema,
   familyDataSchema,
   familyMemberSchema,
   familyNameSchema,
@@ -697,6 +698,41 @@ describe("family validations", () => {
       expect(result).not.toBeNull();
       expect(result?.members[0].email).toBeUndefined();
       expect(result?.members[0].avatarUrl).toBeUndefined();
+    });
+  });
+
+  describe("member color validation message", () => {
+    it("gives a human message when no color is selected", () => {
+      const result = createMemberFormSchema([]).safeParse({ name: "Alice" });
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(
+          result.error.issues.find((i) => i.path[0] === "color")?.message,
+        ).toBe("Please select a color");
+      }
+    });
+
+    it("gives the same message on the profile schema", () => {
+      const result = createMemberProfileSchema([]).safeParse({ name: "Alice" });
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(
+          result.error.issues.find((i) => i.path[0] === "color")?.message,
+        ).toBe("Please select a color");
+      }
+    });
+
+    it("never leaks Zod's default enum text", () => {
+      const result = createMemberFormSchema([]).safeParse({
+        name: "Alice",
+        color: "chartreuse",
+      });
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(
+          result.error.issues.find((i) => i.path[0] === "color")?.message,
+        ).not.toMatch(/expected one of/i);
+      }
     });
   });
 });
