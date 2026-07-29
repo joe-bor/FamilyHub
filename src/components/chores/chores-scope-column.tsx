@@ -72,6 +72,7 @@ export function ChoreScopeColumn({
           <ChoreAssigneeGroup
             key={group.member.id}
             group={group}
+            activeScope={scope.scope}
             onArchive={(chore) => onArchive?.(scope, chore)}
             onComplete={(chore) => onComplete?.(scope, chore)}
             onUncomplete={(chore) => onUncomplete?.(scope, chore)}

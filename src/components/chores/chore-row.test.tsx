@@ -59,3 +59,28 @@ it("grows the checkoff control to at least 44px at lg+", () => {
   expect(checkoff.className).toContain("lg:h-11");
   expect(checkoff.className).toContain("lg:w-11");
 });
+
+describe("ChoreRow cadence label", () => {
+  it("hides the cadence label when the active scope already implies it", () => {
+    render(
+      <ChoreRow chore={baseChore} activeScope="TODAY" onComplete={() => {}} />,
+    );
+    expect(screen.queryByText("Daily")).toBeNull();
+  });
+
+  it("shows the cadence label when the scope does not imply it", () => {
+    render(
+      <ChoreRow
+        chore={baseChore}
+        activeScope="THIS_WEEK"
+        onComplete={() => {}}
+      />,
+    );
+    expect(screen.getByText("Daily")).toBeInTheDocument();
+  });
+
+  it("shows the cadence label when no scope is supplied", () => {
+    render(<ChoreRow chore={baseChore} onComplete={() => {}} />);
+    expect(screen.getByText("Daily")).toBeInTheDocument();
+  });
+});

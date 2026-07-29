@@ -1,11 +1,14 @@
 import { Archive, Check, Circle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { haptics } from "@/lib/haptics";
-import type { ChoreBoardItem } from "@/lib/types";
+import type { ChoreBoardItem, ChoreCadence, ChoreScope } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 interface ChoreRowProps {
   chore: ChoreBoardItem;
+  /** Active scope tab. When it already implies the chore's cadence the label is
+   * redundant (e.g. "Daily" inside the Today column) and is suppressed. */
+  activeScope?: ChoreScope;
   onArchive?: () => void;
   onComplete?: () => void;
   onUncomplete?: () => void;
@@ -17,12 +20,21 @@ function cadenceLabel(cadence: ChoreBoardItem["cadence"]): string {
   return "Monthly";
 }
 
+const IMPLIED_BY: Record<ChoreCadence, ChoreScope> = {
+  DAILY: "TODAY",
+  WEEKLY: "THIS_WEEK",
+  MONTHLY: "THIS_MONTH",
+};
+
 export function ChoreRow({
   chore,
+  activeScope,
   onArchive,
   onComplete,
   onUncomplete,
 }: ChoreRowProps) {
+  const showCadence = IMPLIED_BY[chore.cadence] !== activeScope;
+
   return (
     <div
       data-testid={`chore-row-${chore.templateId}`}
@@ -78,9 +90,11 @@ export function ChoreRow({
         >
           {chore.title}
         </p>
-        <p className="mt-1 text-xs font-medium text-muted-foreground">
-          {cadenceLabel(chore.cadence)}
-        </p>
+        {showCadence && (
+          <p className="mt-1 text-xs font-medium text-muted-foreground">
+            {cadenceLabel(chore.cadence)}
+          </p>
+        )}
       </div>
 
       <Button

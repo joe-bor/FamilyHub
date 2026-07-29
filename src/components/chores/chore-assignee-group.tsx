@@ -1,6 +1,7 @@
 import type {
   ChoreAssigneeGroup as ChoreAssigneeGroupData,
   ChoreBoardItem,
+  ChoreScope,
 } from "@/lib/types";
 import { colorMap } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -8,6 +9,8 @@ import { ChoreRow } from "./chore-row";
 
 interface ChoreAssigneeGroupProps {
   group: ChoreAssigneeGroupData;
+  /** Forwarded to each row so a cadence the scope already implies is suppressed. */
+  activeScope?: ChoreScope;
   onArchive?: (chore: ChoreBoardItem) => void;
   onComplete?: (chore: ChoreBoardItem) => void;
   onUncomplete?: (chore: ChoreBoardItem) => void;
@@ -15,6 +18,7 @@ interface ChoreAssigneeGroupProps {
 
 export function ChoreAssigneeGroup({
   group,
+  activeScope,
   onArchive,
   onComplete,
   onUncomplete,
@@ -70,6 +74,7 @@ export function ChoreAssigneeGroup({
           <ChoreRow
             key={chore.templateId}
             chore={chore}
+            activeScope={activeScope}
             onArchive={() => onArchive?.(chore)}
             onComplete={() => onComplete?.(chore)}
             onUncomplete={() => onUncomplete?.(chore)}
