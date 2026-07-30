@@ -97,10 +97,13 @@ export const TodayList = memo(function TodayList({
                     {event.title}
                   </span>
                   {/* Opacity alone conveys nothing to assistive tech or to anyone
-                      who cannot compare rows side by side, so mark it in text. */}
+                      who cannot compare rows side by side, so mark it in text.
+                      "ended", not "done": nobody completed this event, it merely
+                      elapsed, and "done" means completed everywhere else in the
+                      app ("2 of 6 done"). */}
                   {isPast && (
                     <span className="shrink-0 text-[13px] leading-5 text-foreground/55">
-                      · done
+                      · ended
                     </span>
                   )}
                 </div>

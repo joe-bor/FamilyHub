@@ -140,7 +140,7 @@ describe("TodayList", () => {
     ).toBeNull();
   });
 
-  it("conveys finished state to assistive tech, not by opacity alone", () => {
+  it("conveys elapsed state to assistive tech, not by opacity alone", () => {
     renderWithUser(
       <TodayList
         currentDate={new Date(2026, 3, 25, 15, 0)}
@@ -158,7 +158,10 @@ describe("TodayList", () => {
     );
 
     expect(
-      screen.getByRole("button", { name: /morning run.*done/i }),
+      screen.getByRole("button", { name: /morning run.*ended/i }),
     ).toBeInTheDocument();
+    // "done" belongs to completion copy ("2 of 6 done") — an elapsed event was
+    // not completed by anyone, so it must not borrow the word.
+    expect(screen.queryByText(/·\s*done/i)).toBeNull();
   });
 });
