@@ -48,7 +48,7 @@ export function MobileToolbar({ members }: MobileToolbarProps) {
     // no taller than the old two-row toolbar.
     <div className="flex items-center justify-between gap-3 border-b border-border bg-background px-4 py-1">
       {/* View Switcher */}
-      <div className="flex items-center gap-0.5 rounded-xl bg-muted p-1">
+      <div className="flex shrink-0 items-center gap-0.5 rounded-xl bg-muted p-1">
         {VIEW_PILLS.map(({ view, label, ariaLabel }) => (
           <button
             key={view}
@@ -69,7 +69,7 @@ export function MobileToolbar({ members }: MobileToolbarProps) {
 
       {/* Period navigation — Today deliberately lives in the shared AppHeader
           (app-header.tsx:74-87), so this row owns prev/next only. */}
-      <div className="flex items-center gap-0.5">
+      <div className="flex shrink-0 items-center gap-0.5">
         <button
           type="button"
           aria-label="Previous"
@@ -88,8 +88,13 @@ export function MobileToolbar({ members }: MobileToolbarProps) {
         </button>
       </div>
 
-      {/* Member Filter Dots */}
-      <div className="flex items-center gap-1">
+      {/* Member Filter Dots — the only elastic group in the row. The switcher and
+          prev/next are fixed-width essentials, and the row's ancestor is
+          overflow-hidden (calendar-module.tsx), so without min-w-0 + a scroller
+          here the last members' dots are clipped and unreachable: at 375px a
+          three-member family loses 25px, a five-member one 113px. Same
+          scroll-don't-clip pattern as MemberChipRow on Home. */}
+      <div className="flex min-w-0 items-center gap-1 overflow-x-auto scrollbar-hide">
         {members.map((member) => {
           const isIncluded = filter.selectedMembers.includes(member.id);
           return (
@@ -98,7 +103,7 @@ export function MobileToolbar({ members }: MobileToolbarProps) {
               type="button"
               onClick={() => toggleMember(member.id)}
               aria-label={`${member.name} filter`}
-              className="rounded-full p-2 transition-colors hover:bg-muted"
+              className="shrink-0 rounded-full p-2 transition-colors hover:bg-muted"
             >
               <MemberAvatar
                 name={member.name}

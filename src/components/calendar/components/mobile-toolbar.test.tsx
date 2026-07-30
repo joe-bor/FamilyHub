@@ -66,3 +66,46 @@ describe("MobileToolbar period navigation", () => {
     expect(useCalendarStore.getState().currentDate.getDate()).toBe(2);
   });
 });
+
+// Prev/next costs the row a fixed 90px, which pushed the member dots past the
+// right edge of an overflow-hidden ancestor (unreachable, not scrollable): 25px
+// lost at 375px with three members, 113px with five. jsdom resolves no Tailwind,
+// so geometry is unassertable here — pin the classes that make the group elastic
+// instead, the same way chore-row.test.tsx pins its lg: touch sizing.
+describe("MobileToolbar narrow-viewport layout", () => {
+  const family = [
+    { id: "m1", name: "Alice", color: "coral" as const },
+    { id: "m2", name: "Bob", color: "teal" as const },
+    { id: "m3", name: "Cass", color: "green" as const },
+    { id: "m4", name: "Dev", color: "purple" as const },
+  ];
+
+  it("lets the member dots scroll instead of clipping them", () => {
+    render(<MobileToolbar members={family} />);
+    const group = screen.getByRole("button", { name: "Alice filter" })
+      .parentElement as HTMLElement;
+
+    expect(group.className).toContain("overflow-x-auto");
+    expect(group.className).toContain("min-w-0");
+  });
+
+  it("keeps the switcher and prev/next from being squeezed instead", () => {
+    render(<MobileToolbar members={family} />);
+    const switcher = screen.getByRole("button", { name: /daily/i })
+      .parentElement as HTMLElement;
+    const nav = screen.getByRole("button", { name: "Previous" })
+      .parentElement as HTMLElement;
+
+    expect(switcher.className).toContain("shrink-0");
+    expect(nav.className).toContain("shrink-0");
+  });
+
+  it("keeps every member dot at its full touch size while scrolling", () => {
+    render(<MobileToolbar members={family} />);
+    for (const member of family) {
+      expect(
+        screen.getByRole("button", { name: `${member.name} filter` }).className,
+      ).toContain("shrink-0");
+    }
+  });
+});
