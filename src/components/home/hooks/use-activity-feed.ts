@@ -110,9 +110,12 @@ export function useActivityFeed({
   const lists = listsQuery.data?.data ?? EMPTY_LISTS;
 
   const [feed, setFeed] = useState<Feed>(EMPTY_FEED);
-  // getLastSeen() is 0 only when the marker was never written, i.e. a true first
-  // open. It reads localStorage, so it is unaffected by IndexedDB availability —
-  // unlike loadState(), which returns null for both "never opened" and "no store".
+  // 0 means the marker was never written: a true first open, or a browser where
+  // localStorage throws (markers.ts readNum swallows and returns 0 — private mode,
+  // some webviews). We accept that conflation deliberately: when storage is dead
+  // setLastSeen never sticks either, so such a family keeps seeing the first-run
+  // copy, which is the honest failure. The alternative — loadState() returning
+  // null — conflates the same two cases AND is gated on IndexedDB.
   const [isFirstRun] = useState(() => io.getLastSeen() === 0);
   const [meaningfulOpenId, setMeaningfulOpenId] = useState(0); // bump → reset ephemeral expansion
   const coldStartRef = useRef(true);

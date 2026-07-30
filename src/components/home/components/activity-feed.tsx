@@ -13,8 +13,8 @@ interface ActivityFeedProps {
   memberColorOf?: MemberColorOf;
   /** Bumped on each meaningful open; remounts groups so expansion is ephemeral (§5). */
   meaningfulOpenId?: number;
-  /** True only on a genuine first open — derived from getLastSeen(), never from
-   * a null persisted state, which also means "IndexedDB unavailable". */
+  /** No previous open on record — derived from getLastSeen() (see use-activity-feed
+   * for why an unwritable localStorage intentionally reads as first-run too). */
   isFirstRun?: boolean;
 }
 
