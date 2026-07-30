@@ -264,8 +264,8 @@ test.describe("Large-screen Home", () => {
 
     const home = page.getByTestId("large-home-dashboard");
     await expect(home).toBeVisible();
-    // No events anywhere today: hero reads "All clear today".
-    await expect(home.getByText("All clear today")).toBeVisible();
+    // No events anywhere today. Same wording as the mobile hero by design.
+    await expect(home.getByText("Nothing on the calendar today")).toBeVisible();
     await expect(home.getByText(/dinner not planned/i)).toBeVisible();
     await expect(home.getByText(/chores done/i)).toBeVisible();
     await expect(home.getByText(/lists quiet/i)).toBeVisible();
@@ -274,7 +274,7 @@ test.describe("Large-screen Home", () => {
     await context.setOffline(true);
     await page.evaluate(() => window.dispatchEvent(new Event("offline")));
     await expect(home).toBeVisible();
-    await expect(home.getByText("All clear today")).toBeVisible();
+    await expect(home.getByText("Nothing on the calendar today")).toBeVisible();
     await context.setOffline(false);
   });
 

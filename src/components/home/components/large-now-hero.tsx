@@ -18,14 +18,15 @@ function titleFor(state: HeroState) {
     case "UP_NEXT":
     case "ALL_DAY_ONLY":
       return state.event.title;
+    // Both cleared-day titles match the mobile hero verbatim (hero-card.tsx
+    // getTitle), so the same day never reads two ways across surfaces. Only the
+    // past-event marking in TodayList is REST_OF_DAY_CLEAR-specific —
+    // ALL_CLEAR_TODAY is returned only when there were no events at all, so no
+    // elapsed event can sit beneath it (hero-state.ts:40-48).
     case "REST_OF_DAY_CLEAR":
-      // Same wording as the mobile hero (hero-card.tsx getTitle) so both surfaces
-      // agree about what a cleared day means. ALL_CLEAR_TODAY stays as-is: it is
-      // only returned when there were no events at all, so no past event can sit
-      // beneath it (hero-state.ts:40-48).
       return "All clear for the rest of today";
     case "ALL_CLEAR_TODAY":
-      return "All clear today";
+      return "Nothing on the calendar today";
   }
 }
 

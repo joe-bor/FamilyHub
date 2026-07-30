@@ -78,3 +78,24 @@ describe("LargeNowHero", () => {
     expect(onOpenEvent).toHaveBeenCalledWith(event);
   });
 });
+
+// The two heroes render the same HeroState on different surfaces, so a family
+// that moves between phone and tablet must not be told two different things
+// about the same cleared day. Rendering both and comparing keeps that honest —
+// a comment claiming the wording matches cannot.
+describe("LargeNowHero cleared-day titles match the mobile hero", () => {
+  it.each([
+    ["REST_OF_DAY_CLEAR", "All clear for the rest of today"],
+    ["ALL_CLEAR_TODAY", "Nothing on the calendar today"],
+  ] as const)("renders %s as the same title HeroCard uses", (kind, title) => {
+    render(
+      <LargeNowHero
+        state={{ kind }}
+        now={new Date(2026, 6, 5, 20, 0)}
+        onOpenEvent={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByText(title)).toBeInTheDocument();
+  });
+});
