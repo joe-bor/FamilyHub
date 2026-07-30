@@ -33,7 +33,9 @@ export function ChoreScopeColumn({
   onUncomplete,
 }: ChoreScopeColumnProps) {
   const heading = scopeHeading(scope.scope);
-  const summary = `${scope.summary.total - scope.summary.remaining} of ${scope.summary.total} done`;
+  // Both counts come straight from the API summary rather than being derived from
+  // `total - remaining`, so this can never disagree with the assignee groups below.
+  const summary = `${scope.summary.completed} of ${scope.summary.total} done`;
   const isFullyComplete =
     scope.summary.total > 0 && scope.summary.remaining === 0;
 
